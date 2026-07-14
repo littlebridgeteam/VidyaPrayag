@@ -1313,7 +1313,7 @@ private fun QuizResultCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(academics.leaderboardError!!, style = VTypography.caption, color = VColors.ink3, modifier = Modifier.weight(1f))
+                    Text(academics.leaderboardError ?: "", style = VTypography.caption, color = VColors.ink3, modifier = Modifier.weight(1f))
                     VButton(
                         "Retry",
                         onClick = { onLoadLeaderboard(result.quizId) },
@@ -1408,7 +1408,7 @@ private fun HomeworkTab(
                 }
                 Column(Modifier.weight(1f)) {
                     Text("AI Summary", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text(data.aiSummary!!, style = VTypography.caption, color = VColors.ink2)
+                    Text(data.aiSummary ?: "", style = VTypography.caption, color = VColors.ink2)
                 }
             }
         }

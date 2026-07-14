@@ -38,6 +38,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VTag
@@ -89,6 +91,7 @@ fun DailyAttendanceScreenV2(
                 onTypeChange = viewModel::setAttendanceType,
                 onClassChange = viewModel::selectClass,
                 onUpdateStatus = viewModel::updateStatus,
+                onSave = viewModel::save,
                 onRetry = { viewModel.setAttendanceType(state.attendanceType) },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -102,6 +105,7 @@ private fun DailyAttendanceContent(
     onTypeChange: (String) -> Unit,
     onClassChange: (String) -> Unit,
     onUpdateStatus: (String, AttendanceStatus) -> Unit,
+    onSave: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -172,6 +176,21 @@ private fun DailyAttendanceContent(
                     AttendeeRow(attendee = a, onSetStatus = { onUpdateStatus(a.id, it) })
                 }
             }
+
+            if (state.saveError != null) {
+                Text(state.saveError!!, style = VTypography.caption, color = VColors.error)
+            }
+            if (state.saveSuccess) {
+                Text("Attendance saved", style = VTypography.caption, color = VColors.success)
+            }
+            VButton(
+                text = "Save Attendance",
+                onClick = onSave,
+                variant = VButtonVariant.Primary,
+                full = true,
+                enabled = !state.isSaving && state.attendees.isNotEmpty(),
+                loading = state.isSaving,
+            )
         }
     }
 }

@@ -56,6 +56,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -141,7 +142,10 @@ fun TeacherProfileScreenV2(
             when {
                 profileState.isLoading && profileState.profile == null ->
                     TCard { Box(Modifier.fillMaxWidth().height(96.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
-                profileState.profile != null -> IdentityHero(profileState.profile!!)
+                profileState.profile != null -> {
+                    val profile = profileState.profile ?: return@item
+                    IdentityHero(profile)
+                }
                 else -> TCard {
                     Column {
                         Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VtT.bodyStrong.coloredV(c.navyDeep))
@@ -211,6 +215,7 @@ fun TeacherProfileScreenV2(
                             currentMode = themeMode,
                             currentCustomId = customThemeId,
                             onSelect = { mode, customId ->
+                                AnalyticsTracker.event("vp_teacher_theme_change", mapOf("theme" to mode))
                                 actionsViewModel.setThemeMode(mode)
                                 actionsViewModel.setCustomThemeId(customId)
                             },

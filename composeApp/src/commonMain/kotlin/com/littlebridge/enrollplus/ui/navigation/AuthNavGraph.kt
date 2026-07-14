@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +23,7 @@ import com.littlebridge.enrollplus.ui.screens.shared.PrivacyPolicyScreen
 import com.littlebridge.enrollplus.ui.screens.shared.SplashScreen
 import com.littlebridge.enrollplus.ui.screens.shared.TermsConditionScreen
 import com.littlebridge.enrollplus.ui.tokens.VMotion
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 
 @Composable
 fun AuthNavGraph(
@@ -29,6 +31,22 @@ fun AuthNavGraph(
     onAuthSuccess: () -> Unit,
 ) {
     var currentRoute by remember { mutableStateOf(AuthRoute.Landing) }
+
+    LaunchedEffect(currentRoute) {
+        val screenName = when (currentRoute) {
+            AuthRoute.Splash -> "splash"
+            AuthRoute.Landing -> "landing"
+            AuthRoute.ParentLogin -> "parent_login"
+            AuthRoute.ParentSignup -> "parent_signup"
+            AuthRoute.AdminLogin -> "admin_login"
+            AuthRoute.AdminSignup -> "admin_signup"
+            AuthRoute.Terms -> "terms"
+            AuthRoute.PrivacyPolicy -> "privacy_policy"
+            AuthRoute.ForgotPassword -> "forgot_password"
+        }
+        AnalyticsTracker.setCurrentScreenName(screenName)
+        AnalyticsTracker.event("vp_screen_viewed", mapOf("screen" to screenName))
+    }
 
     fun navigateTo(route: AuthRoute) {
         currentRoute = route

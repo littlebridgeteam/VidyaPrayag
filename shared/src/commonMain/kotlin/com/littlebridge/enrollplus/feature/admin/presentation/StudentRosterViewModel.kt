@@ -19,6 +19,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestCountDt
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
 import com.littlebridge.enrollplus.feature.admin.domain.repository.LinkRequestsRepository
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -97,6 +98,7 @@ class StudentRosterViewModel(
         section: String,
         rollNumber: String,
         parentPhone: String,
+        admissionDate: String? = null,
     ) {
         if (fullName.isBlank() || className.isBlank() || rollNumber.isBlank()) {
             _state.value = _state.value.copy(addError = "Name, class and roll number are required.")
@@ -124,14 +126,17 @@ class StudentRosterViewModel(
                 className = className.trim(),
                 section = section.trim().ifBlank { null },
                 rollNumber = rollNumber.trim(),
-                parentPhone = parentPhone.trim().ifBlank { null }
+                parentPhone = parentPhone.trim().ifBlank { null },
+                admissionDate = admissionDate?.takeIf { it.isNotBlank() }
             )
             when (val r = repository.createStudent(token, req)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_student_created", mapOf("class" to className))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Student added")
                     load()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_student_create_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StudentRosterVM", "createStudent error: ${r.message}")
                     _state.value = _state.value.copy(isSaving = false, addError = r.message)
                 }
@@ -166,10 +171,16 @@ class StudentRosterViewModel(
                         if (res.failed == 0) "Imported ${res.inserted} students"
                         else "Imported ${res.inserted} of ${res.total} (${res.failed} skipped)"
                     } else "Students imported"
+                    AnalyticsTracker.event("vp_student_bulk_import", mapOf(
+                        "inserted" to (res?.inserted ?: 0),
+                        "failed" to (res?.failed ?: 0),
+                        "total" to (res?.total ?: 0),
+                    ))
                     _state.value = _state.value.copy(isImporting = false, infoMessage = summary)
                     load()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_student_bulk_import_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StudentRosterVM", "importStudents error: ${r.message}")
                     _state.value = _state.value.copy(isImporting = false, importError = r.message)
                 }
@@ -190,6 +201,7 @@ class StudentRosterViewModel(
             _state.value = _state.value.copy(removingIds = _state.value.removingIds + studentId)
             when (val r = repository.deleteStudent(token, studentId)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_student_deleted", mapOf("student_id" to studentId))
                     _state.value = _state.value.copy(
                         removingIds = _state.value.removingIds - studentId,
                         students = _state.value.students.filterNot { it.id == studentId },
@@ -197,6 +209,7 @@ class StudentRosterViewModel(
                     )
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_student_delete_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StudentRosterVM", "deleteStudent error: ${r.message}")
                     _state.value = _state.value.copy(removingIds = _state.value.removingIds - studentId, error = r.message)
                 }

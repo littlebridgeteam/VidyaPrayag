@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.admin.presentation.AnalyticsCardData
 import com.littlebridge.enrollplus.feature.admin.presentation.AnalyticsDashboardState
@@ -191,7 +192,13 @@ private fun TrendChart(values: List<Float>, labels: List<String>) {
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 labels.forEach { l ->
-                    Text(l, style = VTypography.caption.copy(color = VColors.ink3))
+                    Text(
+                        l,
+                        style = VTypography.caption.copy(color = VColors.ink3),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -201,12 +208,12 @@ private fun TrendChart(values: List<Float>, labels: List<String>) {
 @Composable
 private fun AnalyticsCard(card: AnalyticsCardData) {
         VCard {
-        Text(card.title, style = VTypography.label.copy(color = VColors.ink3))
+        Text(card.title, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
-        Text(card.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+        Text(card.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink), maxLines = 2, overflow = TextOverflow.Ellipsis)
         if (card.subValue.isNotBlank()) {
             Spacer(Modifier.height(2.dp))
-            Text(card.subValue, style = VTypography.caption.copy(color = VColors.ink2))
+            Text(card.subValue, style = VTypography.caption.copy(color = VColors.ink2), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         val trend = card.trend
         if (!trend.isNullOrBlank()) {
@@ -235,10 +242,10 @@ private fun InsightCard(item: InsightItem, modifier: Modifier = Modifier) {
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(item.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(item.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (item.description.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
-                    Text(item.description, style = VTypography.caption.copy(color = VColors.ink2))
+                    Text(item.description, style = VTypography.caption.copy(color = VColors.ink2), maxLines = 3, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

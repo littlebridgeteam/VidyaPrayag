@@ -24,6 +24,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.MessagesRepository
 import com.littlebridge.enrollplus.feature.admin.domain.repository.TeachersRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -233,6 +234,10 @@ class MessagesViewModel(
             )
             when (val result = messagesRepository.sendMessage(token, request)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_message_sent", mapOf(
+                        "thread_id" to (result.data.threadId ?: ""),
+                        "is_new_thread" to (threadId == null),
+                    ))
                     AppLogger.d(
                         "MessagesVM",
                         "Sent message ${result.data.messageId} (thread ${result.data.threadId})"
@@ -242,6 +247,7 @@ class MessagesViewModel(
                     refresh()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_message_send_failed", mapOf("error_reason" to (result.message ?: "unknown")))
                     AppLogger.e("MessagesVM", "sendMessage failed: ${result.message}")
                     _state.value = _state.value.copy(isSending = false)
                     _errorMessage.value = result.message
@@ -389,12 +395,17 @@ class MessagesViewModel(
             )
             when (val result = messagesRepository.sendMessage(token, request)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_message_sent", mapOf(
+                        "thread_id" to threadId,
+                        "is_new_thread" to false,
+                    ))
                     // Replace optimistic message with real one via reload.
                     _conversation.value = _conversation.value.copy(isSending = false)
                     reloadConversation()
                     refresh()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_message_send_failed", mapOf("error_reason" to (result.message ?: "unknown")))
                     AppLogger.e("MessagesVM", "sendReply failed: ${result.message}")
                     // Remove optimistic message on failure.
                     _conversation.value = _conversation.value.copy(

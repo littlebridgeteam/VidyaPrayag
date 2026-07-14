@@ -61,6 +61,7 @@ import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -90,13 +91,26 @@ fun NotificationsScreenV2(
     viewModel: NotificationsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    LaunchedEffect(state.notifications.size) {
+        if (state.notifications.isNotEmpty()) {
+            AnalyticsTracker.event("vp_notifications_view", mapOf(
+                "unread_count" to state.notifications.count { it.unread },
+            ))
+        }
+    }
     NotificationsContent(
         state = state,
         isRefreshing = state.isRefreshing,
         onRefresh = viewModel::refresh,
         onBack = onBack,
-        onMarkAll = viewModel::markAllRead,
-        onMarkRead = viewModel::markRead,
+        onMarkAll = {
+            AnalyticsTracker.event("vp_notification_mark_all_read")
+            viewModel.markAllRead()
+        },
+        onMarkRead = { id ->
+            AnalyticsTracker.event("vp_notification_mark_read", mapOf("notification_id" to id))
+            viewModel.markRead(id)
+        },
         onClearAll = viewModel::clearAll,
         onDeepLink = onDeepLink,
         onRetry = viewModel::load,
@@ -136,7 +150,7 @@ private fun NotificationsContent(
     val unread = items.count { it.unread }
     val visible = if (filterUnread) items.filter { it.unread } else items
 
-    Column(modifier.fillMaxSize().background(VColors.cream).statusBarsPadding()
+    Column(modifier.fillMaxSize().background(VColors.cream)
         .imePadding()
         .navigationBarsPadding()) {
         PremiumNotificationHeader(

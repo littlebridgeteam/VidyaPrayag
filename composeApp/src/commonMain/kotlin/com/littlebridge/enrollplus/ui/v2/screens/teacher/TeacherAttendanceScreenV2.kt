@@ -440,7 +440,10 @@ private fun AttendanceInsightsBody(
 
         // Student detail drill-down
         if (state.selectedStudentId != null && state.studentAnalytics != null) {
-            item { StudentDetailCard(state.studentAnalytics!!, onClose = { viewModel.closeStudentDetail() }) }
+            val analytics = state.studentAnalytics
+            if (analytics != null) {
+                item { StudentDetailCard(analytics, onClose = { viewModel.closeStudentDetail() }) }
+            }
         }
     }
 }

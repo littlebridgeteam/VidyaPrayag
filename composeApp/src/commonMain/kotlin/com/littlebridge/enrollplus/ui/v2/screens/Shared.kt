@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -33,6 +34,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -69,6 +71,11 @@ fun VErrorState(
     onRetry: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    LaunchedEffect(message) {
+        if (message.isNotBlank()) {
+            AnalyticsTracker.event("vp_error_shown", mapOf("error_message" to message.take(200)))
+        }
+    }
     VEmptyState(
         modifier = modifier,
         icon = VIcons.AlertTriangle,
@@ -78,7 +85,10 @@ fun VErrorState(
             {
                 VButton(
                     text = appString(StringKeys.COMMON_BUTTON_RETRY),
-                    onClick = onRetry,
+                    onClick = {
+                        AnalyticsTracker.event("vp_retry_tapped", emptyMap())
+                        onRetry()
+                    },
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Teal,
                     size = VButtonSize.Sm,
@@ -118,6 +128,12 @@ fun VStateHost(
     skeleton: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
+    LaunchedEffect(isEmpty, error) {
+        if (isEmpty && error == null && !loading) {
+            AnalyticsTracker.event("vp_empty_state_shown", mapOf("empty_title" to emptyTitle))
+        }
+    }
+
     // No skeleton supplied → preserve the original behaviour exactly (spinner loading leg).
     if (skeleton == null) {
         when {

@@ -174,7 +174,7 @@ fun ExamTimetableUploadScreen(
                         Text("Extracting entries...", style = VTypography.body, color = VColors.ink2)
                     }
                     if (ocrState.error != null) {
-                        Text(ocrState.error!!, style = VTypography.body, color = VColors.error)
+                        Text(ocrState.error ?: "", style = VTypography.body, color = VColors.error)
                     }
                 }
             }
@@ -223,7 +223,7 @@ fun ExamTimetableUploadScreen(
             )
 
             if (detailState.error != null) {
-                Text(detailState.error!!, style = VTypography.body, color = VColors.error)
+                Text(detailState.error ?: "", style = VTypography.body, color = VColors.error)
             }
         }
     }

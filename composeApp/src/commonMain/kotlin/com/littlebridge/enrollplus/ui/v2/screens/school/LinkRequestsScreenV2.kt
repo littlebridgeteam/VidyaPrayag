@@ -95,7 +95,6 @@ private fun LinkRequestsContent(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
-            .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
             .padding(top = 16.dp, bottom = 24.dp),

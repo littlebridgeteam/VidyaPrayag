@@ -1012,7 +1012,8 @@ private fun RewardCard(
                 style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                 color = if (canAfford) VColors.mint else VColors.ink3,
             )
-            if (reward.stockRemaining != null && reward.stockRemaining!! <= 0) {
+            val stock = reward.stockRemaining
+            if (stock != null && stock <= 0) {
                 Text(
                     "Out of stock",
                     style = VTypography.caption.copy(fontSize = 10.sp),

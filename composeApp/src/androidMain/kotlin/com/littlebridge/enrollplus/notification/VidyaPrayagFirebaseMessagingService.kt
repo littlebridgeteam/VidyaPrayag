@@ -46,6 +46,7 @@ package com.littlebridge.enrollplus.notification
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -153,6 +154,10 @@ class VidyaPrayagFirebaseMessagingService : FirebaseMessagingService() {
         )
 
         runCatching {
+            AnalyticsTracker.event("vp_notification_received", mapOf(
+                "type" to (type ?: "unknown"),
+                "deep_link" to (deepLink ?: ""),
+            ))
             NotificationManagerHelper.displayNotification(
                 context = this,
                 title = title.orEmpty(),

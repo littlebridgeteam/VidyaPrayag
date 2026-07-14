@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolClassDto
@@ -483,10 +484,10 @@ private fun ClassAnalyticsSubTab(
                     ) {
                         VBadge(text = "★ 1ST", tone = VBadgeTone.Warning)
                         Column(Modifier.weight(1f)) {
-                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (state.topPerformerDetails.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
-                                Text(state.topPerformerDetails, style = VTypography.caption, color = VColors.ink3)
+                                Text(state.topPerformerDetails, style = VTypography.caption, color = VColors.ink3, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -506,16 +507,16 @@ private fun ClassAnalyticsSubTab(
 @Composable
 private fun AnalyticsKpi(label: String, value: String) {
     VCard {
-        Text(label, style = VTypography.label, color = VColors.ink3)
+        Text(label, style = VTypography.label, color = VColors.ink3, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
 private fun AnalyticsRiskTile(label: String, value: String, tone: VBadgeTone) {
     Column {
-        Text(label, style = VTypography.label, color = VColors.ink3)
+        Text(label, style = VTypography.label, color = VColors.ink3, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
         VBadge(text = value, tone = tone)
     }
@@ -568,7 +569,7 @@ private fun AnalyticsProgressRow(p: com.littlebridge.enrollplus.feature.admin.pr
             Box(
                 Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(VColors.cream)
+                    .background(VColors.surfaceCard)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
                 Text(p.initials.take(2).uppercase(), style = VTypography.bodySmall, color = VColors.ink)

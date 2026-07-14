@@ -79,7 +79,17 @@ data class CreateStudentRequest(
     val section: String? = null,
     @SerialName("roll_number") val rollNumber: String,
     @SerialName("parent_phone") val parentPhone: String? = null,
-    @SerialName("student_code") val studentCode: String? = null
+    @SerialName("student_code") val studentCode: String? = null,
+    @SerialName("admission_date") val admissionDate: String? = null
+)
+
+@Serializable
+data class UpdateStudentRequest(
+    @SerialName("full_name") val fullName: String? = null,
+    @SerialName("class_name") val className: String? = null,
+    val section: String? = null,
+    @SerialName("roll_number") val rollNumber: String? = null,
+    @SerialName("admission_date") val admissionDate: String? = null
 )
 
 @Serializable

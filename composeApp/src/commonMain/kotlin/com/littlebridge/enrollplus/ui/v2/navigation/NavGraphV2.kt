@@ -39,6 +39,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VStatusBarAdapter
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeDef
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeRegistry
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import org.koin.compose.koinInject
 
 /**
@@ -103,6 +104,10 @@ fun NavGraphV2(
     var rawDeepLink by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(deepLink) {
         if (deepLink != null) {
+            AnalyticsTracker.event("vp_deeplink_received", mapOf(
+                "path" to deepLink,
+                "role" to entryRole.name.lowercase(),
+            ))
             rawDeepLink = deepLink
             onDeepLinkConsumed()
         }
@@ -111,6 +116,10 @@ fun NavGraphV2(
         val link = rawDeepLink
         if (link != null && entryRole != EntryRole.Unknown) {
             pendingNavigation = parseDeepLink(link, entryRole)
+            AnalyticsTracker.event("vp_deeplink_resolved", mapOf(
+                "path" to link,
+                "role" to entryRole.name.lowercase(),
+            ))
             rawDeepLink = null
         }
     }
@@ -535,6 +544,28 @@ private fun AuthedFlow(
     // The step the school-onboarding wizard should open on, resolved from the
     // server status (first incomplete step) for a returning/partial admin.
     var onboardingResumeStep by remember(role) { mutableStateOf(com.littlebridge.enrollplus.feature.admin.domain.model.ObStepType.BASIC) }
+
+    // Track screen views on every route change for Clarity + Firebase analytics
+    LaunchedEffect(route) {
+        val screenName = when (route) {
+            AuthedRoute.Resolving -> "resolving"
+            AuthedRoute.ParentLinkChild -> "parent_link_child"
+            AuthedRoute.SchoolOnboarding -> "school_onboarding"
+            AuthedRoute.TeacherFirstLogin -> "teacher_first_login"
+            AuthedRoute.Portal -> when (role) {
+                EntryRole.Parent -> "parent_portal"
+                EntryRole.Teacher -> "teacher_portal"
+                EntryRole.SchoolAdmin -> "admin_portal"
+                EntryRole.SuperAdmin -> "admin_portal"
+                else -> "portal"
+            }
+        }
+        AnalyticsTracker.setCurrentScreenName(screenName)
+        AnalyticsTracker.event("vp_screen_viewed", mapOf(
+            "screen" to screenName,
+            "role" to role.name.lowercase(),
+        ))
+    }
 
     // For school roles, the decision is made by the server-truth gate VM below
     // (it sets `route`). The gate is AUTHORITATIVE: OnboardingGateViewModel reads

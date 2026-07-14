@@ -267,7 +267,7 @@ object StudentAggregationService {
         assessments.forEach { a ->
             val maxMarks = a[AssessmentsTable.maxMarks]
             val mark = marks[a[AssessmentsTable.id].value]?.get(AssessmentMarksTable.marks)
-            if (mark != null) ratios += (mark.toFloat() / maxMarks * 100f).coerceIn(0f, 100f)
+            if (mark != null && maxMarks > 0f) ratios += (mark.toFloat() / maxMarks * 100f).coerceIn(0f, 100f)
         }
         return if (ratios.isEmpty()) null else ratios.average().toFloat()
     }

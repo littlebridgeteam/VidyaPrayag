@@ -86,12 +86,15 @@ fun TeacherStudentProfilePane(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text(state.error!!, style = VTypography.caption, color = c.ink3)
+                    Text(state.error ?: "", style = VTypography.caption, color = c.ink3)
                     Spacer(Modifier.height(14.dp))
                     VButton(appString(StringKeys.TC_TRY_AGAIN), onClick = { viewModel.retry() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
                 }
             }
-            state.profile != null -> StudentProfileBody(state.profile!!)
+            state.profile != null -> {
+                val profile = state.profile ?: return
+                StudentProfileBody(profile)
+            }
             else -> TeacherCenterState { TeacherSpinner() }
         }
     }
@@ -256,14 +259,15 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
                         e.isAbsent -> VtPill(appString(StringKeys.TC_ABSENT), bg = c.danger.copy(alpha = 0.12f), fg = c.dangerInk)
                         e.marks == null -> VtPill(appString(StringKeys.TC_PENDING), bg = c.cream, fg = c.ink2)
                         else -> {
-                            val ratio = if (e.max > 0) e.marks!! / e.max else 0.0
+                            val mk = e.marks ?: 0.0
+                            val ratio = if (e.max > 0) mk / e.max else 0.0
                             val tint = when {
                                 ratio >= 0.6 -> c.successInk
                                 ratio >= 0.4 -> c.warningInk
                                 else -> c.dangerInk
                             }
                             Text(
-                                "${fmt1(e.marks!!.toFloat())}/${e.max}",
+                                "${fmt1(mk.toFloat())}/${e.max}",
                                 style = VTypography.bodySmall,
                                 color = tint,
                                 fontWeight = FontWeight.Bold,

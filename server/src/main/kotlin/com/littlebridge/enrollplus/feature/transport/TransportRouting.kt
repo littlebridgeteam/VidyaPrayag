@@ -188,7 +188,7 @@ fun Route.transportRouting() {
                     ?: run { call.fail("Invalid request body"); return@post }
                 val assignment = transportService.createAssignment(ctx.schoolId, req)
                 if (assignment == null) {
-                    call.fail("Invalid student/route/stop/vehicle id", HttpStatusCode.BadRequest)
+                    call.fail("Student not found. Use the student's UUID or student code, and ensure route/stop/vehicle IDs are valid.", HttpStatusCode.BadRequest)
                 } else {
                     call.ok(assignment, "Assignment created", HttpStatusCode.Created)
                 }

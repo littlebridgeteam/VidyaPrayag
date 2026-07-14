@@ -16,6 +16,7 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.MarksImportTextR
 import com.littlebridge.enrollplus.feature.teacher.domain.model.MarksSaveRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ParsedMarkDto
 import com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -229,7 +230,7 @@ class TeacherGradebookViewModel(
                 assignmentId = asg,
                 name = name,
                 type = s.createType,
-                maxMarks = max!!,
+                maxMarks = max,
                 passMarks = pass,
                 examDate = s.createExamDate.takeIf { it.isNotBlank() },
                 linkToCalendar = false,
@@ -393,6 +394,11 @@ class TeacherGradebookViewModel(
             when (val r = repository.saveAssessmentMarks(t, assessment.id, req)) {
                 is NetworkResult.Success -> {
                     val d = r.data.data
+                    AnalyticsTracker.event("vp_marks_saved", mapOf(
+                        "assessment_id" to assessment.id,
+                        "entered_count" to d.enteredCount,
+                        "roster_count" to d.rosterCount,
+                    ))
                     _state.update {
                         it.copy(
                             isSaving = false,
@@ -405,8 +411,10 @@ class TeacherGradebookViewModel(
                         )
                     }
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_marks_save_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update { it.copy(isSaving = false, saveError = r.message) }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(isSaving = false, saveError = "Connection error") }
             }
@@ -429,6 +437,10 @@ class TeacherGradebookViewModel(
             when (val r = repository.publishAssessment(t, assessment.id)) {
                 is NetworkResult.Success -> {
                     val d = r.data.data
+                    AnalyticsTracker.event("vp_marks_published", mapOf(
+                        "assessment_id" to assessment.id,
+                        "parents_notified" to (d.parentsNotified ?: 0),
+                    ))
                     _state.update {
                         it.copy(
                             isPublishing = false,
@@ -440,8 +452,10 @@ class TeacherGradebookViewModel(
                         )
                     }
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_marks_publish_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update { it.copy(isPublishing = false, publishError = r.message) }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(isPublishing = false, publishError = "Connection error") }
             }

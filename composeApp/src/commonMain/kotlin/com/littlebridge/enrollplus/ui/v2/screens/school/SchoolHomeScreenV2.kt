@@ -244,7 +244,7 @@ fun SchoolHomeScreenV2(
                 skeleton = { SkeletonDashboard() },
                 modifier = Modifier.fillMaxSize(),
             ) {
-                val ov = overview!!
+                val ov = overview ?: return@VStateHost
                 CommandDesk(
                     overview = ov,
                     activity = activity,

@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class OnboardingBasics(
     val schoolName: String = "",
     val boardAffiliation: String = "",
+    val affiliationNumber: String = "",
     val officialEmail: String = "",
     val contactNumber: String = "",
     val countryCode: String = "+91",

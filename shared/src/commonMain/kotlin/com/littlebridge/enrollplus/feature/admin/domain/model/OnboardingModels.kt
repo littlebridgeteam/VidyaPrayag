@@ -139,6 +139,7 @@ object ObPayloadKeys {
     // BASIC step
     const val SCHOOL_NAME = "school_name"
     const val BOARD = "board"
+    const val AFFILIATION_NUMBER = "affiliation_number"
     const val MEDIUM = "medium"
     const val SCHOOL_GENDER = "school_gender"
     const val CONTACT_EMAIL = "contact_email"

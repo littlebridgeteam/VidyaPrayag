@@ -100,10 +100,10 @@ fun ParentResultsCard(
         return
     }
 
-    val score = latestMark.marks!!.roundToInt()
+    val score = (latestMark.marks ?: 0.0).roundToInt()
     val max = latestMark.maxMarks
     val delta = if (previousMark?.marks != null) {
-        (latestMark.marks!! - previousMark.marks!!).roundToInt()
+        ((latestMark.marks ?: 0.0) - (previousMark.marks ?: 0.0)).roundToInt()
     } else null
 
     VCard(modifier = modifier, padding = 14.dp, onClick = onOpenAcademics) {

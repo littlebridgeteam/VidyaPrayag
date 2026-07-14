@@ -114,7 +114,7 @@ fun TutorChatScreen(
             if (state.error != null) {
                 VEmptyState(
                     title = appString(StringKeys.TUT_ERROR),
-                    body = state.error!!,
+                    body = state.error ?: "",
                     icon = VIcons.AlertTriangle,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )
@@ -217,7 +217,7 @@ private fun ChatBubble(msg: ChatMessage) {
                 )
                 if (msg.nextPrompt != null) {
                     Text(
-                        msg.nextPrompt!!,
+                        msg.nextPrompt ?: "",
                         style = VTheme.type.caption.colored(if (isUser) c.accentTint else c.accent),
                         fontWeight = FontWeight.Medium,
                     )

@@ -127,17 +127,18 @@ fun AdminReportPublishScreen(
                 VStateHost(loading = false, error = state.error, isEmpty = false, onRetry = { viewModel.loadOversight(termInput) }) {}
             }
             state.oversight != null -> {
+                val oversight = state.oversight ?: return
                 VPullRefresh(isRefreshing = state.publishing, onRefresh = { viewModel.loadOversight(termInput) }) {
                     LazyColumn(
                         Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(state.oversight!!.classes) { row ->
+                        items(oversight.classes) { row ->
                             OversightClassCard(
                                 row = row,
                                 publishing = state.publishing,
                                 onPublish = { viewModel.publishClass(row.className, row.section, row.term) },
-                                modifier = Modifier.staggeredItemEntrance(state.oversight!!.classes.indexOf(row), state.oversight!!.classes.isNotEmpty()),
+                                modifier = Modifier.staggeredItemEntrance(oversight.classes.indexOf(row), oversight.classes.isNotEmpty()),
                             )
                         }
                     }

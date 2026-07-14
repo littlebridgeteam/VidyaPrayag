@@ -7,6 +7,7 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.teacher.domain.model.AttendanceSaveMarkDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.AttendanceSaveRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -235,10 +236,21 @@ class TeacherAttendanceViewModel(
                 marks = current.students.map { AttendanceSaveMarkDto(it.studentId, it.status) },
             )
             when (val result = repository.saveAttendance(token, request)) {
-                is NetworkResult.Success ->
+                is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_attendance_saved", mapOf(
+                        "assignment_id" to current.assignmentId,
+                        "student_count" to current.students.size,
+                        "present" to current.presentCount,
+                        "absent" to current.absentCount,
+                        "late" to current.lateCount,
+                        "leave" to current.leaveCount,
+                    ))
                     _state.update { it.copy(isSaving = false, saveSuccess = true, alreadyMarked = true) }
-                is NetworkResult.Error ->
+                }
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_attendance_save_failed", mapOf("error_reason" to (result.message ?: "unknown")))
                     _state.update { it.copy(isSaving = false, saveError = result.message) }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(isSaving = false, saveError = "Connection error") }
             }

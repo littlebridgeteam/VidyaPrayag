@@ -165,7 +165,11 @@ fun Route.timetableImportRouting() {
                 return@post
             }
 
-            val rawText = aiResult.content!!
+            val rawText = aiResult.content
+            if (rawText.isNullOrBlank()) {
+                call.fail("AI returned empty content", HttpStatusCode.ServiceUnavailable, "AI_EMPTY")
+                return@post
+            }
             if (rawText.contains("ERROR_NOT_A_TIMETABLE")) {
                 call.fail("The image does not appear to be a timetable.", HttpStatusCode.BadRequest, "NOT_A_TIMETABLE")
                 return@post
@@ -222,7 +226,17 @@ fun Route.timetableImportRouting() {
                 return@post
             }
 
-            val rawText = aiResult.content!!
+            val rawText = aiResult.content
+            if (rawText.isNullOrBlank()) {
+                val (fallbackSlots, fallbackName) = parseTimetableText(req.text)
+                if (fallbackSlots.isEmpty()) {
+                    call.fail("AI returned empty content", HttpStatusCode.ServiceUnavailable, "AI_EMPTY")
+                    return@post
+                }
+                call.ok(TimetableImportResponse(slots = fallbackSlots, name = fallbackName, aiUsed = false),
+                    message = "Timetable parsed with regex fallback (AI returned empty)")
+                return@post
+            }
             if (rawText.contains("ERROR_NOT_A_TIMETABLE")) {
                 call.fail("The text does not appear to be a timetable.", HttpStatusCode.BadRequest, "NOT_A_TIMETABLE")
                 return@post

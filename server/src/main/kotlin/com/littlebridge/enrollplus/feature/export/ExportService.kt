@@ -471,11 +471,11 @@ class ExportService {
         }
 
         if (!req.dateFrom.isNullOrBlank()) {
-            val df = req.dateFrom!!
+            val df = req.dateFrom
             query = query.andWhere { FeeRecordsTable.dueDate greaterEq df }
         }
         if (!req.dateTo.isNullOrBlank()) {
-            val dt = req.dateTo!!
+            val dt = req.dateTo
             query = query.andWhere { FeeRecordsTable.dueDate lessEq dt }
         }
 
@@ -605,11 +605,11 @@ class ExportService {
             .where { LeaveRequestsTable.schoolId eq schoolId }
 
         if (!req.dateFrom.isNullOrBlank()) {
-            val df = req.dateFrom!!
+            val df = req.dateFrom
             query = query.andWhere { LeaveRequestsTable.dateFrom greaterEq df }
         }
         if (!req.dateTo.isNullOrBlank()) {
-            val dt = req.dateTo!!
+            val dt = req.dateTo
             query = query.andWhere { LeaveRequestsTable.dateTo lessEq dt }
         }
 

@@ -46,6 +46,7 @@ import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
 import com.littlebridge.enrollplus.db.LeaveRequestsTable
 import com.littlebridge.enrollplus.db.ParentChildLinksTable
+import com.littlebridge.enrollplus.db.SchoolClassesTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import io.ktor.http.*
@@ -62,6 +63,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 // ───────────────────────────── DTOs ─────────────────────────────
@@ -153,7 +155,8 @@ data class CreateStudentRequest(
     // ISSUE 2b: parent/guardian phone captured at creation, validated + persisted,
     // and consumed by the parent→child link matcher.
     @SerialName("parent_phone") val parentPhone: String? = null,
-    @SerialName("student_code") val studentCode: String? = null  // optional; auto-generated when blank
+    @SerialName("student_code") val studentCode: String? = null,  // optional; auto-generated when blank
+    @SerialName("admission_date") val admissionDate: String? = null  // YYYY-MM-DD; falls back to today if null
 )
 
 /**
@@ -168,7 +171,8 @@ data class UpdateStudentRequest(
     @SerialName("full_name") val fullName: String? = null,
     @SerialName("class_name") val className: String? = null,
     val section: String? = null,
-    @SerialName("roll_number") val rollNumber: String? = null
+    @SerialName("roll_number") val rollNumber: String? = null,
+    @SerialName("admission_date") val admissionDate: String? = null
 )
 
 @Serializable
@@ -610,7 +614,10 @@ private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDt
         parentPhone = row[StudentsTable.parentPhone],
         profilePhotoUrl = row[StudentsTable.profilePhotoUrl],
         status = if (row[StudentsTable.isActive]) "active" else "inactive",
-        isNewAdmission = isNewAdmission(row[StudentsTable.createdAt])
+        isNewAdmission = isNewAdmission(
+            row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
+                ?: row[StudentsTable.createdAt]
+        )
     )
 
 /**
@@ -838,6 +845,15 @@ fun Route.schoolStudentsRouting() {
                     PhoneNormalizer.canonical(req.parentPhone)
                 } else null
 
+                val classOk = dbQuery { ClassResolution.classExists(ctx.schoolId, req.className) }
+                if (!classOk) {
+                    call.fail(
+                        "Class \"${req.className}\" is not configured for your school. Add it in Classes & Subjects first.",
+                        HttpStatusCode.BadRequest, "CLASS_NOT_FOUND"
+                    )
+                    return@post
+                }
+
                 val dto = dbQuery {
                     // ISSUE 1: store the canonical class name + section so the derived
                     // teacher⇄student join holds byte-for-byte.
@@ -867,6 +883,9 @@ fun Route.schoolStudentsRouting() {
                         it[rollNumber] = req.rollNumber.trim()
                         it[parentPhone] = canonPhone
                         it[isActive] = true
+                        it[admissionDate] = req.admissionDate?.let { d ->
+                            runCatching { LocalDate.parse(d) }.getOrNull()
+                        } ?: LocalDate.now()
                         it[createdAt] = Instant.now()
                     } get StudentsTable.id
 
@@ -921,6 +940,8 @@ fun Route.schoolStudentsRouting() {
                     val newSection = req.section?.takeIf { it.isNotBlank() }
                         ?.let { ClassNaming.canonicalSection(it) } ?: oldSection
                     val newRoll = req.rollNumber?.takeIf { it.isNotBlank() }?.trim()
+                    val newAdmissionDate = req.admissionDate?.takeIf { it.isNotBlank() }
+                        ?.let { d -> runCatching { LocalDate.parse(d) }.getOrNull() }
 
                     StudentsTable.update({
                         (StudentsTable.id eq id) and (StudentsTable.schoolId eq ctx.schoolId)
@@ -929,6 +950,7 @@ fun Route.schoolStudentsRouting() {
                         it[className] = newClass
                         it[section] = newSection
                         if (newRoll != null) it[rollNumber] = newRoll
+                        if (newAdmissionDate != null) it[admissionDate] = newAdmissionDate
                     }
 
                     // RA-LINK: only re-sync when the class+section actually changed —
@@ -979,10 +1001,26 @@ fun Route.schoolStudentsRouting() {
                 // recompute the affected teachers' workload once, after the batch.
                 val touchedClasses = LinkedHashSet<Pair<String, String>>()
                 dbQuery {
+                    // Pre-fetch all configured class keys for this school for fast validation.
+                    val configuredClassKeys = SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.schoolId eq ctx.schoolId }
+                        .flatMap { row ->
+                            listOf(
+                                ClassNaming.classKey(row[SchoolClassesTable.name]),
+                                ClassNaming.classKey(row[SchoolClassesTable.code])
+                            )
+                        }.toSet()
+
                     rows.forEachIndexed { index, r ->
                         val rowNo = index + 1
                         if (r.fullName.isBlank() || r.className.isBlank() || r.rollNumber.isBlank()) {
                             results += BulkImportRowResult(rowNo, false, null, "Name, class and roll number are required.")
+                            return@forEachIndexed
+                        }
+                        // Bug 17: reject rows whose class is not configured for this school.
+                        val typedClassKey = ClassNaming.classKey(r.className.trim().replace(Regex("\\s+"), " "))
+                        if (typedClassKey !in configuredClassKeys) {
+                            results += BulkImportRowResult(rowNo, false, null, "Class \"${r.className}\" is not configured for your school.")
                             return@forEachIndexed
                         }
                         // ISSUE 1: canonical class + section so the derived join holds.
@@ -1185,7 +1223,8 @@ fun Route.schoolStudentsRouting() {
                     // ── RA-SP: relationship-aware aggregation via the single source
                     // of truth, so teachers/parents/insights/activities and the KPI
                     // carousel metrics are always derived from live facts. ──
-                    val admittedAt = row[StudentsTable.createdAt]
+                    val admittedAt = row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
+                        ?: row[StudentsTable.createdAt]
                     val teachers = StudentAggregationService.teachersForStudent(
                         ctx.schoolId, student.className, student.section
                     )
