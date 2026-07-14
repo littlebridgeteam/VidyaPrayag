@@ -34,6 +34,8 @@ data class SyllabusPosition(
     val currentTopic: String? = null,
     val coveredTopicIds: List<String> = emptyList(),
     val notYetCoveredIds: List<String> = emptyList(),
+    val coveredTopicTitles: List<String> = emptyList(),
+    val notYetCoveredTitles: List<String> = emptyList(),
 )
 
 @Serializable

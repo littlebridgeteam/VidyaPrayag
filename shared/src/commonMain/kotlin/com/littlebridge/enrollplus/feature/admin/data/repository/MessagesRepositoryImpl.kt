@@ -13,6 +13,7 @@ import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.MessagesApi
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttachmentUploadResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThread
 import com.littlebridge.enrollplus.feature.admin.domain.model.MessageThreadsResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.SendMessageRequest
@@ -156,6 +157,28 @@ class MessagesRepositoryImpl(
                 val envelope = result.data
                 if (!envelope.success) NetworkResult.Error(envelope.message.ifBlank { "Failed to delete message" })
                 else NetworkResult.Success(envelope.data ?: emptyMap())
+            }
+            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
+        }
+    }
+
+    override suspend fun uploadAttachment(
+        token: String,
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+        attachmentType: String,
+    ): NetworkResult<AttachmentUploadResponse> {
+        return when (val result = api.uploadAttachment(token, bytes, fileName, mimeType, attachmentType)) {
+            is NetworkResult.Success -> {
+                val envelope = result.data
+                val data = envelope.data
+                when {
+                    !envelope.success -> NetworkResult.Error(envelope.message.ifBlank { "Failed to upload attachment" })
+                    data == null -> NetworkResult.Error("No data in response")
+                    else -> NetworkResult.Success(data)
+                }
             }
             is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
             is NetworkResult.ConnectionError -> NetworkResult.ConnectionError

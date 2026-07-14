@@ -78,6 +78,7 @@ fun Route.triageRouting() {
             TriageResponse(
                 intent = result.intent,
                 onSyllabus = result.onSyllabus,
+                syllabusStatus = result.syllabusStatus,
                 knownMisconception = result.knownMisconception,
                 misconceptionType = result.misconceptionType,
                 skipAgent = result.skipAgent,
@@ -101,6 +102,7 @@ data class TriageRequest(
 data class TriageResponse(
     val intent: String,
     val onSyllabus: Boolean,
+    val syllabusStatus: String,
     val knownMisconception: Boolean,
     val misconceptionType: String?,
     val skipAgent: Boolean,

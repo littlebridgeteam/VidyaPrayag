@@ -165,6 +165,23 @@ data class ParentUnreadCountDto(
     val data: ParentUnreadCountData? = null,
 )
 
+/** Phase 1 (§12): attachment upload response from POST /api/v1/parent/messages/attachments */
+@Serializable
+data class ParentAttachmentUploadResponse(
+    val success: Boolean = false,
+    val message: String? = null,
+    val data: ParentAttachmentUploadData? = null,
+)
+
+@Serializable
+data class ParentAttachmentUploadData(
+    @SerialName("storage_url") val storageUrl: String,
+    @SerialName("file_name") val fileName: String,
+    @SerialName("mime_type") val mimeType: String,
+    @SerialName("size_bytes") val sizeBytes: Long,
+    @SerialName("attachment_type") val attachmentType: String,
+)
+
 @Serializable
 data class ParentUnreadCountData(
     @SerialName("unread_count") val unreadCount: Int = 0,

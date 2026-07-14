@@ -167,3 +167,13 @@ data class MessageAttachment(
 data class UnreadCountDto(
     @SerialName("unread_count") val unreadCount: Int = 0,
 )
+
+/** Phase 1 (§12): attachment upload response from POST /api/v1/school/messages/attachments */
+@Serializable
+data class AttachmentUploadResponse(
+    @SerialName("storage_url") val storageUrl: String,
+    @SerialName("file_name") val fileName: String,
+    @SerialName("mime_type") val mimeType: String,
+    @SerialName("size_bytes") val sizeBytes: Long,
+    @SerialName("attachment_type") val attachmentType: String,
+)

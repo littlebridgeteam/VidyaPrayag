@@ -40,6 +40,8 @@ interface ParentRepository : NotificationFeedRepository {
     suspend fun sendMessage(token: String, request: ParentSendMessageRequest): NetworkResult<ParentSendMessageResponse>
     // RA-S07: compose-new — who the parent can start a conversation with.
     suspend fun getMessageRecipients(token: String): NetworkResult<ParentRecipientsResponse>
+    /** Phase 1 (§12): POST /api/v1/parent/messages/attachments — multipart image upload. */
+    suspend fun uploadMessageAttachment(token: String, bytes: ByteArray, fileName: String, mimeType: String, attachmentType: String = "IMAGE"): NetworkResult<ParentAttachmentUploadResponse>
     // Parent Pulse (PARENT_PULSE_SPEC.md — weekly AI digest).
     suspend fun getLatestPulse(token: String, childId: String): NetworkResult<PulseResponse>
     suspend fun getPulseHistory(token: String, childId: String, weeks: Int = 12): NetworkResult<PulseHistoryResponse>
