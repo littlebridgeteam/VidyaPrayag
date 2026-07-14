@@ -83,11 +83,10 @@ fun ParentProgressScreen(
                     body = appString(StringKeys.TUT_NO_PROGRESS_DESC),
                     icon = VIcons.BookOpen,
                 )
-                else -> state.progressCard?.let { ProgressContent(it) } ?: VEmptyState(
-                    title = appString(StringKeys.TUT_NO_PROGRESS),
-                    body = appString(StringKeys.TUT_NO_PROGRESS_DESC),
-                    icon = VIcons.BookOpen,
-                )
+                else -> {
+                    val card = state.progressCard ?: return@Column
+                    ProgressContent(card)
+                }
             }
         }
     }

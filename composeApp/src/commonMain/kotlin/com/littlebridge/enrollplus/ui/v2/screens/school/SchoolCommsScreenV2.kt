@@ -187,7 +187,6 @@ private fun SchoolCommsContent(
         Column(
             Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
                 .imePadding()
                 .navigationBarsPadding()
                 .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),

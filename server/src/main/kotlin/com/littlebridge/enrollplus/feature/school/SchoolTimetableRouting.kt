@@ -394,17 +394,20 @@ fun Route.schoolTimetableRouting() {
             }
 
             // Notify the teacher about the new period
-            runCatching {
-                Notify.toUser(
-                    userId = parseUuid(period.teacherId)!!,
-                    category = "timetable",
-                    title = "New period assigned",
-                    body = "${period.subject} — ${period.className}-${period.section} on day ${period.weekday} at ${period.startTime}",
-                    schoolId = ctx.schoolId,
-                    deepLink = "/teacher/timetable",
-                    refType = "teacher_period",
-                    refId = period.id,
-                )
+            val notifyTeacherUuid = period.teacherId?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+            if (notifyTeacherUuid != null) {
+                runCatching {
+                    Notify.toUser(
+                        userId = notifyTeacherUuid,
+                        category = "timetable",
+                        title = "New period assigned",
+                        body = "${period.subject} — ${period.className}-${period.section} on day ${period.weekday} at ${period.startTime}",
+                        schoolId = ctx.schoolId,
+                        deepLink = "/teacher/timetable",
+                        refType = "teacher_period",
+                        refId = period.id,
+                    )
+                }
             }
 
             call.created(period, message = "Period created")

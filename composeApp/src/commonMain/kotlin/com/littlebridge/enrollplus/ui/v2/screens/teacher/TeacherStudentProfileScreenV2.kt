@@ -91,7 +91,10 @@ fun TeacherStudentProfilePane(
                     VButton(appString(StringKeys.TC_TRY_AGAIN), onClick = { viewModel.retry() }, size = VButtonSize.Sm, tone = VButtonTone.Lavender)
                 }
             }
-            state.profile != null -> state.profile?.let { StudentProfileBody(it) } ?: TeacherCenterState { TeacherSpinner() }
+            state.profile != null -> {
+                val profile = state.profile ?: return
+                StudentProfileBody(profile)
+            }
             else -> TeacherCenterState { TeacherSpinner() }
         }
     }
@@ -256,14 +259,15 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
                         e.isAbsent -> VtPill(appString(StringKeys.TC_ABSENT), bg = c.danger.copy(alpha = 0.12f), fg = c.dangerInk)
                         e.marks == null -> VtPill(appString(StringKeys.TC_PENDING), bg = c.cream, fg = c.ink2)
                         else -> {
-                            val ratio = if (e.max > 0) (e.marks ?: 0.0) / e.max else 0.0
+                            val mk = e.marks ?: 0.0
+                            val ratio = if (e.max > 0) mk / e.max else 0.0
                             val tint = when {
                                 ratio >= 0.6 -> c.successInk
                                 ratio >= 0.4 -> c.warningInk
                                 else -> c.dangerInk
                             }
                             Text(
-                                "${fmt1((e.marks ?: 0.0).toFloat())}/${e.max}",
+                                "${fmt1(mk.toFloat())}/${e.max}",
                                 style = VTypography.bodySmall,
                                 color = tint,
                                 fontWeight = FontWeight.Bold,

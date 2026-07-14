@@ -344,10 +344,12 @@ private fun InteractiveCalendar(events: List<AcademicCalendarEventDto>, onOpenEv
     val days = daysIn(navYear, navMonth)
 
     val eventsByDay = remember(events, navYear, navMonth) {
-        events.filter {
-            val p = parseIso3(it.startDate)
-            p != null && p.first == navYear && p.second == navMonth
-        }.groupBy { parseIso3(it.startDate)!!.third }
+        events.mapNotNull { event ->
+            val p = parseIso3(event.startDate)
+            if (p != null && p.first == navYear && p.second == navMonth) {
+                p.third to event
+            } else null
+        }.groupBy({ it.first }, { it.second })
     }
 
     VCard {

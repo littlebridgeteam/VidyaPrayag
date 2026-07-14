@@ -882,7 +882,9 @@ fun Route.libraryRouting() {
                 val ctx = call.requireSchoolAdmin() ?: return@post
                 val req = call.receive<SetFeaturedBookRequest>()
                 try {
-                    libraryService.setFeaturedBook(ctx.schoolId, req.bookId.toUuidOrNull()!!, req.type, ctx.userId, ctx.role)
+                    val bookUuid = req.bookId.toUuidOrNull()
+                    if (bookUuid == null) { call.fail("Invalid book ID", HttpStatusCode.BadRequest, "INVALID_UUID"); return@post }
+                    libraryService.setFeaturedBook(ctx.schoolId, bookUuid, req.type, ctx.userId, ctx.role)
                     call.okMessage("Featured book set")
                 } catch (e: LibraryException) {
                     call.fail(e.message ?: "Featured book error", e.toHttpStatusCode(), e::class.simpleName)
@@ -1066,7 +1068,9 @@ fun Route.libraryRouting() {
                 val schoolId = resolveParentSchoolId(uid) ?: run { call.fail("No school", HttpStatusCode.NotFound, "NO_SCHOOL"); return@post }
                 val req = call.receive<ReserveBookRequest>()
                 try {
-                    val reservation = libraryService.reserveBook(schoolId, req.bookId.toUuidOrNull()!!, uid, "Parent", "parent")
+                    val bookUuid = req.bookId.toUuidOrNull()
+                    if (bookUuid == null) { call.fail("Invalid book ID", HttpStatusCode.BadRequest, "INVALID_UUID"); return@post }
+                    val reservation = libraryService.reserveBook(schoolId, bookUuid, uid, "Parent", "parent")
                     call.ok(reservation, "Book reserved", HttpStatusCode.Created)
                 } catch (e: LibraryException) {
                     call.fail(e.message ?: "Reserve error", e.toHttpStatusCode(), e::class.simpleName)
@@ -1277,7 +1281,9 @@ fun Route.libraryRouting() {
                 val schoolId = resolveParentSchoolId(uid) ?: run { call.fail("No school", HttpStatusCode.NotFound, "NO_SCHOOL"); return@post }
                 val req = call.receive<ReserveBookRequest>()
                 try {
-                    val reservation = libraryService.reserveBook(schoolId, req.bookId.toUuidOrNull()!!, uid, "Student", "student")
+                    val bookUuid = req.bookId.toUuidOrNull()
+                    if (bookUuid == null) { call.fail("Invalid book ID", HttpStatusCode.BadRequest, "INVALID_UUID"); return@post }
+                    val reservation = libraryService.reserveBook(schoolId, bookUuid, uid, "Student", "student")
                     call.ok(reservation, "Book reserved", HttpStatusCode.Created)
                 } catch (e: LibraryException) {
                     call.fail(e.message ?: "Reserve error", e.toHttpStatusCode(), e::class.simpleName)
@@ -1453,7 +1459,9 @@ fun Route.libraryRouting() {
                 val schoolId = resolveParentSchoolId(uid) ?: run { call.fail("No school", HttpStatusCode.NotFound, "NO_SCHOOL"); return@post }
                 val req = call.receive<ReserveBookRequest>()
                 try {
-                    val reservation = libraryService.reserveBook(schoolId, req.bookId.toUuidOrNull()!!, uid, "Student", "student")
+                    val bookUuid = req.bookId.toUuidOrNull()
+                    if (bookUuid == null) { call.fail("Invalid book ID", HttpStatusCode.BadRequest, "INVALID_UUID"); return@post }
+                    val reservation = libraryService.reserveBook(schoolId, bookUuid, uid, "Student", "student")
                     call.ok(reservation, "Book reserved", HttpStatusCode.Created)
                 } catch (e: LibraryException) {
                     call.fail(e.message ?: "Reserve error", e.toHttpStatusCode(), e::class.simpleName)

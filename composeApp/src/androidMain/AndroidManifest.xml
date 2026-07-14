@@ -23,6 +23,13 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.VidyaPrayag">
+
+        <!-- Firebase Crashlytics — explicitly enable crash reporting collection.
+             The runtime call in EnRollPlusApp also sets this, but declaring it
+             here ensures it's on from the very first process start. -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="true" />
         <activity
             android:exported="true"
             android:name=".MainActivity"

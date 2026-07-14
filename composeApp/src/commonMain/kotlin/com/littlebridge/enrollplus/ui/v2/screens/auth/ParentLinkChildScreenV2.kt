@@ -57,6 +57,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.ui.components.VBackHeader
 import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -101,8 +102,23 @@ fun ParentLinkChildScreenV2(
         onClassNameChange = viewModel::onClassNameChange,
         onSectionChange = viewModel::onSectionChange,
         onParentPhoneChange = viewModel::onParentPhoneChange,
-        onSearch = viewModel::searchSchools,
-        onLink = viewModel::linkChild,
+        onSearch = {
+            AnalyticsTracker.event("vp_parent_linkchild_school_search")
+            viewModel.searchSchools()
+        },
+        onLink = { doneCallback ->
+            AnalyticsTracker.event("vp_parent_linkchild_submit", mapOf(
+                "school_id" to (state.selectedSchool?.id ?: ""),
+                "class" to state.className,
+                "section" to state.section,
+            ))
+            viewModel.linkChild {
+                AnalyticsTracker.event("vp_parent_linkchild_success", mapOf(
+                    "school_id" to (state.selectedSchool?.id ?: ""),
+                ))
+                doneCallback()
+            }
+        },
         modifier = modifier.statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),

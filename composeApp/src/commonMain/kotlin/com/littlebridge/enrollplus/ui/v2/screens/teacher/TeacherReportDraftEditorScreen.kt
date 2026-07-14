@@ -76,7 +76,7 @@ fun TeacherReportDraftEditorScreen(
                 }
             }
             state.draft != null -> {
-                val draft = state.draft
+                val draft = state.draft ?: return
                 Column(
                     Modifier.fillMaxSize().padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -84,10 +84,10 @@ fun TeacherReportDraftEditorScreen(
                     // Draft metadata
                     VCard(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${draft?.className} ${draft?.section} • ${draft?.term}",
+                            Text("${draft.className} ${draft.section} • ${draft.term}",
                                 style = VtT.body.coloredV(c.ink).copy(fontWeight = FontWeight.Medium))
-                            Text(appString(StringKeys.TC_STATUS_COLON, "status" to (draft?.status ?: "")), style = VtT.caption.coloredV(c.ink2))
-                            Text(appString(StringKeys.TC_LANGUAGE_COLON, "lang" to (draft?.language ?: "")), style = VtT.caption.coloredV(c.ink3))
+                            Text(appString(StringKeys.TC_STATUS_COLON, "status" to draft.status), style = VtT.caption.coloredV(c.ink2))
+                            Text(appString(StringKeys.TC_LANGUAGE_COLON, "lang" to draft.language), style = VtT.caption.coloredV(c.ink3))
                         }
                     }
 

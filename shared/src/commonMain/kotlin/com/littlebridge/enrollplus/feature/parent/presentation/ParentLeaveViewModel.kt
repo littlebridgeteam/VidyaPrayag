@@ -9,6 +9,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.CreateParentLeave
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentLeaveDto
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -137,11 +138,14 @@ class ParentLeaveViewModel(
             )
             when (val r = repository.applyLeave(token, request)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_leave_applied", mapOf("child_id" to childId))
                     _state.update { it.copy(submitting = false, submittedOk = true) }
                     load() // refresh the list with the new pending request
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_leave_apply_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update { it.copy(submitting = false, submitError = r.message) }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(submitting = false, submitError = "Connection error") }
             }

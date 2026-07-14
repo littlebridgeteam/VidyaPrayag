@@ -93,7 +93,7 @@ fun ParentReportScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(VIcons.AlertCircle, contentDescription = null, tint = c.danger, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text(state.error!!, style = VTheme.type.body.colored(c.ink2))
+                        Text(state.error ?: "", style = VTheme.type.body.colored(c.ink2))
                     }
                 }
             }

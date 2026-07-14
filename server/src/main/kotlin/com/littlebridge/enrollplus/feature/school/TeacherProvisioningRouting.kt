@@ -255,7 +255,7 @@ fun Route.teacherProvisioningRouting() {
                         it[schoolId] = ctx.schoolId
                         if (isEmail(id)) {
                             it[email] = id
-                            it[passwordHash] = hashPassword(req.initialPassword!!)
+                            it[passwordHash] = hashPassword(req.initialPassword ?: "")
                             it[isEmailVerified] = true
                         } else {
                             it[phone] = id

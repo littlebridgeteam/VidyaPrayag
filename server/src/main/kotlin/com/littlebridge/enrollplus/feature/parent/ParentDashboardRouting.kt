@@ -340,7 +340,7 @@ fun Route.parentDashboardRouting() {
                         // Geo mode: keep those within radius (if given), nearest first.
                         val located = mapped.filter { it.distanceKm != null }
                         val withinRadius = if (radiusKm != null)
-                            located.filter { it.distanceKm!! <= radiusKm } else located
+                            located.filter { (it.distanceKm ?: Double.MAX_VALUE) <= radiusKm } else located
                         val result = withinRadius.sortedBy { it.distanceKm }
                             .let { if (radiusKm == null) it + mapped.filter { s -> s.distanceKm == null } else it }
                             .take(limit)

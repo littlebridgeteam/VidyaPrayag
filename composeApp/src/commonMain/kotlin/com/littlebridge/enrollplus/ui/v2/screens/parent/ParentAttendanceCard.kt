@@ -205,14 +205,15 @@ private fun TodayFace(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (hasMonth) {
-                AttendanceRing(percent = attendance!!.attendanceRate.coerceIn(0, 100), modifier = Modifier.size(56.dp))
+                val att = attendance ?: return@Row
+                AttendanceRing(percent = att.attendanceRate.coerceIn(0, 100), modifier = Modifier.size(56.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
                         appString(StringKeys.PATT_THIS_MONTH),
                         style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                     )
                     Text(
-                        appString(StringKeys.PATT_PERCENT_PRESENT, "rate" to attendance!!.attendanceRate.coerceIn(0, 100)),
+                        appString(StringKeys.PATT_PERCENT_PRESENT, "rate" to att.attendanceRate.coerceIn(0, 100)),
                         style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
                     )
                     Text(monthBreakdown(attendance), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))

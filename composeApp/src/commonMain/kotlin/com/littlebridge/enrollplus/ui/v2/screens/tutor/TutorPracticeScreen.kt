@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -65,6 +66,7 @@ fun TutorPracticeScreen(
     Box(
         modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(c.background)
     ) {
         Column(
@@ -98,9 +100,10 @@ fun TutorPracticeScreen(
                     )
                 }
                 state.gradeResult != null -> {
-                    state.gradeResult?.let {
+                    val result = state.gradeResult
+                    if (result != null) {
                         GradeResultContent(
-                            result = it,
+                            result = result,
                             onNext = viewModel::nextQuestion,
                         )
                     }
@@ -153,10 +156,10 @@ private fun QuestionContent(
             }
         }
 
-        val options = question.options
-        if (options != null) {
+        val opts = question.options
+        if (opts != null) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                options.forEach { option ->
+                opts.forEach { option ->
                     val isSelected = option == selectedAnswer
                     VCard(
                         modifier = Modifier

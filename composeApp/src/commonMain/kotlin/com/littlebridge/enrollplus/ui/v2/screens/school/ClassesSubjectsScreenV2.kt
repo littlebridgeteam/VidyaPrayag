@@ -1533,9 +1533,7 @@ private fun ScheduleStepAssign(
             weekday = selectedDay,
             isSaving = state.isSaving,
             onSave = { teacherId, subject, room ->
-                if (editingPeriod != null) {
-                    onDeletePeriod(editingPeriod!!.id)
-                }
+                editingPeriod?.let { onDeletePeriod(it.id) }
                 onCreatePeriod(teacherId, selectedClassName ?: "", selectedSection, subject, selectedDay, slot.startTime, slot.endTime, room) {
                     editingSlot = null
                     editingPeriod = null
@@ -1640,9 +1638,7 @@ private fun ScheduleStepAssign(
             weekday = selectedDay,
             isSaving = state.isSaving,
             onSave = { teacherId, subject, startTime, endTime, room ->
-                if (editingPeriod != null) {
-                    onDeletePeriod(editingPeriod!!.id)
-                }
+                editingPeriod?.let { onDeletePeriod(it.id) }
                 onCreatePeriod(teacherId, selectedClassName ?: "", selectedSection, subject, selectedDay, startTime, endTime, room) {
                     showManualAddDialog = false
                     editingPeriod = null

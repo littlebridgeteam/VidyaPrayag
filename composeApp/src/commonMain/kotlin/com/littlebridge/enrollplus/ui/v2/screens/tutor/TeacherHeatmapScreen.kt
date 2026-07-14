@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -60,6 +61,7 @@ fun TeacherHeatmapScreen(
     Box(
         modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(c.background)
     ) {
         Column(
@@ -88,8 +90,9 @@ fun TeacherHeatmapScreen(
                             onSelect = viewModel::selectScope,
                         )
                     }
-                    if (state.heatmap != null) {
-                        state.heatmap?.let { HeatmapContent(it) }
+                    val hm = state.heatmap
+                    if (hm != null) {
+                        HeatmapContent(hm)
                     } else if (!state.isLoading) {
                         VEmptyState(
                             title = appString(StringKeys.TH_NO_DATA),

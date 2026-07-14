@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.crashlytics)
     kotlin("plugin.serialization")
 }
 
@@ -104,11 +105,15 @@ kotlin {
             implementation(libs.androidx.biometric)
 
             implementation(libs.firebase.messaging)
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.analytics)
             // Transport Tracking — Google Maps Compose for the parent bus
             // tracking map (Android-only; iOS/JVM use a Canvas fallback).
             implementation(libs.play.services.maps)
             implementation(libs.play.services.location)
             implementation(libs.maps.compose)
+            // Microsoft Clarity — session recordings & heatmaps (Android-only)
+            implementation(libs.clarity.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -164,16 +169,19 @@ android {
             dimension = "environment"
             buildConfigField("String", "AUTH_BASE_URL", "\"$devBaseUrl\"")
             buildConfigField("String", "SCHOOL_BASE_URL", "\"$devBaseUrl\"")
+            buildConfigField("boolean", "CLARITY_ENABLED", "true")
         }
         create("staging") {
             dimension = "environment"
             buildConfigField("String", "AUTH_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
             buildConfigField("String", "SCHOOL_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
+            buildConfigField("boolean", "CLARITY_ENABLED", "true")
         }
         create("prod") {
             dimension = "environment"
             buildConfigField("String", "AUTH_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
             buildConfigField("String", "SCHOOL_BASE_URL", "\"https://vidyaprayag-1.onrender.com\"")
+            buildConfigField("boolean", "CLARITY_ENABLED", "true")
         }
     }
 

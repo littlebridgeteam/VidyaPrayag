@@ -115,6 +115,7 @@ fun EditSchoolProfileScreenV2(
 
                 modifier = Modifier
                     .weight(1f)
+                    .padding(bottom = 80.dp)
             )
         }
 
@@ -195,7 +196,6 @@ private fun EditSchoolProfileContent(
             .verticalScroll(
                 rememberScrollState()
             )
-            .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
             .padding(

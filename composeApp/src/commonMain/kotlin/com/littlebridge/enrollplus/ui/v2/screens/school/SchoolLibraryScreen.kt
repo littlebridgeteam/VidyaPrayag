@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -118,6 +119,7 @@ fun SchoolLibraryScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(VColors.surface),
     ) {
     Column(
@@ -194,7 +196,7 @@ fun SchoolLibraryScreen(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            VBadge(text = state.actionMessage!!, tone = VBadgeTone.Accent)
+            VBadge(text = state.actionMessage ?: "", tone = VBadgeTone.Accent)
         }
         LaunchedEffect(state.actionMessage) {
             kotlinx.coroutines.delay(3000)
@@ -507,8 +509,9 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
 
     // Issue Book Dialog
     if (showIssueBook != null) {
+        val issueBookId = showIssueBook ?: return
         IssueBookSheet(
-            bookId = showIssueBook!!,
+            bookId = issueBookId,
             onDismiss = { showIssueBook = null },
             onIssue = { req ->
                 viewModel.issueBook(req)
@@ -518,7 +521,7 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
     }
 
     // Cover Upload Dialog
-    if (showCoverUpload != null) {
+    showCoverUpload?.let { coverBookId ->
         VBottomSheet(
             visible = true,
             onDismiss = { showCoverUpload = null },
@@ -538,7 +541,7 @@ private fun BooksTab(state: SchoolLibraryState, viewModel: SchoolLibraryViewMode
                     text = "Save",
                     onClick = {
                         if (coverUrl.isNotBlank()) {
-                            viewModel.uploadCover(showCoverUpload!!, coverUrl)
+                            viewModel.uploadCover(coverBookId, coverUrl)
                         }
                         showCoverUpload = null
                     },
@@ -1384,15 +1387,15 @@ private fun CategoriesTab(state: SchoolLibraryState, viewModel: SchoolLibraryVie
             }
         }
 
-        if (showDeleteConfirm != null) {
-            val catName = state.categories.find { it.id == showDeleteConfirm }?.name ?: ""
+        showDeleteConfirm?.let { deleteCatId ->
+            val catName = state.categories.find { it.id == deleteCatId }?.name ?: ""
             VConfirmDialog(
                 visible = true,
                 title = "Delete Category?",
                 message = "Are you sure you want to delete \"$catName\"? Books in this category will remain but lose their category label.",
                 confirmLabel = "Delete",
                 onConfirm = {
-                    viewModel.deleteCategory(showDeleteConfirm!!)
+                    viewModel.deleteCategory(deleteCatId)
                     showDeleteConfirm = null
                 },
                 onDismiss = { showDeleteConfirm = null },
@@ -1538,15 +1541,15 @@ private fun AnnouncementsTab(state: SchoolLibraryState, viewModel: SchoolLibrary
             }
         }
 
-        if (showDeleteAnnouncement != null) {
-            val annTitle = state.announcements.find { it.id == showDeleteAnnouncement }?.title ?: ""
+        showDeleteAnnouncement?.let { deleteAnnId ->
+            val annTitle = state.announcements.find { it.id == deleteAnnId }?.title ?: ""
             VConfirmDialog(
                 visible = true,
                 title = "Delete Announcement?",
                 message = "Are you sure you want to delete \"$annTitle\"? This cannot be undone.",
                 confirmLabel = "Delete",
                 onConfirm = {
-                    viewModel.deleteAnnouncement(showDeleteAnnouncement!!)
+                    viewModel.deleteAnnouncement(deleteAnnId)
                     showDeleteAnnouncement = null
                 },
                 onDismiss = { showDeleteAnnouncement = null },

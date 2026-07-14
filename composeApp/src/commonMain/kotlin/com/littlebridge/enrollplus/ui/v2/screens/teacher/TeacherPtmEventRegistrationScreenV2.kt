@@ -86,18 +86,16 @@ fun TeacherPtmEventRegistrationScreenV2(
         }
 
         if (selectedEventId != null && state.eventDetail != null) {
-            val eventId = selectedEventId
-            val detail = state.eventDetail
-            if (eventId != null && detail != null) {
-                PtmDetailContent(
-                    eventDetail = detail,
-                    slots = state.slots,
-                    isCheckingIn = state.isCheckingIn,
-                    onCheckIn = { registrationId ->
-                        viewModel.checkinParent(eventId, registrationId)
-                    },
-                )
-            }
+            val evId = selectedEventId ?: return
+            val detail = state.eventDetail ?: return
+            PtmDetailContent(
+                eventDetail = detail,
+                slots = state.slots,
+                isCheckingIn = state.isCheckingIn,
+                onCheckIn = { registrationId ->
+                    viewModel.checkinParent(evId, registrationId)
+                },
+            )
         } else {
             VStateHost(
                 loading = state.isLoading,

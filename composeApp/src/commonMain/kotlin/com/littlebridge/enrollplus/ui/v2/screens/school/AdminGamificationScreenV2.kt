@@ -85,10 +85,11 @@ fun AdminGamificationScreenV2(
     ) {
         AdminGamificationHeader(onBack = onBack)
 
-        if (state.actionMessage != null) {
+        val actionMsg = state.actionMessage
+        if (actionMsg != null) {
             ActionMessageBanner(
-                message = state.actionMessage!!,
-                isError = state.actionMessage!!.startsWith("Failed"),
+                message = actionMsg,
+                isError = actionMsg.startsWith("Failed"),
             )
         }
 

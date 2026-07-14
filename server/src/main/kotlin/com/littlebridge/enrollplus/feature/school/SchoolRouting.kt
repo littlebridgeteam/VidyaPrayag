@@ -255,11 +255,12 @@ fun Route.schoolRouting() {
                     call.fail("'grade' is required for type=student"); return@get
                 }
 
+                val safeGrade = grade
                 val resp = dbQuery {
                     // Pull people list (students of that grade, or all faculty).
                     val people: List<Triple<String, String, String?>> = if (type == "student") {
                         StudentsTable.selectAll()
-                            .where { (StudentsTable.schoolId eq schoolId) and (StudentsTable.className eq grade!!) and (StudentsTable.isActive eq true) }
+                            .where { (StudentsTable.schoolId eq schoolId) and (StudentsTable.className eq (safeGrade ?: "")) and (StudentsTable.isActive eq true) }
                             .map { Triple(it[StudentsTable.studentCode], it[StudentsTable.fullName], it[StudentsTable.profilePhotoUrl]) }
                     } else {
                         FacultyTable.selectAll()
