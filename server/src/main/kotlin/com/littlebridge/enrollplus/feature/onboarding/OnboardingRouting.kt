@@ -362,7 +362,7 @@ private fun syncSchoolBasics(schoolId: UUID, uid: UUID) {
  * Idempotent: classes are upserted by (school, code); subjects are replaced for
  * each touched class. Must be called inside a dbQuery {}.
  */
-private fun persistAcademicStructure(schoolId: UUID, payload: JsonObject) {
+private fun persistAcademicStructure(schoolId: UUID, payload: JsonObject): String? {
     val now = Instant.now()
     val classesJson = (payload["classes"] as? JsonArray)
 
@@ -393,6 +393,12 @@ private fun persistAcademicStructure(schoolId: UUID, payload: JsonObject) {
         // Empty payload -> no classes to persist. The admin must configure
         // classes/subjects explicitly; we no longer seed defaults (Bug 23).
         emptyList()
+    }
+
+    // Bug 13: Every class must have at least one subject.
+    val missingSubjects = parsedClasses.firstOrNull { it.subjects.isEmpty() }
+    if (missingSubjects != null) {
+        return "Class \"${missingSubjects.name}\" must have at least one subject."
     }
 
     parsedClasses.forEach { pc ->
@@ -444,6 +450,7 @@ private fun persistAcademicStructure(schoolId: UUID, payload: JsonObject) {
     // Optional: persist a roster of students supplied during onboarding so the
     // dashboard isn't empty on day one.
     persistOnboardingStudents(schoolId, payload)
+    return null
 }
 
 /** A teacher entry as parsed from the onboarding payload's `teachers` array. */
@@ -1010,7 +1017,11 @@ fun Route.onboardingRouting() {
                         "ACADEMIC" -> {
                             val sid = ensureSchoolForUser(uid)
                             syncSchoolBasics(sid, uid)
-                            persistAcademicStructure(sid, req.dataPayload)
+                            val validationError = persistAcademicStructure(sid, req.dataPayload)
+                            if (validationError != null) {
+                                call.fail(validationError, HttpStatusCode.BadRequest)
+                                return@post
+                            }
                             markStepCompleted(sid, "ACADEMIC")
                         }
                         "REVIEW" -> {

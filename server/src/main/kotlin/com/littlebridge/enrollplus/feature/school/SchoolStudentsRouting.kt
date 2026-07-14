@@ -614,7 +614,10 @@ private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDt
         parentPhone = row[StudentsTable.parentPhone],
         profilePhotoUrl = row[StudentsTable.profilePhotoUrl],
         status = if (row[StudentsTable.isActive]) "active" else "inactive",
-        isNewAdmission = isNewAdmission(row[StudentsTable.createdAt])
+        isNewAdmission = isNewAdmission(
+            row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
+                ?: row[StudentsTable.createdAt]
+        )
     )
 
 /**
