@@ -101,7 +101,6 @@ fun ParentConversationsScreenV2(
         modifier
             .fillMaxSize()
             .background(VColors.cream)
-            .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
             .then(if (!isChatOpen) Modifier.padding(bottom = 130.dp) else Modifier),
@@ -143,8 +142,7 @@ fun ParentConversationsScreenV2(
             transitionSpec = { VMotion.quietFade() },
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .then(if (!isChatOpen) Modifier.padding(horizontal = 20.dp) else Modifier),
+                .fillMaxWidth(),
             label = "conversations-segment",
         ) { seg ->
             when (seg) {

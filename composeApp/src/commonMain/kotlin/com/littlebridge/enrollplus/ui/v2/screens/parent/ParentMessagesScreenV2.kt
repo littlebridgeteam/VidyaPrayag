@@ -701,8 +701,8 @@ private fun ParentConversationContent(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
-                            horizontal = 16.dp,
-                            vertical = 12.dp,
+                            horizontal = 20.dp,
+                            vertical = 16.dp,
                         ),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
@@ -728,7 +728,7 @@ private fun ParentConversationContent(
                     Modifier
                         .fillMaxWidth()
                         .background(VColors.errorSoft)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
