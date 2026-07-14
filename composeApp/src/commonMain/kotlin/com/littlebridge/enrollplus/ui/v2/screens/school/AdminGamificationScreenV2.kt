@@ -101,6 +101,7 @@ fun AdminGamificationScreenV2(
                 CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
             }
         } else if (state.error != null && state.flags == null) {
+            val errorMsg = state.error ?: ""
             Column(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -108,7 +109,7 @@ fun AdminGamificationScreenV2(
             ) {
                 Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.error, modifier = Modifier.size(40.dp))
                 Spacer(Modifier.height(12.dp))
-                Text(state.error, style = VTypography.body, color = VColors.ink2)
+                Text(errorMsg, style = VTypography.body, color = VColors.ink2)
                 Spacer(Modifier.height(16.dp))
                 Box(
                     modifier = Modifier

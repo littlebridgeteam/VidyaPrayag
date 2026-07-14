@@ -39,6 +39,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -480,7 +482,34 @@ private fun HomeHero(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // School logo — surfaces configured branding in the home header.
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(VTheme.colors.card)
+                    .border(1.dp, VTheme.colors.border1.copy(alpha = 0.5f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!header.logoUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = header.logoUrl,
+                        contentDescription = schoolName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Icon(
+                        imageVector = VIcons.School,
+                        contentDescription = schoolName,
+                        tint = VTheme.colors.ink3,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "$greeting, $name",
@@ -495,6 +524,8 @@ private fun HomeHero(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
+
+            // Notification bell overlaid on the admin avatar (if configured).
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -507,12 +538,34 @@ private fun HomeHero(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = VIcons.Bell,
-                    contentDescription = "Notifications",
-                    tint = VTheme.colors.ink,
-                    modifier = Modifier.size(22.dp),
-                )
+                if (!header.adminAvatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = header.adminAvatarUrl,
+                        contentDescription = "Admin profile",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(VTheme.colors.ink.copy(alpha = 0.25f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = VIcons.Bell,
+                            contentDescription = "Notifications",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = VIcons.Bell,
+                        contentDescription = "Notifications",
+                        tint = VTheme.colors.ink,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
                 if (unreadCount > 0) {
                     VBadge(
                         text = unreadCount.coerceAtMost(99).toString(),

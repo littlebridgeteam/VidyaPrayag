@@ -82,6 +82,19 @@ object IdCardRenderer {
         g.color = primary
         g.fillRect(0, 0, CARD_W, 120)
 
+        // School logo in header band (when configured and enabled)
+        if (config.showLogo && data.schoolLogoUrl != null) {
+            try {
+                val logoSize = 90
+                val logoX = CARD_W - logoSize - 20
+                val logoY = (120 - logoSize) / 2
+                val logoImg = loadRemoteImage(data.schoolLogoUrl, logoSize, logoSize)
+                g.drawImage(logoImg, logoX, logoY, logoSize, logoSize, null)
+            } catch (e: Exception) {
+                logger.warn("ID card school logo load failed for url={}: {}", data.schoolLogoUrl, e.message, e)
+            }
+        }
+
         // School name (if in fields)
         if ("school" in config.fields) {
             g.color = Color.WHITE
@@ -99,7 +112,7 @@ object IdCardRenderer {
         val photoY = 150
         val photoW = 200
         val photoH = 250
-        if (config.showPhoto && "photo" in config.fields || (config.showPhoto && config.fields.contains("name"))) {
+        if (config.showPhoto && "photo" in config.fields) {
             if (data.photoUrl != null) {
                 try {
                     val photoImg = loadRemoteImage(data.photoUrl, photoW, photoH)
@@ -119,22 +132,23 @@ object IdCardRenderer {
             g.color = textColor
             g.font = Font("SansSerif", Font.BOLD, config.titleFontSize)
             g.drawString(truncate(data.personName, 24), 240, textY)
-            textY += 40
+            textY += 45
         }
 
         // Role (if in fields)
         if ("role" in config.fields) {
             g.color = primary
-            g.font = Font("SansSerif", Font.PLAIN, config.bodyFontSize)
+            g.font = Font("SansSerif", Font.BOLD, config.bodyFontSize)
             g.drawString(data.personType.replaceFirstChar { it.uppercase() }, 240, textY)
-            textY += 30
+            textY += 32
         }
 
         // Class/Department (if in fields)
         if ("class" in config.fields) {
             g.color = Color.DARK_GRAY
             g.font = Font("SansSerif", Font.PLAIN, config.smallFontSize)
-            g.drawString(truncate(data.classOrDept, 28), 240, textY)
+            val classOrDept = data.classOrDept.takeIf { it.isNotBlank() } ?: "—"
+            g.drawString(truncate(classOrDept, 30), 240, textY)
             textY += 30
         }
 
@@ -193,16 +207,17 @@ object IdCardRenderer {
         g.color = Color.BLACK
         g.font = Font("SansSerif", Font.PLAIN, config.smallFontSize)
         var y = 400
-        if ("emergency_contact" in config.fields || config.fields.isEmpty()) {
+        val backFields = config.fields.map { it.lowercase() }.toSet()
+        if ("emergency_contact" in backFields || "emergencycontact" in backFields || backFields.isEmpty()) {
             y = drawField(g, "Emergency Contact", data.emergencyContact ?: "N/A", y, config.smallFontSize)
         }
-        if ("blood_group" in config.fields || config.fields.isEmpty()) {
+        if ("blood_group" in backFields || "bloodgroup" in backFields || backFields.isEmpty()) {
             y = drawField(g, "Blood Group", data.bloodGroup ?: "N/A", y, config.smallFontSize)
         }
-        if ("address" in config.fields || config.fields.isEmpty()) {
+        if ("address" in backFields || backFields.isEmpty()) {
             y = drawField(g, "Address", truncate(data.address ?: "N/A", 40), y, config.smallFontSize)
         }
-        if ("valid_till" in config.fields || config.fields.isEmpty()) {
+        if ("valid_till" in backFields || "validtill" in backFields || backFields.isEmpty()) {
             y = drawField(g, "Valid Till", data.validTill ?: "N/A", y, config.smallFontSize)
         }
 

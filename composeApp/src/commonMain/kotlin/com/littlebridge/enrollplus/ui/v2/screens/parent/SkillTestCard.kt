@@ -290,7 +290,7 @@ private fun SkillTestReady(state: SkillTestState, onStartTest: () -> Unit) {
     VButton(
         text = "Start Skill Test",
         onClick = onStartTest,
-        full = true,
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -457,7 +457,7 @@ private fun SkillTestInProgress(
                 VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
                 Spacer(Modifier.height(8.dp))
             }
-            VButton("See Results", onClick = onSeeResults, full = true)
+            VButton("See Results", onClick = onSeeResults, modifier = Modifier.fillMaxWidth())
         } else {
             Row(
                 Modifier.fillMaxWidth(),
@@ -547,7 +547,7 @@ private fun SkillTestCompleted(state: SkillTestState, onReset: () -> Unit) {
         }
 
         Spacer(Modifier.height(16.dp))
-        VButton("Done", onClick = onReset, full = true, variant = VButtonVariant.Secondary)
+        VButton("Done", onClick = onReset, modifier = Modifier.fillMaxWidth(), variant = VButtonVariant.Secondary)
     }
 }
 

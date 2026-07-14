@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.littlebridge.enrollplus.feature.branding.presentation.BrandingViewModel
 import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
@@ -39,8 +40,10 @@ fun IdCardScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: IdCardViewModel = koinViewModel(),
+    brandingViewModel: BrandingViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val brandingState by brandingViewModel.state.collectAsStateV2()
     var activeTab by remember { mutableStateOf(IdCardTab.Templates) }
     val templatesScrollState = rememberScrollState()
     var scrollToBuilder by remember { mutableStateOf(false) }
@@ -56,6 +59,7 @@ fun IdCardScreen(
     LaunchedEffect(Unit) {
         viewModel.loadTemplates()
         viewModel.loadCards()
+        brandingViewModel.loadBranding()
     }
 
     Column(
@@ -88,7 +92,12 @@ fun IdCardScreen(
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) { tab ->
             when (tab) {
-                IdCardTab.Templates -> TemplatesTab(state, viewModel, templatesScrollState)
+                IdCardTab.Templates -> TemplatesTab(
+                    state = state,
+                    viewModel = viewModel,
+                    scrollState = templatesScrollState,
+                    branding = brandingState.branding,
+                )
                 IdCardTab.Generate -> GenerateTab(state, viewModel)
                 IdCardTab.Cards -> CardsTab(state, viewModel)
             }
