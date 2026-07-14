@@ -67,8 +67,8 @@ jobs:
             echo "flavor=${{ inputs.flavor }}" >> $GITHUB_OUTPUT
             echo "build_type=${{ inputs.build_type }}" >> $GITHUB_OUTPUT
           else
-            echo "flavor=prod" >> $GITHUB_OUTPUT
-            echo "build_type=release" >> $GITHUB_OUTPUT
+            echo "flavor=staging" >> $GITHUB_OUTPUT
+            echo "build_type=debug" >> $GITHUB_OUTPUT
           fi
 
           # Extract versionName from build.gradle.kts
@@ -78,7 +78,7 @@ jobs:
           echo "Version: $VERSION_NAME (build ${{ github.run_number }})"
 
           # Map flavor to display name: dev→Dev, staging→Stag, prod→Prod
-          FLAVOR=${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'prod' }}
+          FLAVOR=${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'staging' }}
           case "$FLAVOR" in
             dev) FLAVOR_DISPLAY="Dev" ;;
             staging) FLAVOR_DISPLAY="Stag" ;;
