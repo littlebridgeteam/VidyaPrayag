@@ -219,6 +219,59 @@ internal fun MessagePreviewCard(
 }
 
 @Composable
+internal fun PtmActivePreviewCard(
+    title: String,
+    date: String,
+    slot: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    VCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        padding = 14.dp,
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(VColors.mintSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(VIcons.Calendar, contentDescription = null, tint = VColors.mint, modifier = Modifier.size(20.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    CommsBadge(text = "Active", color = VColors.mint, bg = VColors.mintSoft)
+                    Text(
+                        title,
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.ink,
+                        maxLines = 1,
+                    )
+                }
+                Text(
+                    if (slot.isNotBlank()) "$date · $slot" else date,
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
 internal fun PtmPreviewCard(
     item: PTMHistoryItem,
     onClick: () -> Unit,

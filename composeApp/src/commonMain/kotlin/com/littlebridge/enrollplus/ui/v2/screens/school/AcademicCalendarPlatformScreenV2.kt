@@ -150,14 +150,30 @@ fun AcademicCalendarPlatformScreenV2(
                     when (state.viewMode) {
                         CalendarViewMode.MONTH -> InteractiveCalendar(state.events, onOpenEvent)
                         CalendarViewMode.AGENDA -> AgendaList(state.events, onOpenEvent)
-                        CalendarViewMode.TIMELINE -> TimelineList(dash?.upcomingTimeline.orEmpty(), onOpenEvent)
+                        CalendarViewMode.TIMELINE -> {
+                            val past = dash?.pastTimeline.orEmpty()
+                            val upcoming = dash?.upcomingTimeline.orEmpty()
+                            if (past.isNotEmpty()) {
+                                VLabel("Past Events")
+                                TimelineList(past, onOpenEvent)
+                            }
+                            if (upcoming.isNotEmpty()) {
+                                VLabel(appString(StringKeys.ACALP_UPCOMING))
+                                TimelineList(upcoming, onOpenEvent)
+                            }
+                            if (past.isEmpty() && upcoming.isEmpty()) {
+                                Text(appString(StringKeys.ACALP_NOTHING_UPCOMING), style = VTypography.caption, color = VColors.ink2)
+                            }
+                        }
                     }
 
-                    // ── 5. Upcoming Events Timeline (always shown) ───────────
-                    val timeline = dash?.upcomingTimeline.orEmpty()
-                    if (timeline.isNotEmpty()) {
-                        VLabel(appString(StringKeys.ACALP_UPCOMING))
-                        timeline.take(6).forEach { EventRow(it, onClick = { onOpenEvent(it.id) }) }
+                    // ── 5. Upcoming Events Timeline (always shown, except in TIMELINE mode which has its own) ───
+                    if (state.viewMode != CalendarViewMode.TIMELINE) {
+                        val timeline = dash?.upcomingTimeline.orEmpty()
+                        if (timeline.isNotEmpty()) {
+                            VLabel(appString(StringKeys.ACALP_UPCOMING))
+                            timeline.take(6).forEach { EventRow(it, onClick = { onOpenEvent(it.id) }) }
+                        }
                     }
 
                     // ── 6. Draft Events ──────────────────────────────────────

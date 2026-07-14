@@ -50,12 +50,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsState
+import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersState
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.StaffRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -73,6 +79,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.platform.rememberPhoneHelper
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -115,18 +122,23 @@ fun SchoolPeopleScreenV2(
     teachersViewModel: SchoolTeachersViewModel = koinViewModel(),
     studentsViewModel: StudentRosterViewModel = koinViewModel(),
     staffViewModel: StaffViewModel = koinViewModel(),
+    classesViewModel: ClassesSubjectsViewModel = koinViewModel(),
     teacherRefreshKey: Int,
     studentRefreshKey: Int,
 ) {
     val teachersState by teachersViewModel.state.collectAsStateV2()
     val studentsState by studentsViewModel.state.collectAsStateV2()
     val staffState by staffViewModel.state.collectAsStateV2()
+    val classesState by classesViewModel.state.collectAsStateV2()
 
     LaunchedEffect(teacherRefreshKey){
         teachersViewModel.load()
     }
     LaunchedEffect(studentRefreshKey){
         studentsViewModel.load()
+    }
+    LaunchedEffect(Unit) {
+        classesViewModel.loadClasses()
     }
     SchoolPeopleContent(
         teachersState = teachersState,
@@ -137,9 +149,10 @@ fun SchoolPeopleScreenV2(
         studentsState = studentsState,
         onStudentsRetry = studentsViewModel::load,
         onStudentSearch = { studentsViewModel.load() }, // students VM reloads full list; client-side filter below
-        onAddStudent = studentsViewModel::addStudent,
+        onAddStudent = { name, cls, sec, roll, phone, admission -> studentsViewModel.addStudent(name, cls, sec, roll, phone, admission) },
         onImportStudentsCsv = studentsViewModel::importStudentsCsv,
         onClearStudentMessages = studentsViewModel::clearMessages,
+        availableClassNames = classesState.classes.map { it.name },
         staffState = staffState,
         onStaffRetry = staffViewModel::load,
         onStaffSearch = staffViewModel::onQueryChange,
@@ -164,9 +177,10 @@ private fun SchoolPeopleContent(
     studentsState: StudentRosterState,
     onStudentsRetry: () -> Unit,
     onStudentSearch: (String) -> Unit,
-    onAddStudent: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
+    onAddStudent: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
     onImportStudentsCsv: (String) -> Unit,
     onClearStudentMessages: () -> Unit,
+    availableClassNames: List<String> = emptyList(),
     staffState: StaffRosterState,
     onStaffRetry: () -> Unit,
     onStaffSearch: (String) -> Unit,
@@ -349,7 +363,8 @@ private fun SchoolPeopleContent(
             isSubmitting = studentsState.isSaving,
             error = studentsState.addError,
             onDismiss = { showAddStudent = false; onClearStudentMessages() },
-            onSubmit = { name, cls, sec, roll, phone -> onAddStudent(name, cls, sec, roll, phone) },
+            onSubmit = { name, cls, sec, roll, phone, admission -> onAddStudent(name, cls, sec, roll, phone, admission) },
+            availableClassNames = availableClassNames,
         )
     }
 
@@ -537,6 +552,7 @@ private fun StudentsSubTab(
     onImportClick: () -> Unit,
     onGraduateClick: (List<String>, Int) -> Unit,
 ) {
+    val phoneHelper = rememberPhoneHelper()
     var query by remember { mutableStateOf("") }
     var showGraduate by remember { mutableStateOf(false) }
     var selectedClasses by remember { mutableStateOf(setOf<String>()) }
@@ -673,8 +689,8 @@ private fun StudentsSubTab(
                     StudentCard(
                         student = s,
                         onOpen = { onOpenStudent(s.id) },
-                        onCall = { /* TODO: dial parent phone */ },
-                        onMessage = { /* TODO: message parent */ },
+                        onCall = { phoneHelper.dialPhone(s.parentPhone ?: "") },
+                        onMessage = { phoneHelper.sendSms(s.parentPhone ?: "") },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
@@ -744,6 +760,7 @@ private fun StaffSubTab(
     onAddClick: () -> Unit,
     onOpenStaff: (String) -> Unit,
 ) {
+    val phoneHelper = rememberPhoneHelper()
     var selectedDepartments by remember { mutableStateOf(setOf<String>()) }
     var selectedRoles by remember { mutableStateOf(setOf<String>()) }
     var selectedStatuses by remember { mutableStateOf(setOf<String>()) }
@@ -863,8 +880,8 @@ private fun StaffSubTab(
                     StaffCard(
                         staff = s,
                         onOpen = { onOpenStaff(s.id) },
-                        onCall = { /* TODO: dial staff phone */ },
-                        onMessage = { /* TODO: message staff */ },
+                        onCall = { phoneHelper.dialPhone(s.phone ?: "") },
+                        onMessage = { phoneHelper.sendSms(s.phone ?: "") },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
@@ -1043,18 +1060,21 @@ private fun AddStudentPeopleSheet(
     isSubmitting: Boolean,
     error: String?,
     onDismiss: () -> Unit,
-    onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String) -> Unit,
+    onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
+    availableClassNames: List<String> = emptyList(),
 ) {
     var name by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
     var section by remember { mutableStateOf("") }
     var roll by remember { mutableStateOf("") }
     var parentPhone by remember { mutableStateOf("") }
+    var admissionDate by remember { mutableStateOf("") }
+    var classDropdownExpanded by remember { mutableStateOf(false) }
 
     val phoneDigits = parentPhone.count { it.isDigit() }
-    // Parent phone is optional — only validate when the admin has entered something.
     val phoneOk = parentPhone.isBlank() || phoneDigits >= 10
-    val canSubmit = name.isNotBlank() && className.isNotBlank() && roll.isNotBlank() &&
+    val classValid = className.isNotBlank() && (availableClassNames.isEmpty() || availableClassNames.any { it.equals(className, ignoreCase = true) })
+    val canSubmit = name.isNotBlank() && classValid && roll.isNotBlank() &&
         phoneOk && !isSubmitting
 
     VBottomSheet(
@@ -1064,9 +1084,38 @@ private fun AddStudentPeopleSheet(
         VBottomSheetHeader(title = appString(StringKeys.PPL_ADD_STUDENT))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
-            VInput(className, { className = it }, label = appString(StringKeys.PPL_CLASS), placeholder = appString(StringKeys.PPL_CLASS_PH))
+            Box {
+                VInput(
+                    className,
+                    { className = it },
+                    label = appString(StringKeys.PPL_CLASS),
+                    placeholder = appString(StringKeys.PPL_CLASS_PH),
+                    modifier = Modifier.fillMaxWidth().clickable { classDropdownExpanded = true },
+                )
+                DropdownMenu(
+                    expanded = classDropdownExpanded,
+                    onDismissRequest = { classDropdownExpanded = false },
+                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                ) {
+                    availableClassNames.forEach { cn ->
+                        DropdownMenuItem(
+                            text = { Text(cn) },
+                            onClick = { className = cn; classDropdownExpanded = false },
+                        )
+                    }
+                }
+            }
+            if (className.isNotBlank() && !classValid) {
+                Text("Please select a configured class", style = VTypography.caption, color = VColors.coral)
+            }
             VInput(section, { section = it }, label = appString(StringKeys.PPL_SECTION), placeholder = appString(StringKeys.PPL_SECTION_PH))
             VInput(roll, { roll = it }, label = appString(StringKeys.PPL_ROLL_NUMBER), placeholder = appString(StringKeys.PPL_ROLL_PH), keyboardType = KeyboardType.Number)
+            VInput(
+                admissionDate,
+                { admissionDate = it },
+                label = "Admission Date",
+                placeholder = "YYYY-MM-DD (optional)",
+            )
             VInput(
                 parentPhone,
                 { parentPhone = it },
@@ -1080,7 +1129,7 @@ private fun AddStudentPeopleSheet(
             Spacer(Modifier.height(2.dp))
             VButton(
                 text = appString(StringKeys.PPL_ADD_STUDENT),
-                onClick = { onSubmit(name, className, section, roll, parentPhone) },
+                onClick = { onSubmit(name, className, section, roll, parentPhone, admissionDate) },
                 variant = VButtonVariant.Primary,
                 full = true,
                 enabled = canSubmit,
@@ -1114,7 +1163,24 @@ private fun ImportStudentsSheet(
     var csv by remember {
         mutableStateOf("full_name,class_name,section,roll_number\n")
     }
+    var fileName by remember { mutableStateOf<String?>(null) }
     val canSubmit = csv.lineSequence().drop(1).any { it.isNotBlank() } && !isSubmitting
+    val scope = rememberCoroutineScope()
+    val csvTemplate = "full_name,class_name,section,roll_number,parent_phone\n"
+    val fileSaver = rememberFileSaverLauncher() { _ -> }
+    val csvPicker = rememberFilePickerLauncher(
+        type = PickerType.File(),
+        mode = PickerMode.Single,
+        title = "Choose a CSV file",
+    ) { platformFile ->
+        if (platformFile != null) {
+            scope.launch {
+                val bytes = platformFile.readBytes()
+                csv = bytes.decodeToString()
+                fileName = platformFile.name
+            }
+        }
+    }
 
     VBottomSheet(
         visible = true,
@@ -1122,14 +1188,58 @@ private fun ImportStudentsSheet(
     ) {
         VBottomSheetHeader(title = appString(StringKeys.PPL_IMPORT_STUDENTS_CSV), subtitle = appString(StringKeys.PPL_IMPORT_INSTRUCTIONS))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Primary: file upload gateway
+            VCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { csvPicker.launch() },
+                padding = 20.dp,
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(VColors.violet.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(24.dp))
+                    }
+                    Text(
+                        if (fileName != null) "File: $fileName" else "Upload CSV File",
+                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        if (fileName != null) "Tap to replace file" else "Tap to choose a .csv file from your device",
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                }
+            }
+            // Secondary: paste area (collapsible-style, still visible)
+            Text("or paste CSV content manually", style = VTypography.caption, color = VColors.ink3)
             VInput(
                 value = csv,
-                onValueChange = { csv = it },
+                onValueChange = { csv = it; fileName = null },
                 label = appString(StringKeys.PPL_CSV_CONTENT),
                 placeholder = appString(StringKeys.PPL_CSV_PH),
                 singleLine = false,
-                modifier = Modifier.fillMaxWidth().height(180.dp),
+                modifier = Modifier.fillMaxWidth().height(120.dp),
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Download Template",
+                    onClick = { fileSaver.launch(baseName = "student_import_template", extension = "csv", bytes = csvTemplate.encodeToByteArray()) },
+                    variant = VButtonVariant.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             if (error != null) {
                 Text(error, style = VTypography.caption, color = VColors.coral)
             }

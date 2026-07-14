@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.transport.domain.model.CreateAssignmentRequest
 import com.littlebridge.enrollplus.feature.transport.domain.model.CreateRouteRequest
@@ -88,7 +89,7 @@ fun TransportManagementScreenV2(
 
         VStateHost(
             loading = state.isLoading,
-            error = state.error,
+            error = state.error.takeIf { !showRouteForm && !showVehicleForm && !showAssignmentForm },
             isEmpty = false,
             onRetry = { viewModel.loadRoutes() },
             modifier = Modifier.fillMaxSize(),
@@ -303,6 +304,7 @@ private fun CreateAssignmentForm(
     routes: List<TransportRoute>,
     vehicles: List<TransportVehicle>,
 ) {
+    val state by viewModel.state.collectAsStateV2()
     var studentId by remember { mutableStateOf("") }
     var selectedRouteId by remember { mutableStateOf("") }
     var selectedStopId by remember { mutableStateOf("") }
@@ -322,6 +324,11 @@ private fun CreateAssignmentForm(
                 placeholder = appString(StringKeys.TRANS_STUDENT_ID_PLACE),
                 modifier = Modifier.fillMaxWidth(),
             )
+            Text("Enter student UUID or student code", style = VTypography.caption, color = VColors.ink2)
+            val err = state.error
+            if (err != null) {
+                Text(err, style = VTypography.caption, color = VColors.coral)
+            }
             if (routes.isNotEmpty()) {
                 Text(appString(StringKeys.TRANS_SELECT_ROUTE), style = VTypography.caption, color = VColors.ink2)
                 routes.forEach { route ->
@@ -343,7 +350,7 @@ private fun CreateAssignmentForm(
                                 selectedStopId = ""
                             },
                         )
-                        Text(route.name, style = VTypography.body, color = VColors.ink)
+                        Text(route.name, style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -364,7 +371,7 @@ private fun CreateAssignmentForm(
                             selected = selectedStopId == stop.id,
                             onClick = { selectedStopId = if (selectedStopId == stop.id) "" else stop.id },
                         )
-                        Text("${stop.name} (#${stop.sequence})", style = VTypography.body, color = VColors.ink)
+                        Text("${stop.name} (#${stop.sequence})", style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -385,7 +392,7 @@ private fun CreateAssignmentForm(
                             selected = selectedVehicleId == vehicle.id,
                             onClick = { selectedVehicleId = if (selectedVehicleId == vehicle.id) "" else vehicle.id },
                         )
-                        Text(vehicle.busNumber, style = VTypography.body, color = VColors.ink)
+                        Text(vehicle.busNumber, style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -408,7 +415,8 @@ private fun CreateAssignmentForm(
                 text = appString(StringKeys.TRANS_ASSIGN_BTN),
                 variant = VButtonVariant.Primary,
                 size = VButtonSize.Sm,
-                enabled = studentId.isNotBlank() && selectedRouteId.isNotBlank() && selectedStopId.isNotBlank() && selectedVehicleId.isNotBlank(),
+                enabled = studentId.isNotBlank() && selectedRouteId.isNotBlank() && selectedStopId.isNotBlank() && selectedVehicleId.isNotBlank() && !state.isLoading,
+                loading = state.isLoading,
                 onClick = {
                     viewModel.createAssignment(
                         CreateAssignmentRequest(

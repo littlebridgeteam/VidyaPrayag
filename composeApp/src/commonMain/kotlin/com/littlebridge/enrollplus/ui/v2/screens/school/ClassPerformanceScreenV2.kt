@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassPerformanceState
@@ -154,10 +155,10 @@ private fun ClassPerformanceContent(
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         VBadge(text = appString(StringKeys.SCH_STAR_1ST), tone = VBadgeTone.Warning)
                         Column(Modifier.weight(1f)) {
-                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (state.topPerformerDetails.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
-                                Text(state.topPerformerDetails, style = VTypography.caption.copy(color = VColors.ink3))
+                                Text(state.topPerformerDetails, style = VTypography.caption.copy(color = VColors.ink3), maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -176,16 +177,16 @@ private fun ClassPerformanceContent(
 @Composable
 private fun Kpi(label: String, value: String) {
         VCard {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
 private fun RiskTile(label: String, value: String, tone: VBadgeTone) {
         Column {
-        Text(label, style = VTypography.label.copy(color = VColors.ink3))
+        Text(label, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
         VBadge(text = value, tone = tone)
     }
@@ -238,7 +239,7 @@ private fun ProgressRow(p: ProgressMonitoringItem) {
             Box(
                 Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(VColors.cream)
+                    .background(VColors.surfaceCard)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
                 Text(p.initials.take(2).uppercase(), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))

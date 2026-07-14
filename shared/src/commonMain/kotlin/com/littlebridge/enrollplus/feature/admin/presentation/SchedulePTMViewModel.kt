@@ -125,6 +125,10 @@ class SchedulePTMViewModel(
             _state.value = _state.value.copy(errorMessage = "Title, date and slot are required.")
             return
         }
+        if (date.trim() < com.littlebridge.enrollplus.util.todayIso()) {
+            _state.value = _state.value.copy(errorMessage = "PTM date cannot be in the past.")
+            return
+        }
         viewModelScope.launch {
             _state.value = _state.value.copy(isCreating = true, errorMessage = null)
             val token = preferenceRepository.getUserToken().first()

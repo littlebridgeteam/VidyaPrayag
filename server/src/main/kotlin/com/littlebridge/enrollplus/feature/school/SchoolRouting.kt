@@ -44,12 +44,29 @@ import com.littlebridge.enrollplus.db.StudentsTable
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
+import io.ktor.server.request.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 import java.time.LocalDate
+import java.time.Instant
+
+@Serializable
+data class AttendanceMark(
+    val id: String,
+    val status: String
+)
+
+@Serializable
+data class AttendanceSaveRequest(
+    val type: String,
+    val date: String,
+    val marks: List<AttendanceMark>
+)
 
 @Serializable
 data class AnalyticsResponse(
@@ -279,6 +296,62 @@ fun Route.schoolRouting() {
                     )
                 }
                 call.ok(resp, message = "Daily attendance fetched successfully")
+            }
+
+            // ---- attendance/daily (POST: save marks) ----
+            post("/attendance/daily") {
+                val ctx = call.requireSchoolContext() ?: return@post
+                val schoolId = ctx.schoolId
+                val req = call.receive<AttendanceSaveRequest>()
+                val type = req.type.lowercase()
+                if (type !in setOf("student", "faculty")) {
+                    call.fail("type must be 'student' or 'faculty'"); return@post
+                }
+                val dateValue = try {
+                    LocalDate.parse(req.date)
+                } catch (_: Exception) {
+                    call.fail("Invalid date format. Use YYYY-MM-DD."); return@post
+                }
+                val validStatuses = setOf("present", "absent", "late", "leave", "half_day")
+                val marks = req.marks.filter { it.status.lowercase() in validStatuses }
+                if (marks.isEmpty()) {
+                    call.fail("No valid attendance marks provided"); return@post
+                }
+
+                dbQuery {
+                    marks.forEach { mark ->
+                        val personId = mark.id
+                        val status = mark.status.lowercase()
+                        val existing = AttendanceRecordsTable.selectAll()
+                            .where {
+                                (AttendanceRecordsTable.schoolId eq schoolId) and
+                                    (AttendanceRecordsTable.date eq dateValue) and
+                                    (AttendanceRecordsTable.type eq type) and
+                                    (AttendanceRecordsTable.personId eq personId)
+                            }
+                            .singleOrNull()
+
+                        if (existing != null) {
+                            AttendanceRecordsTable.update({
+                                (AttendanceRecordsTable.id eq existing[AttendanceRecordsTable.id])
+                            }) {
+                                it[AttendanceRecordsTable.status] = status
+                                it[AttendanceRecordsTable.markedAt] = Instant.now()
+                            }
+                        } else {
+                            AttendanceRecordsTable.insert {
+                                it[AttendanceRecordsTable.schoolId] = schoolId
+                                it[AttendanceRecordsTable.date] = dateValue
+                                it[AttendanceRecordsTable.type] = type
+                                it[AttendanceRecordsTable.personId] = personId
+                                it[AttendanceRecordsTable.status] = status
+                                it[AttendanceRecordsTable.attSource] = "manual"
+                                it[AttendanceRecordsTable.markedAt] = Instant.now()
+                            }
+                        }
+                    }
+                }
+                call.ok(mapOf("saved" to marks.size), message = "Attendance saved successfully")
             }
         }
     }

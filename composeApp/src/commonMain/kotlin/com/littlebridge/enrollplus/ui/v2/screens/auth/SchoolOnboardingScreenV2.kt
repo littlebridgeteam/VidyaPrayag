@@ -76,7 +76,9 @@ import com.littlebridge.enrollplus.ui.components.FilterChip
 import com.littlebridge.enrollplus.ui.components.VBackHeader
 import com.littlebridge.enrollplus.ui.components.VButton
 import com.littlebridge.enrollplus.ui.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import io.github.vinceglb.filekit.compose.rememberFileSaverLauncher
 import com.littlebridge.enrollplus.ui.components.VProgressBar
 import com.littlebridge.enrollplus.ui.components.VProgressBarSegments
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -126,23 +128,23 @@ fun SchoolOnboardingScreenV2(
     var principalName by remember { mutableStateOf("") }
     var principalMobile by remember { mutableStateOf("") }
 
+    // Academic year state — hoisted to screen scope so it survives
+    // AnimatedContent disposal when navigating back/forward (Bug 8).
+    var ayYear by remember { mutableStateOf("2025-26") }
+    var ayWorkingDays by remember { mutableStateOf("Mon–Sat") }
+    var ayStarts by remember { mutableStateOf("") }
+    var ayEnds by remember { mutableStateOf("") }
+    var ayStartTime by remember { mutableStateOf("") }
+    var ayEndTime by remember { mutableStateOf("") }
+    var ayPeriods by remember { mutableStateOf("") }
+
     val classesBuilt = remember {
-        mutableStateListOf(
-            OBClass("Class 9", mutableStateListOf("A", "B")),
-            OBClass("Class 10", mutableStateListOf("A", "B")),
-        )
+        mutableStateListOf<OBClass>()
     }
     val classCodes: List<String> = classesBuilt.flatMap { cl -> cl.sections.map { "${cl.name.removePrefix("Class ")}-$it" } }
 
     val subjects = remember {
-        mutableStateListOf(
-            OBSubject("s1", "Mathematics", "MAT001", "Core", mutableStateListOf()),
-            OBSubject("s2", "Science", "SCI001", "Core", mutableStateListOf()),
-            OBSubject("s3", "English", "ENG001", "Core", mutableStateListOf()),
-            OBSubject("s4", "Hindi", "HIN001", "Language", mutableStateListOf()),
-            OBSubject("s5", "Social Studies", "SOC001", "Core", mutableStateListOf()),
-            OBSubject("s6", "Computer Apps", "COMP01", "Core", mutableStateListOf()),
-        )
+        mutableStateListOf<OBSubject>()
     }
 
     val teachers = remember { mutableStateListOf<OBTeacher>() }
@@ -169,6 +171,12 @@ fun SchoolOnboardingScreenV2(
 
     val canContinue: Boolean = when (step) {
         1 -> legalName.isNotBlank()
+             && shortName.isNotBlank()
+             && affiliation.isNotBlank()
+             && board.isNotBlank()
+             && schoolType.isNotBlank()
+             && principalName.isNotBlank()
+             && principalMobile.filter { it.isDigit() }.length == 10
         3 -> classesBuilt.isNotEmpty()
         4 -> subjects.isNotEmpty()
         5 -> teachers.isNotEmpty()
@@ -178,10 +186,13 @@ fun SchoolOnboardingScreenV2(
     fun continueClicked() {
         when (step) {
             1 -> {
-                if (legalName.isBlank()) return
+                if (legalName.isBlank() || shortName.isBlank() || affiliation.isBlank()
+                    || board.isBlank() || schoolType.isBlank()
+                    || principalName.isBlank() || principalMobile.filter { it.isDigit() }.length != 10) return
                 basicVm.updateSchoolName(legalName)
                 basicVm.updateBoard(board)
-                basicVm.updateContact(principalMobile.replace(Regex("[^0-9]"), "").take(10))
+                basicVm.updateAffiliation(affiliation)
+                basicVm.updateContact(principalMobile.filter { it.isDigit() }.take(10))
                 basicVm.submit(onSuccess = { step++ })
             }
             2 -> {
@@ -241,7 +252,7 @@ fun SchoolOnboardingScreenV2(
     Column(
         modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VColors.surface)
             .statusBarsPadding()
             .imePadding(),
     ) {
@@ -289,15 +300,29 @@ fun SchoolOnboardingScreenV2(
             ) {
                     when (current) {
                         1 -> IdentityStep(
-                            legalName = legalName, onLegalNameChange = { legalName = it },
-                            shortName = shortName, onShortNameChange = { shortName = it },
+                            legalName = legalName, onLegalNameChange = { value ->
+                                if (value.matches(Regex("^[a-zA-Z\\s']*$"))) legalName = value
+                            },
+                            shortName = shortName, onShortNameChange = { value ->
+                                if (value.matches(Regex("^[a-zA-Z\\s']*$"))) shortName = value
+                            },
                             affiliation = affiliation, onAffiliationChange = { affiliation = it },
                             board = board, onBoardChange = { board = it },
                             schoolType = schoolType, onSchoolTypeChange = { schoolType = it },
                             principal = principalName, onPrincipalChange = { principalName = it },
-                            principalMobile = principalMobile, onPrincipalMobileChange = { principalMobile = it },
+                            principalMobile = principalMobile, onPrincipalMobileChange = { value ->
+                                principalMobile = value.filter { it.isDigit() }.take(10)
+                            },
                         )
-                        2 -> AcademicYearStep()
+                        2 -> AcademicYearStep(
+                            year = ayYear, onYearChange = { ayYear = it },
+                            workingDays = ayWorkingDays, onWorkingDaysChange = { ayWorkingDays = it },
+                            starts = ayStarts, onStartsChange = { ayStarts = it },
+                            ends = ayEnds, onEndsChange = { ayEnds = it },
+                            startTime = ayStartTime, onStartTimeChange = { ayStartTime = it },
+                            endTime = ayEndTime, onEndTimeChange = { ayEndTime = it },
+                            periods = ayPeriods, onPeriodsChange = { ayPeriods = it },
+                        )
                         3 -> ClassesStep(classesBuilt)
                         4 -> SubjectsStep(subjects, classCodes)
                         5 -> TeachersStep(
@@ -309,7 +334,8 @@ fun SchoolOnboardingScreenV2(
                             onAddTeacher = {
                                 val nm = newTeacherName.trim()
                                 val em = newTeacherEmail.trim()
-                                if (nm.isNotBlank()) {
+                                val emailValid = em.isBlank() || em.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))
+                                if (nm.isNotBlank() && emailValid) {
                                     teachers.add(
                                         OBTeacher(
                                             id = "t${teachers.size + 1}",
@@ -429,33 +455,49 @@ private fun IdentityStep(
 }
 
 @Composable
-private fun AcademicYearStep() {
-    var year by remember { mutableStateOf("2025-26") }
-    var workingDays by remember { mutableStateOf("Mon–Sat") }
-    var starts by remember { mutableStateOf("") }
-    var ends by remember { mutableStateOf("") }
-    var startTime by remember { mutableStateOf("") }
-    var endTime by remember { mutableStateOf("") }
-    var periods by remember { mutableStateOf("") }
+private fun AcademicYearStep(
+    year: String, onYearChange: (String) -> Unit,
+    workingDays: String, onWorkingDaysChange: (String) -> Unit,
+    starts: String, onStartsChange: (String) -> Unit,
+    ends: String, onEndsChange: (String) -> Unit,
+    startTime: String, onStartTimeChange: (String) -> Unit,
+    endTime: String, onEndTimeChange: (String) -> Unit,
+    periods: String, onPeriodsChange: (String) -> Unit,
+) {
+    var userEditedDates by remember { mutableStateOf(false) }
+
+    LaunchedEffect(year) {
+        if (!userEditedDates) {
+            val (defaultStart, defaultEnd) = when (year) {
+                "2025-26" -> "2025-04-01" to "2026-03-31"
+                "2026-27" -> "2026-04-01" to "2027-03-31"
+                else -> "" to ""
+            }
+            if (defaultStart.isNotBlank()) {
+                onStartsChange(defaultStart)
+                onEndsChange(defaultEnd)
+            }
+        }
+    }
 
     Text(appString(StringKeys.OB_AY_CURRENT), style = VTypography.label, color = VColors.ink3)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("2025-26", "2026-27").forEach { y -> FilterChip(label = y, selected = year == y, onClick = { year = y }) }
+        listOf("2025-26", "2026-27").forEach { y -> FilterChip(label = y, selected = year == y, onClick = { onYearChange(y) }) }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        VInput(starts, { starts = it }, label = appString(StringKeys.OB_AY_STARTS), placeholder = appString(StringKeys.OB_AY_STARTS), modifier = Modifier.weight(1f))
-        VInput(ends, { ends = it }, label = appString(StringKeys.OB_AY_ENDS), placeholder = appString(StringKeys.OB_AY_ENDS), modifier = Modifier.weight(1f))
+        VInput(starts, { userEditedDates = true; onStartsChange(it) }, label = appString(StringKeys.OB_AY_STARTS), placeholder = appString(StringKeys.OB_AY_STARTS), modifier = Modifier.weight(1f))
+        VInput(ends, { userEditedDates = true; onEndsChange(it) }, label = appString(StringKeys.OB_AY_ENDS), placeholder = appString(StringKeys.OB_AY_ENDS), modifier = Modifier.weight(1f))
     }
     Text(appString(StringKeys.OB_AY_WORKING_DAYS), style = VTypography.label, color = VColors.ink3)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(label = "Mon–Fri", selected = workingDays == "Mon–Fri", onClick = { workingDays = "Mon–Fri" })
-        FilterChip(label = "Mon–Sat", selected = workingDays == "Mon–Sat", onClick = { workingDays = "Mon–Sat" })
+        FilterChip(label = "Mon–Fri", selected = workingDays == "Mon–Fri", onClick = { onWorkingDaysChange("Mon–Fri") })
+        FilterChip(label = "Mon–Sat", selected = workingDays == "Mon–Sat", onClick = { onWorkingDaysChange("Mon–Sat") })
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        VInput(startTime, { startTime = it }, label = appString(StringKeys.OB_AY_START_TIME), placeholder = "08:00 AM", modifier = Modifier.weight(1f))
-        VInput(endTime, { endTime = it }, label = appString(StringKeys.OB_AY_END_TIME), placeholder = "02:00 PM", modifier = Modifier.weight(1f))
+        VInput(startTime, onStartTimeChange, label = appString(StringKeys.OB_AY_START_TIME), placeholder = "08:00 AM", modifier = Modifier.weight(1f))
+        VInput(endTime, onEndTimeChange, label = appString(StringKeys.OB_AY_END_TIME), placeholder = "02:00 PM", modifier = Modifier.weight(1f))
     }
-    VInput(periods, { periods = it }, label = appString(StringKeys.OB_AY_PERIODS), placeholder = appString(StringKeys.OB_AY_PERIODS_PH), keyboardType = KeyboardType.Number, modifier = Modifier.fillMaxWidth())
+    VInput(periods, onPeriodsChange, label = appString(StringKeys.OB_AY_PERIODS), placeholder = appString(StringKeys.OB_AY_PERIODS_PH), keyboardType = KeyboardType.Number, modifier = Modifier.fillMaxWidth())
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -468,19 +510,50 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
         Text(appString(StringKeys.OB_CL_TIP_BODY), style = VTypography.caption, color = VColors.ink2, modifier = Modifier.padding(top = 4.dp))
     }
     classesBuilt.forEachIndexed { idx, cl ->
+        var newSection by remember { mutableStateOf("") }
         CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(cl.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.weight(1f))
                 Text(appString(StringKeys.OB_CL_SECTIONS, "count" to cl.sections.size), style = VTypography.caption, color = VColors.ink3)
+                Spacer(Modifier.width(8.dp))
+                Box(
+                    Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(VColors.coral.copy(alpha = 0.1f))
+                        .clickable { classesBuilt.removeAt(idx) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(VIcons.Close, contentDescription = "Delete class", tint = VColors.coral, modifier = Modifier.size(16.dp))
+                }
             }
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                listOf("A", "B", "C", "D", "E", "F").forEach { s ->
-                    val on = cl.sections.contains(s)
-                    FilterChip(label = s, selected = on, onClick = {
-                        if (on) cl.sections.remove(s) else { cl.sections.add(s); cl.sections.sort() }
-                    })
+                cl.sections.forEach { s ->
+                    FilterChip(label = s, selected = true, onClick = { cl.sections.remove(s); cl.sections.sort() })
                 }
+                listOf("A", "B", "C", "D", "E", "F").forEach { s ->
+                    if (!cl.sections.contains(s)) {
+                        FilterChip(label = s, selected = false, onClick = { cl.sections.add(s); cl.sections.sort() })
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                VInput(newSection, { newSection = it }, placeholder = "Add section (e.g. G, H)", modifier = Modifier.weight(1f))
+                VButton(
+                    text = "+",
+                    onClick = {
+                        val s = newSection.trim().uppercase()
+                        if (s.isNotBlank() && !cl.sections.contains(s)) {
+                            cl.sections.add(s)
+                            cl.sections.sort()
+                            newSection = ""
+                        }
+                    },
+                    enabled = newSection.isNotBlank(),
+                    modifier = Modifier.weight(0.2f),
+                )
             }
         }
     }
@@ -576,9 +649,13 @@ private fun TeachersStep(
             VButton(
                 text = appString(StringKeys.OB_CL_ADD_BTN),
                 onClick = onAddTeacher,
-                enabled = newTeacherName.isNotBlank(),
+                enabled = newTeacherName.isNotBlank() &&
+                    (newTeacherEmail.isBlank() || newTeacherEmail.trim().matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))),
                 modifier = Modifier.weight(0.4f),
             )
+        }
+        if (newTeacherEmail.isNotBlank() && !newTeacherEmail.trim().matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))) {
+            Text("Enter a valid email address", style = VTypography.caption, color = VColors.coral, modifier = Modifier.padding(top = 4.dp))
         }
     }
 
@@ -750,6 +827,9 @@ private fun MatrixCell(label: String, inSubject: Boolean, mine: Boolean, takenBy
 
 @Composable
 private fun StudentsStep() {
+    val csvTemplate = "full_name,class_name,section,roll_number,parent_phone\n"
+    val fileSaver = rememberFileSaverLauncher() { _ -> }
+
     CreamCard {
         Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(Icons.Filled.CloudUpload, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(32.dp))
@@ -757,7 +837,11 @@ private fun StudentsStep() {
             Text(appString(StringKeys.OB_ST_DROP_CSV), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
             Text(appString(StringKeys.OB_ST_OR_BROWSE), style = VTypography.caption, color = VColors.ink3)
             Spacer(Modifier.height(16.dp))
-            VButton(text = appString(StringKeys.OB_ST_DOWNLOAD), onClick = {}, variant = VButtonVariant.Secondary)
+            VButton(
+                text = appString(StringKeys.OB_ST_DOWNLOAD),
+                onClick = { fileSaver.launch(baseName = "student_import_template", extension = "csv", bytes = csvTemplate.encodeToByteArray()) },
+                variant = VButtonVariant.Secondary,
+            )
         }
     }
     CreamCard {
@@ -779,7 +863,7 @@ private fun CompletionScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(VColors.cream)
+            .background(VColors.surface)
             .verticalScroll(rememberScrollState()),
     ) {
         Box(

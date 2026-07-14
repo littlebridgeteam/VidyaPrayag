@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentActivityDto
@@ -47,11 +48,15 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VActionCard
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -90,6 +95,8 @@ fun StudentProfileScreenV2(
     LaunchedEffect(studentId) { viewModel.load(studentId) }
     LaunchedEffect(state.removed) { if (state.removed) onRemoved() }
 
+    var showEditSheet by remember { mutableStateOf(false) }
+
     Column(
         modifier
             .fillMaxSize()
@@ -97,13 +104,42 @@ fun StudentProfileScreenV2(
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = appString(StringKeys.SCH_STUDENT), onBack = onBack)
+        VBackHeader(
+            title = appString(StringKeys.SCH_STUDENT),
+            onBack = onBack,
+            action = {
+                androidx.compose.material3.IconButton(
+                    onClick = { showEditSheet = true },
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(VIcons.Edit3, contentDescription = "Edit", tint = VColors.ink, modifier = Modifier.size(18.dp))
+                }
+            },
+        )
         StudentProfileContent(
             state = state,
             onRetry = viewModel::retry,
             onRemove = { viewModel.remove(studentId) },
             onOpenHealth = onOpenHealth,
             modifier = Modifier.fillMaxSize(),
+        )
+    }
+
+    if (showEditSheet && state.profile != null) {
+        val p = state.profile!!
+        EditStudentSheet(
+            fullName = p.student.fullName,
+            className = p.student.className,
+            section = p.student.section,
+            rollNumber = p.student.rollNumber,
+            admissionDate = p.admissionDate,
+            isSaving = state.isEditing,
+            error = state.editError,
+            success = state.editSuccess,
+            onDismiss = { showEditSheet = false; viewModel.clearEditError() },
+            onSave = { name, cls, sec, roll, admission ->
+                viewModel.updateStudent(studentId, name, cls, sec, roll, admission)
+            },
         )
     }
 }
@@ -685,6 +721,82 @@ private fun EmptyCard(icon: ImageVector, message: String) {
                 Icon(icon, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(17.dp))
             }
             Text(message, style = VTypography.body, color = VColors.ink2)
+        }
+    }
+}
+
+// ────────────────────────────── edit sheet ───────────────────────────────
+
+@Composable
+private fun EditStudentSheet(
+    fullName: String,
+    className: String,
+    section: String,
+    rollNumber: String,
+    admissionDate: String?,
+    isSaving: Boolean,
+    error: String?,
+    success: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String, String) -> Unit,
+) {
+    var name by remember { mutableStateOf(fullName) }
+    var cls by remember { mutableStateOf(className) }
+    var sec by remember { mutableStateOf(section) }
+    var roll by remember { mutableStateOf(rollNumber) }
+    var admission by remember { mutableStateOf(admissionDate ?: "") }
+
+    VBottomSheet(visible = true, onDismiss = onDismiss) {
+        VBottomSheetHeader(title = "Edit Student")
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            VInput(
+                value = name,
+                onValueChange = { name = it },
+                label = "Full Name",
+                placeholder = "Student name",
+            )
+            VInput(
+                value = cls,
+                onValueChange = { cls = it },
+                label = "Class",
+                placeholder = "e.g. Class 10",
+            )
+            VInput(
+                value = sec,
+                onValueChange = { sec = it },
+                label = "Section",
+                placeholder = "e.g. A",
+            )
+            VInput(
+                value = roll,
+                onValueChange = { roll = it },
+                label = "Roll Number",
+                placeholder = "e.g. 15",
+                keyboardType = KeyboardType.Number,
+            )
+            VInput(
+                value = admission,
+                onValueChange = { admission = it },
+                label = "Admission Date",
+                placeholder = "YYYY-MM-DD",
+            )
+            error?.let {
+                Text(it, style = VTypography.caption, color = VColors.error)
+            }
+            if (success) {
+                Text("Saved successfully", style = VTypography.caption, color = VColors.success)
+            }
+            VButton(
+                text = "Save Changes",
+                onClick = { onSave(name, cls, sec, roll, admission) },
+                variant = VButtonVariant.Primary,
+                full = true,
+                enabled = !isSaving,
+                loading = isSaving,
+            )
         }
     }
 }

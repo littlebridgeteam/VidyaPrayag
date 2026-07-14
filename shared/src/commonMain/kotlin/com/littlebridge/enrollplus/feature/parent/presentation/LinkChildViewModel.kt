@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** A school match surfaced in step 2 of the link wizard. */
@@ -84,6 +86,8 @@ class LinkChildViewModel(
     private val _state = MutableStateFlow(LinkChildState())
     val state: StateFlow<LinkChildState> = _state.asStateFlow()
 
+    private var searchJob: Job? = null
+
     fun onFullNameChange(v: String) = _state.update { it.copy(fullName = v) }
     fun onLanguageChange(v: String) = _state.update { it.copy(language = v) }
 
@@ -136,6 +140,15 @@ class LinkChildViewModel(
 
     fun onSchoolQueryChange(v: String) {
         _state.update { it.copy(schoolQuery = v, selectedSchool = null) }
+        searchJob?.cancel()
+        if (v.trim().length < 2) {
+            _state.update { it.copy(matches = emptyList(), searchError = null) }
+            return
+        }
+        searchJob = viewModelScope.launch {
+            delay(500)
+            searchSchools()
+        }
     }
 
     fun selectSchool(match: SchoolMatch) {

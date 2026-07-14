@@ -12,6 +12,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentProfileDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherProfileDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateStudentRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository
 
 class StudentsRepositoryImpl(
@@ -24,6 +25,9 @@ class StudentsRepositoryImpl(
 
     override suspend fun createStudent(token: String, request: CreateStudentRequest): NetworkResult<ApiResponse<StudentDto>> =
         api.createStudent(token, request)
+
+    override suspend fun updateStudent(token: String, studentId: String, request: UpdateStudentRequest): NetworkResult<ApiResponse<StudentDto>> =
+        api.updateStudent(token, studentId, request)
 
     override suspend fun importStudents(token: String, request: BulkImportStudentsRequest): NetworkResult<ApiResponse<BulkImportStudentsResponse>> =
         api.importStudents(token, request)

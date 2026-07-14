@@ -38,6 +38,8 @@ services:
       JWT_SECRET: "dev-jwt-secret-change-in-production-min-32-chars"
       OTP_ENABLE_CONSOLE_FALLBACK: "true"
       OTP_DEV_RETURN_CODE: "true"
+      OTP_TEST_FIXED_CODE: "123456"
+      OTP_TEST_NUMBERS: "+919535248581"
       CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://server:3000"
       AI_ENCRYPTION_KEY: ""
       PORT: "8080"

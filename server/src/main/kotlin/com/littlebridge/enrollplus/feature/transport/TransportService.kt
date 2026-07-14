@@ -415,7 +415,11 @@ class TransportService {
     }
 
     suspend fun createAssignment(schoolId: UUID, req: CreateAssignmentRequest): TransportAssignmentDto? = dbQuery {
-        val studentId = runCatching { UUID.fromString(req.studentId) }.getOrNull() ?: return@dbQuery null
+        val studentId = runCatching { UUID.fromString(req.studentId) }.getOrNull()
+            ?: StudentsTable.selectAll()
+                .where { (StudentsTable.schoolId eq schoolId) and (StudentsTable.studentCode eq req.studentId.trim()) }
+                .firstOrNull()?.get(StudentsTable.id)?.value
+            ?: return@dbQuery null
         val routeId = runCatching { UUID.fromString(req.routeId) }.getOrNull() ?: return@dbQuery null
         val stopId = runCatching { UUID.fromString(req.stopId) }.getOrNull() ?: return@dbQuery null
         val vehicleId = runCatching { UUID.fromString(req.vehicleId) }.getOrNull() ?: return@dbQuery null

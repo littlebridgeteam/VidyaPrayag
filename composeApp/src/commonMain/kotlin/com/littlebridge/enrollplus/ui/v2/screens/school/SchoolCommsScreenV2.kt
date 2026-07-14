@@ -384,7 +384,7 @@ private fun PtmTab(
             modifier = Modifier.fillMaxWidth().weight(1f),
             loading = state.isLoading,
             error = state.errorMessage,
-            isEmpty = state.history.isEmpty(),
+            isEmpty = state.history.isEmpty() && state.activeEventTitle.isBlank(),
             emptyTitle = appString(StringKeys.SCH_NO_PTMS_YET),
             emptyBody = appString(StringKeys.SCH_NO_PTMS_DESC),
             emptyIcon = VIcons.Calendar,
@@ -395,6 +395,14 @@ private fun PtmTab(
                 modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (state.activeEventTitle.isNotBlank()) {
+                    PtmActivePreviewCard(
+                        title = state.activeEventTitle,
+                        date = state.activeEventDate,
+                        slot = state.activeEventSlot,
+                        onClick = onOpenPtm,
+                    )
+                }
                 state.history.take(5).forEachIndexed { index, item ->
                     PtmPreviewCard(
                         item = item,
