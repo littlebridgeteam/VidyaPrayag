@@ -121,6 +121,7 @@ fun MessagesScreenV2(
             isSending = state.isSending,
             onSend = viewModel::composeNew,
             onClose = viewModel::closeCompose,
+            onSearchQueryChange = viewModel::setSearchQuery,
             modifier = modifier.fillMaxSize(),
         )
         return

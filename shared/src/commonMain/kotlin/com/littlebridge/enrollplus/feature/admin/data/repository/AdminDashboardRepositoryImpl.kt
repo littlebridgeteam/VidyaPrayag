@@ -37,16 +37,16 @@ class AdminDashboardRepositoryImpl(
 
     // ── Agentic Syllabus — pace monitoring (admin) ───────────────────────────
     override suspend fun getPaceSnapshots(token: String, classId: String?, section: String?): NetworkResult<PaceSnapshotsResponse> =
-        cacheFirstNetworkResult(cache, "admin_pace_snapshots_${classId ?: "all"}_${section ?: "all"}", PaceSnapshotsResponse.serializer()) { api.getPaceSnapshots(token, classId, section) }
+        cacheFirstNetworkResult(cache, "admin_pace_snapshots_v2_${classId ?: "all"}_${section ?: "all"}", PaceSnapshotsResponse.serializer()) { api.getPaceSnapshots(token, classId, section) }
 
     override suspend fun getPaceAlerts(token: String): NetworkResult<PaceAlertsResponse> =
-        cacheFirstNetworkResult(cache, "admin_pace_alerts", PaceAlertsResponse.serializer()) { api.getPaceAlerts(token) }
+        cacheFirstNetworkResult(cache, "admin_pace_alerts_v2", PaceAlertsResponse.serializer()) { api.getPaceAlerts(token) }
 
     override suspend fun resolvePaceAlert(token: String, alertId: String): NetworkResult<PaceAlertResolveResponse> =
         api.resolvePaceAlert(token, alertId)
 
     override suspend fun getPaceCoverage(token: String, classId: String?, section: String?): NetworkResult<PaceSnapshotsResponse> =
-        cacheFirstNetworkResult(cache, "admin_pace_coverage_${classId ?: "all"}_${section ?: "all"}", PaceSnapshotsResponse.serializer()) { api.getPaceCoverage(token, classId, section) }
+        cacheFirstNetworkResult(cache, "admin_pace_coverage_v2_${classId ?: "all"}_${section ?: "all"}", PaceSnapshotsResponse.serializer()) { api.getPaceCoverage(token, classId, section) }
 
     override suspend fun recalculatePace(token: String): NetworkResult<PaceSnapshotsResponse> =
         api.recalculatePace(token)

@@ -217,7 +217,7 @@ val commonModule = module {
 
             storage = get(),
 
-            json = Json { ignoreUnknownKeys = true; isLenient = true },
+            json = Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true },
 
         )
 
