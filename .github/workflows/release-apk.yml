@@ -175,7 +175,7 @@ jobs:
           echo "Uploading $APK_NAME ($APK_SIZE bytes) to Slack..."
 
           # Step 1: Get upload URL from Slack (new files.getUploadURLExternal API)
-          UPLOAD_RESP=$(curl -s -X POST https://slack.com/api/files.getUploadURLExternal \
+          UPLOAD_RESP=$(curl -s --max-time 30 -X POST https://slack.com/api/files.getUploadURLExternal \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
             -F "filename=$APK_NAME" \
             -F "length=$APK_SIZE")
@@ -187,8 +187,9 @@ jobs:
             exit 1
           fi
 
-          UPLOAD_URL=$(echo "$UPLOAD_RESP" | grep -o '"upload_url":"[^"]*"' | sed 's/"upload_url":"//;s/"//')
-          FILE_ID=$(echo "$UPLOAD_RESP" | grep -o '"file_id":"[^"]*"' | sed 's/"file_id":"//;s/"//')
+          # Use python3 to parse JSON (handles escaped slashes correctly)
+          UPLOAD_URL=$(echo "$UPLOAD_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['upload_url'])")
+          FILE_ID=$(echo "$UPLOAD_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['file_id'])")
 
           if [ -z "$UPLOAD_URL" ] || [ -z "$FILE_ID" ]; then
             echo "::error::Could not parse upload URL or file ID from response"
@@ -198,7 +199,7 @@ jobs:
           echo "Got upload URL and file_id: $FILE_ID"
 
           # Step 2: Upload the file to the provided URL (raw binary body, not multipart)
-          UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 \
             -X POST "$UPLOAD_URL" \
             -H "Content-Type: application/octet-stream" \
             --data-binary "@$APK_FILE")
@@ -211,7 +212,7 @@ jobs:
           echo "File uploaded to Slack storage"
 
           # Step 3: Complete the upload and share to channel
-          COMPLETE_RESP=$(curl -s -X POST https://slack.com/api/files.completeUploadExternal \
+          COMPLETE_RESP=$(curl -s --max-time 30 -X POST https://slack.com/api/files.completeUploadExternal \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
             -H "Content-Type: application/json; charset=utf-8" \
             -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"Enroll+ APK — $TAG\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"📱 *New APK Build*\\n• *Tag:* $TAG\\n• *Flavor:* $FLAVOR\\n• *Build:* $BUILD_TYPE\\n• *Commit:* ${{ github.sha }}\\n• *Triggered by:* ${{ github.actor }}\\n\\nDownload: https://github.com/${{ github.repository }}/releases/tag/$TAG\"}")
