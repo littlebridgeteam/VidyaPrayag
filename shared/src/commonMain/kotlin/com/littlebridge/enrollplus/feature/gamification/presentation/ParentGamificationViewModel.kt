@@ -488,7 +488,11 @@ class AdminGamificationViewModel(
                 return@launch
             }
 
+            var hasError = false
+            var errorMsg: String? = null
+
             val flags = safeCall { repository.getFlags(token) }
+            if (flags == null) { hasError = true; errorMsg = "Failed to load gamification flags" }
             val badges = safeCall { repository.getBadgeDefinitions(token) }
             val levels = safeCall { repository.getLevelDefinitions(token) }
             val houses = safeCall { repository.getHouses(token) }
@@ -503,6 +507,7 @@ class AdminGamificationViewModel(
             _state.update {
                 it.copy(
                     isLoading = false,
+                    error = if (hasError) errorMsg else null,
                     flags = flags,
                     badgeDefinitions = badges ?: emptyList(),
                     levelDefinitions = levels ?: emptyList(),

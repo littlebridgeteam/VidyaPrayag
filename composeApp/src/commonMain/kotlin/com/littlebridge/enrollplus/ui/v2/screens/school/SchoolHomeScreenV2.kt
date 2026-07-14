@@ -381,7 +381,7 @@ private fun CommandDesk(
         )
 
         QuickShortcuts(
-            onAnnouncement = onOpenNotifications,
+            onAnnouncement = onCreateEvent,
             onEvent = onCreateEvent,
             onReports = onOpenReportPublish,
             onCalendar = onOpenCalendar,

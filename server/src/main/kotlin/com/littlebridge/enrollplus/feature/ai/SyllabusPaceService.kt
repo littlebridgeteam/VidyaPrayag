@@ -45,10 +45,12 @@ object SyllabusPaceService {
 
     @Serializable
     data class PaceSnapshot(
+        val id: String = "",
         @SerialName("assignment_id") val assignmentId: String,
         val subject: String,
         @SerialName("class_name") val className: String,
         val section: String,
+        @SerialName("teacher_name") val teacherName: String = "",
         @SerialName("total_topics") val totalTopics: Int,
         @SerialName("covered_topics") val coveredTopics: Int,
         @SerialName("actual_pct") val actualPct: Int,
@@ -69,6 +71,10 @@ object SyllabusPaceService {
     data class AlertDto(
         val id: String,
         @SerialName("assignment_id") val assignmentId: String,
+        @SerialName("class_name") val className: String = "",
+        val section: String = "",
+        val subject: String = "",
+        @SerialName("teacher_name") val teacherName: String = "",
         @SerialName("alert_level") val alertLevel: String,
         @SerialName("expected_pct") val expectedPct: Int,
         @SerialName("actual_pct") val actualPct: Int,
@@ -112,6 +118,7 @@ object SyllabusPaceService {
         val className = asgRow[TeacherSubjectAssignmentsTable.className]
         val section = asgRow[TeacherSubjectAssignmentsTable.section]
         val subject = asgRow[TeacherSubjectAssignmentsTable.subject]
+        val teacherName = asgRow[TeacherSubjectAssignmentsTable.teacherName] ?: ""
 
         val totalTopics = dbQuery {
             CurriculumUnitsTable.selectAll().where {
@@ -316,10 +323,12 @@ object SyllabusPaceService {
         }
 
         return PaceSnapshot(
+            id = assignmentId.toString(),
             assignmentId = assignmentId.toString(),
             subject = subject,
             className = className,
             section = section,
+            teacherName = teacherName,
             totalTopics = totalTopics,
             coveredTopics = coveredTopics,
             actualPct = actualPct,
@@ -503,9 +512,17 @@ object SyllabusPaceService {
             (SyllabusPaceAlertsTable.schoolId eq schoolId) and
                 (SyllabusPaceAlertsTable.resolvedAt.isNull())
         }.orderBy(SyllabusPaceAlertsTable.createdAt, org.jetbrains.exposed.sql.SortOrder.DESC).map { row ->
+            val asgId = row[SyllabusPaceAlertsTable.assignmentId]
+            val asgRow = TeacherSubjectAssignmentsTable.selectAll()
+                .where { TeacherSubjectAssignmentsTable.id eq asgId }
+                .firstOrNull()
             AlertDto(
                 id = row[SyllabusPaceAlertsTable.id].value.toString(),
-                assignmentId = row[SyllabusPaceAlertsTable.assignmentId].toString(),
+                assignmentId = asgId.toString(),
+                className = asgRow?.get(TeacherSubjectAssignmentsTable.className) ?: "",
+                section = asgRow?.get(TeacherSubjectAssignmentsTable.section) ?: "",
+                subject = asgRow?.get(TeacherSubjectAssignmentsTable.subject) ?: "",
+                teacherName = asgRow?.get(TeacherSubjectAssignmentsTable.teacherName) ?: "",
                 alertLevel = row[SyllabusPaceAlertsTable.alertLevel],
                 expectedPct = row[SyllabusPaceAlertsTable.expectedPct],
                 actualPct = row[SyllabusPaceAlertsTable.actualPct],
@@ -543,10 +560,12 @@ object SyllabusPaceService {
                     }.count()
                 }.toInt()
                 PaceSnapshot(
+                    id = assignmentId.toString(),
                     assignmentId = assignmentId.toString(),
                     subject = asgRow[TeacherSubjectAssignmentsTable.subject],
                     className = asgRow[TeacherSubjectAssignmentsTable.className],
                     section = asgRow[TeacherSubjectAssignmentsTable.section],
+                    teacherName = asgRow[TeacherSubjectAssignmentsTable.teacherName] ?: "",
                     totalTopics = planRow[SyllabusPacePlanTable.totalTopics],
                     coveredTopics = covered,
                     actualPct = planRow[SyllabusPacePlanTable.actualCoveragePct],

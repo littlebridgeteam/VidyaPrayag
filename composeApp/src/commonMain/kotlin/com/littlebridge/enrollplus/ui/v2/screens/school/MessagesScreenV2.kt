@@ -267,7 +267,7 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit, modifier: Modi
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    thread.lastMessage,
+                    thread.lastMessage.ifBlank { "No message yet" },
                     style = VTypography.body,
                     color = if (thread.isRead) VColors.ink3 else VColors.ink2,
                     maxLines = 1,

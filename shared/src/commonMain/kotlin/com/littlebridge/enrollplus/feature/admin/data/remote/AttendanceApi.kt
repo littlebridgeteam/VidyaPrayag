@@ -33,21 +33,21 @@ class AttendanceApi(
 
     /**
      * @param type  "student" or "faculty"
-     * @param grade Required when type == "student" (e.g. "Grade 10-A")
+     * @param grade Required when type == "student" (e.g. "Class 10")
+     * @param section Optional section filter (e.g. "A")
      * @param date  YYYY-MM-DD; defaults to today on the server
      */
     suspend fun getDailyAttendance(
         token: String,
         type: String = "student",
         grade: String? = null,
+        section: String? = null,
         date: String? = null
     ): NetworkResult<ApiResponse<AttendanceResponse>> = safeApiCall {
-        // RA-64: use Ktor's parameter(...) so values are URL-encoded. Raw
-        // interpolation corrupted requests when grade contained spaces/'#'/'&'
-        // (e.g. "Grade 10-A").
         client.get(getUrl("api/v1/school/attendance/daily")) {
             parameter("type", type)
             grade?.let { parameter("grade", it) }
+            section?.let { parameter("section", it) }
             date?.let { parameter("date", it) }
         }
     }

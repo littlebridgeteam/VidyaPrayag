@@ -31,6 +31,7 @@ import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
+import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationPreferencesScreenV2
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
@@ -84,6 +85,7 @@ private enum class SchoolOverlay {
     ClassesSubjects,
     ClassDetail,
     GamificationManagement,
+    NotificationPreferences,
 }
 
 /**
@@ -278,8 +280,16 @@ fun SchoolPortalV2(
                     localDeepLink = parseDeepLink(deepLinkString, EntryRole.SchoolAdmin)
                     overlay = SchoolOverlay.None
                 },
+                onOpenPreferences = { overlay = SchoolOverlay.NotificationPreferences },
                 modifier = modifier,
             )
+                return
+            }
+            SchoolOverlay.NotificationPreferences -> {
+                NotificationPreferencesScreenV2(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
                 return
             }
             SchoolOverlay.Calendar -> {

@@ -88,6 +88,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun NotificationsScreenV2(
     onBack: () -> Unit,
     onDeepLink: (String) -> Unit = {},
+    onOpenPreferences: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NotificationsViewModel = koinViewModel(),
 ) {
@@ -114,6 +115,7 @@ fun NotificationsScreenV2(
         },
         onClearAll = viewModel::clearAll,
         onDeepLink = onDeepLink,
+        onOpenPreferences = onOpenPreferences,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding()
@@ -132,6 +134,7 @@ private fun NotificationsContent(
     onMarkRead: (String) -> Unit,
     onClearAll: () -> Unit,
     onDeepLink: (String) -> Unit,
+    onOpenPreferences: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -312,7 +315,7 @@ private fun NotificationsContent(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .background(VColors.cream)
-                        .clickable {}
+                        .clickable { onOpenPreferences() }
                         .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,

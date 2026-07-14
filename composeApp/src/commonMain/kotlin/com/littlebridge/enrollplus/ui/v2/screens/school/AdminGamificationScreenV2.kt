@@ -100,8 +100,49 @@ fun AdminGamificationScreenV2(
             ) {
                 CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
             }
+        } else if (state.error != null && state.flags == null) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.error, modifier = Modifier.size(40.dp))
+                Spacer(Modifier.height(12.dp))
+                Text(state.error, style = VTypography.body, color = VColors.ink2)
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.md)
+                        .background(VColors.violet)
+                        .clickable { viewModel.load() }
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                ) {
+                    Text("Retry", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                }
+            }
         } else {
-            LazyColumn(
+            val isEmpty = state.flags == null &&
+                state.badgeDefinitions.isEmpty() &&
+                state.levelDefinitions.isEmpty() &&
+                state.houses.isEmpty() &&
+                state.rewards.isEmpty() &&
+                state.quests.isEmpty() &&
+                state.events.isEmpty() &&
+                state.leaderboard.isEmpty()
+            if (isEmpty) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(40.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Text("No gamification data yet", style = VTypography.body, color = VColors.ink2)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Configure feature flags and create badges, levels, and rewards to get started.", style = VTypography.caption, color = VColors.ink3)
+                }
+            } else {
+                LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
                     start = 24.dp, end = 24.dp, top = 8.dp, bottom = 100.dp,
@@ -119,6 +160,7 @@ fun AdminGamificationScreenV2(
                 item { LeaderboardCard(leaderboard = state.leaderboard) }
                 item { RedemptionsCard(state = state, onApprove = { id -> viewModel.updateRedemptionStatus(id, "APPROVED") }, onReject = { id -> viewModel.updateRedemptionStatus(id, "REJECTED") }) }
                 item { BoostsCard(state = state, onCreateBoost = { type, mult, scope, tid, hrs -> viewModel.createBoost(type, mult, scope, tid, hrs) }) }
+            }
             }
         }
     }

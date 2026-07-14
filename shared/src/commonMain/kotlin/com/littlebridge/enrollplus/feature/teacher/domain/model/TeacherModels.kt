@@ -1096,7 +1096,7 @@ data class PaceSnapshotsData(
 
 @Serializable
 data class PaceSnapshotDto(
-    val id: String,
+    val id: String = "",
     @SerialName("assignment_id") val assignmentId: String,
     @SerialName("class_name") val className: String = "",
     val section: String = "",
@@ -1107,7 +1107,7 @@ data class PaceSnapshotDto(
     @SerialName("expected_pct") val expectedPct: Int = 0,
     @SerialName("actual_pct") val actualPct: Int = 0,
     @SerialName("deviation_pct") val deviationPct: Int = 0,
-    val status: String = "ON_TRACK", // ON_TRACK | BEHIND | CRITICAL | AHEAD
+    @SerialName("level") val status: String = "ON_TRACK", // ON_TRACK | BEHIND | CRITICAL | AHEAD
     @SerialName("calculated_at") val calculatedAt: String? = null,
 )
 
@@ -1130,9 +1130,9 @@ data class PaceAlertDto(
     val section: String = "",
     val subject: String = "",
     @SerialName("teacher_name") val teacherName: String = "",
-    val level: String = "BEHIND", // BEHIND | CRITICAL | AHEAD
-    val message: String = "",
-    @SerialName("ai_reconfirmed") val aiReconfirmed: Boolean = false,
+    @SerialName("alert_level") val level: String = "BEHIND", // BEHIND | CRITICAL | AHEAD
+    @SerialName("ai_reasoning") val message: String = "",
+    @SerialName("ai_confirmed") val aiReconfirmed: Boolean = false,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("resolved_at") val resolvedAt: String? = null,
 )

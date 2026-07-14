@@ -805,6 +805,16 @@ val commonModule = module {
 
     }
 
+    // Notification PREFERENCES API + repository + ViewModel
+
+    single {
+        com.littlebridge.enrollplus.feature.notification.data.remote.NotificationPreferencesApi(get(), get())
+    }
+
+    single<com.littlebridge.enrollplus.feature.notification.domain.repository.NotificationPreferencesRepository> {
+        com.littlebridge.enrollplus.feature.notification.data.repository.NotificationPreferencesRepositoryImpl(get())
+    }
+
     // Health Records repository (P1-12)
 
     single<com.littlebridge.enrollplus.feature.health.domain.repository.HealthRepository> {
@@ -1196,6 +1206,8 @@ val viewModelModule = module {
 
     factory { NotificationsViewModel(get<com.littlebridge.enrollplus.core.notification.NotificationFeedRepository>(), get()) }
 
+    factory { com.littlebridge.enrollplus.feature.notification.presentation.NotificationPreferencesViewModel(get(), get()) }
+
     factory { LinkChildViewModel(get(), get()) }
 
     factory { ParentHomeViewModel(get(), get(), get()) }
@@ -1286,7 +1298,7 @@ val viewModelModule = module {
 
     factory { com.littlebridge.enrollplus.feature.admin.presentation.LinkRequestsViewModel(get(), get()) }
 
-    factory { DailyAttendanceViewModel(get(), get()) }
+    factory { DailyAttendanceViewModel(get(), get(), get()) }
 
     factory { AnalyticsDashboardViewModel(get(), get()) }
 

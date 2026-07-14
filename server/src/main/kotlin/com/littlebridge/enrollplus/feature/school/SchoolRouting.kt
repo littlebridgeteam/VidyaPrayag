@@ -50,6 +50,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.LocalDate
@@ -244,6 +245,7 @@ fun Route.schoolRouting() {
                 val schoolId = ctx.schoolId
                 val type  = call.request.queryParameters["type"]?.lowercase() ?: "student"
                 val grade = call.request.queryParameters["grade"]
+                val section = call.request.queryParameters["section"]
                 val date  = call.request.queryParameters["date"] ?: LocalDate.now().toString()
                 // T-004: attendance_records.date is now a typed `date` column.
                 val dateValue = LocalDate.parse(date)
@@ -256,11 +258,17 @@ fun Route.schoolRouting() {
                 }
 
                 val safeGrade = grade
+                val safeSection = section?.takeIf { it.isNotBlank() }
                 val resp = dbQuery {
                     // Pull people list (students of that grade, or all faculty).
                     val people: List<Triple<String, String, String?>> = if (type == "student") {
                         StudentsTable.selectAll()
-                            .where { (StudentsTable.schoolId eq schoolId) and (StudentsTable.className eq (safeGrade ?: "")) and (StudentsTable.isActive eq true) }
+                            .where {
+                                (StudentsTable.schoolId eq schoolId) and
+                                (StudentsTable.className eq (safeGrade ?: "")) and
+                                (StudentsTable.isActive eq true) and
+                                (if (safeSection != null) (StudentsTable.section eq safeSection) else Op.TRUE)
+                            }
                             .map { Triple(it[StudentsTable.studentCode], it[StudentsTable.fullName], it[StudentsTable.profilePhotoUrl]) }
                     } else {
                         FacultyTable.selectAll()
