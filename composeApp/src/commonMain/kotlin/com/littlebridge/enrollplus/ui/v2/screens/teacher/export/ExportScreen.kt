@@ -1,0 +1,496 @@
+package com.littlebridge.enrollplus.ui.v2.screens.teacher.export
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.feature.export.domain.model.ExportAssessmentDto
+import com.littlebridge.enrollplus.feature.export.domain.model.ExportTypeDto
+import com.littlebridge.enrollplus.feature.export.presentation.ExportViewModel
+import com.littlebridge.enrollplus.feature.teacher.domain.model.TeacherClassSummaryDto
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherClassesViewModel
+import com.littlebridge.enrollplus.platform.rememberShareHelper
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
+import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import org.koin.compose.viewmodel.koinViewModel
+
+@Composable
+fun ExportScreen(
+    onBack: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    viewModel: ExportViewModel = koinViewModel(),
+    classesViewModel: TeacherClassesViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateV2()
+    val classesState by classesViewModel.state.collectAsStateV2()
+    val shareHelper = rememberShareHelper()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadExportTypes()
+        classesViewModel.load()
+    }
+
+    Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        VBackHeader(title = "Export Reports", onBack = onBack)
+
+        VStateHost(
+            loading = state.isLoading,
+            error = if (state.exportTypes.isEmpty()) state.errorMessage else null,
+            isEmpty = state.exportTypes.isEmpty() && !state.isLoading && state.errorMessage == null,
+            emptyTitle = "No exports available",
+            emptyBody = "Export types will appear here once configured.",
+            emptyIcon = VIcons.FileText,
+            onRetry = { viewModel.loadExportTypes() },
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(
+                    text = "Generate branded PDF or CSV reports for your school data. Select a report type and format below.",
+                    style = VTypography.body,
+                    color = VColors.ink2,
+                )
+
+                if (state.isGenerating) {
+                    GeneratingBanner()
+                }
+
+                state.errorMessage?.let { msg ->
+                    if (msg.isNotBlank() && state.exportTypes.isNotEmpty()) {
+                        ErrorBanner(text = msg, onDismiss = { viewModel.clearMessages() })
+                    }
+                }
+
+                state.infoMessage?.let { msg ->
+                    if (msg.isNotBlank()) {
+                        InfoBanner(text = msg)
+                    }
+                }
+
+                state.exportTypes.forEach { exportType ->
+                    ExportTypeCard(
+                        exportType = exportType,
+                        classes = classesState.classes,
+                        assessments = state.assessments,
+                        isGenerating = state.isGenerating,
+                        onGenerate = { format, classId, assessmentId, dateFrom, dateTo ->
+                            viewModel.clearMessages()
+                            viewModel.generateExport(
+                                type = exportType.type,
+                                format = format,
+                                classId = classId,
+                                assessmentId = assessmentId,
+                                dateFrom = dateFrom,
+                                dateTo = dateTo,
+                            )
+                        },
+                        onLoadAssessments = { classId ->
+                            viewModel.loadAssessments(classId)
+                        },
+                    )
+                }
+
+                val dlUrl = state.downloadUrl
+                val dUrl = state.dataUrl
+                if (dlUrl != null) {
+                    DownloadResultCard(
+                        fileName = state.fileName,
+                        url = dlUrl,
+                        onShare = { shareHelper.shareText(dlUrl, "Export download link") },
+                    )
+                } else if (dUrl != null) {
+                    DownloadResultCard(
+                        fileName = state.fileName,
+                        url = dUrl,
+                        isInline = true,
+                        onShare = { shareHelper.shareText(dUrl, "Export file") },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExportTypeCard(
+    exportType: ExportTypeDto,
+    classes: List<TeacherClassSummaryDto>,
+    assessments: List<ExportAssessmentDto>,
+    isGenerating: Boolean,
+    onGenerate: (String, String?, String?, String?, String?) -> Unit,
+    onLoadAssessments: (String?) -> Unit,
+) {
+    var selectedClassId by remember { mutableStateOf<String?>(null) }
+    var classDropdownOpen by remember { mutableStateOf(false) }
+    var selectedAssessmentId by remember { mutableStateOf<String?>(null) }
+    var assessmentDropdownOpen by remember { mutableStateOf(false) }
+    var dateFrom by remember { mutableStateOf("") }
+    var dateTo by remember { mutableStateOf("") }
+
+    val needsClass = exportType.filters.contains("classId")
+    val needsAssessment = exportType.filters.contains("assessmentId")
+    val needsDateFrom = exportType.filters.contains("dateFrom")
+    val needsDateTo = exportType.filters.contains("dateTo")
+
+    val dedupedClasses = classes.distinctBy { "${it.className}-${it.section}" }
+    val selectedClass = dedupedClasses.find { it.classId == selectedClassId }
+    val classLabel = selectedClass?.let { "Class ${it.className}-${it.section}" } ?: "All Classes"
+
+    val selectedAssessment = assessments.find { it.id == selectedAssessmentId }
+    val assessmentLabel = selectedAssessment?.let { "${it.name} — ${it.subject} (${it.className}-${it.section})" }
+        ?: "Select Test/Exam"
+
+    // Load assessments when class changes for test_marks type
+    LaunchedEffect(selectedClassId, needsAssessment) {
+        if (needsAssessment) {
+            onLoadAssessments(selectedClassId)
+            selectedAssessmentId = null
+        }
+    }
+
+    VCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = exportType.label,
+                        style = VTypography.h2,
+                        color = VColors.ink,
+                    )
+                    Text(
+                        text = exportType.category,
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                }
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                        .background(VColors.violetSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = iconForExport(exportType.icon),
+                        contentDescription = null,
+                        tint = VColors.violet,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
+            // Class dropdown
+            if (needsClass && dedupedClasses.isNotEmpty()) {
+                FilterDropdown(
+                    label = classLabel,
+                    expanded = classDropdownOpen,
+                    onExpand = { classDropdownOpen = true },
+                    onDismiss = { classDropdownOpen = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("All Classes", style = VTypography.body) },
+                        onClick = {
+                            selectedClassId = null
+                            classDropdownOpen = false
+                        },
+                    )
+                    dedupedClasses.forEach { cls ->
+                        DropdownMenuItem(
+                            text = { Text("Class ${cls.className}-${cls.section}", style = VTypography.body) },
+                            onClick = {
+                                selectedClassId = cls.classId
+                                classDropdownOpen = false
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Assessment dropdown
+            if (needsAssessment) {
+                FilterDropdown(
+                    label = assessmentLabel,
+                    expanded = assessmentDropdownOpen,
+                    onExpand = { assessmentDropdownOpen = true },
+                    onDismiss = { assessmentDropdownOpen = false },
+                ) {
+                    if (assessments.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("No assessments found", style = VTypography.caption) },
+                            onClick = { assessmentDropdownOpen = false },
+                        )
+                    }
+                    assessments.forEach { a ->
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text("${a.name} — ${a.subject}", style = VTypography.body)
+                                    Text("Class ${a.className}-${a.section} | Max: ${a.maxMarks}", style = VTypography.caption, color = VColors.ink3)
+                                }
+                            },
+                            onClick = {
+                                selectedAssessmentId = a.id
+                                assessmentDropdownOpen = false
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Date range pickers
+            if (needsDateFrom || needsDateTo) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (needsDateFrom) {
+                        VDatePicker(
+                            value = dateFrom,
+                            onValueChange = { dateFrom = it },
+                            label = "From Date",
+                            placeholder = "Start date",
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (needsDateTo) {
+                        VDatePicker(
+                            value = dateTo,
+                            onValueChange = { dateTo = it },
+                            label = "To Date",
+                            placeholder = "End date",
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                exportType.formats.forEach { format ->
+                    VButton(
+                        text = format.uppercase(),
+                        onClick = {
+                            onGenerate(
+                                format,
+                                selectedClassId,
+                                if (needsAssessment) selectedAssessmentId else null,
+                                if (needsDateFrom) dateFrom.takeIf { it.isNotBlank() } else null,
+                                if (needsDateTo) dateTo.takeIf { it.isNotBlank() } else null,
+                            )
+                        },
+                        variant = if (format == "pdf") VButtonVariant.Primary else VButtonVariant.Secondary,
+                        size = VButtonSize.Sm,
+                        enabled = !isGenerating && (!needsAssessment || selectedAssessmentId != null),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterDropdown(
+    label: String,
+    expanded: Boolean,
+    onExpand: () -> Unit,
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Box {
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .clip(VShapes.md)
+                .background(VColors.cream)
+                .border(1.dp, VColors.line, VShapes.md)
+                .clickable { onExpand() }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(label, style = VTypography.body, color = VColors.ink, maxLines = 1)
+            Icon(VIcons.ChevronDown, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = onDismiss,
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun DownloadResultCard(
+    fileName: String?,
+    url: String,
+    isInline: Boolean = false,
+    onShare: () -> Unit,
+) {
+    VCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(
+                    modifier = Modifier.size(36.dp).clip(CircleShape)
+                        .background(VColors.mintSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = VIcons.CheckCircle,
+                        contentDescription = null,
+                        tint = VColors.mint,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Export Ready",
+                        style = VTypography.h2,
+                        color = VColors.ink,
+                    )
+                    Text(
+                        text = fileName ?: "Your file is ready to download.",
+                        style = VTypography.caption,
+                        color = VColors.ink3,
+                    )
+                }
+            }
+
+            VButton(
+                text = if (isInline) "Share File" else "Share Download Link",
+                onClick = onShare,
+                variant = VButtonVariant.Primary,
+                size = VButtonSize.Md,
+                full = true,
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoBanner(text: String) {
+    Box(
+        modifier = Modifier.fillMaxWidth()
+            .clip(VShapes.md)
+            .background(VColors.goldSoft)
+            .border(1.dp, VColors.gold.copy(alpha = 0.3f), VShapes.md)
+            .padding(16.dp),
+    ) {
+        Text(
+            text = text,
+            style = VTypography.caption,
+            color = VColors.ink,
+        )
+    }
+}
+
+private fun iconForExport(iconKey: String) = when (iconKey) {
+    "roster", "students" -> VIcons.Users
+    "attendance" -> VIcons.ListChecks
+    "marks", "grades" -> VIcons.GraduationCap
+    "fees" -> VIcons.Wallet
+    "staff" -> VIcons.Users
+    "homework" -> VIcons.FileText
+    "admissions" -> VIcons.ClipboardList
+    "leave" -> VIcons.Calendar
+    "transport" -> VIcons.MapPin
+    "health" -> VIcons.Heart
+    "alumni" -> VIcons.Academic
+    "events" -> VIcons.Calendar
+    else -> VIcons.FileText
+}
+
+@Composable
+private fun GeneratingBanner() {
+    Box(
+        modifier = Modifier.fillMaxWidth()
+            .clip(VShapes.md)
+            .background(VColors.violetSoft)
+            .border(1.dp, VColors.violet.copy(alpha = 0.3f), VShapes.md)
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = VColors.violet,
+            )
+            Text(
+                text = "Generating export... Please wait.",
+                style = VTypography.caption,
+                color = VColors.violet,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ErrorBanner(text: String, onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxWidth()
+            .clip(VShapes.md)
+            .background(VColors.errorSoft)
+            .border(1.dp, VColors.error.copy(alpha = 0.3f), VShapes.md)
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(
+                imageVector = VIcons.Close,
+                contentDescription = null,
+                tint = VColors.error,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = text,
+                style = VTypography.caption,
+                color = VColors.error,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "Dismiss",
+                style = VTypography.label,
+                color = VColors.error,
+                modifier = Modifier.clip(VShapes.sm)
+                    .clickable { onDismiss() }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+    }
+}

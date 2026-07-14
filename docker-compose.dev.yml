@@ -1,0 +1,20 @@
+services:
+  server:
+    environment:
+      DEBUG_ERRORS: "true"
+      LOG_FORMAT: "text"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./server/src
+
+  website:
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: "http://localhost:8080"
+    develop:
+      watch:
+        - action: sync
+          path: ./website/src
+          target: /app/src
+        - action: rebuild
+          path: ./website/package.json

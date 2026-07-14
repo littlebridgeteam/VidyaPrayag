@@ -58,22 +58,25 @@ class CaseworkerService {
         val agentResult = runAgent(schoolId, snapshot)
 
         if (agentResult != null) {
-            val caseFile = CaseFileCodec.parse(agentResult.content!!)
-            if (caseFile != null) {
-                val grounded = GroundingGuard.verify(caseFile, snapshot)
-                val wasGrounded = grounded.narrative == caseFile.narrative &&
-                    grounded.hypotheses == caseFile.hypotheses
-                return CaseworkerResult(
-                    studentCode = snapshot.studentCode,
-                    caseFile = grounded,
-                    modelUsed = true,
-                    providerUsed = agentResult.providerUsed,
-                    toolCallsMade = agentResult.toolCallsMade,
-                    stepsTaken = agentResult.stepsTaken,
-                    grounded = wasGrounded,
-                )
-            } else {
-                log.warn("Caseworker: model output failed Case File parse for {} — falling back to deterministic", snapshot.studentCode)
+            val content = agentResult.content
+            if (!content.isNullOrBlank()) {
+                val caseFile = CaseFileCodec.parse(content)
+                if (caseFile != null) {
+                    val grounded = GroundingGuard.verify(caseFile, snapshot)
+                    val wasGrounded = grounded.narrative == caseFile.narrative &&
+                        grounded.hypotheses == caseFile.hypotheses
+                    return CaseworkerResult(
+                        studentCode = snapshot.studentCode,
+                        caseFile = grounded,
+                        modelUsed = true,
+                        providerUsed = agentResult.providerUsed,
+                        toolCallsMade = agentResult.toolCallsMade,
+                        stepsTaken = agentResult.stepsTaken,
+                        grounded = wasGrounded,
+                    )
+                } else {
+                    log.warn("Caseworker: model output failed Case File parse for {} — falling back to deterministic", snapshot.studentCode)
+                }
             }
         }
 

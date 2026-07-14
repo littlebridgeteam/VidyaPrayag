@@ -52,9 +52,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VTag
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.util.AppConfig
 
 @Composable
@@ -62,8 +66,7 @@ internal fun CardsTab(
     state: IdCardState,
     viewModel: IdCardViewModel,
 ) {
-    val c = VTheme.colors
-    var searchQuery by remember { mutableStateOf("") }
+        var searchQuery by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf<String?>(null) }
     var cardToDelete by remember { mutableStateOf<IdCardDto?>(null) }
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
@@ -81,7 +84,7 @@ internal fun CardsTab(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            label = { Text("Search by name...") },
+            label = { Text(appString(StringKeys.SCH_SEARCH_BY_NAME)) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             singleLine = true,
         )
@@ -90,7 +93,7 @@ internal fun CardsTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp),
         ) {
-            listOf(null to "All", "student" to "Students", "teacher" to "Teachers", "staff" to "Staff").forEach { (type, label) ->
+            listOf(null to appString(StringKeys.SCH_ALL), "student" to appString(StringKeys.SCH_STUDENTS), "teacher" to appString(StringKeys.SCH_TEACHERS), "staff" to appString(StringKeys.SCH_STAFF)).forEach { (type, label) ->
                 VTag(
                     text = label,
                     active = filterType == type,
@@ -101,8 +104,8 @@ internal fun CardsTab(
         }
 
         Text(
-            text = "${filteredCards.size} of ${state.cards.size} cards",
-            style = VTheme.type.caption.colored(c.ink3),
+            text = appString(StringKeys.SCH_CARDS_COUNT, "filtered" to filteredCards.size.toString(), "total" to state.cards.size.toString()),
+            style = VTypography.caption.copy(color = VColors.ink3),
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -117,15 +120,15 @@ internal fun CardsTab(
             }
         } else if (filteredCards.isEmpty()) {
             VEmptyState(
-                title = if (searchQuery.isNotBlank()) "No cards match \"$searchQuery\"" else "No cards generated yet",
-                body = if (searchQuery.isNotBlank()) "Try a different search term" else "Go to the Generate tab to create ID cards.",
+                title = if (searchQuery.isNotBlank()) appString(StringKeys.SCH_NO_CARDS_MATCH, "query" to searchQuery) else appString(StringKeys.SCH_NO_CARDS_YET),
+                body = if (searchQuery.isNotBlank()) appString(StringKeys.SCH_TRY_DIFFERENT_SEARCH) else appString(StringKeys.SCH_GO_TO_GENERATE),
                 icon = Icons.Filled.School,
                 modifier = Modifier.padding(top = 48.dp),
             )
         } else {
-            filteredCards.chunked(2).forEach { rowCards ->
+            filteredCards.chunked(2).forEachIndexed { i, rowCards ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, filteredCards.chunked(2).isNotEmpty()).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     rowCards.forEach { card ->
@@ -150,9 +153,9 @@ internal fun CardsTab(
     cardToDelete?.let { card ->
         VConfirmDialog(
             visible = true,
-            title = "Delete ID Card?",
-            message = "Are you sure you want to delete the ID card for ${card.personName}? This action cannot be undone.",
-            confirmLabel = "Delete",
+            title = appString(StringKeys.SCH_DELETE_ID_CARD),
+            message = appString(StringKeys.SCH_DELETE_ID_CARD_CONFIRM, "name" to card.personName),
+            confirmLabel = appString(StringKeys.SCH_DELETE),
             onConfirm = {
                 viewModel.deleteCard(card.id)
                 cardToDelete = null
@@ -171,8 +174,7 @@ private fun CardGridItem(
     onVerify: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val status = remember(card.validTill) { cardStatus(card.validTill) }
+        val status = remember(card.validTill) { cardStatus(card.validTill) }
 
     VCard(
         modifier = modifier.padding(vertical = 4.dp),
@@ -183,7 +185,7 @@ private fun CardGridItem(
                     .fillMaxWidth()
                     .aspectRatio(54f / 86f)
                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                    .background(c.cream),
+                    .background(VColors.cream),
                 contentAlignment = Alignment.Center,
             ) {
                 card.digitalCardUrl?.let { url ->
@@ -206,12 +208,12 @@ private fun CardGridItem(
                                 .fillMaxWidth()
                                 .height(20.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(c.accent),
+                                .background(VColors.violet),
                             contentAlignment = Alignment.CenterStart,
                         ) {
                             Text(
-                                text = "ID CARD",
-                                style = VTheme.type.caption.colored(Color.White).copy(fontSize = 7.sp),
+                                text = appString(StringKeys.SCH_ID_CARD),
+                                style = VTypography.caption.copy(color = Color.White).copy(fontSize = 7.sp),
                                 modifier = Modifier.padding(horizontal = 4.dp),
                             )
                         }
@@ -229,15 +231,15 @@ private fun CardGridItem(
                                     Modifier
                                         .size(32.dp)
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(c.accent.copy(alpha = 0.15f)),
+                                        .background(VColors.violet.copy(alpha = 0.15f)),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Icon(Icons.Filled.Person, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Filled.Person, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
                                 }
                                 // Real QR code from server endpoint
                                 AsyncImage(
                                     model = qrImgUrl,
-                                    contentDescription = "QR Code",
+                                    contentDescription = appString(StringKeys.SCH_QR_CODE),
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier
                                         .size(40.dp)
@@ -251,16 +253,16 @@ private fun CardGridItem(
                             ) {
                                 Text(
                                     text = card.personName,
-                                    style = VTheme.type.caption.colored(c.ink).copy(fontWeight = FontWeight.Bold),
+                                    style = VTypography.caption.copy(color = VColors.ink).copy(fontWeight = FontWeight.Bold),
                                     maxLines = 2,
                                 )
                                 Text(
                                     text = card.personType.replaceFirstChar { it.uppercase() },
-                                    style = VTheme.type.caption.colored(c.accent).copy(fontSize = 8.sp),
+                                    style = VTypography.caption.copy(color = VColors.violet).copy(fontSize = 8.sp),
                                 )
                                 Text(
                                     text = "#${card.personId.takeLast(8)}",
-                                    style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 7.sp),
+                                    style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 7.sp),
                                     maxLines = 1,
                                 )
                             }
@@ -272,7 +274,7 @@ private fun CardGridItem(
                                 .fillMaxWidth()
                                 .height(12.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(c.accent),
+                                .background(VColors.violet),
                         )
                     }
                 }
@@ -283,7 +285,7 @@ private fun CardGridItem(
                         .padding(6.dp),
                 ) {
                     VBadge(
-                        text = status.label,
+                        text = appString(status.labelKey),
                         tone = status.tone,
                     )
                 }
@@ -304,7 +306,7 @@ private fun CardGridItem(
                 ) {
                     Icon(
                         Icons.Filled.Close,
-                        contentDescription = "Delete",
+                        contentDescription = appString(StringKeys.SCH_DELETE),
                         tint = Color.White,
                         modifier = Modifier.size(18.dp),
                     )
@@ -314,12 +316,12 @@ private fun CardGridItem(
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = card.personName,
-                    style = VTheme.type.bodyStrong.colored(c.ink),
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                     maxLines = 1,
                 )
                 Text(
                     text = card.personType.replaceFirstChar { it.uppercase() },
-                    style = VTheme.type.caption.colored(c.ink2),
+                    style = VTypography.caption.copy(color = VColors.ink2),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
@@ -327,14 +329,14 @@ private fun CardGridItem(
                 ) {
                     card.pdfUrl?.let {
                         VButton(
-                            text = "PDF",
+                            text = appString(StringKeys.SCH_PDF),
                             onClick = onDownloadPdf,
                             variant = VButtonVariant.Secondary,
                             size = VButtonSize.Sm,
                         )
                     }
                     VButton(
-                        text = "Verify",
+                        text = appString(StringKeys.SCH_VERIFY),
                         onClick = { onVerify() },
                         variant = VButtonVariant.Secondary,
                         size = VButtonSize.Sm,
@@ -345,31 +347,31 @@ private fun CardGridItem(
     }
 }
 
-private data class CardStatus(val label: String, val tone: VBadgeTone)
+private data class CardStatus(val labelKey: String, val tone: VBadgeTone)
 
 private fun cardStatus(validTill: String?): CardStatus {
-    if (validTill == null) return CardStatus("No Expiry", VBadgeTone.Neutral)
+    if (validTill == null) return CardStatus(StringKeys.SCH_NO_EXPIRY, VBadgeTone.Neutral)
     return try {
         val today = com.littlebridge.enrollplus.util.todayIso()
         val cmp = validTill.compareTo(today)
         when {
-            cmp < 0 -> CardStatus("Expired", VBadgeTone.Danger)
-            cmp == 0 -> CardStatus("Expiring", VBadgeTone.Warning)
+            cmp < 0 -> CardStatus(StringKeys.SCH_EXPIRED, VBadgeTone.Danger)
+            cmp == 0 -> CardStatus(StringKeys.SCH_EXPIRING, VBadgeTone.Warning)
             else -> {
                 val parts = validTill.split("-")
                 val tParts = today.split("-")
                 if (parts.size == 3 && tParts.size == 3) {
                     val expiryApprox = parts[0].toInt() * 365 + parts[1].toInt() * 30 + parts[2].toInt()
                     val todayApprox = tParts[0].toInt() * 365 + tParts[1].toInt() * 30 + tParts[2].toInt()
-                    if (expiryApprox - todayApprox < 30) CardStatus("Expiring", VBadgeTone.Warning)
-                    else CardStatus("Valid", VBadgeTone.Success)
+                    if (expiryApprox - todayApprox < 30) CardStatus(StringKeys.SCH_EXPIRING, VBadgeTone.Warning)
+                    else CardStatus(StringKeys.SCH_VALID, VBadgeTone.Success)
                 } else {
-                    CardStatus("Valid", VBadgeTone.Success)
+                    CardStatus(StringKeys.SCH_VALID, VBadgeTone.Success)
                 }
             }
         }
     } catch (e: Exception) {
-        CardStatus("Valid", VBadgeTone.Success)
+        CardStatus(StringKeys.SCH_VALID, VBadgeTone.Success)
     }
 }
 

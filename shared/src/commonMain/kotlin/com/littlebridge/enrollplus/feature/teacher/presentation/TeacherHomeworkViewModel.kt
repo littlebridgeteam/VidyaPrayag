@@ -13,6 +13,7 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.HomeworkSubmissi
 import com.littlebridge.enrollplus.feature.teacher.domain.model.HomeworkSubmissionStatus
 import com.littlebridge.enrollplus.feature.teacher.domain.model.ReviewSubmissionRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.todayIso
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,6 +74,8 @@ data class HomeworkBoardRow(
     val rollNo: Int?,
     val status: String,
     val submittedAt: String?,
+    val submissionText: String = "",
+    val attachments: List<HomeworkAttachmentDto> = emptyList(),
     val grade: String?,
     val hasExtension: Boolean,
     val extendedTo: String?,
@@ -105,6 +108,8 @@ data class TeacherHomeworkState(
     val items: List<HomeworkSummary> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     // ── assign composer ──
     val isComposerOpen: Boolean = false,
     val composerTitle: String = "",
@@ -159,7 +164,7 @@ class TeacherHomeworkViewModel(
             }
             when (val result = repository.listHomework(t, assignmentId)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(isLoading = false, items = result.data.data.items.map { d -> d.toUi() }) }
+                    _state.update { it.copy(isLoading = false, items = result.data.data.items.map { d -> d.toUi() }, isStale = result.isStale, isOffline = result.isOffline) }
                 is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = result.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(isLoading = false, error = "Connection error") }
             }
@@ -224,10 +229,14 @@ class TeacherHomeworkViewModel(
             )
             when (val result = repository.assignHomework(t, request)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_homework_assigned", mapOf("assignment_id" to s0.assignmentId))
                     _state.update { it.copy(isAssigning = false, isComposerOpen = false) }
                     load(s0.assignmentId)
                 }
-                is NetworkResult.Error -> _state.update { it.copy(isAssigning = false, composerError = result.message) }
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_homework_assign_failed", mapOf("error_reason" to (result.message ?: "unknown")))
+                    _state.update { it.copy(isAssigning = false, composerError = result.message) }
+                }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(isAssigning = false, composerError = "Connection error") }
             }
         }
@@ -302,10 +311,12 @@ class TeacherHomeworkViewModel(
             val request = ReviewSubmissionRequest(assignmentId = s0.assignmentId, status = status, grade = grade)
             when (val result = repository.reviewHomeworkSubmission(t, board.homeworkId, studentId, request)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_homework_reviewed", mapOf("student_id" to studentId, "status" to status))
                     _state.update { it.copy(updatingStudentId = null) }
                     reloadBoard()   // pull authoritative status counts
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_homework_review_failed", mapOf("error_reason" to (result.message ?: "unknown")))
                     _state.update { it.copy(updatingStudentId = null, boardError = result.message) }
                     reloadBoard()
                 }
@@ -446,6 +457,8 @@ private fun HomeworkSubmissionRowDto.toUi() = HomeworkBoardRow(
     rollNo = rollNo,
     status = status,
     submittedAt = submittedAt,
+    submissionText = submissionText,
+    attachments = attachments.map { HomeworkAttachmentDto(it.id, it.url, it.filename, it.mime, it.sizeBytes) },
     grade = grade,
     hasExtension = hasExtension,
     extendedTo = extendedTo,

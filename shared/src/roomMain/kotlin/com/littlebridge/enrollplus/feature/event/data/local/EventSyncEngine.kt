@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.feature.event.data.local
 
 import com.littlebridge.enrollplus.core.database.AppDatabase
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.util.AppLogger
 import com.littlebridge.enrollplus.feature.event.data.repository.EventRegistrationRepositoryImpl
 import com.littlebridge.enrollplus.feature.event.domain.model.CancelRegistrationRequest
 import com.littlebridge.enrollplus.feature.event.domain.model.RegisterRequest
@@ -9,7 +10,7 @@ import com.littlebridge.enrollplus.feature.event.domain.model.RescheduleRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.UUID
+import com.littlebridge.enrollplus.util.currentTimeMillis
 
 class EventSyncEngine(
     private val db: AppDatabase,
@@ -28,7 +29,7 @@ class EventSyncEngine(
             while (true) {
                 delay(POLL_INTERVAL_MS)
                 runCatching { drain() }
-                    .onFailure { println("[$TAG] drain failed: ${it.message}") }
+                    .onFailure { AppLogger.e(TAG, "drain failed: ${it.message}") }
             }
         }
     }
@@ -47,7 +48,7 @@ class EventSyncEngine(
                         status = "FAILED",
                         attempts = op.attempts,
                         lastError = "Max attempts reached",
-                        updatedAt = System.currentTimeMillis(),
+                        updatedAt = currentTimeMillis(),
                     )
                     continue
                 }
@@ -60,7 +61,7 @@ class EventSyncEngine(
 
     private suspend fun processOp(op: EventOutboxEntity) {
         val token = "offline-sync"
-        val now = System.currentTimeMillis()
+        val now = currentTimeMillis()
         val result = when (op.operation) {
             "REGISTER" -> repository.register(
                 token = token,

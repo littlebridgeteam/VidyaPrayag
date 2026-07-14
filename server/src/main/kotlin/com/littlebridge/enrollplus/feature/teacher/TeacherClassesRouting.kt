@@ -75,6 +75,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.and
@@ -172,11 +173,12 @@ internal fun computeFlags(
     }
 
     if (hasAttendance) {
-        val rate = attendance!!.monthRate
+        val att = attendance ?: return flags
+        val rate = att.monthRate
         if (rate != null && rate < ClassFlags.LOW_ATTENDANCE_RATE) {
             flags += ClassFlags.LOW_ATTENDANCE
         }
-        val recentAbsences = attendance.recentStatuses
+        val recentAbsences = att.recentStatuses
             .take(ClassFlags.RECENT_WINDOW)
             .count { it.equals("absent", ignoreCase = true) }
         if (recentAbsences >= ClassFlags.RECENT_ABSENCE_MIN) {
@@ -187,7 +189,7 @@ internal fun computeFlags(
     if (hasMarks) {
         // Failing trend: last 2 published marks below pass (only when a pass line exists).
         val lastTwo = marks.take(2)
-        if (lastTwo.size == 2 && lastTwo.all { it.pass != null && it.marks < it.pass!!.toDouble() }) {
+        if (lastTwo.size == 2 && lastTwo.all { it.pass != null && it.marks < (it.pass ?: 0).toDouble() }) {
             flags += ClassFlags.FAILING_TREND
         }
         // Dropping: latest down >20% (as a fraction of max) vs the prior one.
@@ -333,14 +335,18 @@ private fun buildClassDetailInTxn(
             hw[HomeworkTable.subject] == a.subject
     }
     val rosterSize = roster.size
+    val hwIds = homeworkRows.map { it[HomeworkTable.id].value }
+    val allSubmissions = if (hwIds.isEmpty()) emptyList() else
+        HomeworkSubmissionsTable.selectAll().where {
+            (HomeworkSubmissionsTable.homeworkId inList hwIds) and
+                (HomeworkSubmissionsTable.status neq "not_submitted")
+        }.toList()
+    val submissionsByHw = allSubmissions.groupBy { it[HomeworkSubmissionsTable.homeworkId] }
     val activeHomework = homeworkRows
         .sortedBy { it[HomeworkTable.dueDate] }
         .map { hw ->
             val hwId = hw[HomeworkTable.id].value
-            val submitted = HomeworkSubmissionsTable.selectAll().where {
-                (HomeworkSubmissionsTable.homeworkId eq hwId) and
-                    (HomeworkSubmissionsTable.status neq "not_submitted")
-            }.count().toInt()
+            val submitted = (submissionsByHw[hwId] ?: emptyList()).size
             ClassHomeworkDto(
                 homeworkId = hwId.toString(),
                 title = hw[HomeworkTable.title],
@@ -482,8 +488,10 @@ internal fun rosterForInTxn(a: OwnedAssignment): List<EnrolledStudent> {
 
 /** Look up classId from SchoolClassesTable by school + class name (case-insensitive). */
 private fun resolveClassIdByName(a: OwnedAssignment): java.util.UUID? {
+    val pattern = "%${a.className.trim()}%"
     return SchoolClassesTable.selectAll().where {
-        (SchoolClassesTable.schoolId eq a.schoolId)
+        (SchoolClassesTable.schoolId eq a.schoolId) and
+        (SchoolClassesTable.name like pattern)
     }.firstOrNull {
         com.littlebridge.enrollplus.core.ClassNaming.classKey(it[SchoolClassesTable.name]) ==
             com.littlebridge.enrollplus.core.ClassNaming.classKey(a.className)
@@ -492,8 +500,10 @@ private fun resolveClassIdByName(a: OwnedAssignment): java.util.UUID? {
 
 /** Fallback: match students by ClassNaming on className + section (no enrollments needed). */
 private fun fallbackRosterByClassNaming(a: OwnedAssignment): List<EnrolledStudent> {
+    val pattern = "%${a.className.trim()}%"
     return StudentsTable.selectAll().where {
-        (StudentsTable.schoolId eq a.schoolId) and (StudentsTable.isActive eq true)
+        (StudentsTable.schoolId eq a.schoolId) and (StudentsTable.isActive eq true) and
+        (StudentsTable.className like pattern)
     }.filter {
         com.littlebridge.enrollplus.core.ClassNaming.sameClassSection(
             it[StudentsTable.className], it[StudentsTable.section], a.className, a.section
@@ -605,7 +615,7 @@ internal fun recentMarksInTxn(
                 .mapNotNull { mr ->
                     val asg = byId[mr[AssessmentMarksTable.assessmentId]] ?: return@mapNotNull null
                     StudentMarkPoint(
-                        marks = mr[AssessmentMarksTable.marks]!!,
+                        marks = mr[AssessmentMarksTable.marks] ?: return@mapNotNull null,
                         max = asg[AssessmentsTable.maxMarks],
                         pass = asg[AssessmentsTable.passMarks],
                     )
@@ -645,7 +655,7 @@ internal fun latestPublishedMarkInTxn(
             val asg = byId[latest[AssessmentMarksTable.assessmentId]] ?: return@mapNotNull null
             sid to LatestMarkDto(
                 name = asg[AssessmentsTable.name],
-                marks = latest[AssessmentMarksTable.marks]!!,
+                marks = latest[AssessmentMarksTable.marks] ?: return@mapNotNull null,
                 max = asg[AssessmentsTable.maxMarks],
             )
         }.toMap()

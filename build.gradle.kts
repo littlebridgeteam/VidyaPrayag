@@ -12,5 +12,6 @@ plugins {
     alias(libs.plugins.kotlinAndroid) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.room) apply false
+    alias(libs.plugins.crashlytics) apply false
     kotlin("plugin.serialization") version libs.versions.kotlin.get() apply false
 }

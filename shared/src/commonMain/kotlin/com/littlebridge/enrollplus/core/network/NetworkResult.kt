@@ -7,13 +7,17 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.utils.io.errors.*
+import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 sealed class NetworkResult<out T> {
-    data class Success<out T>(val data: T) : NetworkResult<T>()
+    data class Success<out T>(
+        val data: T,
+        val isStale: Boolean = false,
+        val isOffline: Boolean = false,
+    ) : NetworkResult<T>()
     data class Error(val message: String, val code: Int? = null) : NetworkResult<Nothing>()
     data object ConnectionError : NetworkResult<Nothing>()
 }
@@ -130,7 +134,7 @@ suspend inline fun <reified T> safeApiCall(block: () -> HttpResponse): NetworkRe
         AppLogger.e("API_CALL", "PARSING ERROR: ${e.message}")
         NetworkResult.Error("Data parsing error")
     } catch (e: Exception) {
-        AppLogger.e("API_CALL", "UNKNOWN ERROR: ${e.message}")
-        NetworkResult.Error(e.message ?: "An unknown error occurred")
+        AppLogger.e("API_CALL", "UNKNOWN ERROR: ${e::class.simpleName}: ${e.message}")
+        NetworkResult.Error("${e::class.simpleName}: ${e.message ?: "An unknown error occurred"}")
     }
 }

@@ -6,6 +6,7 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.schools.domain.usecase.GetSchoolsUseCase
 import com.littlebridge.enrollplus.feature.schools.domain.model.School
 import com.littlebridge.enrollplus.domain.util.UiState
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -58,6 +59,38 @@ class MainViewModel(
                 }
             }
         }
+
+        // Set Clarity session tags when auth state changes
+        viewModelScope.launch {
+            authState.collect { state ->
+                if (state.isLoaded) {
+                    val role = state.role ?: "guest"
+                    AnalyticsTracker.setCustomTag("role", role)
+                    if (state.token.isNullOrBlank()) {
+                        AnalyticsTracker.setCustomTag("auth_status", "unauthenticated")
+                    } else {
+                        AnalyticsTracker.setCustomTag("auth_status", "authenticated")
+                    }
+                }
+            }
+        }
+
+        // Set user_id and user_name tags when available
+        viewModelScope.launch {
+            preferenceRepository.getUserId().collect { userId ->
+                if (!userId.isNullOrBlank()) {
+                    AnalyticsTracker.setCustomTag("user_id", userId)
+                    AnalyticsTracker.setCustomUserId(userId)
+                }
+            }
+        }
+        viewModelScope.launch {
+            preferenceRepository.getUserName().collect { name ->
+                if (!name.isNullOrBlank()) {
+                    AnalyticsTracker.setCustomTag("user_name", name)
+                }
+            }
+        }
     }
 
     fun refreshSchools() {
@@ -99,6 +132,18 @@ class MainViewModel(
 
     fun logout() {
         viewModelScope.launch {
+            val role = authState.value.role
+            AnalyticsTracker.event("vp_auth_logout", mapOf(
+                "role" to (role ?: "unknown"),
+            ))
+            AnalyticsTracker.setUserId(null)
+            AnalyticsTracker.setCustomUserId(null)
+            AnalyticsTracker.setUserProperty("role", null)
+            AnalyticsTracker.setCustomKey("user_id", "")
+            AnalyticsTracker.setCustomTag("role", "guest")
+            AnalyticsTracker.setCustomTag("auth_status", "unauthenticated")
+            AnalyticsTracker.setCustomTag("user_id", "")
+            AnalyticsTracker.setCustomTag("user_name", "")
             authRepository.logout()
         }
     }

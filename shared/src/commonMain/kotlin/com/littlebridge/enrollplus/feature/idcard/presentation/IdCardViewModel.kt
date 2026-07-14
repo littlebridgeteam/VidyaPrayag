@@ -33,14 +33,18 @@ class IdCardViewModel(
     private val _state = MutableStateFlow(IdCardState())
     val state: StateFlow<IdCardState> = _state.asStateFlow()
 
-    private suspend fun token(): String = prefs.getUserToken().first() ?: ""
+    private suspend fun token(): String? = prefs.getUserToken().first()
+
+    private fun notSignedIn(isLoading: Boolean = false, isGenerating: Boolean = false) =
+        _state.update { it.copy(isLoading = isLoading, isGenerating = isGenerating, error = "Not signed in") }
 
     // ── Admin: Templates ────────────────────────────────────────────────
 
     fun loadTemplates() {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            when (val result = repository.getTemplates(token())) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.getTemplates(t)) {
                 is NetworkResult.Success -> _state.update {
                     it.copy(isLoading = false, templates = result.data.data ?: emptyList())
                 }
@@ -57,7 +61,8 @@ class IdCardViewModel(
     fun createTemplate(name: String, roleType: String, frontConfig: String, backConfig: String) {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            when (val result = repository.createTemplate(token(), CreateTemplateRequest(name, roleType, frontConfig, backConfig))) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.createTemplate(t, CreateTemplateRequest(name, roleType, frontConfig, backConfig))) {
                 is NetworkResult.Success -> {
                     _state.update { it.copy(isLoading = false, infoMessage = "Template created") }
                     loadTemplates()
@@ -74,7 +79,8 @@ class IdCardViewModel(
 
     fun deactivateTemplate(templateId: String) {
         viewModelScope.launch {
-            when (val result = repository.deactivateTemplate(token(), templateId)) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.deactivateTemplate(t, templateId)) {
                 is NetworkResult.Success -> {
                     _state.update { it.copy(infoMessage = "Template deactivated") }
                     loadTemplates()
@@ -90,7 +96,8 @@ class IdCardViewModel(
     fun generateCards(templateId: String, scope: String, classId: String? = null) {
         _state.update { it.copy(isGenerating = true, error = null, infoMessage = null) }
         viewModelScope.launch {
-            when (val result = repository.generateCards(token(), GenerateIdCardRequest(templateId, scope, classId))) {
+            val t = token() ?: run { notSignedIn(isGenerating = true); return@launch }
+            when (val result = repository.generateCards(t, GenerateIdCardRequest(templateId, scope, classId))) {
                 is NetworkResult.Success -> {
                     val data = result.data.data
                     _state.update {
@@ -115,7 +122,8 @@ class IdCardViewModel(
     fun loadCards() {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            when (val result = repository.getCards(token())) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.getCards(t)) {
                 is NetworkResult.Success -> _state.update {
                     it.copy(isLoading = false, cards = result.data.data ?: emptyList())
                 }
@@ -134,7 +142,8 @@ class IdCardViewModel(
     fun loadChildIdCard(childId: String) {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            when (val result = repository.getChildIdCard(token(), childId)) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.getChildIdCard(t, childId)) {
                 is NetworkResult.Success -> _state.update {
                     it.copy(isLoading = false, currentCard = result.data.data)
                 }
@@ -153,7 +162,8 @@ class IdCardViewModel(
     fun loadTeacherIdCard() {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            when (val result = repository.getTeacherIdCard(token())) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.getTeacherIdCard(t)) {
                 is NetworkResult.Success -> _state.update {
                     it.copy(isLoading = false, currentCard = result.data.data)
                 }
@@ -172,7 +182,8 @@ class IdCardViewModel(
     fun loadStaffIdCard() {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            when (val result = repository.getStaffIdCard(token())) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.getStaffIdCard(t)) {
                 is NetworkResult.Success -> _state.update {
                     it.copy(isLoading = false, currentCard = result.data.data)
                 }
@@ -190,7 +201,8 @@ class IdCardViewModel(
 
     fun deleteCard(cardId: String) {
         viewModelScope.launch {
-            when (val result = repository.deleteCard(token(), cardId)) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.deleteCard(t, cardId)) {
                 is NetworkResult.Success -> {
                     _state.update { it.copy(infoMessage = "Card deleted") }
                     loadCards()
@@ -203,7 +215,8 @@ class IdCardViewModel(
 
     fun loadPdfUrl(cardId: String) {
         viewModelScope.launch {
-            when (val result = repository.getPdfUrl(token(), cardId)) {
+            val t = token() ?: run { notSignedIn(); return@launch }
+            when (val result = repository.getPdfUrl(t, cardId)) {
                 is NetworkResult.Success -> {
                     val url = result.data.data?.get("pdfUrl")
                     _state.update { it.copy(pdfUrl = url, error = if (url == null) "PDF not available" else null) }

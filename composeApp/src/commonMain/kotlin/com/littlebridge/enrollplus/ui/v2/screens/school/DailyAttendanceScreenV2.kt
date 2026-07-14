@@ -38,14 +38,22 @@ import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -76,15 +84,18 @@ fun DailyAttendanceScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Daily Attendance", onBack = onBack)
-        DailyAttendanceContent(
-            state = state,
-            onTypeChange = viewModel::setAttendanceType,
-            onClassChange = viewModel::selectClass,
-            onUpdateStatus = viewModel::updateStatus,
-            onRetry = { viewModel.setAttendanceType(state.attendanceType) },
-            modifier = Modifier.fillMaxSize(),
-        )
+        VBackHeader(title = appString(StringKeys.SCH_DAILY_ATTENDANCE), onBack = onBack, pinRouteId = "overlay_daily_attendance")
+        VPullRefresh(isRefreshing = state.isLoading && state.attendees.isNotEmpty(), onRefresh = { viewModel.setAttendanceType(state.attendanceType) }) {
+            DailyAttendanceContent(
+                state = state,
+                onTypeChange = viewModel::setAttendanceType,
+                onClassChange = viewModel::selectClass,
+                onUpdateStatus = viewModel::updateStatus,
+                onSave = viewModel::save,
+                onRetry = { viewModel.setAttendanceType(state.attendanceType) },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -94,11 +105,11 @@ private fun DailyAttendanceContent(
     onTypeChange: (String) -> Unit,
     onClassChange: (String) -> Unit,
     onUpdateStatus: (String, AttendanceStatus) -> Unit,
+    onSave: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val isStudents = state.attendanceType.equals("Students", ignoreCase = true)
+        val isStudents = state.attendanceType.equals("Students", ignoreCase = true)
 
     Column(
         modifier
@@ -109,8 +120,8 @@ private fun DailyAttendanceContent(
     ) {
         // Type selector
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VTag(text = "Students", active = isStudents, onClick = { onTypeChange("Students") })
-            VTag(text = "Faculty", active = !isStudents, onClick = { onTypeChange("Faculty") })
+            VTag(text = appString(StringKeys.SCH_STUDENTS), active = isStudents, onClick = { onTypeChange("Students") })
+            VTag(text = appString(StringKeys.SCH_FACULTY), active = !isStudents, onClick = { onTypeChange("Faculty") })
         }
 
         // Class picker (Students mode only)
@@ -133,37 +144,53 @@ private fun DailyAttendanceContent(
             loading = state.isLoading,
             error = state.errorMessage,
             isEmpty = state.attendees.isEmpty(),
-            emptyTitle = "No roster",
+            emptyTitle = appString(StringKeys.SCH_NO_ROSTER),
             emptyBody = if (isStudents)
-                "There are no students in ${state.selectedClass} yet."
+                appString(StringKeys.SCH_NO_STUDENTS_IN_CLASS, "className" to state.selectedClass)
             else
-                "No faculty roster is available.",
+                appString(StringKeys.SCH_NO_FACULTY_ROSTER),
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 8, withAvatar = true) },
         ) {
             // Summary
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("Present today", style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTypography.label.copy(color = VColors.ink3))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${state.presentCount} / ${state.totalCount}",
-                            style = VTheme.type.dataLg.colored(c.ink),
+                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink),
                         )
                     }
                     VBadge(text = state.attendancePercentage, tone = VBadgeTone.Arctic)
                 }
             }
 
-            VSectionHeader(title = if (isStudents) "STUDENTS" else "FACULTY")
+            VSectionHeader(title = if (isStudents) appString(StringKeys.SCH_STUDENTS_HEADER) else appString(StringKeys.SCH_FACULTY_HEADER))
 
-            VCard {
+            VCard(Modifier.staggeredItemEntrance(0, true)) {
                 state.attendees.forEachIndexed { i, a ->
-                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
+                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
                     AttendeeRow(attendee = a, onSetStatus = { onUpdateStatus(a.id, it) })
                 }
             }
+
+            if (state.saveError != null) {
+                Text(state.saveError!!, style = VTypography.caption, color = VColors.error)
+            }
+            if (state.saveSuccess) {
+                Text("Attendance saved", style = VTypography.caption, color = VColors.success)
+            }
+            VButton(
+                text = "Save Attendance",
+                onClick = onSave,
+                variant = VButtonVariant.Primary,
+                full = true,
+                enabled = !state.isSaving && state.attendees.isNotEmpty(),
+                loading = state.isSaving,
+            )
         }
     }
 }
@@ -173,40 +200,38 @@ private fun AttendeeRow(
     attendee: Attendee,
     onSetStatus: (AttendanceStatus) -> Unit,
 ) {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         VAvatar(name = attendee.name.ifBlank { attendee.initials.ifBlank { "?" } }, src = attendee.imageUrl, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(attendee.name, style = VTheme.type.bodyStrong.colored(c.ink))
-            Text(attendee.initials, style = VTheme.type.caption.colored(c.ink3))
+            Text(attendee.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(attendee.initials, style = VTypography.caption.copy(color = VColors.ink3))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusPill("P", attendee.status == AttendanceStatus.PRESENT, c.success) { onSetStatus(AttendanceStatus.PRESENT) }
-            StatusPill("A", attendee.status == AttendanceStatus.ABSENT, c.danger) { onSetStatus(AttendanceStatus.ABSENT) }
-            StatusPill("L", attendee.status == AttendanceStatus.LATE, c.warning) { onSetStatus(AttendanceStatus.LATE) }
+            StatusPill("P", attendee.status == AttendanceStatus.PRESENT, VColors.success) { onSetStatus(AttendanceStatus.PRESENT) }
+            StatusPill("A", attendee.status == AttendanceStatus.ABSENT, VColors.error) { onSetStatus(AttendanceStatus.ABSENT) }
+            StatusPill("L", attendee.status == AttendanceStatus.LATE, VColors.gold) { onSetStatus(AttendanceStatus.LATE) }
         }
     }
 }
 
 @Composable
 private fun StatusPill(letter: String, active: Boolean, tone: Color, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val interaction = remember { MutableInteractionSource() }
+        val interaction = remember { MutableInteractionSource() }
     Box(
         Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (active) tone else c.ink.copy(alpha = 0.06f))
+            .background(if (active) tone else VColors.ink.copy(alpha = 0.06f))
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             letter,
-            style = VTheme.type.label.colored(if (active) c.background else c.ink3).copy(fontWeight = FontWeight.SemiBold),
+            style = VTypography.label.copy(color = if (active) VColors.surface else VColors.ink3).copy(fontWeight = FontWeight.SemiBold),
         )
     }
 }

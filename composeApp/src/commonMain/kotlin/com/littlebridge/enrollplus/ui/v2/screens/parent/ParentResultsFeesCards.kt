@@ -31,6 +31,8 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.FeeData
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMarkDto
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import kotlin.math.roundToInt
@@ -98,10 +100,10 @@ fun ParentResultsCard(
         return
     }
 
-    val score = latestMark.marks!!.roundToInt()
+    val score = (latestMark.marks ?: 0.0).roundToInt()
     val max = latestMark.maxMarks
     val delta = if (previousMark?.marks != null) {
-        (latestMark.marks!! - previousMark.marks!!).roundToInt()
+        ((latestMark.marks ?: 0.0) - (previousMark.marks ?: 0.0)).roundToInt()
     } else null
 
     VCard(modifier = modifier, padding = 14.dp, onClick = onOpenAcademics) {
@@ -142,7 +144,7 @@ fun ParentResultsCard(
                 Modifier.clip(RoundedCornerShape(999.dp)).background(c.accent.copy(alpha = 0.14f))
                     .padding(horizontal = 8.dp, vertical = 2.dp),
             ) {
-                Text("Published", style = VTheme.type.label.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp))
+                Text(appString(StringKeys.PRF_PUBLISHED), style = VTheme.type.label.colored(c.accentDeep).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp))
             }
         }
 

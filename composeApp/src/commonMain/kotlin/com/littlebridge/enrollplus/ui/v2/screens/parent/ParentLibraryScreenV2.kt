@@ -15,10 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,9 +33,12 @@ import com.littlebridge.enrollplus.feature.library.presentation.ParentLibraryVie
 import com.littlebridge.enrollplus.feature.parent.presentation.ParentDashboardViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
@@ -45,6 +46,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VSnackbar
 import com.littlebridge.enrollplus.ui.v2.components.VSnackbarTone
 import com.littlebridge.enrollplus.ui.v2.components.ShimmerBox
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.library.BookCover
@@ -57,14 +60,14 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.LibraryViewMode
 import com.littlebridge.enrollplus.ui.v2.screens.library.QrShareDialog
 import com.littlebridge.enrollplus.ui.v2.screens.library.ReadingTimeEstimate
 import com.littlebridge.enrollplus.ui.v2.screens.library.ViewModeToggle
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
 
-private enum class ParentLibraryTab(val label: String) {
-    Browse("Browse"),
-    MyBooks("My Books"),
-    Reservations("Reservations"),
+private enum class ParentLibraryTab {
+    Browse, MyBooks, Reservations,
 }
 
 @Composable
@@ -97,27 +100,20 @@ fun ParentLibraryScreenV2(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(c.background),
+            .background(VColors.cream),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Library", style = VTheme.type.h2.colored(c.ink))
-                TextButton(onClick = onBack) { Text("Back") }
-            }
+            PremiumOverlayHeader(
+                title = appString(StringKeys.PL_LIBRARY),
+                onBack = onBack,
+            )
 
             // Child selector hint
             if (dashboard.children.size > 1) {
                 Text(
-                    "Viewing books for ${dashboard.selectedChild?.name ?: "child"}",
+                    appString(StringKeys.PL_VIEWING_FOR, "name" to (dashboard.selectedChild?.name ?: appString(StringKeys.PL_PARENT))),
                     style = VTheme.type.caption.colored(c.ink2),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
@@ -132,8 +128,13 @@ fun ParentLibraryScreenV2(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ParentLibraryTab.entries.forEach { tab ->
+                    val tabLabel = when (tab) {
+                        ParentLibraryTab.Browse -> appString(StringKeys.PL_TAB_BROWSE)
+                        ParentLibraryTab.MyBooks -> appString(StringKeys.PL_TAB_MY_BOOKS)
+                        ParentLibraryTab.Reservations -> appString(StringKeys.PL_TAB_RESERVATIONS)
+                    }
                     VBadge(
-                        text = tab.label,
+                        text = tabLabel,
                         tone = if (activeTab == tab) VBadgeTone.Accent else VBadgeTone.Neutral,
                         modifier = Modifier.clickable { activeTab = tab },
                     )
@@ -178,7 +179,7 @@ private fun ParentBrowseTab(
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Greeting header (UIX-016)
         GreetingHeader(
-            userName = "Parent",
+            userName = appString(StringKeys.PL_PARENT),
             overdueCount = state.issuedBooks.count { com.littlebridge.enrollplus.ui.v2.screens.library.parseDaysRemaining(it.dueDate) < 0 },
             dueTomorrowCount = state.issuedBooks.count { com.littlebridge.enrollplus.ui.v2.screens.library.parseDaysRemaining(it.dueDate) in 0..1 },
             reservationReadyCount = state.reservations.count { it.status == "notified" },
@@ -187,7 +188,7 @@ private fun ParentBrowseTab(
         VInput(
             value = state.searchQuery,
             onValueChange = { viewModel.updateSearchQuery(it); viewModel.searchBooks(1) },
-            label = "Search by title, author, or ISBN",
+            label = appString(StringKeys.PL_SEARCH_PH),
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -210,17 +211,17 @@ private fun ParentBrowseTab(
         }
 
         if (state.error != null && state.books.isEmpty()) {
-            VErrorState(message = state.error!!, onRetry = { viewModel.searchBooks(1) })
+            VErrorState(message = state.error ?: "An error occurred", onRetry = { viewModel.searchBooks(1) })
             return@Column
         }
 
         if (state.books.isEmpty()) {
-            IllustratedEmptyState(title = "No books found", body = "Try a different search query.", icon = VIcons.Search)
+            IllustratedEmptyState(title = appString(StringKeys.PL_NO_BOOKS_FOUND), body = appString(StringKeys.PL_NO_BOOKS_FOUND_DESC), icon = VIcons.Search)
             return@Column
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("${state.booksTotal} books found", style = VTheme.type.caption.colored(c.ink2))
+            Text(appString(StringKeys.PL_BOOKS_FOUND, "count" to state.booksTotal), style = VTheme.type.caption.colored(c.ink2))
             ViewModeToggle(viewMode = viewMode, onModeChange = onViewModeChange)
         }
 
@@ -260,7 +261,7 @@ private fun ParentBrowseTab(
                                 )
                                 if (book.availableCopies == 0) {
                                     VButton(
-                                        text = "Reserve",
+                                        text = appString(StringKeys.PL_RESERVE),
                                         onClick = { reserveBookId = book.id },
                                         tone = VButtonTone.Lavender,
                                         size = VButtonSize.Sm,
@@ -283,17 +284,16 @@ private fun ParentBrowseTab(
 
         // Reserve confirmation dialog
         reserveBookId?.let { bookId ->
-            AlertDialog(
-                onDismissRequest = { reserveBookId = null },
-                title = { Text("Reserve Book") },
-                text = { Text("You'll be notified when this book becomes available.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.reserveBook(bookId)
-                        reserveBookId = null
-                    }) { Text("Reserve") }
+            VConfirmDialog(
+                visible = true,
+                title = appString(StringKeys.PL_RESERVE_BOOK),
+                message = appString(StringKeys.PL_RESERVE_MSG),
+                confirmLabel = appString(StringKeys.PL_RESERVE),
+                onConfirm = {
+                    viewModel.reserveBook(bookId)
+                    reserveBookId = null
                 },
-                dismissButton = { TextButton(onClick = { reserveBookId = null }) { Text("Cancel") } },
+                onDismiss = { reserveBookId = null },
             )
         }
     }
@@ -306,11 +306,11 @@ private fun ParentMyBooksTab(state: ParentLibraryState) {
     val c = VTheme.colors
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("My Child's Books", style = VTheme.type.h2.colored(c.ink))
-        Text("Currently issued books for your child.", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.PL_MY_CHILD_BOOKS), style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.PL_MY_CHILD_BOOKS_DESC), style = VTheme.type.caption.colored(c.ink2))
 
         if (state.issuedBooks.isEmpty()) {
-            VEmptyState(title = "No books issued", body = "Your child has no books currently issued.", icon = VIcons.BookOpen)
+            VEmptyState(title = appString(StringKeys.PL_NO_BOOKS_ISSUED), body = appString(StringKeys.PL_NO_BOOKS_ISSUED_DESC), icon = VIcons.BookOpen)
             return@Column
         }
 
@@ -319,14 +319,14 @@ private fun ParentMyBooksTab(state: ParentLibraryState) {
                 VCard {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(issue.bookTitle, style = VTheme.type.bodyStrong.colored(c.ink))
-                        Text("Issued: ${issue.issueDate}", style = VTheme.type.caption.colored(c.ink2))
+                        Text(appString(StringKeys.PL_ISSUED, "date" to issue.issueDate), style = VTheme.type.caption.colored(c.ink2))
                         DueDateBadge(dueDate = issue.dueDate)
                         if (issue.renewalCount > 0) {
-                            VBadge(text = "${issue.renewalCount} renewal(s)", tone = VBadgeTone.Neutral)
+                            VBadge(text = appString(StringKeys.PL_RENEWALS, "count" to issue.renewalCount), tone = VBadgeTone.Neutral)
                         }
                         if (issue.fineAmount > 0) {
                             VBadge(
-                                text = "Fine: ₹${"%.2f".format(issue.fineAmount)} (${issue.fineStatus})",
+                                text = appString(StringKeys.PL_FINE, "amount" to formatDecimal(issue.fineAmount), "status" to issue.fineStatus),
                                 tone = VBadgeTone.Warning,
                             )
                         }
@@ -345,11 +345,11 @@ private fun ParentReservationsTab(state: ParentLibraryState, viewModel: ParentLi
     var cancelId by remember { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Reservations", style = VTheme.type.h2.colored(c.ink))
-        Text("Books you've reserved. You'll be notified when available.", style = VTheme.type.caption.colored(c.ink2))
+        Text(appString(StringKeys.PL_RESERVATIONS), style = VTheme.type.h2.colored(c.ink))
+        Text(appString(StringKeys.PL_RESERVATIONS_DESC), style = VTheme.type.caption.colored(c.ink2))
 
         if (state.reservations.isEmpty()) {
-            IllustratedEmptyState(title = "No reservations", body = "Reserve a book from the Browse tab to see it here.", icon = VIcons.Bookmark)
+            IllustratedEmptyState(title = appString(StringKeys.PL_NO_RESERVATIONS), body = appString(StringKeys.PL_NO_RESERVATIONS_DESC), icon = VIcons.Bookmark)
             return@Column
         }
 
@@ -363,7 +363,7 @@ private fun ParentReservationsTab(state: ParentLibraryState, viewModel: ParentLi
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(reservation.bookTitle, style = VTheme.type.bodyStrong.colored(c.ink))
-                            Text("Reserved on: ${reservation.createdAt}", style = VTheme.type.caption.colored(c.ink2))
+                            Text(appString(StringKeys.PL_RESERVED_ON, "date" to reservation.createdAt), style = VTheme.type.caption.colored(c.ink2))
                             VBadge(
                                 text = reservation.status.replaceFirstChar { it.uppercase() },
                                 tone = when (reservation.status) {
@@ -377,7 +377,7 @@ private fun ParentReservationsTab(state: ParentLibraryState, viewModel: ParentLi
                         }
                         if (reservation.status == "pending") {
                             VButton(
-                                text = "Cancel",
+                                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                                 onClick = { cancelId = reservation.id },
                                 variant = com.littlebridge.enrollplus.ui.v2.components.VButtonVariant.Secondary,
                                 tone = com.littlebridge.enrollplus.ui.v2.components.VButtonTone.Rose,
@@ -390,17 +390,17 @@ private fun ParentReservationsTab(state: ParentLibraryState, viewModel: ParentLi
         }
 
         cancelId?.let { id ->
-            AlertDialog(
-                onDismissRequest = { cancelId = null },
-                title = { Text("Cancel Reservation") },
-                text = { Text("Are you sure you want to cancel this reservation?") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.cancelReservation(id)
-                        cancelId = null
-                    }) { Text("Cancel Reservation") }
+            VConfirmDialog(
+                visible = true,
+                title = appString(StringKeys.PL_CANCEL_RESERVATION),
+                message = appString(StringKeys.PL_CANCEL_RESERVATION_MSG),
+                confirmLabel = appString(StringKeys.PL_CANCEL_RESERVATION_CONFIRM),
+                cancelLabel = appString(StringKeys.PL_KEEP),
+                onConfirm = {
+                    viewModel.cancelReservation(id)
+                    cancelId = null
                 },
-                dismissButton = { TextButton(onClick = { cancelId = null }) { Text("Keep") } },
+                onDismiss = { cancelId = null },
             )
         }
     }

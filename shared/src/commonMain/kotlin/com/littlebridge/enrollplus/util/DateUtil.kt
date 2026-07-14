@@ -90,9 +90,80 @@ fun dayOfWeek(year: Int, month: Int, day: Int): Int {
     return (y + y / 4 - y / 100 + y / 400 + t[month - 1] + day) % 7
 }
 
+/**
+ * Whole-day difference between two dates (from - to). Positive if `from` is after `to`.
+ * Uses Julian day number approximation for common compatibility.
+ */
+fun daysBetween(fromY: Int, fromM: Int, fromD: Int, toY: Int, toM: Int, toD: Int): Int {
+    return julianDay(toY, toM, toD) - julianDay(fromY, fromM, fromD)
+}
+
+/** Julian Day Number for a Gregorian date (integer day count). */
+private fun julianDay(y: Int, m: Int, d: Int): Int {
+    val a = (14 - m) / 12
+    val yy = y + 4800 - a
+    val mm = m + 12 * a - 3
+    return d + (153 * mm + 2) / 5 + 365 * yy + yy / 4 - yy / 100 + yy / 400 - 32045
+}
+
 val MONTH_LONG: List<String> = listOf(
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
 )
 
+val MONTH_SHORT: List<String> = listOf(
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+)
+
 val WEEKDAY_SHORT: List<String> = listOf("S", "M", "T", "W", "T", "F", "S")
+
+/** "2026-06-25" → "25 Jun 2026"; blank-safe. */
+fun formatDate(iso: String?): String {
+    if (iso.isNullOrBlank()) return ""
+    val (y, m, d) = parseIsoDate(iso) ?: return iso
+    val mon = MONTH_SHORT.getOrNull(m - 1) ?: return iso
+    return "$d $mon $y"
+}
+
+/** "2026-06-25" → "25 Jun" (short, no year). */
+fun formatDateShort(iso: String?): String {
+    if (iso.isNullOrBlank()) return ""
+    val (_, m, d) = parseIsoDate(iso) ?: return iso
+    val mon = MONTH_SHORT.getOrNull(m - 1) ?: return iso
+    return "$d $mon"
+}
+
+/** "2026-06-25T14:30:00" → "25 Jun 2026, 2:30 PM"; blank-safe. */
+fun formatDateTime(iso: String?): String {
+    if (iso.isNullOrBlank()) return ""
+    val datePart = iso.substringBefore("T").take(10)
+    val timePart = iso.substringAfter("T", "")
+    val dateStr = formatDate(datePart)
+    if (timePart.isBlank()) return dateStr
+    val h = timePart.substring(0, 2).toIntOrNull() ?: return dateStr
+    val mi = timePart.substring(3, 5).toIntOrNull() ?: return dateStr
+    val period = if (h < 12) "AM" else "PM"
+    val h12 = when (val hh = h % 12) { 0 -> 12; else -> hh }
+    return "$dateStr, $h12:${mi.toString().padStart(2, '0')} $period"
+}
+
+/** "2026-06-25T14:30:00" → "2:30 PM"; blank-safe. */
+fun formatTime(iso: String?): String {
+    if (iso.isNullOrBlank()) return ""
+    val timePart = iso.substringAfter("T", "")
+    if (timePart.length < 5) return ""
+    val h = timePart.substring(0, 2).toIntOrNull() ?: return ""
+    val mi = timePart.substring(3, 5).toIntOrNull() ?: return ""
+    val period = if (h < 12) "AM" else "PM"
+    val h12 = when (val hh = h % 12) { 0 -> 12; else -> hh }
+    return "$h12:${mi.toString().padStart(2, '0')} $period"
+}
+
+/** "2026-06-25" → "Jun 25, 2026" (display format with month first). */
+fun formatDateDisplay(iso: String?): String {
+    if (iso.isNullOrBlank()) return ""
+    val (y, m, d) = parseIsoDate(iso) ?: return iso
+    val mon = MONTH_SHORT.getOrNull(m - 1) ?: return iso
+    return "$mon $d, $y"
+}

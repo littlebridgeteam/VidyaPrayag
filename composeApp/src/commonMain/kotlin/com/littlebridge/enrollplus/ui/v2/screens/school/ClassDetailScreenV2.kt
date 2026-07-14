@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,7 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolClassDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TimetablePeriodDto
@@ -52,13 +54,26 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 private val DETAIL_TABS = listOf("Students", "Teachers", "Timetable", "Analytics")
 private val WEEKDAY_NAMES = listOf("", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+@Composable
+private fun detailTabs(): List<String> = listOf(
+    appString(StringKeys.CD_STUDENTS),
+    appString(StringKeys.CD_TEACHERS),
+    appString(StringKeys.CD_TIMETABLE),
+    appString(StringKeys.CD_ANALYTICS),
+)
 
 /**
  * ClassDetailScreenV2 — drill-down view for a single class.
@@ -84,7 +99,7 @@ fun ClassDetailScreenV2(
     val classesState by classesViewModel.state.collectAsStateV2()
     val rosterState by studentRosterViewModel.state.collectAsStateV2()
     val performanceState by classPerformanceViewModel.state.collectAsStateV2()
-    var activeTab by remember { mutableStateOf("Students") }
+    var activeTabIdx by remember { mutableStateOf(0) }
 
     // Load full timetable (not class-filtered) so the shared ClassesSubjectsViewModel
     // state isn't corrupted for ClassesSubjectsScreenV2. We filter client-side.
@@ -104,25 +119,26 @@ fun ClassDetailScreenV2(
             .navigationBarsPadding(),
     ) {
         VBackHeader(title = className, onBack = onBack)
-        VTopTabs(tabs = DETAIL_TABS, selected = activeTab, onSelect = { activeTab = it })
+        val tabsList = detailTabs()
+        VTopTabs(tabs = tabsList, selected = tabsList[activeTabIdx], onSelect = { label -> activeTabIdx = tabsList.indexOf(label) })
 
-        when (activeTab) {
-            "Students" -> ClassStudentsSubTab(
+        when (activeTabIdx) {
+            0 -> ClassStudentsSubTab(
                 className = className,
                 state = rosterState,
                 onOpenStudent = onOpenStudent,
                 onRetry = { studentRosterViewModel.load() },
             )
-            "Teachers" -> ClassTeachersSubTab(
+            1 -> ClassTeachersSubTab(
                 className = className,
                 classesState = classesState,
                 onOpenTeacher = onOpenTeacher,
             )
-            "Timetable" -> ClassTimetableSubTab(
+            2 -> ClassTimetableSubTab(
                 className = className,
                 classesState = classesState,
             )
-            "Analytics" -> ClassAnalyticsSubTab(
+            3 -> ClassAnalyticsSubTab(
                 state = performanceState,
                 onRetry = { classPerformanceViewModel.load(className) },
             )
@@ -145,10 +161,11 @@ private fun ClassStudentsSubTab(
         loading = state.isLoading,
         error = state.error,
         isEmpty = students.isEmpty() && !state.isLoading,
-        emptyTitle = "No students",
-        emptyBody = "No students found in $className.",
+        emptyTitle = appString(StringKeys.CD_NO_STUDENTS),
+        emptyBody = appString(StringKeys.CD_NO_STUDENTS_BODY).replace("{className}", className),
         emptyIcon = VIcons.Users,
         onRetry = onRetry,
+        skeleton = { SkeletonList(rows = 6, withAvatar = true) },
     ) {
         LazyColumn(
             Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -156,12 +173,13 @@ private fun ClassStudentsSubTab(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 12.dp, bottom = 80.dp),
         ) {
             item {
-                VSectionHeader("${students.size} Students")
+                VSectionHeader(appString(StringKeys.CD_STUDENTS_COUNT).replace("{count}", students.size.toString()))
             }
-            items(students) { student ->
+            itemsIndexed(students, key = { _, it -> it.id }) { index, student ->
                 StudentRowCard(
                     student = student,
                     onClick = { onOpenStudent(student.id) },
+                    modifier = Modifier.staggeredItemEntrance(index, students.isNotEmpty()),
                 )
             }
         }
@@ -172,9 +190,9 @@ private fun ClassStudentsSubTab(
 private fun StudentRowCard(
     student: StudentDto,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VCard(Modifier.fillMaxWidth().clickable { onClick() }) {
+    VCard(modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -182,21 +200,21 @@ private fun StudentRowCard(
         ) {
             VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 44.dp)
             Column(Modifier.weight(1f)) {
-                Text(student.fullName, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
+                Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (student.section.isNotBlank()) VBadge(text = "Sec ${student.section}", tone = VBadgeTone.Accent)
-                    Text("Roll ${student.rollNumber}", style = VTheme.type.caption.colored(c.ink3))
+                    if (student.section.isNotBlank()) VBadge(text = appString(StringKeys.CD_SEC).replace("{section}", student.section), tone = VBadgeTone.Accent)
+                    Text(appString(StringKeys.CD_ROLL).replace("{number}", student.rollNumber), style = VTypography.caption, color = VColors.ink3)
                 }
                 if (student.attendancePercent > 0f) {
-                    Text("${student.attendancePercent.toInt()}% attendance", style = VTheme.type.label.colored(c.ink3))
+                    Text(appString(StringKeys.CD_ATTENDANCE).replace("{percent}", student.attendancePercent.toInt().toString()), style = VTypography.label, color = VColors.ink3)
                 }
             }
             Box(
                 Modifier.size(28.dp).clip(CircleShape)
-                    .background(c.tealDeep.copy(alpha = 0.1f)),
+                    .background(VColors.violet.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("›", color = c.tealDeep, fontWeight = FontWeight.Bold)
+                Text("›", color = VColors.violet, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -228,13 +246,13 @@ private fun ClassTeachersSubTab(
 
     if (tt == null && classesState.isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Loading timetable…", style = VTheme.type.body.colored(VTheme.colors.ink2))
+            Text(appString(StringKeys.CD_LOADING_TIMETABLE), style = VTypography.body, color = VColors.ink2)
         }
     } else if (classTeachers.isEmpty()) {
         VEmptyState(
-            title = "No teachers assigned",
+            title = appString(StringKeys.CD_NO_TEACHERS),
             icon = VIcons.Users,
-            body = "Teachers will appear here once you assign periods in the Schedule tab.",
+            body = appString(StringKeys.CD_NO_TEACHERS_BODY),
         )
     } else {
         LazyColumn(
@@ -243,12 +261,13 @@ private fun ClassTeachersSubTab(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 12.dp, bottom = 80.dp),
         ) {
             item {
-                VSectionHeader("${classTeachers.size} Teachers")
+                VSectionHeader(appString(StringKeys.CD_TEACHERS_COUNT).replace("{count}", classTeachers.size.toString()))
             }
-            items(classTeachers) { teacher ->
+            itemsIndexed(classTeachers, key = { _, it -> it.id }) { index, teacher ->
                 TeacherRowCard(
                     teacher = teacher,
                     onClick = { onOpenTeacher(teacher.id) },
+                    modifier = Modifier.staggeredItemEntrance(index, classTeachers.isNotEmpty()),
                 )
             }
         }
@@ -265,9 +284,9 @@ private data class TeacherInfo(
 private fun TeacherRowCard(
     teacher: TeacherInfo,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VCard(Modifier.fillMaxWidth().clickable { onClick() }) {
+    VCard(modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -275,17 +294,17 @@ private fun TeacherRowCard(
         ) {
             VAvatar(name = teacher.name, size = 44.dp)
             Column(Modifier.weight(1f)) {
-                Text(teacher.name, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
+                Text(teacher.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
                 if (teacher.subject.isNotBlank()) {
-                    Text(teacher.subject, style = VTheme.type.caption.colored(c.ink2))
+                    Text(teacher.subject, style = VTypography.caption, color = VColors.ink2)
                 }
             }
             Box(
                 Modifier.size(28.dp).clip(CircleShape)
-                    .background(c.tealDeep.copy(alpha = 0.1f)),
+                    .background(VColors.violet.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("›", color = c.tealDeep, fontWeight = FontWeight.Bold)
+                Text("›", color = VColors.violet, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -303,16 +322,16 @@ private fun ClassTimetableSubTab(
 
     if (tt == null && classesState.isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Loading timetable…", style = VTheme.type.body.colored(VTheme.colors.ink2))
+            Text(appString(StringKeys.CD_LOADING_TIMETABLE), style = VTypography.body, color = VColors.ink2)
         }
         return
     }
 
     if (tt == null || tt.weekdays.isEmpty()) {
         VEmptyState(
-            title = "No timetable yet",
+            title = appString(StringKeys.CD_NO_TIMETABLE),
             icon = VIcons.Calendar,
-            body = "Build the timetable in the Schedule tab.",
+            body = appString(StringKeys.CD_NO_TIMETABLE_BODY),
         )
         return
     }
@@ -321,7 +340,7 @@ private fun ClassTimetableSubTab(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        VSectionHeader("$className — Weekly Timetable")
+        VSectionHeader(appString(StringKeys.CD_WEEKLY_TIMETABLE).replace("{className}", className))
 
         // Day selector
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -341,9 +360,9 @@ private fun ClassTimetableSubTab(
 
         if (classPeriods.isEmpty()) {
             VEmptyState(
-                title = "No periods for ${WEEKDAY_NAMES[selectedDay]}",
+                title = appString(StringKeys.CD_NO_PERIODS).replace("{day}", WEEKDAY_NAMES[selectedDay]),
                 icon = VIcons.Calendar,
-                body = "No classes scheduled for $className on this day.",
+                body = appString(StringKeys.CD_NO_PERIODS_BODY).replace("{className}", className),
             )
         } else {
             classPeriods.forEach { period ->
@@ -357,7 +376,6 @@ private fun ClassTimetableSubTab(
 
 @Composable
 private fun ClassPeriodRow(period: TimetablePeriodDto) {
-    val c = VTheme.colors
     VCard(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
@@ -367,21 +385,21 @@ private fun ClassPeriodRow(period: TimetablePeriodDto) {
             Column(Modifier.weight(1f)) {
                 Text(
                     "${period.startTime} – ${period.endTime}",
-                    style = VTheme.type.body,
+                    style = VTypography.body,
                     fontWeight = FontWeight.Medium,
-                    color = c.ink,
+                    color = VColors.ink,
                 )
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (period.section.isNotBlank()) VBadge(text = period.section, tone = VBadgeTone.Accent)
-                    Text(period.subject, style = VTheme.type.caption.colored(c.ink2))
+                    Text(period.subject, style = VTypography.caption, color = VColors.ink2)
                     if (period.teacherName.isNotBlank()) {
-                        Text("• ${period.teacherName}", style = VTheme.type.caption.colored(c.ink3))
+                        Text("• ${period.teacherName}", style = VTypography.caption, color = VColors.ink3)
                     }
                 }
             }
             if (period.room.isNotBlank()) {
-                VBadge(text = "Room ${period.room}", tone = VBadgeTone.Success)
+                VBadge(text = appString(StringKeys.CD_ROOM).replace("{room}", period.room), tone = VBadgeTone.Success)
             }
         }
     }
@@ -394,7 +412,6 @@ private fun ClassAnalyticsSubTab(
     state: ClassPerformanceState,
     onRetry: () -> Unit,
 ) {
-    val c = VTheme.colors
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -407,21 +424,22 @@ private fun ClassAnalyticsSubTab(
                 state.subjectMatrix.isEmpty() &&
                 state.recentProgress.isEmpty() &&
                 state.avgProficiency.isBlank(),
-            emptyTitle = "No analytics yet",
-            emptyBody = "Class-level analytics will appear here once teachers post marks and attendance.",
+            emptyTitle = appString(StringKeys.CD_NO_ANALYTICS),
+            emptyBody = appString(StringKeys.CD_NO_ANALYTICS_BODY),
             emptyIcon = VIcons.TrendingUp,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // KPI row
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.weight(1f)) { AnalyticsKpi(label = "Avg proficiency", value = state.avgProficiency.ifBlank { "—" }) }
-                Box(Modifier.weight(1f)) { AnalyticsKpi(label = "Active students", value = state.activeStudents.toString()) }
-                Box(Modifier.weight(1f)) { AnalyticsKpi(label = "Median grade", value = state.medianGrade.ifBlank { "—" }) }
+                Box(Modifier.weight(1f)) { AnalyticsKpi(label = appString(StringKeys.CD_AVG_PROFICIENCY), value = state.avgProficiency.ifBlank { "—" }) }
+                Box(Modifier.weight(1f)) { AnalyticsKpi(label = appString(StringKeys.CD_ACTIVE_STUDENTS), value = state.activeStudents.toString()) }
+                Box(Modifier.weight(1f)) { AnalyticsKpi(label = appString(StringKeys.CD_MEDIAN_GRADE), value = state.medianGrade.ifBlank { "—" }) }
             }
 
             // Grade distribution
             if (state.gradeDistribution.isNotEmpty()) {
-                VSectionHeader(title = "GRADE DISTRIBUTION")
+                VSectionHeader(title = appString(StringKeys.CD_GRADE_DIST))
                 VCard {
                     state.gradeDistribution.forEachIndexed { i, g ->
                         if (i > 0) Spacer(Modifier.height(10.dp))
@@ -432,32 +450,32 @@ private fun ClassAnalyticsSubTab(
 
             // Subject matrix
             if (state.subjectMatrix.isNotEmpty()) {
-                VSectionHeader(title = "SUBJECT MATRIX")
+                VSectionHeader(title = appString(StringKeys.CD_SUBJECT_MATRIX))
                 VCard {
                     state.subjectMatrix.forEachIndexed { i, s ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.hairline))
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
                         AnalyticsSubjectRow(s)
                     }
                 }
             }
 
             // Risk summary
-            VSectionHeader(title = "EARLY WARNING")
+            VSectionHeader(title = appString(StringKeys.CD_EARLY_WARNING))
             VCard {
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Box(Modifier.weight(1f)) { AnalyticsRiskTile(label = "Critical", value = state.criticalRiskCount.toString(), tone = VBadgeTone.Danger) }
-                    Box(Modifier.weight(1f)) { AnalyticsRiskTile(label = "Moderate", value = state.moderateRiskCount.toString(), tone = VBadgeTone.Warning) }
-                    Box(Modifier.weight(1f)) { AnalyticsRiskTile(label = "On target", value = "${state.proficiencyTargetReach}%", tone = VBadgeTone.Success) }
+                    Box(Modifier.weight(1f)) { AnalyticsRiskTile(label = appString(StringKeys.CD_CRITICAL), value = state.criticalRiskCount.toString(), tone = VBadgeTone.Danger) }
+                    Box(Modifier.weight(1f)) { AnalyticsRiskTile(label = appString(StringKeys.CD_MODERATE), value = state.moderateRiskCount.toString(), tone = VBadgeTone.Warning) }
+                    Box(Modifier.weight(1f)) { AnalyticsRiskTile(label = appString(StringKeys.CD_ON_TARGET), value = "${state.proficiencyTargetReach}%", tone = VBadgeTone.Success) }
                 }
             }
 
             // Top performer
             if (state.topPerformerName.isNotBlank()) {
-                VSectionHeader(title = "TOP PERFORMER")
+                VSectionHeader(title = appString(StringKeys.CD_TOP_PERFORMER))
                 VCard {
                     Row(
                         Modifier.fillMaxWidth(),
@@ -466,10 +484,10 @@ private fun ClassAnalyticsSubTab(
                     ) {
                         VBadge(text = "★ 1ST", tone = VBadgeTone.Warning)
                         Column(Modifier.weight(1f)) {
-                            Text(state.topPerformerName, style = VTheme.type.bodyStrong.colored(c.ink))
+                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (state.topPerformerDetails.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
-                                Text(state.topPerformerDetails, style = VTheme.type.caption.colored(c.ink3))
+                                Text(state.topPerformerDetails, style = VTypography.caption, color = VColors.ink3, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -478,7 +496,7 @@ private fun ClassAnalyticsSubTab(
 
             // Recent progress monitoring
             if (state.recentProgress.isNotEmpty()) {
-                VSectionHeader(title = "PROGRESS MONITORING")
+                VSectionHeader(title = appString(StringKeys.CD_PROGRESS_MONITORING))
                 state.recentProgress.forEach { p -> AnalyticsProgressRow(p) }
             }
         }
@@ -488,19 +506,17 @@ private fun ClassAnalyticsSubTab(
 
 @Composable
 private fun AnalyticsKpi(label: String, value: String) {
-    val c = VTheme.colors
     VCard {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Text(label, style = VTypography.label, color = VColors.ink3, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
-        Text(value, style = VTheme.type.dataLg.colored(c.ink))
+        Text(value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
 private fun AnalyticsRiskTile(label: String, value: String, tone: VBadgeTone) {
-    val c = VTheme.colors
     Column {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Text(label, style = VTypography.label, color = VColors.ink3, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
         VBadge(text = value, tone = tone)
     }
@@ -508,11 +524,10 @@ private fun AnalyticsRiskTile(label: String, value: String, tone: VBadgeTone) {
 
 @Composable
 private fun AnalyticsGradeRow(g: com.littlebridge.enrollplus.feature.admin.presentation.GradeDistribution) {
-    val c = VTheme.colors
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(g.grade, style = VTheme.type.bodyStrong.colored(c.ink))
-            Text("${g.percentage}%", style = VTheme.type.dataSm.colored(c.ink2))
+            Text(g.grade, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text("${g.percentage}%", style = VTypography.bodySmall, color = VColors.ink2)
         }
         Spacer(Modifier.height(6.dp))
         VProgressBar(value = (g.value * 100f).coerceIn(0f, 100f))
@@ -521,26 +536,24 @@ private fun AnalyticsGradeRow(g: com.littlebridge.enrollplus.feature.admin.prese
 
 @Composable
 private fun AnalyticsSubjectRow(s: com.littlebridge.enrollplus.feature.admin.presentation.SubjectMatrixItem) {
-    val c = VTheme.colors
     val (trendText, trendTone) = when (s.trend.lowercase()) {
-        "up" -> "▲ Up" to VBadgeTone.Success
-        "down" -> "▼ Down" to VBadgeTone.Danger
-        else -> "● Flat" to VBadgeTone.Neutral
+        "up" -> appString(StringKeys.CD_TREND_UP) to VBadgeTone.Success
+        "down" -> appString(StringKeys.CD_TREND_DOWN) to VBadgeTone.Danger
+        else -> appString(StringKeys.CD_TREND_FLAT) to VBadgeTone.Neutral
     }
     Row(
         Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
-        Text("${s.percentage}%", style = VTheme.type.dataSm.colored(c.ink2))
+        Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, modifier = Modifier.weight(1f))
+        Text("${s.percentage}%", style = VTypography.bodySmall, color = VColors.ink2)
         VBadge(text = trendText, tone = trendTone)
     }
 }
 
 @Composable
 private fun AnalyticsProgressRow(p: com.littlebridge.enrollplus.feature.admin.presentation.ProgressMonitoringItem) {
-    val c = VTheme.colors
     val statusTone = when (p.status.uppercase()) {
         "EXCELLING" -> VBadgeTone.Success
         "PEWS ALERT" -> VBadgeTone.Danger
@@ -556,27 +569,27 @@ private fun AnalyticsProgressRow(p: com.littlebridge.enrollplus.feature.admin.pr
             Box(
                 Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(c.cream)
+                    .background(VColors.surfaceCard)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                Text(p.initials.take(2).uppercase(), style = VTheme.type.dataSm.colored(c.ink))
+                Text(p.initials.take(2).uppercase(), style = VTypography.bodySmall, color = VColors.ink)
             }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         p.name,
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = p.status, tone = statusTone)
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Math ${p.math} · Sci ${p.science} · Lit ${p.literature}",
-                    style = VTheme.type.dataSm.colored(c.ink2),
+                    "${appString(StringKeys.CD_MATH)} ${p.math} · ${appString(StringKeys.CD_SCI)} ${p.science} · ${appString(StringKeys.CD_LIT)} ${p.literature}",
+                    style = VTypography.bodySmall, color = VColors.ink2,
                 )
                 Spacer(Modifier.height(2.dp))
-                Text("Attendance ${p.attendance}", style = VTheme.type.caption.colored(c.ink3))
+                Text(appString(StringKeys.CD_ATTENDANCE_LABEL).replace("{percent}", p.attendance), style = VTypography.caption, color = VColors.ink3)
             }
         }
     }

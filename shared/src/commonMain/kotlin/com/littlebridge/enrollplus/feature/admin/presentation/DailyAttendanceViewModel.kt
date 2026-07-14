@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceEntryDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceMarkDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceSaveRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AttendanceRepository
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +36,12 @@ data class DailyAttendanceState(
     val presentCount: Int = 0,
     val attendancePercentage: String = "0%",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val isSaving: Boolean = false,
+    val saveSuccess: Boolean = false,
+    val saveError: String? = null,
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class DailyAttendanceViewModel(
@@ -85,7 +92,9 @@ class DailyAttendanceViewModel(
                         totalCount = data?.totalCount ?: 0,
                         presentCount = data?.presentCount ?: 0,
                         attendancePercentage = data?.attendancePercentage ?: "0%",
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
@@ -107,17 +116,63 @@ class DailyAttendanceViewModel(
     }
 
     fun updateStatus(attendeeId: String, newStatus: AttendanceStatus) {
-        // Local optimistic update; real API write can be added later
         val updated = _state.value.attendees.map {
             if (it.id == attendeeId) it.copy(status = newStatus) else it
         }
-        _state.value = _state.value.copy(attendees = updated)
+        _state.value = _state.value.copy(attendees = updated, saveSuccess = false)
+    }
+
+    fun save() {
+        val current = _state.value
+        if (current.attendees.isEmpty() || current.isSaving) return
+
+        viewModelScope.launch {
+            _state.value = current.copy(isSaving = true, saveError = null, saveSuccess = false)
+
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) {
+                _state.value = _state.value.copy(isSaving = false, saveError = "Not signed in")
+                return@launch
+            }
+
+            val serverType = if (current.attendanceType.lowercase().contains("faculty")) "faculty" else "student"
+            val today = com.littlebridge.enrollplus.util.todayIso()
+            val marks = current.attendees.map { a ->
+                AttendanceMarkDto(
+                    id = a.id,
+                    status = when (a.status) {
+                        AttendanceStatus.PRESENT -> "present"
+                        AttendanceStatus.ABSENT -> "absent"
+                        AttendanceStatus.LATE -> "late"
+                    }
+                )
+            }
+            val request = AttendanceSaveRequest(type = serverType, date = today, marks = marks)
+
+            when (val result = attendanceRepository.saveDailyAttendance(token, request)) {
+                is NetworkResult.Success -> {
+                    _state.value = _state.value.copy(isSaving = false, saveSuccess = true, saveError = null)
+                    loadAttendance(
+                        type = serverType,
+                        grade = if (serverType == "student") current.selectedClass else null
+                    )
+                }
+                is NetworkResult.Error -> {
+                    AppLogger.e("DailyAttendanceVM", "save error: ${result.message}")
+                    _state.value = _state.value.copy(isSaving = false, saveError = result.message)
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.value = _state.value.copy(isSaving = false, saveError = "Connection error")
+                }
+            }
+        }
     }
 
     private fun AttendanceEntryDto.toUiModel(): Attendee {
         val uiStatus = when (status.lowercase()) {
             "present", "half_day" -> AttendanceStatus.PRESENT
             "late" -> AttendanceStatus.LATE
+            "leave" -> AttendanceStatus.LATE
             else -> AttendanceStatus.ABSENT
         }
         val initials = name.split(" ")

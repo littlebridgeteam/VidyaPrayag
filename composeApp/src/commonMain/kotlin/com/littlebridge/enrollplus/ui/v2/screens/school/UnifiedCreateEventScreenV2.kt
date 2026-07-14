@@ -46,8 +46,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.components.VScheduleToggle
 import com.littlebridge.enrollplus.ui.v2.components.ScheduleSelection
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -74,8 +76,7 @@ fun UnifiedCreateEventScreenV2(
     viewModel: UnifiedCreateEventViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
-
+    
     LaunchedEffect(state.created) {
         if (state.created) {
             onCreated()
@@ -84,7 +85,7 @@ fun UnifiedCreateEventScreenV2(
     }
 
     Column(
-        modifier.fillMaxSize().background(c.background).imePadding().navigationBarsPadding(),
+        modifier.fillMaxSize().background(VColors.surface).imePadding().navigationBarsPadding(),
     ) {
         VBackHeader(
             title = "Create Event",
@@ -105,7 +106,7 @@ fun UnifiedCreateEventScreenV2(
             }
 
             state.errorMessage?.let {
-                Text(it, style = VTheme.type.caption.colored(c.dangerInk))
+                Text(it, style = VTypography.caption.copy(color = VColors.error))
             }
         }
 
@@ -119,18 +120,17 @@ fun UnifiedCreateEventScreenV2(
 
 @Composable
 private fun StepProgress(current: Int, total: Int) {
-    val c = VTheme.colors
-    Column(Modifier.fillMaxWidth().background(c.card).padding(horizontal = 16.dp, vertical = 10.dp)) {
+        Column(Modifier.fillMaxWidth().background(VColors.surfaceCard).padding(horizontal = 16.dp, vertical = 10.dp)) {
         Text(
             "Step $current of $total",
-            style = VTheme.type.label.colored(c.ink3),
+            style = VTypography.label.copy(color = VColors.ink3),
         )
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             (1..total).forEach { i ->
                 Box(
                     Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp))
-                        .background(if (i <= current) c.tealDeep else c.hairline),
+                        .background(if (i <= current) VColors.sky else VColors.lineSoft),
                 )
             }
         }
@@ -142,9 +142,8 @@ private fun UnifiedFooter(
     state: UnifiedCreateEventState,
     viewModel: UnifiedCreateEventViewModel,
 ) {
-    val c = VTheme.colors
-    Row(
-        Modifier.fillMaxWidth().background(c.card).padding(16.dp),
+        Row(
+        Modifier.fillMaxWidth().background(VColors.surfaceCard).padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -197,20 +196,19 @@ private fun StepWhat(
     state: UnifiedCreateEventState,
     viewModel: UnifiedCreateEventViewModel,
 ) {
-    val c = VTheme.colors
-    VLabel("What kind of event?")
+        VLabel("What kind of event?")
     TYPE_OPTIONS.chunked(2).forEach { row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             row.forEach { opt ->
                 val isSel = opt.type == state.form.type
                 VCard(
                     modifier = Modifier.weight(1f),
-                    background = if (isSel) c.teal.copy(alpha = 0.12f) else c.card,
+                    background = if (isSel) VColors.sky.copy(alpha = 0.12f) else VColors.surfaceCard,
                     onClick = { viewModel.setType(opt.type) },
                 ) {
-                    Text(opt.title, style = VTheme.type.bodyStrong.colored(if (isSel) c.tealDeep else c.ink))
+                    Text(opt.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = if (isSel) VColors.sky else VColors.ink))
                     Spacer(Modifier.height(2.dp))
-                    Text(opt.subtitle, style = VTheme.type.caption.colored(c.ink3))
+                    Text(opt.subtitle, style = VTypography.caption.copy(color = VColors.ink3))
                 }
             }
             if (row.size == 1) Box(Modifier.weight(1f)) {}
@@ -281,8 +279,7 @@ private fun StepWho(
     state: UnifiedCreateEventState,
     viewModel: UnifiedCreateEventViewModel,
 ) {
-    val c = VTheme.colors
-    val audienceOptions = listOf(
+        val audienceOptions = listOf(
         "Everyone" to "ALL_SCHOOL",
         "Class" to "CLASS",
         "Subject" to "SUBJECT",
@@ -335,13 +332,13 @@ private fun StepWho(
             Spacer(Modifier.height(4.dp))
             Text(
                 "This event will also sync to the Academic Calendar automatically.",
-                style = VTheme.type.caption.colored(c.tealDeep),
+                style = VTypography.caption.copy(color = VColors.sky),
             )
         } else {
             Spacer(Modifier.height(4.dp))
             Text(
                 "This event will appear in the Academic Calendar with a \"Calendar Only\" badge.",
-                style = VTheme.type.caption.colored(c.ink3),
+                style = VTypography.caption.copy(color = VColors.ink3),
             )
         }
     }
@@ -353,11 +350,10 @@ private fun StepWho(
 
 @Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
-    val c = VTheme.colors
-    val (bg, fg) = if (active) c.teal.copy(alpha = 0.16f) to c.tealDeep else c.cream to c.ink2
+        val (bg, fg) = if (active) VColors.sky.copy(alpha = 0.16f) to VColors.sky else VColors.cream to VColors.ink2
     Text(
         text = label,
-        style = VTheme.type.caption.colored(fg),
+        style = VTypography.caption.copy(color = fg),
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
             .background(bg)
@@ -373,14 +369,13 @@ private fun TogglePill(
     checked: Boolean,
     onToggle: (Boolean) -> Unit,
 ) {
-    val c = VTheme.colors
-    VCard(onClick = { onToggle(!checked) }) {
+        VCard(onClick = { onToggle(!checked) }) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = VTheme.type.bodyStrong.colored(c.ink), modifier = Modifier.weight(1f))
+                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), modifier = Modifier.weight(1f))
                 Box(
                     Modifier.size(width = 44.dp, height = 26.dp).clip(RoundedCornerShape(999.dp))
-                        .background(if (checked) c.tealDeep else c.hairline)
+                        .background(if (checked) VColors.sky else VColors.lineSoft)
                         .clickable { onToggle(!checked) }
                         .padding(3.dp),
                     contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
@@ -390,7 +385,7 @@ private fun TogglePill(
             }
             if (subtitle != null) {
                 Spacer(Modifier.height(4.dp))
-                Text(subtitle, style = VTheme.type.caption.colored(c.ink3))
+                Text(subtitle, style = VTypography.caption.copy(color = VColors.ink3))
             }
         }
     }

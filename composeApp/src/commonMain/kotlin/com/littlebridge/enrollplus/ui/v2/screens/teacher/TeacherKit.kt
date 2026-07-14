@@ -48,8 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.VColors
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors as VTok
+import com.littlebridge.enrollplus.ui.tokens.VTypography as VTypo
 import com.littlebridge.enrollplus.util.nowMinutesOfDay
 
 /**
@@ -67,13 +67,36 @@ import com.littlebridge.enrollplus.util.nowMinutesOfDay
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Token bridge — the legacy T* atoms below now paint with the cream/violet
+// [VTok] tokens instead of the lavender VTheme palette, so every screen that
+// still calls TCard/TEyebrow/TPill/TRing/TMetricTile/… gets the new look with no
+// call-site churn. Same accessor names, new source of truth.
+// ─────────────────────────────────────────────────────────────────────────────
+private object KitC {
+    val background: Color get() = VTok.cream
+    val card: Color get() = VTok.white
+    val cream: Color get() = VTok.surfaceTint
+    val hairline: Color get() = VTok.line
+    val ink: Color get() = VTok.ink
+    val ink2: Color get() = VTok.ink2
+    val ink3: Color get() = VTok.ink3
+    val navyDeep: Color get() = VTok.ink
+    val accent: Color get() = VTok.violet
+    val accentDeep: Color get() = VTok.violetInk
+    val teal: Color get() = VTok.mint
+    val tealDeep: Color get() = VTok.success
+}
+
+private fun androidx.compose.ui.text.TextStyle.coloredK(color: Color) = copy(color = color)
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Palette — harmonious per-subject accent rotation (mirrors ParentPalette).
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Pure (non-@Composable) helpers: they only read colors off the passed-in
 // [VColors] and do plain arithmetic, so they can be called from any context —
 // including non-composable lambdas (e.g. the `tint` callback in ChipFlow).
-fun teacherSubjectPalette(c: VColors): List<Color> = listOf(
+fun teacherSubjectPalette(c: VtC): List<Color> = listOf(
     c.accent,          // violet (brand)
     c.teal,            // teal
     Color(0xFF6C8DF5), // sky
@@ -82,7 +105,7 @@ fun teacherSubjectPalette(c: VColors): List<Color> = listOf(
 )
 
 /** Deterministic, stable per-key accent so a given subject keeps its hue everywhere. */
-fun teacherSubjectColor(c: VColors, key: String): Color {
+fun teacherSubjectColor(c: VtC, key: String): Color {
     val palette = teacherSubjectPalette(c)
     if (key.isBlank()) return palette.first()
     val idx = ((key.hashCode() % palette.size) + palette.size) % palette.size
@@ -111,7 +134,7 @@ fun Modifier.teacherCanvas(c: VColors): Modifier = this
 
 @Composable
 fun TeacherAurora(modifier: Modifier = Modifier) {
-    val c = VTheme.colors
+    val c = KitC
     Box(
         modifier
             .fillMaxSize()
@@ -144,7 +167,7 @@ fun TeacherCenterState(content: @Composable () -> Unit) {
 /** The portal's signature brand-violet spinner. */
 @Composable
 fun TeacherSpinner(size: androidx.compose.ui.unit.Dp = 34.dp) {
-    CircularProgressIndicator(color = VTheme.colors.accent, modifier = Modifier.size(size))
+    CircularProgressIndicator(color = VTok.violet, modifier = Modifier.size(size))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,7 +188,7 @@ fun SwipeExpandCard(
     padding: androidx.compose.ui.unit.Dp = 16.dp,
     content: @Composable (Int) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = KitC
     val swipe = Modifier.pointerInput(face) {
         var dx = 0f
         detectHorizontalDragGestures(
@@ -204,7 +227,7 @@ fun SwipeExpandCard(
 /** A row of tiny dots indicating which face of a SwipeExpandCard is shown. */
 @Composable
 fun FaceDots(face: Int, count: Int, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
+    val c = KitC
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(count) { i ->
             Box(
@@ -229,7 +252,7 @@ fun TCard(
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = KitC
     var base = modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(24.dp))
@@ -248,12 +271,12 @@ private fun remember0() = androidx.compose.runtime.remember { MutableInteraction
 /** An eyebrow label with an optional leading status dot. */
 @Composable
 fun TEyebrow(text: String, dot: Color? = null, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
+    val c = KitC
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         if (dot != null) Box(Modifier.size(6.dp).clip(CircleShape).background(dot))
         Text(
             text,
-            style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 0.6.sp),
+            style = VTypo.label.coloredK(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 0.6.sp),
         )
     }
 }
@@ -273,7 +296,7 @@ fun TPill(
         horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         if (leading != null) leading()
-        Text(label, style = VTheme.type.label.colored(fg).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp))
+        Text(label, style = VTypo.label.coloredK(fg).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp))
     }
 }
 
@@ -293,11 +316,11 @@ fun TIconDisc(icon: ImageVector, tint: Color, bg: Color, size: androidx.compose.
 fun TRing(
     percent: Int,
     modifier: Modifier = Modifier,
-    accent: Color = VTheme.colors.accent,
+    accent: Color = VTok.violet,
     track: Color = accent.copy(alpha = 0.15f),
     stroke: androidx.compose.ui.unit.Dp = 6.dp,
     label: String = "$percent%",
-    labelColor: Color = VTheme.colors.navyDeep,
+    labelColor: Color = VTok.ink,
     labelSize: androidx.compose.ui.unit.TextUnit = 15.sp,
 ) {
     val sweep by animateFloatAsState(targetValue = (percent / 100f).coerceIn(0f, 1f), label = "tring")
@@ -314,14 +337,14 @@ fun TRing(
                 topLeft = topLeft, size = arcSize, style = Stroke(width = s, cap = StrokeCap.Round),
             )
         }
-        Text(label, style = VTheme.type.dataLg.colored(labelColor).copy(fontWeight = FontWeight.ExtraBold, fontSize = labelSize))
+        Text(label, style = VTypo.h2.coloredK(labelColor).copy(fontWeight = FontWeight.ExtraBold, fontSize = labelSize))
     }
 }
 
 /** A compact metric tile (number over caption) on a soft tinted plate. */
 @Composable
 fun TMetricTile(value: String, label: String, tint: Color, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
+    val c = KitC
     Column(
         modifier
             .clip(RoundedCornerShape(16.dp))
@@ -329,16 +352,16 @@ fun TMetricTile(value: String, label: String, tint: Color, modifier: Modifier = 
             .padding(horizontal = 12.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = VTheme.type.dataLg.colored(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 20.sp))
+        Text(value, style = VTypo.h2.coloredK(c.navyDeep).copy(fontWeight = FontWeight.ExtraBold, fontSize = 20.sp))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Text(label, style = VTypo.caption.coloredK(c.ink3).copy(fontSize = 10.sp))
     }
 }
 
 /** A circular header / nav action button — cream disc, navy glyph, no ripple. */
 @Composable
 fun TCircleButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val c = VTheme.colors
+    val c = KitC
     val ix = remember0()
     Box(
         modifier
@@ -355,10 +378,10 @@ fun TCircleButton(icon: ImageVector, label: String, onClick: () -> Unit, modifie
 /** A "swipe for more" hint line shown at the foot of an expandable card. */
 @Composable
 fun TSwipeHint(text: String = "Swipe for more", modifier: Modifier = Modifier) {
-    val c = VTheme.colors
+    val c = KitC
     Text(
         text,
-        style = VTheme.type.label.colored(c.ink3).copy(fontSize = 9.sp, letterSpacing = 0.4.sp),
+        style = VTypo.label.coloredK(c.ink3).copy(fontSize = 9.sp, letterSpacing = 0.4.sp),
         modifier = modifier,
     )
 }

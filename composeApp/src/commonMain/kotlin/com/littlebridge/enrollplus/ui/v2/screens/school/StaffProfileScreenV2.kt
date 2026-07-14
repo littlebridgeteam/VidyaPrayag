@@ -37,9 +37,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -67,7 +70,7 @@ fun StaffProfileScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Staff", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_STAFF), onBack = onBack)
         StaffProfileContent(
             member = member,
             isLoading = state.isLoading,
@@ -90,8 +93,7 @@ private fun StaffProfileContent(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    var confirmRemove by remember { mutableStateOf(false) }
+        var confirmRemove by remember { mutableStateOf(false) }
 
     Column(
         modifier
@@ -104,10 +106,11 @@ private fun StaffProfileContent(
             loading = isLoading,
             error = error,
             isEmpty = member == null && !isLoading && error == null,
-            emptyTitle = "No profile",
-            emptyBody = "This staff member's record could not be found.",
+            emptyTitle = appString(StringKeys.SCH_NO_PROFILE),
+            emptyBody = appString(StringKeys.SCH_NO_PROFILE_DESC),
             emptyIcon = VIcons.User,
             onRetry = onRetry,
+            skeleton = { SkeletonProfile() },
         ) {
             val m = member ?: return@VStateHost
 
@@ -115,8 +118,8 @@ private fun StaffProfileContent(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     VAvatar(name = m.fullName, src = m.photoUrl, size = 56.dp)
                     Column(Modifier.weight(1f)) {
-                        Text(m.fullName, style = VTheme.type.h3.colored(c.ink))
-                        Text(m.role, style = VTheme.type.caption.colored(c.ink2))
+                        Text(m.fullName, style = VTypography.h3.copy(color = VColors.ink))
+                        Text(m.role, style = VTypography.caption.copy(color = VColors.ink2))
                     }
                     m.department?.takeIf { it.isNotBlank() }?.let {
                         VBadge(text = it, tone = VBadgeTone.Neutral)
@@ -124,24 +127,24 @@ private fun StaffProfileContent(
                 }
             }
 
-            VSectionHeader(title = "CONTACT")
+            VSectionHeader(title = appString(StringKeys.SCH_CONTACT))
             VCard {
                 val phone = m.phone?.takeIf { it.isNotBlank() }
                 val email = m.email?.takeIf { it.isNotBlank() }
                 if (phone == null && email == null) {
-                    Text("No contact details on file.", style = VTheme.type.body.colored(c.ink2))
+                    Text(appString(StringKeys.SCH_NO_CONTACT_DETAILS), style = VTypography.body.copy(color = VColors.ink2))
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         phone?.let {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(VIcons.Phone, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
-                                Text(it, style = VTheme.type.body.colored(c.ink))
+                                Icon(VIcons.Phone, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+                                Text(it, style = VTypography.body.copy(color = VColors.ink))
                             }
                         }
                         email?.let {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(VIcons.Mail, contentDescription = null, tint = c.ink3, modifier = Modifier.size(16.dp))
-                                Text(it, style = VTheme.type.body.colored(c.ink))
+                                Icon(VIcons.Mail, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(16.dp))
+                                Text(it, style = VTypography.body.copy(color = VColors.ink))
                             }
                         }
                     }
@@ -150,7 +153,7 @@ private fun StaffProfileContent(
 
             Spacer(Modifier.height(12.dp))
             VButton(
-                text = "Remove from school",
+                text = appString(StringKeys.SCH_REMOVE_FROM_SCHOOL),
                 onClick = { confirmRemove = true },
                 variant = VButtonVariant.Destructive,
                 full = true,
@@ -163,10 +166,9 @@ private fun StaffProfileContent(
 
     VConfirmDialog(
         visible = confirmRemove,
-        title = "Remove staff member",
-        message = "Remove ${member?.fullName ?: "this staff member"} from your school? " +
-            "Their record will be hidden. This can be reversed by re-adding them.",
-        confirmLabel = "Remove",
+        title = appString(StringKeys.SCH_REMOVE_STAFF_MEMBER),
+        message = appString(StringKeys.SCH_REMOVE_STAFF_CONFIRM, "name" to (member?.fullName ?: appString(StringKeys.SCH_STAFF))),
+        confirmLabel = appString(StringKeys.SCH_REMOVE),
         icon = VIcons.AlertTriangle,
         onConfirm = { confirmRemove = false; onRemove() },
         onDismiss = { confirmRemove = false },

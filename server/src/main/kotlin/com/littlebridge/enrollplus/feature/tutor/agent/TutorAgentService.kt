@@ -69,7 +69,8 @@ class TutorAgentService(
         val agentResult = runAgent(schoolId, childId, subjectId, question, bundle)
 
         if (agentResult != null) {
-            val turn = TutorTurnCodec.parse(agentResult.content!!)
+            val content = agentResult.content ?: ""
+            val turn = TutorTurnCodec.parse(content)
             if (turn != null) {
                 // Ground the turn against the deterministic bundle
                 val grounded = if (bundle != null) {

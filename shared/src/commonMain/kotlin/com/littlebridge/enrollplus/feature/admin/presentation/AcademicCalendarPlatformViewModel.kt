@@ -49,7 +49,9 @@ data class AcademicCalendarPlatformState(
     val isRefreshing: Boolean = false,
     val isMutating: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     val isEmpty: Boolean
         get() = dashboard == null && events.isEmpty() && !isLoading
@@ -86,7 +88,7 @@ class AcademicCalendarPlatformViewModel(
             // Dashboard + events in sequence (cheap; keeps error handling simple).
             when (val dash = repository.getDashboard(token)) {
                 is NetworkResult.Success ->
-                    _state.value = _state.value.copy(dashboard = dash.data.data)
+                    _state.value = _state.value.copy(dashboard = dash.data.data, isStale = dash.isStale, isOffline = dash.isOffline)
                 is NetworkResult.Error -> {
                     AppLogger.e(tag, "dashboard error: ${dash.message}")
                     _state.value = _state.value.copy(errorMessage = dash.message)
@@ -105,7 +107,7 @@ class AcademicCalendarPlatformViewModel(
         val s = _state.value
         when (val r = repository.getEvents(token, s.monthFilter, s.statusFilter, s.typeFilter)) {
             is NetworkResult.Success ->
-                _state.value = _state.value.copy(events = r.data.data?.events.orEmpty())
+                _state.value = _state.value.copy(events = r.data.data?.events.orEmpty(), isStale = r.isStale, isOffline = r.isOffline)
             is NetworkResult.Error -> {
                 AppLogger.e(tag, "events error: ${r.message}")
                 _state.value = _state.value.copy(errorMessage = r.message)
@@ -137,7 +139,7 @@ class AcademicCalendarPlatformViewModel(
     private fun reloadEvents() {
         viewModelScope.launch {
             val token = token() ?: return@launch
-            _state.value = _state.value.copy(isLoading = true)
+            _state.value = _state.value.copy(isLoading = true, errorMessage = null)
             loadEvents(token)
             _state.value = _state.value.copy(isLoading = false)
         }

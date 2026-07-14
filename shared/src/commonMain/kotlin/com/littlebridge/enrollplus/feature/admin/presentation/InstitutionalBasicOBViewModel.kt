@@ -51,6 +51,10 @@ class InstitutionalBasicOBViewModel(
         _state.value = _state.value.copy(boardAffiliation = board)
     }
 
+    fun updateAffiliation(affiliationNumber: String) {
+        _state.value = _state.value.copy(affiliationNumber = affiliationNumber)
+    }
+
     fun updateEmail(email: String) {
         _state.value = _state.value.copy(officialEmail = email)
     }
@@ -119,10 +123,24 @@ class InstitutionalBasicOBViewModel(
             }
 
             val current = _state.value
+
+            // Regression guard for "mandatory validation missing" bug: the BASIC step
+            // must have a real school name and contact number before the server is called.
+            // Keeping validation client-side prevents the wizard from advancing and the
+            // admin from reaching an empty / unnamed dashboard.
+            val validationError = validateBasics(current)
+            if (validationError != null) {
+                _errorMessage.value = validationError
+                _isSubmitting.value = false
+                return@launch
+            }
+
             val payload = JsonObject(
                 buildMap {
                     put(ObPayloadKeys.SCHOOL_NAME, JsonPrimitive(current.schoolName.trim()))
                     put(ObPayloadKeys.BOARD, JsonPrimitive(current.boardAffiliation.trim()))
+                    current.affiliationNumber.trim().takeIf { it.isNotBlank() }
+                        ?.let { put(ObPayloadKeys.AFFILIATION_NUMBER, JsonPrimitive(it)) }
                     // Only send the email when the admin actually entered one, so a
                     // blank Step-1 form never overwrites the real contact email that
                     // was captured at school registration.
@@ -186,4 +204,34 @@ class InstitutionalBasicOBViewModel(
             }
         }
     }
+}
+
+/**
+ * Validates the fields the mobile BASIC step actually collects.
+ * Returns a user-facing error message, or null when the data is complete enough
+ * to send to the server.
+ */
+internal fun validateBasics(basics: OnboardingBasics): String? {
+    if (basics.schoolName.isBlank()) return "School name is required."
+    if (!basics.schoolName.matches(Regex("^[a-zA-Z\\s']+$"))) {
+        return "School name can only contain letters, spaces, and apostrophes."
+    }
+    if (basics.contactNumber.isBlank()) return "Principal's mobile number is required."
+    if (basics.contactNumber.length != 10 || !basics.contactNumber.all { it.isDigit() }) {
+        return "Enter a valid 10-digit mobile number."
+    }
+    if (basics.affiliationNumber.isNotBlank()) {
+        val board = basics.boardAffiliation
+        val affUpper = basics.affiliationNumber.uppercase()
+        val mismatch = when (board) {
+            "CBSE" -> !affUpper.contains("CBSE")
+            "ICSE" -> !affUpper.contains("ICSE")
+            "UP State" -> !affUpper.contains("UP") && !affUpper.contains("UPBOARD")
+            else -> false
+        }
+        if (mismatch) {
+            return "Affiliation number does not match the selected board ($board)."
+        }
+    }
+    return null
 }

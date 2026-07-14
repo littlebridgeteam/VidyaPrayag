@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { adminApi } from "@/lib/admin/client";
 import { ApiError } from "@/lib/api";
 import type { AlumniDto, AlumniCampaignDto, AlumniDonationDto, AlumniAnalyticsDto, AlumniMentorshipDto, AlumniMentorshipRequestDto } from "@/lib/admin/types";
-import { Card, EmptyState, FadeIn, Badge } from "@/components/admin/Primitives";
+import { Card, EmptyState, FadeIn, Badge, Skeleton } from "@/components/admin/Primitives";
 import { IconAlumni, IconSearch, IconPlus, IconCheck, IconClose } from "@/components/admin/icons";
 
 type Tab = "directory" | "pending" | "campaigns" | "donations" | "mentorship" | "analytics";
@@ -70,7 +70,7 @@ function DirectoryTab({ q, setQ }: { q: string; setQ: (v: string) => void }) {
         />
       </div>
 
-      {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-navy/5" />}
+      {isLoading && <Skeleton className="h-40" />}
       {error && <ErrorCard error={error} />}
       {data && (
         <>
@@ -133,7 +133,7 @@ function PendingTab() {
 
   return (
     <div className="space-y-4">
-      {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-navy/5" />}
+      {isLoading && <Skeleton className="h-40" />}
       {error && <ErrorCard error={error} />}
       {data && data.length === 0 && <EmptyState title="No pending verifications" hint="All alumni registrations have been reviewed." />}
       {data && data.length > 0 && (
@@ -175,7 +175,7 @@ function CampaignsTab() {
 
   return (
     <div className="space-y-4">
-      {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-navy/5" />}
+      {isLoading && <Skeleton className="h-40" />}
       {error && <ErrorCard error={error} />}
       {data && data.length === 0 && <EmptyState title="No campaigns yet" hint="Create a donation campaign to engage alumni." />}
       {data && data.length > 0 && (
@@ -216,7 +216,7 @@ function DonationsTab() {
 
   return (
     <div className="space-y-4">
-      {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-navy/5" />}
+      {isLoading && <Skeleton className="h-40" />}
       {error && <ErrorCard error={error} />}
       {data && data.length === 0 && <EmptyState title="No donations recorded" hint="Log donations from the alumni detail view." />}
       {data && data.length > 0 && (
@@ -262,7 +262,7 @@ function AnalyticsTab() {
 
   return (
     <div className="space-y-4">
-      {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-navy/5" />}
+      {isLoading && <Skeleton className="h-40" />}
       {error && <ErrorCard error={error} />}
       {data && <AnalyticsGrid data={data} />}
     </div>
@@ -341,14 +341,23 @@ function AnalyticsGrid({ data }: { data: AlumniAnalyticsDto }) {
 
 function MentorshipTab() {
   const { data: mentorships, error: mErr, isLoading: mLoading } = useSWR("alumni-mentorships", () => adminApi.alumniMentorships());
-  const { data: requests, error: rErr, isLoading: rLoading } = useSWR("alumni-mentorship-requests", () => adminApi.alumniMentorshipRequests());
+  const { data: requests, error: rErr, isLoading: rLoading, mutate: mutateRequests } = useSWR("alumni-mentorship-requests", () => adminApi.alumniMentorshipRequests());
+
+  async function handleRequest(requestId: string, action: string) {
+    try {
+      await adminApi.alumniMentorshipRequestOverride(requestId, action);
+      await mutateRequests();
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   return (
     <div className="space-y-6">
       {/* Active mentorships */}
       <div className="space-y-3">
         <h3 className="text-[15px] font-semibold text-ink">Active Mentorships</h3>
-        {mLoading && <div className="h-32 animate-pulse rounded-2xl bg-navy/5" />}
+        {mLoading && <Skeleton className="h-32" />}
         {mErr && <ErrorCard error={mErr} />}
         {mentorships && mentorships.length === 0 && <EmptyState title="No active mentorships" hint="Mentorships will appear here once alumni start mentoring students." />}
         {mentorships && mentorships.length > 0 && (
@@ -372,13 +381,13 @@ function MentorshipTab() {
       {/* Pending requests */}
       <div className="space-y-3">
         <h3 className="text-[15px] font-semibold text-ink">Mentorship Requests</h3>
-        {rLoading && <div className="h-32 animate-pulse rounded-2xl bg-navy/5" />}
+        {rLoading && <Skeleton className="h-32" />}
         {rErr && <ErrorCard error={rErr} />}
         {requests && requests.length === 0 && <EmptyState title="No mentorship requests" hint="Student requests for alumni mentorship will appear here." />}
         {requests && requests.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
             {requests.map((r) => (
-              <Card key={r.id} className="space-y-1">
+              <Card key={r.id} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-ink">{r.alumniName}</p>
                   <Badge tone={r.status === "pending" ? "warning" : "neutral"}>{r.status}</Badge>
@@ -387,6 +396,22 @@ function MentorshipTab() {
                 <p className="text-[13px] text-ink-2">Requested by: {r.requestedByName}</p>
                 {r.expertiseArea && <p className="text-[13px] text-ink-2">Expertise: {r.expertiseArea}</p>}
                 {r.message && <p className="text-[13px] text-ink-2">{r.message}</p>}
+                {r.status === "pending" && (
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => handleRequest(r.id, "approve")}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-green-700"
+                    >
+                      <IconCheck className="h-4 w-4" /> Approve
+                    </button>
+                    <button
+                      onClick={() => handleRequest(r.id, "decline")}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-red-700"
+                    >
+                      <IconClose className="h-4 w-4" /> Decline
+                    </button>
+                  </div>
+                )}
               </Card>
             ))}
           </div>

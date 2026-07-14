@@ -31,7 +31,9 @@ data class AcademicYearState(
     val isRefreshing: Boolean = false,
     val isMutating: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     val activeYear: AcademicYearDto? get() = years.firstOrNull { it.isActive }
     val historicalYears: List<AcademicYearDto>
@@ -66,7 +68,9 @@ class AcademicYearViewModel(
                     _state.value = _state.value.copy(
                         years = r.data.data?.years.orEmpty(),
                         isLoading = false,
-                        isRefreshing = false
+                        isRefreshing = false,
+                        isStale = r.isStale,
+                        isOffline = r.isOffline,
                     )
                 is NetworkResult.Error -> {
                     AppLogger.e(tag, "getYears error: ${r.message}")

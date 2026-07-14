@@ -25,6 +25,8 @@ data class StudentProfileState(
     val error: String? = null,
     val forbidden: Boolean = false,   // 403 — teacher doesn't teach this student
     val profile: StudentProfileData? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherStudentProfileViewModel(
@@ -46,7 +48,7 @@ class TeacherStudentProfileViewModel(
             }
             when (val r = repository.getStudentProfileV2(token, studentId)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(isLoading = false, profile = r.data.data) }
+                    _state.update { it.copy(isLoading = false, profile = r.data.data, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error -> {
                     // The scope law: a 403 is a semantic "not your student", not a transient error.
                     val forbidden = r.code == 403 || r.message.contains("teach", ignoreCase = true)

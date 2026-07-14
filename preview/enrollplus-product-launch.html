@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Product Launch</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --lavender: #E6E6FA;
+    --violet: #6C5CE0;
+    --deep-violet: #544AB8;
+    --navy: #26234D;
+    --ink: #1A1838;
+    --white: #FFFFFF;
+    --off-white: #F8F7FC;
+  }
+
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #000; font-family: 'Inter', -apple-system, sans-serif;
+    cursor: none;
+  }
+
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .scene {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .scene.active { opacity: 1; pointer-events: auto; }
+  .scene.exit { opacity: 0; }
+
+  /* ===== Progress bar ===== */
+  #progress-track {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 3px; background: rgba(255,255,255,0.08); z-index: 100;
+  }
+  #progress-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #544AB8, #6C5CE0, #544AB8);
+    transition: width 0.1s linear;
+  }
+
+  /* ===== Scene indicators ===== */
+  #indicators {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 100;
+  }
+  .indicator {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.4s ease;
+  }
+  .indicator.active {
+    background: #6C5CE0; width: 24px; border-radius: 3px;
+  }
+
+  /* ===== Replay button ===== */
+  #replay {
+    position: fixed; top: 24px; right: 24px; z-index: 100;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+    color: rgba(255,255,255,0.6); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.6s ease;
+    font-size: 18px;
+  }
+  #replay.visible { opacity: 1; }
+  #replay:hover { background: rgba(108,92,224,0.3); color: #fff; }
+
+  /* ===== Brand mark (Setu bridge) ===== */
+  .bridge-mark {
+    width: 120px; height: 120px;
+  }
+  .bridge-mark svg { width: 100%; height: 100%; }
+
+  /* ===== Typography ===== */
+  .headline {
+    font-weight: 800; letter-spacing: -3px; line-height: 1.05;
+    text-align: center;
+  }
+  .subhead {
+    font-weight: 400; letter-spacing: -0.5px; line-height: 1.4;
+    text-align: center;
+  }
+
+  /* ===== Animations ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes blurIn {
+    from { opacity: 0; filter: blur(20px); transform: scale(1.1); }
+    to { opacity: 1; filter: blur(0); transform: scale(1); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes glow {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(108,92,224,0.3)); }
+    50% { filter: drop-shadow(0 0 40px rgba(108,92,224,0.6)); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes drawLine {
+    from { stroke-dashoffset: 1000; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  .anim-fade-up { animation: fadeUp 1s cubic-bezier(0.4,0,0.2,1) forwards; }
+  .anim-fade-down { animation: fadeDown 1s cubic-bezier(0.4,0,0.2,1) forwards; }
+  .anim-scale-in { animation: scaleIn 1.2s cubic-bezier(0.4,0,0.2,1) forwards; }
+  .anim-blur-in { animation: blurIn 1.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+  .anim-glow { animation: glow 3s ease-in-out infinite; }
+  .anim-float { animation: float 4s ease-in-out infinite; }
+
+  .stagger-1 { animation-delay: 0.15s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.3s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.45s; opacity: 0; }
+  .stagger-4 { animation-delay: 0.6s; opacity: 0; }
+  .stagger-5 { animation-delay: 0.75s; opacity: 0; }
+  .stagger-6 { animation-delay: 0.9s; opacity: 0; }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #6C5CE0, #A29BFE, #6C5CE0);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  /* ===== Scene 0: Black + logo reveal ===== */
+  #scene0 { background: #000; }
+  #scene0 .bridge-mark { animation: glow 3s ease-in-out infinite; }
+
+  /* ===== Scene 1: "The OS for your campus" ===== */
+  #scene1 { background: linear-gradient(180deg, #000 0%, #0A0820 100%); }
+
+  /* ===== Scene 2: Three pillars ===== */
+  #scene2 { background: linear-gradient(180deg, #0A0820 0%, #000 100%); }
+  .pillar {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .pillar-icon {
+    width: 80px; height: 80px; border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 800;
+  }
+  .pillar-admin { background: linear-gradient(135deg, #26234D, #3D3A6B); color: #A29BFE; }
+  .pillar-teacher { background: linear-gradient(135deg, #544AB8, #6C5CE0); color: #fff; }
+  .pillar-parent { background: linear-gradient(135deg, #6C5CE0, #A29BFE); color: #fff; }
+
+  /* ===== Scene 3: Feature showcase ===== */
+  #scene3 { background: #000; }
+  .feature-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px; padding: 32px 28px;
+    display: flex; flex-direction: column; gap: 12px;
+    backdrop-filter: blur(20px);
+  }
+  .feature-card .icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: rgba(108,92,224,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .feature-card h3 { font-size: 18px; font-weight: 700; color: #fff; }
+  .feature-card p { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+  /* ===== Scene 4: Stats ===== */
+  #scene4 { background: linear-gradient(180deg, #000 0%, #0A0820 100%); }
+  .stat-number {
+    font-size: 96px; font-weight: 900; letter-spacing: -4px;
+    background: linear-gradient(135deg, #6C5CE0, #A29BFE);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 18px; color: rgba(255,255,255,0.5); font-weight: 400; }
+
+  /* ===== Scene 5: Final CTA ===== */
+  #scene5 { background: #000; }
+  #scene5 .bridge-mark { animation: glow 3s ease-in-out infinite, float 4s ease-in-out infinite; }
+
+  /* ===== Phone mockup ===== */
+  .phone-mockup {
+    width: 280px; height: 580px;
+    border-radius: 40px; border: 3px solid rgba(255,255,255,0.1);
+    background: linear-gradient(180deg, #0F0D1A, #1A1838);
+    box-shadow: 0 0 80px rgba(108,92,224,0.15);
+    overflow: hidden; position: relative;
+  }
+  .phone-screen {
+    position: absolute; inset: 12px; border-radius: 32px;
+    background: var(--off-white); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .phone-header {
+    padding: 20px 16px 12px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  .phone-header .dot {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: linear-gradient(135deg, #6C5CE0, #A29BFE);
+  }
+  .phone-header .line {
+    height: 8px; border-radius: 4px; background: rgba(0,0,0,0.08);
+  }
+  .phone-body { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .phone-card {
+    background: #fff; border-radius: 14px; padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .phone-card .bar { height: 6px; border-radius: 3px; background: rgba(0,0,0,0.06); }
+  .phone-card .bar-accent { background: linear-gradient(90deg, #6C5CE0, #A29BFE); }
+  .phone-dock {
+    height: 56px; border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex; align-items: center; justify-content: space-around;
+    background: #fff;
+  }
+  .phone-dock .tab {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(108,92,224,0.1);
+  }
+  .phone-dock .tab.active { background: #6C5CE0; }
+
+  /* ===== Ambient particles ===== */
+  .particle {
+    position: absolute; border-radius: 50%;
+    background: rgba(108,92,224,0.3);
+    pointer-events: none;
+  }
+
+  /* ===== Glow orbs ===== */
+  .glow-orb {
+    position: absolute; border-radius: 50%;
+    filter: blur(80px); pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- Ambient glow orbs -->
+  <div class="glow-orb" style="width:600px;height:600px;background:rgba(108,92,224,0.08);top:-200px;left:-200px;"></div>
+  <div class="glow-orb" style="width:500px;height:500px;background:rgba(84,74,184,0.06);bottom:-150px;right:-150px;"></div>
+
+  <!-- ===== SCENE 0: Logo reveal ===== -->
+  <div class="scene" id="scene0">
+    <div class="bridge-mark anim-scale-in" style="margin-bottom: 40px;">
+      <svg viewBox="0 0 64 64" fill="none">
+        <defs>
+          <linearGradient id="span0" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#544AB8"/>
+            <stop offset="0.5" stop-color="#6C5CE0"/>
+            <stop offset="1" stop-color="#544AB8"/>
+          </linearGradient>
+        </defs>
+        <path d="M16 36 Q32 16 48 36" stroke="url(#span0)" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+        <path d="M14 44 H50" stroke="#A29BFE" stroke-width="4" stroke-linecap="round"/>
+        <path d="M22 36 V44" stroke="#A29BFE" stroke-opacity="0.6" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M32 26 V44" stroke="#A29BFE" stroke-opacity="0.6" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M42 36 V44" stroke="#A29BFE" stroke-opacity="0.6" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="16" cy="36" r="2.9" fill="#A29BFE"/>
+        <circle cx="48" cy="36" r="2.9" fill="#A29BFE"/>
+        <circle cx="32" cy="26" r="3" fill="#6C5CE0"/>
+      </svg>
+    </div>
+    <div class="anim-fade-up stagger-2" style="font-size: 56px; font-weight: 900; color: #fff; letter-spacing: -2px;">
+      Enroll<span style="color:#6C5CE0">+</span>
+    </div>
+    <div class="anim-fade-up stagger-4" style="font-size: 16px; color: rgba(255,255,255,0.3); font-weight: 400; margin-top: 12px; letter-spacing: 4px; text-transform: uppercase;">
+      Introducing
+    </div>
+  </div>
+
+  <!-- ===== SCENE 1: The OS for your campus ===== -->
+  <div class="scene" id="scene1">
+    <div class="anim-blur-in" style="text-align: center;">
+      <div class="headline gradient-text" style="font-size: 80px; margin-bottom: 24px;">
+        The OS for<br>your campus.
+      </div>
+    </div>
+    <div class="subhead anim-fade-up stagger-3" style="font-size: 22px; color: rgba(255,255,255,0.4); max-width: 600px; margin-top: 20px;">
+      One platform connecting your office,<br>your teachers, and every parent.
+    </div>
+  </div>
+
+  <!-- ===== SCENE 2: Three pillars ===== -->
+  <div class="scene" id="scene2">
+    <div class="anim-fade-down" style="margin-bottom: 60px; text-align: center;">
+      <div style="font-size: 14px; color: rgba(255,255,255,0.3); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px;">Three portals. One ecosystem.</div>
+      <div class="headline" style="font-size: 48px; color: #fff;">Built for everyone.</div>
+    </div>
+    <div style="display: flex; gap: 60px; align-items: flex-start;">
+      <div class="pillar anim-fade-up stagger-1">
+        <div class="pillar-icon pillar-admin">A</div>
+        <div style="text-align: center;">
+          <div style="font-size: 20px; font-weight: 700; color: #fff;">Admin</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 6px;">Run the school</div>
+        </div>
+      </div>
+      <div class="pillar anim-fade-up stagger-3">
+        <div class="pillar-icon pillar-teacher">T</div>
+        <div style="text-align: center;">
+          <div style="font-size: 20px; font-weight: 700; color: #fff;">Teacher</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 6px;">Teach faster</div>
+        </div>
+      </div>
+      <div class="pillar anim-fade-up stagger-5">
+        <div class="pillar-icon pillar-parent">P</div>
+        <div style="text-align: center;">
+          <div style="font-size: 20px; font-weight: 700; color: #fff;">Parent</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 6px;">Stay connected</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCENE 3: Feature showcase with phone mockup ===== -->
+  <div class="scene" id="scene3">
+    <div style="display: flex; align-items: center; gap: 80px;">
+      <!-- Phone mockup -->
+      <div class="phone-mockup anim-scale-in">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <div class="dot"></div>
+            <div style="flex:1;">
+              <div class="line" style="width: 60%; margin-bottom: 4px;"></div>
+              <div class="line" style="width: 40%; height: 6px;"></div>
+            </div>
+          </div>
+          <div class="phone-body">
+            <div class="phone-card">
+              <div class="bar bar-accent" style="width: 70%;"></div>
+              <div class="bar" style="width: 90%;"></div>
+              <div class="bar" style="width: 50%;"></div>
+            </div>
+            <div class="phone-card">
+              <div class="bar" style="width: 80%;"></div>
+              <div class="bar bar-accent" style="width: 60%;"></div>
+            </div>
+            <div class="phone-card">
+              <div class="bar" style="width: 45%;"></div>
+              <div class="bar" style="width: 75%;"></div>
+            </div>
+          </div>
+          <div class="phone-dock">
+            <div class="tab active"></div>
+            <div class="tab"></div>
+            <div class="tab"></div>
+            <div class="tab"></div>
+            <div class="tab"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Feature list -->
+      <div style="display: flex; flex-direction: column; gap: 20px; max-width: 420px;">
+        <div class="anim-fade-up stagger-1" style="font-size: 14px; color: rgba(255,255,255,0.3); letter-spacing: 3px; text-transform: uppercase;">Everything in your pocket</div>
+        <div class="anim-fade-up stagger-2 headline" style="font-size: 40px; color: #fff;">A complete toolkit.</div>
+        <div class="feature-card anim-fade-up stagger-3">
+          <div class="icon">📊</div>
+          <h3>Real-time analytics</h3>
+          <p>Live dashboards for attendance, fees, and performance — no spreadsheets needed.</p>
+        </div>
+        <div class="feature-card anim-fade-up stagger-4">
+          <div class="icon">💬</div>
+          <h3>Instant messaging</h3>
+          <p>Teachers and parents on the same channel. Read receipts, attachments, deep links.</p>
+        </div>
+        <div class="feature-card anim-fade-up stagger-5">
+          <div class="icon">📅</div>
+          <h3>Smart scheduling</h3>
+          <p>Timetables, exams, events — auto-synced to every parent's calendar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCENE 4: Stats ===== -->
+  <div class="scene" id="scene4">
+    <div style="display: flex; gap: 80px; align-items: center;">
+      <div style="text-align: center;" class="anim-fade-up stagger-1">
+        <div class="stat-number">18+</div>
+        <div class="stat-label">Features</div>
+      </div>
+      <div style="text-align: center;" class="anim-fade-up stagger-3">
+        <div class="stat-number">3</div>
+        <div class="stat-label">Portals</div>
+      </div>
+      <div style="text-align: center;" class="anim-fade-up stagger-5">
+        <div class="stat-number">5</div>
+        <div class="stat-label">Platforms</div>
+      </div>
+    </div>
+    <div class="anim-fade-up stagger-6" style="margin-top: 50px; font-size: 18px; color: rgba(255,255,255,0.3); text-align: center; max-width: 500px;">
+      Android, iOS, Web, Desktop, and Server —<br>one codebase, zero compromises.
+    </div>
+  </div>
+
+  <!-- ===== SCENE 5: Final CTA ===== -->
+  <div class="scene" id="scene5">
+    <div class="bridge-mark anim-glow" style="margin-bottom: 32px; width: 100px; height: 100px;">
+      <svg viewBox="0 0 64 64" fill="none">
+        <defs>
+          <linearGradient id="span5" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#544AB8"/>
+            <stop offset="0.5" stop-color="#6C5CE0"/>
+            <stop offset="1" stop-color="#544AB8"/>
+          </linearGradient>
+        </defs>
+        <path d="M16 36 Q32 16 48 36" stroke="url(#span5)" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+        <path d="M14 44 H50" stroke="#A29BFE" stroke-width="4" stroke-linecap="round"/>
+        <path d="M22 36 V44" stroke="#A29BFE" stroke-opacity="0.6" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M32 26 V44" stroke="#A29BFE" stroke-opacity="0.6" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M42 36 V44" stroke="#A29BFE" stroke-opacity="0.6" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="16" cy="36" r="2.9" fill="#A29BFE"/>
+        <circle cx="48" cy="36" r="2.9" fill="#A29BFE"/>
+        <circle cx="32" cy="26" r="3" fill="#6C5CE0"/>
+      </svg>
+    </div>
+    <div class="anim-blur-in headline" style="font-size: 64px; color: #fff; margin-bottom: 16px;">
+      Enroll<span style="color:#6C5CE0">+</span>
+    </div>
+    <div class="anim-fade-up stagger-2" style="font-size: 28px; font-weight: 300; color: rgba(255,255,255,0.5); margin-bottom: 40px;">
+      The OS for your campus.
+    </div>
+    <div class="anim-fade-up stagger-4" style="font-size: 14px; color: rgba(255,255,255,0.2); letter-spacing: 2px; text-transform: uppercase;">
+      Available now
+    </div>
+  </div>
+
+</div>
+
+<!-- Progress bar -->
+<div id="progress-track"><div id="progress-bar"></div></div>
+
+<!-- Scene indicators -->
+<div id="indicators">
+  <div class="indicator active"></div>
+  <div class="indicator"></div>
+  <div class="indicator"></div>
+  <div class="indicator"></div>
+  <div class="indicator"></div>
+  <div class="indicator"></div>
+</div>
+
+<!-- Replay button -->
+<button id="replay" onclick="replay()">&#x21bb;</button>
+
+<script>
+  const scenes = [
+    { id: 'scene0', duration: 4000 },  // Logo reveal
+    { id: 'scene1', duration: 5000 },  // "The OS for your campus"
+    { id: 'scene2', duration: 5000 },  // Three pillars
+    { id: 'scene3', duration: 6000 },  // Feature showcase
+    { id: 'scene4', duration: 4500 },  // Stats
+    { id: 'scene5', duration: 5000 },  // Final CTA
+  ];
+
+  let currentScene = 0;
+  let totalElapsed = 0;
+  let startTime = 0;
+  let rafId = null;
+  let isPlaying = false;
+
+  const totalTime = scenes.reduce((sum, s) => sum + s.duration, 0);
+  const indicators = document.querySelectorAll('.indicator');
+  const progressBar = document.getElementById('progress-bar');
+  const replayBtn = document.getElementById('replay');
+
+  function showScene(index) {
+    scenes.forEach((s, i) => {
+      const el = document.getElementById(s.id);
+      if (i === index) {
+        el.classList.remove('exit');
+        el.classList.add('active');
+        // Re-trigger animations by re-adding animation classes
+        el.querySelectorAll('[class*="anim-"]').forEach(child => {
+          const classes = child.className;
+          child.className = '';
+          void child.offsetWidth; // force reflow
+          child.className = classes;
+        });
+      } else if (i < index) {
+        el.classList.remove('active');
+        el.classList.add('exit');
+      } else {
+        el.classList.remove('active', 'exit');
+      }
+    });
+
+    indicators.forEach((ind, i) => {
+      ind.classList.toggle('active', i === index);
+    });
+  }
+
+  function playLoop(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    totalElapsed = elapsed;
+
+    // Progress bar
+    const progress = Math.min(elapsed / totalTime, 1) * 100;
+    progressBar.style.width = progress + '%';
+
+    // Determine current scene
+    let accumulated = 0;
+    let sceneIndex = 0;
+    for (let i = 0; i < scenes.length; i++) {
+      accumulated += scenes[i].duration;
+      if (elapsed < accumulated) {
+        sceneIndex = i;
+        break;
+      }
+      sceneIndex = i;
+    }
+
+    if (sceneIndex !== currentScene) {
+      currentScene = sceneIndex;
+      showScene(currentScene);
+    }
+
+    if (elapsed < totalTime) {
+      rafId = requestAnimationFrame(playLoop);
+    } else {
+      isPlaying = false;
+      replayBtn.classList.add('visible');
+    }
+  }
+
+  function start() {
+    cancelAnimationFrame(rafId);
+    startTime = 0;
+    currentScene = 0;
+    totalElapsed = 0;
+    isPlaying = true;
+    replayBtn.classList.remove('visible');
+    showScene(0);
+    rafId = requestAnimationFrame(playLoop);
+  }
+
+  function replay() {
+    start();
+  }
+
+  // Auto-start on load
+  window.addEventListener('load', () => {
+    setTimeout(start, 300);
+  });
+
+  // Click anywhere to replay when finished
+  document.addEventListener('click', (e) => {
+    if (!isPlaying && e.target.id !== 'replay') {
+      start();
+    }
+  });
+
+  // Keyboard: Space to pause/resume, R to replay
+  let paused = false;
+  let pauseTime = 0;
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (!paused) {
+        paused = true;
+        pauseTime = performance.now();
+        cancelAnimationFrame(rafId);
+      } else {
+        paused = false;
+        startTime += performance.now() - pauseTime;
+        rafId = requestAnimationFrame(playLoop);
+      }
+    } else if (e.code === 'KeyR') {
+      start();
+    }
+  });
+</script>
+
+</body>
+</html>

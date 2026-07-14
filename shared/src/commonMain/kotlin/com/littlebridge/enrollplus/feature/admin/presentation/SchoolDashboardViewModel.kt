@@ -8,16 +8,20 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardSummary
+import com.littlebridge.enrollplus.feature.admin.domain.model.DailyDigest
 import com.littlebridge.enrollplus.feature.admin.domain.model.OnboardingStep
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AdminDashboardRepository
 import com.littlebridge.enrollplus.feature.auth.domain.model.OnboardingStepData
 import com.littlebridge.enrollplus.feature.auth.domain.model.UserDetailsData
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
 import com.littlebridge.enrollplus.util.AppLogger
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -43,14 +47,34 @@ enum class DashboardOnboardingStatus {
 }
 
 /**
- * Drives the SchoolDashboard. Pulls `GET /api/v1/user/details` on init and
- * exposes:
+ * Consolidated UI state for SchoolHomeScreenV2 (PRF-034).
  *
- *  - [steps]: the four onboarding steps with real per-step `status`
- *  - [progress]: completed / total (0f..1f)
- *  - [onboardingStatus]: high-level state (NOT_STARTED / IN_PROGRESS / COMPLETED)
- *  - [adminName]: who to greet in the welcome card
- *  - [isLoading], [errorMessage]: standard loading state
+ * Replaces 10 individual StateFlow fields with a single StateFlow to minimize
+ * recompositions — each field change now emits one new state object instead
+ * of triggering N independent recompositions.
+ */
+data class SchoolDashboardState(
+    val steps: List<OnboardingStep> = emptyList(),
+    val progress: Float = 0f,
+    val onboardingStatus: DashboardOnboardingStatus = DashboardOnboardingStatus.UNKNOWN,
+    val adminName: String = "Admin",
+    val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val errorMessage: String? = null,
+    val summary: AdminDashboardSummary? = null,
+    val analytics: AdminDashboardAnalytics? = null,
+    val activity: AdminDashboardActivity? = null,
+    val overview: AdminDashboardOverview? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
+    val digest: DailyDigest? = null,
+    val pinnedScreens: List<String> = emptyList(),
+    val isDigestLoading: Boolean = false,
+)
+
+/**
+ * Drives the SchoolDashboard. Pulls `GET /api/v1/user/details` on init and
+ * exposes a single consolidated [state] (PRF-034).
  *
  * The screen uses these to decide whether to show:
  *  (a) The "Welcome, Admin — let's onboard" hero with real progress + a
@@ -63,41 +87,8 @@ class SchoolDashboardViewModel(
     private val dashboardRepository: AdminDashboardRepository
 ) : ViewModel() {
 
-    private val _steps = MutableStateFlow<List<OnboardingStep>>(DEFAULT_STEPS)
-    val steps: StateFlow<List<OnboardingStep>> = _steps.asStateFlow()
-
-    private val _progress = MutableStateFlow(0f)
-    val progress: StateFlow<Float> = _progress.asStateFlow()
-
-    private val _onboardingStatus = MutableStateFlow(DashboardOnboardingStatus.UNKNOWN)
-    val onboardingStatus: StateFlow<DashboardOnboardingStatus> = _onboardingStatus.asStateFlow()
-
-    private val _adminName = MutableStateFlow("Admin")
-    val adminName: StateFlow<String> = _adminName.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-
-    // ---- Redesigned home dashboard payloads (summary / analytics / activity) ----
-    // Each is null until its endpoint resolves so the UI can fall back to a
-    // skeleton / honest empty state and never renders fabricated numbers.
-    private val _summary = MutableStateFlow<AdminDashboardSummary?>(null)
-    val summary: StateFlow<AdminDashboardSummary?> = _summary.asStateFlow()
-
-    private val _analytics = MutableStateFlow<AdminDashboardAnalytics?>(null)
-    val analytics: StateFlow<AdminDashboardAnalytics?> = _analytics.asStateFlow()
-
-    private val _activity = MutableStateFlow<AdminDashboardActivity?>(null)
-    val activity: StateFlow<AdminDashboardActivity?> = _activity.asStateFlow()
-
-    // ---- Consolidated command-center overview (the redesigned home's canonical
-    // source). Null until the /overview endpoint resolves so the UI shows a
-    // skeleton and never renders fabricated numbers. ----
-    private val _overview = MutableStateFlow<AdminDashboardOverview?>(null)
-    val overview: StateFlow<AdminDashboardOverview?> = _overview.asStateFlow()
+    private val _state = MutableStateFlow(SchoolDashboardState(steps = DEFAULT_STEPS))
+    val state: StateFlow<SchoolDashboardState> = _state.asStateFlow()
 
     init {
         refresh()
@@ -118,31 +109,37 @@ class SchoolDashboardViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
+            val hasData = _state.value.overview != null
+            _state.update { it.copy(isLoading = !hasData, isRefreshing = hasData, errorMessage = null) }
 
             val token = preferenceRepository.getUserToken().first()
             if (token.isNullOrBlank()) {
                 AppLogger.d("SchoolDashboardVM", "No auth token in prefs; skipping refresh")
-                _isLoading.value = false
+                _state.update { it.copy(isLoading = false, isRefreshing = false) }
                 return@launch
             }
 
             when (val result = authRepository.getUserDetails(token)) {
-                is NetworkResult.Success -> applyUserDetails(result.data.data)
+                is NetworkResult.Success -> {
+                    applyUserDetails(result.data.data)
+                    _state.update { it.copy(isStale = result.isStale, isOffline = result.isOffline) }
+                }
                 is NetworkResult.Error -> {
-                    _errorMessage.value = result.message
+                    _state.update { it.copy(errorMessage = result.message) }
                     AppLogger.e("SchoolDashboardVM", "getUserDetails failed: ${result.message}")
                 }
                 is NetworkResult.ConnectionError -> {
-                    _errorMessage.value = "Connection error"
+                    _state.update { it.copy(errorMessage = "Connection error") }
                     AppLogger.e("SchoolDashboardVM", "getUserDetails connection error")
                 }
             }
 
-            loadDashboard(token)
+            coroutineScope {
+                launch { loadDashboard(token) }
+                launch { loadDigest(token) }
+            }
 
-            _isLoading.value = false
+            _state.update { it.copy(isLoading = false, isRefreshing = false, isDigestLoading = false) }
         }
     }
 
@@ -154,13 +151,17 @@ class SchoolDashboardViewModel(
      * source).
      */
     private suspend fun loadDashboard(token: String) {
-        // The consolidated overview is the redesigned home's canonical source.
-        // It is fetched first and, when present, supplies the admin greeting name.
         when (val r = dashboardRepository.getOverview(token)) {
             is NetworkResult.Success -> {
                 r.data.data?.let { o ->
-                    _overview.value = o
-                    o.header.adminName.takeIf { it.isNotBlank() }?.let { _adminName.value = it }
+                    _state.update { s ->
+                        s.copy(
+                            overview = o,
+                            adminName = o.header.adminName.takeIf { it.isNotBlank() } ?: s.adminName,
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
+                        )
+                    }
                 }
             }
             is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getOverview failed: ${r.message}")
@@ -170,8 +171,14 @@ class SchoolDashboardViewModel(
         when (val r = dashboardRepository.getSummary(token)) {
             is NetworkResult.Success -> {
                 r.data.data?.let { s ->
-                    _summary.value = s
-                    s.admin.name.takeIf { it.isNotBlank() }?.let { _adminName.value = it }
+                    _state.update { st ->
+                        st.copy(
+                            summary = s,
+                            adminName = s.admin.name.takeIf { it.isNotBlank() } ?: st.adminName,
+                            isStale = r.isStale,
+                            isOffline = r.isOffline,
+                        )
+                    }
                 }
             }
             is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getSummary failed: ${r.message}")
@@ -179,15 +186,26 @@ class SchoolDashboardViewModel(
         }
 
         when (val r = dashboardRepository.getAnalytics(token)) {
-            is NetworkResult.Success -> r.data.data?.let { _analytics.value = it }
+            is NetworkResult.Success -> r.data.data?.let { a -> _state.update { it.copy(analytics = a, isStale = r.isStale, isOffline = r.isOffline) } }
             is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getAnalytics failed: ${r.message}")
             is NetworkResult.ConnectionError -> AppLogger.e("SchoolDashboardVM", "getAnalytics connection error")
         }
 
         when (val r = dashboardRepository.getActivity(token)) {
-            is NetworkResult.Success -> r.data.data?.let { _activity.value = it }
+            is NetworkResult.Success -> r.data.data?.let { a -> _state.update { it.copy(activity = a, isStale = r.isStale, isOffline = r.isOffline) } }
             is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getActivity failed: ${r.message}")
             is NetworkResult.ConnectionError -> AppLogger.e("SchoolDashboardVM", "getActivity connection error")
+        }
+    }
+
+    private suspend fun loadDigest(token: String) {
+        _state.update { it.copy(isDigestLoading = true) }
+        when (val r = dashboardRepository.getDigest(token)) {
+            is NetworkResult.Success -> r.data.data?.let { digest ->
+                _state.update { it.copy(digest = digest) }
+            }
+            is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getDigest failed: ${r.message}")
+            is NetworkResult.ConnectionError -> AppLogger.e("SchoolDashboardVM", "getDigest connection error")
         }
     }
 
@@ -197,34 +215,31 @@ class SchoolDashboardViewModel(
      * COMPLETED or the data hasn't loaded yet.
      */
     fun firstPendingStep(): OnboardingStep? =
-        _steps.value.firstOrNull { it.status.equals(OnboardingStep.STATUS_PENDING, ignoreCase = true) }
-            ?: _steps.value.firstOrNull { !it.status.equals(OnboardingStep.STATUS_COMPLETED, ignoreCase = true) }
+        _state.value.steps.firstOrNull { it.status.equals(OnboardingStep.STATUS_PENDING, ignoreCase = true) }
+            ?: _state.value.steps.firstOrNull { !it.status.equals(OnboardingStep.STATUS_COMPLETED, ignoreCase = true) }
 
     private fun applyUserDetails(data: UserDetailsData) {
-        _adminName.value = data.personalDetails.name.takeIf { it.isNotBlank() } ?: "Admin"
-
+        val name = data.personalDetails.name.takeIf { it.isNotBlank() } ?: "Admin"
         val ob = data.onboardingDetails
-        _onboardingStatus.value = DashboardOnboardingStatus.fromServer(ob.onboardingStatus)
+        val status = DashboardOnboardingStatus.fromServer(ob.onboardingStatus)
 
-        // Map server step list → UI model. We use the order the server gives
-        // us; that order is canonical (BASIC, BRANDING, ACADEMIC, REVIEW).
         val mapped = ob.listOfSteps.mapIndexed { idx, s -> s.toUiStep(idx + 1) }
 
-        // Belt-and-braces: if the server's per-step status disagrees with the
-        // top-level onboardingStatus = COMPLETED, treat all steps as completed
-        // for the dashboard. This protects the user experience while the
-        // server-side status-rollup quirk is fixed (the response we observed
-        // had onboardingStatus=COMPLETED but BRANDING=PENDING and
-        // ACADEMIC=LOCKED, which would otherwise force the user back into
-        // onboarding).
-        val finalSteps = if (_onboardingStatus.value == DashboardOnboardingStatus.COMPLETED) {
+        val finalSteps = if (status == DashboardOnboardingStatus.COMPLETED) {
             mapped.map { it.copy(status = OnboardingStep.STATUS_COMPLETED, isEnabled = true) }
         } else {
             mapped
         }
 
-        _steps.value = if (finalSteps.isNotEmpty()) finalSteps else DEFAULT_STEPS
-        _progress.value = computeProgress(_steps.value)
+        _state.update {
+            it.copy(
+                adminName = name,
+                onboardingStatus = status,
+                steps = if (finalSteps.isNotEmpty()) finalSteps else DEFAULT_STEPS,
+                progress = computeProgress(if (finalSteps.isNotEmpty()) finalSteps else DEFAULT_STEPS),
+                pinnedScreens = data.pinnedScreens
+            )
+        }
     }
 
     private fun computeProgress(steps: List<OnboardingStep>): Float {
@@ -233,7 +248,7 @@ class SchoolDashboardViewModel(
         return completed.toFloat() / steps.size
     }
 
-    private companion object {
+    companion object {
         /** Shown until `/user/details` resolves. Same titles the server uses. */
         val DEFAULT_STEPS: List<OnboardingStep> = listOf(
             OnboardingStep(

@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsInterventionDto
 import com.littlebridge.enrollplus.feature.pews.domain.model.PewsStudentDto
 import com.littlebridge.enrollplus.feature.pews.presentation.TeacherPewsState
@@ -53,6 +54,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -66,9 +68,34 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import org.koin.compose.viewmodel.koinViewModel
+
+// ── Cream/violet token bridge for the PEWS attention list ────────────────────
+private object PewsColors {
+    val card get() = VColors.white
+    val cream get() = VColors.surfaceTint
+    val ink get() = VColors.ink
+    val ink2 get() = VColors.ink2
+    val ink3 get() = VColors.ink3
+    val teal get() = VColors.mint
+    val tealDeep get() = VColors.success
+    val success get() = VColors.success
+    val warningInk get() = VColors.gold
+    val dangerInk get() = VColors.error
+}
+
+private object PewsType {
+    val body: TextStyle get() = VTypography.body
+    val bodyStrong: TextStyle get() = VTypography.body
+    val caption: TextStyle get() = VTypography.caption
+    val label: TextStyle get() = VTypography.label
+}
+
+private fun TextStyle.colored(color: Color): TextStyle = copy(color = color)
 
 @Composable
 fun TeacherPewsScreenV2(
@@ -77,9 +104,10 @@ fun TeacherPewsScreenV2(
     viewModel: TeacherPewsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val c = PewsColors
 
-    Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        VBackHeader(title = "Needs Attention", onBack = onBack)
+    Column(modifier.fillMaxSize().background(c.cream).statusBarsPadding().navigationBarsPadding()) {
+        VBackHeader(title = appString(StringKeys.TC_NEEDS_ATTENTION), onBack = onBack)
         TeacherPewsContent(
             state = state,
             onRetry = viewModel::load,
@@ -108,14 +136,14 @@ private fun TeacherPewsContent(
     onClearMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
+    val c = PewsColors
     VStateHost(
         loading = state.isLoading,
         error = state.error,
         isEmpty = state.isEmpty,
         emptyIcon = VIcons.ShieldCheck,
-        emptyTitle = "Your classes are on track",
-        emptyBody = "No student in your assigned classes needs attention right now.",
+        emptyTitle = appString(StringKeys.TC_CLASSES_ON_TRACK),
+        emptyBody = appString(StringKeys.TC_NO_STUDENTS_NEED_ATTENTION),
         onRetry = onRetry,
         modifier = modifier,
     ) {
@@ -141,7 +169,7 @@ private fun TeacherPewsContent(
                     onClearDraft = onClearDraft,
                 )
             }
-            item { Spacer(Modifier.height(24.dp)) }
+            item { Spacer(Modifier.height(120.dp)) }
         }
     }
 }
@@ -160,38 +188,38 @@ private fun TeacherStudentCard(
     onSendParentMessage: (String) -> Unit,
     onClearDraft: (String) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = PewsColors
     val (tone, levelLabel) = when (s.riskLevel) {
-        "high" -> VBadgeTone.Danger to "High"
-        "medium" -> VBadgeTone.Warning to "Medium"
-        else -> VBadgeTone.Success to "Watch"
+        "high" -> VBadgeTone.Danger to appString(StringKeys.TC_RISK_HIGH)
+        "medium" -> VBadgeTone.Warning to appString(StringKeys.TC_RISK_MEDIUM)
+        else -> VBadgeTone.Success to appString(StringKeys.TC_RISK_WATCH)
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(40.dp).clip(CircleShape).background(c.cream), contentAlignment = Alignment.Center) {
-                Text(s.name.firstOrNull()?.uppercase() ?: "?", style = VTheme.type.bodyStrong.colored(c.ink2))
+                Text(s.name.firstOrNull()?.uppercase() ?: "?", style = PewsType.bodyStrong.colored(c.ink2))
             }
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTheme.type.bodyStrong.colored(c.ink), maxLines = 1)
+                Text(s.name, style = PewsType.bodyStrong.colored(c.ink), maxLines = 1)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "Class ${s.className}${if (s.section.isNotBlank()) "-${s.section}" else ""}",
-                    style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp),
+                    style = PewsType.caption.colored(c.ink3).copy(fontSize = 12.sp),
                 )
             }
             VBadge(text = levelLabel, tone = tone)
             if (s.hasOpenIntervention) {
                 Spacer(Modifier.width(4.dp))
-                VBadge(text = "Under intervention", tone = VBadgeTone.Neutral)
+                VBadge(text = appString(StringKeys.TC_UNDER_INTERVENTION), tone = VBadgeTone.Neutral)
             }
         }
 
         // deterministic metrics
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            s.attendancePct?.let { MiniStat("Attendance", "$it%") }
-            s.marksPct?.let { MiniStat("Marks", "$it%") }
-            if (s.leaveCount > 0) MiniStat("Leaves", "${s.leaveCount}")
+            s.attendancePct?.let { MiniStat(appString(StringKeys.TEACHER_ATTENDANCE), "$it%") }
+            s.marksPct?.let { MiniStat(appString(StringKeys.TC_MARKS), "$it%") }
+            if (s.leaveCount > 0) MiniStat(appString(StringKeys.TC_LEAVES), "${s.leaveCount}")
         }
 
         // signals
@@ -200,7 +228,7 @@ private fun TeacherStudentCard(
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 s.signals.take(3).forEach { sig ->
                     Box(Modifier.clip(RoundedCornerShape(8.dp)).background(c.cream).padding(horizontal = 8.dp, vertical = 4.dp)) {
-                        Text(sig.label, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                        Text(sig.label, style = PewsType.caption.colored(c.ink2).copy(fontSize = 11.sp))
                     }
                 }
             }
@@ -212,7 +240,7 @@ private fun TeacherStudentCard(
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(13.dp))
-                Text(aiLine, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp), maxLines = 3)
+                Text(aiLine, style = PewsType.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp), maxLines = 3)
             }
         }
 
@@ -223,10 +251,10 @@ private fun TeacherStudentCard(
                 val notes = iv.notes
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(iv.actionType.replace('_', ' '), style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp), modifier = Modifier.weight(1f))
+                        Text(iv.actionType.replace('_', ' '), style = PewsType.label.colored(c.ink).copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp), modifier = Modifier.weight(1f))
                         // Escalation badge
                         if (iv.escalationLevel > 0) {
-                            val escLabel = if (iv.escalationLevel >= 2) "ESCALATED" else "REMINDED"
+                            val escLabel = if (iv.escalationLevel >= 2) appString(StringKeys.TC_ESCALATED) else appString(StringKeys.TC_REMINDED)
                             val escTone = if (iv.escalationLevel >= 2) VBadgeTone.Danger else VBadgeTone.Warning
                             VBadge(text = escLabel, tone = escTone)
                         }
@@ -235,24 +263,24 @@ private fun TeacherStudentCard(
                     iv.urgency?.let { urg ->
                         Spacer(Modifier.height(4.dp))
                         val urgColor = when (urg) { "high" -> c.dangerInk; "medium" -> c.warningInk; else -> c.ink3 }
-                        Text("Urgency: ${urg}", style = VTheme.type.caption.colored(urgColor).copy(fontSize = 11.sp))
+                        Text(appString(StringKeys.TC_URGENCY_COLON, "level" to urg), style = PewsType.caption.colored(urgColor).copy(fontSize = 11.sp))
                     }
                     iv.slaDays?.let { sla ->
-                        Text("SLA: $sla days${iv.followUpDate?.let { " · follow-up $it" } ?: ""}", style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 11.sp))
+                        Text(appString(StringKeys.TC_SLA_DAYS, "days" to sla.toString(), "followup" to (iv.followUpDate ?: "")), style = PewsType.caption.colored(c.ink3).copy(fontSize = 11.sp))
                     }
                     if (!notes.isNullOrBlank()) {
                         Spacer(Modifier.height(4.dp))
-                        Text(notes, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp))
+                        Text(notes, style = PewsType.caption.colored(c.ink2).copy(fontSize = 12.sp, lineHeight = 17.sp))
                     }
                     // Plan steps
                     iv.planJson?.let { planJson ->
                         val steps = parseTeacherPlanSteps(planJson)
                         if (steps.isNotEmpty()) {
                             Spacer(Modifier.height(6.dp))
-                            Text("PLAN", style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp))
+                            Text(appString(StringKeys.TC_PLAN), style = PewsType.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp))
                             Spacer(Modifier.height(4.dp))
                             steps.forEachIndexed { i, step ->
-                                Text("${i + 1}. $step", style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp, lineHeight = 15.sp))
+                                Text("${i + 1}. $step", style = PewsType.caption.colored(c.ink2).copy(fontSize = 11.sp, lineHeight = 15.sp))
                             }
                         }
                     }
@@ -270,13 +298,13 @@ private fun TeacherStudentCard(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(VIcons.Sparkles, contentDescription = null, tint = c.tealDeep, modifier = Modifier.size(12.dp))
                                     Spacer(Modifier.size(4.dp))
-                                    Text("PARENT MESSAGE (${draftLang?.uppercase() ?: "EN"})", style = VTheme.type.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
+                                    Text(appString(StringKeys.TC_PARENT_MESSAGE, "lang" to (draftLang?.uppercase() ?: "EN")), style = PewsType.label.colored(c.tealDeep).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp), modifier = Modifier.weight(1f))
                                     if (parentDrafts[iv.id] != null) {
                                         VButton("✕", { onClearDraft(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm)
                                     }
                                 }
                                 Spacer(Modifier.height(4.dp))
-                                Text(draftBody, style = VTheme.type.body.colored(c.ink).copy(fontSize = 12.sp, lineHeight = 17.sp))
+                                Text(draftBody, style = PewsType.body.colored(c.ink).copy(fontSize = 12.sp, lineHeight = 17.sp))
                             }
                         }
                     }
@@ -289,37 +317,38 @@ private fun TeacherStudentCard(
                     if (iv.status == "open") {
                         // Open: Start + Dismiss
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            VButton("Start", { onStart(iv.id) }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
-                            VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                            VButton(appString(StringKeys.TC_START), { onStart(iv.id) }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
+                            VButton(appString(StringKeys.TC_DISMISS), { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                         }
                     } else if (iv.status == "in_progress") {
                         // In-progress: show who initiated it
                         val initiatorLabel = iv.initiatedByName?.let { name ->
                             val role = iv.initiatedByRole?.let { r ->
-                                if (r in listOf("school_admin", "admin")) "Admin" else "Teacher"
+                                if (r in listOf("school_admin", "admin")) appString(StringKeys.TC_ADMIN) else appString(StringKeys.TEACHER_TITLE)
                             } ?: ""
-                            "✓ Initiated by $name${if (role.isNotBlank()) " ($role)" else ""}"
+                            appString(StringKeys.TC_INITIATED_BY, "name" to name, "role" to role)
                         }
                         if (initiatorLabel != null) {
                             Spacer(Modifier.height(6.dp))
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(13.dp))
-                                Text(initiatorLabel, style = VTheme.type.caption.colored(c.ink2).copy(fontSize = 11.sp))
+                                Text(initiatorLabel, style = PewsType.caption.colored(c.ink2).copy(fontSize = 11.sp))
                             }
                         }
                         // action-type-specific workflow
                         if (isParentAction) {
-                            // Parent-contact action: Send the message
+                            // Parent-contact action: one-tap send to parent. The backend generates the
+                            // draft if the case file does not already have one. Draft/Preview is kept as
+                            // a secondary option for teachers who want to review first.
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (hasDraft) {
-                                    VButton(
-                                        "Send to parent",
-                                        { onSendParentMessage(iv.id) },
-                                        variant = VButtonVariant.Primary,
-                                        size = VButtonSize.Sm,
-                                        enabled = !isUpdating,
-                                    )
-                                } else {
+                                VButton(
+                                    appString(StringKeys.TC_SEND_TO_PARENT),
+                                    { onSendParentMessage(iv.id) },
+                                    variant = VButtonVariant.Primary,
+                                    size = VButtonSize.Sm,
+                                    enabled = !isUpdating,
+                                )
+                                if (!hasDraft) {
                                     var draftLang by remember { mutableStateOf("en") }
                                     var langDropdownOpen by remember { mutableStateOf(false) }
                                     Row(
@@ -327,7 +356,7 @@ private fun TeacherStudentCard(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     ) {
                                         VButton(
-                                            "Draft parent message",
+                                            appString(StringKeys.TC_DRAFT_PARENT_MESSAGE),
                                             { onGenerateDraft(iv.id, draftLang) },
                                             variant = VButtonVariant.Secondary,
                                             size = VButtonSize.Sm,
@@ -347,7 +376,7 @@ private fun TeacherStudentCard(
                                             ) {
                                                 listOf("en" to "English", "hi" to "हिन्दी", "mr" to "मराठी", "ta" to "தமிழ்", "te" to "తెలుగు", "bn" to "বাংলা").forEach { (code, label) ->
                                                     DropdownMenuItem(
-                                                        text = { Text(label, style = VTheme.type.body.colored(c.ink)) },
+                                                        text = { Text(label, style = PewsType.body.colored(c.ink)) },
                                                         onClick = {
                                                             draftLang = code
                                                             langDropdownOpen = false
@@ -358,17 +387,17 @@ private fun TeacherStudentCard(
                                         }
                                     }
                                 }
-                                VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_DISMISS), { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                             }
                         } else {
                             // Non-parent action: mark outcome
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                VButton("Mark improved", { onMarkDone(iv.id, "improved") }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
-                                VButton("No change", { onMarkDone(iv.id, "unchanged") }, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_MARK_IMPROVED), { onMarkDone(iv.id, "improved") }, variant = VButtonVariant.Primary, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_NO_CHANGE), { onMarkDone(iv.id, "unchanged") }, variant = VButtonVariant.Secondary, size = VButtonSize.Sm, enabled = !isUpdating)
                             }
                             Spacer(Modifier.height(6.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                VButton("Dismiss", { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
+                                VButton(appString(StringKeys.TC_DISMISS), { onDismiss(iv.id) }, variant = VButtonVariant.Ghost, size = VButtonSize.Sm, enabled = !isUpdating)
                             }
                         }
                     }
@@ -380,10 +409,10 @@ private fun TeacherStudentCard(
 
 @Composable
 private fun MiniStat(label: String, value: String) {
-    val c = VTheme.colors
+    val c = PewsColors
     Column {
-        Text(value, style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
-        Text(label, style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
+        Text(value, style = PewsType.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
+        Text(label, style = PewsType.caption.colored(c.ink3).copy(fontSize = 10.sp))
     }
 }
 

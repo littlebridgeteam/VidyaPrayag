@@ -136,6 +136,7 @@ data class CalendarDashboardDto(
     val hero: CalendarHeroDto,
     @SerialName("upcoming_highlights") val upcomingHighlights: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("upcoming_timeline") val upcomingTimeline: List<AcademicCalendarEventDto> = emptyList(),
+    @SerialName("past_timeline") val pastTimeline: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("draft_events") val draftEvents: List<AcademicCalendarEventDto> = emptyList(),
     @SerialName("published_events") val publishedEvents: List<AcademicCalendarEventDto> = emptyList(),
     val milestones: List<AcademicCalendarEventDto> = emptyList(),
@@ -227,10 +228,16 @@ fun Route.academicCalendarRouting() {
                         CalendarKpiDto("milestones", "Milestones", milestones.size, "ink")
                     )
 
+                    val pastTimeline = notCancelled
+                        .filter { (it.endDate.takeIf { d -> d.isNotBlank() } ?: it.startDate) < todayIso }
+                        .sortedByDescending { it.startDate }
+                        .take(12)
+
                     CalendarDashboardDto(
                         hero = hero,
                         upcomingHighlights = upcoming.filter { it.status == EventStatus.PUBLISHED }.take(8),
                         upcomingTimeline = upcoming.take(12),
+                        pastTimeline = pastTimeline,
                         draftEvents = drafts.sortedBy { it.startDate }.take(20),
                         publishedEvents = published.sortedBy { it.startDate }.take(20),
                         milestones = milestones.take(12),
@@ -384,8 +391,8 @@ fun Route.academicCalendarRouting() {
                     CalendarEventsTable.update({
                         (CalendarEventsTable.schoolId eq ctx.schoolId) and (CalendarEventsTable.eventCode eq code)
                     }) {
-                        req.title?.let { v -> it[title] = v.trim() }
-                        req.description?.let { v -> it[description] = v.trim() }
+                        req.title?.let { v -> it[title] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(v.trim()) }
+                        req.description?.let { v -> it[description] = com.littlebridge.enrollplus.core.HtmlSanitizer.sanitize(v.trim()) }
                         req.type?.let { v -> it[type] = v.uppercase() }
                         req.status?.let { v -> it[status] = v.uppercase() }
                         // T-004: typed `date` columns — parse validated String at boundary.
@@ -533,7 +540,7 @@ private suspend fun notifyEvent(
             body = dto.description.take(140),
             schoolId = schoolId,
             actorId = actorId,
-            deepLink = "calendar/${dto.id}",
+            deepLink = "/calendar/${dto.id}",
             refType = "calendar_event",
             refId = dto.id
         )

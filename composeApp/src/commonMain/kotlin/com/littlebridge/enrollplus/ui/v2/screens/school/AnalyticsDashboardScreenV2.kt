@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.admin.presentation.AnalyticsCardData
 import com.littlebridge.enrollplus.feature.admin.presentation.AnalyticsDashboardState
@@ -38,11 +39,18 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -69,12 +77,14 @@ fun AnalyticsDashboardScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Analytics", onBack = onBack)
-        AnalyticsContent(
-            state = state,
-            onRetry = viewModel::loadOverview,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VBackHeader(title = appString(StringKeys.SCH_ANALYTICS), onBack = onBack, pinRouteId = "overlay_analytics")
+        VPullRefresh(isRefreshing = state.isLoading && state.cards.isNotEmpty(), onRefresh = { viewModel.loadOverview() }) {
+            AnalyticsContent(
+                state = state,
+                onRetry = viewModel::loadOverview,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -84,8 +94,7 @@ private fun AnalyticsContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -98,21 +107,22 @@ private fun AnalyticsContent(
             isEmpty = state.performanceTrend.isEmpty() &&
                 state.cards.isEmpty() &&
                 state.insights.isEmpty(),
-            emptyTitle = "No analytics yet",
-            emptyBody = "The overview will populate once the analytics rollup endpoint has data.",
+            emptyTitle = appString(StringKeys.SCH_NO_ANALYTICS),
+            emptyBody = appString(StringKeys.SCH_NO_ANALYTICS_DESC),
             emptyIcon = VIcons.TrendingUp,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // Performance trend
             if (state.performanceTrend.isNotEmpty()) {
                 VCard {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
-                            Text("Performance trend", style = VTheme.type.label.colored(c.ink3))
+                            Text(appString(StringKeys.SCH_PERFORMANCE_TREND), style = VTypography.label.copy(color = VColors.ink3))
                             Spacer(Modifier.height(4.dp))
-                            Text(state.currentGrowth, style = VTheme.type.dataLg.colored(c.ink))
+                            Text(state.currentGrowth, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
                         }
-                        VBadge(text = "OVERVIEW", tone = VBadgeTone.Arctic)
+                        VBadge(text = appString(StringKeys.SCH_OVERVIEW), tone = VBadgeTone.Arctic)
                     }
                     Spacer(Modifier.height(12.dp))
                     TrendChart(
@@ -124,10 +134,10 @@ private fun AnalyticsContent(
 
             // Cards grid (2 per row)
             if (state.cards.isNotEmpty()) {
-                VSectionHeader(title = "OVERVIEW")
+                VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
                 val pairs = state.cards.chunked(2)
-                pairs.forEach { pair ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                pairs.forEachIndexed { i, pair ->
+                    Row(Modifier.fillMaxWidth().staggeredItemEntrance(i, pairs.isNotEmpty()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) { AnalyticsCard(pair[0]) }
                         if (pair.size > 1) {
                             Box(Modifier.weight(1f)) { AnalyticsCard(pair[1]) }
@@ -140,8 +150,8 @@ private fun AnalyticsContent(
 
             // Insights
             if (state.insights.isNotEmpty()) {
-                VSectionHeader(title = "INSIGHTS")
-                state.insights.forEach { item -> InsightCard(item) }
+                VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
+                state.insights.forEachIndexed { i, item -> InsightCard(item, modifier = Modifier.staggeredItemEntrance(i, state.insights.isNotEmpty())) }
             }
         }
     }
@@ -149,8 +159,7 @@ private fun AnalyticsContent(
 
 @Composable
 private fun TrendChart(values: List<Float>, labels: List<String>) {
-    val c = VTheme.colors
-    Column {
+        Column {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,21 +178,27 @@ private fun TrendChart(values: List<Float>, labels: List<String>) {
             }
             drawPath(
                 path = path,
-                color = c.teal,
+                color = VColors.sky,
                 style = Stroke(width = 3f),
             )
             // dots
             values.forEachIndexed { i, v ->
                 val x = stepX * i
                 val y = size.height - ((v - min) / range) * size.height
-                drawCircle(color = c.tealDeep, radius = 4f, center = Offset(x, y))
+                drawCircle(color = VColors.sky, radius = 4f, center = Offset(x, y))
             }
         }
         if (labels.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 labels.forEach { l ->
-                    Text(l, style = VTheme.type.caption.colored(c.ink3))
+                    Text(
+                        l,
+                        style = VTypography.caption.copy(color = VColors.ink3),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -192,14 +207,13 @@ private fun TrendChart(values: List<Float>, labels: List<String>) {
 
 @Composable
 private fun AnalyticsCard(card: AnalyticsCardData) {
-    val c = VTheme.colors
-    VCard {
-        Text(card.title, style = VTheme.type.label.colored(c.ink3))
+        VCard {
+        Text(card.title, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
-        Text(card.value, style = VTheme.type.dataLg.colored(c.ink))
+        Text(card.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink), maxLines = 2, overflow = TextOverflow.Ellipsis)
         if (card.subValue.isNotBlank()) {
             Spacer(Modifier.height(2.dp))
-            Text(card.subValue, style = VTheme.type.caption.colored(c.ink2))
+            Text(card.subValue, style = VTypography.caption.copy(color = VColors.ink2), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         val trend = card.trend
         if (!trend.isNullOrBlank()) {
@@ -210,9 +224,8 @@ private fun AnalyticsCard(card: AnalyticsCardData) {
 }
 
 @Composable
-private fun InsightCard(item: InsightItem) {
-    val c = VTheme.colors
-    VCard {
+private fun InsightCard(item: InsightItem, modifier: Modifier = Modifier) {
+    VCard(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier
@@ -229,10 +242,10 @@ private fun InsightCard(item: InsightItem) {
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(item.title, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(item.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (item.description.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
-                    Text(item.description, style = VTheme.type.caption.colored(c.ink2))
+                    Text(item.description, style = VTypography.caption.copy(color = VColors.ink2), maxLines = 3, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

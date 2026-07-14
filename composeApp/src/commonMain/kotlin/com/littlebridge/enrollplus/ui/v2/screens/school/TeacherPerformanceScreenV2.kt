@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import com.littlebridge.enrollplus.feature.admin.presentation.DeptEfficiency
 import com.littlebridge.enrollplus.feature.admin.presentation.FacultyAccountability
 import com.littlebridge.enrollplus.feature.admin.presentation.StarTeacher
@@ -33,11 +34,18 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -64,12 +72,14 @@ fun TeacherPerformanceScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "Teacher Performance", onBack = onBack)
-        TeacherPerformanceContent(
-            state = state,
-            onRetry = viewModel::load,
-            modifier = Modifier.fillMaxSize(),
-        )
+        VBackHeader(title = appString(StringKeys.SCH_TEACHER_PERFORMANCE), onBack = onBack)
+        VPullRefresh(isRefreshing = state.isLoading && state.aggregateCompliance.isNotBlank(), onRefresh = { viewModel.load() }) {
+            TeacherPerformanceContent(
+                state = state,
+                onRetry = viewModel::load,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -79,8 +89,7 @@ private fun TeacherPerformanceContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    Column(
+        Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -94,18 +103,19 @@ private fun TeacherPerformanceContent(
                 state.accountabilityMatrix.isEmpty() &&
                 state.deptEfficiencies.isEmpty() &&
                 state.aggregateCompliance.isBlank(),
-            emptyTitle = "No data yet",
-            emptyBody = "Teacher analytics will appear here once faculty start posting attendance and marks.",
+            emptyTitle = appString(StringKeys.SCH_NO_DATA_YET),
+            emptyBody = appString(StringKeys.SCH_TEACHER_PERFORMANCE_DESC),
             emptyIcon = VIcons.Users,
             onRetry = onRetry,
+            skeleton = { SkeletonDashboard() },
         ) {
             // Aggregate compliance
             VCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("Aggregate compliance", style = VTheme.type.label.colored(c.ink3))
+                        Text(appString(StringKeys.SCH_AGGREGATE_COMPLIANCE), style = VTypography.label.copy(color = VColors.ink3))
                         Spacer(Modifier.height(4.dp))
-                        Text(state.aggregateCompliance.ifBlank { "—" }, style = VTheme.type.dataLg.colored(c.ink))
+                        Text(state.aggregateCompliance.ifBlank { "—" }, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
                     }
                     if (state.complianceTrend.isNotBlank()) {
                         VBadge(text = state.complianceTrend, tone = VBadgeTone.Arctic)
@@ -115,28 +125,28 @@ private fun TeacherPerformanceContent(
 
             // Star Faculty
             if (state.starFaculty.isNotEmpty()) {
-                VSectionHeader(title = "STAR FACULTY")
+                VSectionHeader(title = appString(StringKeys.SCH_STAR_FACULTY))
                 VCard {
                     state.starFaculty.forEachIndexed { i, t ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
-                        StarRow(t)
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                        StarRow(t, modifier = Modifier.staggeredItemEntrance(i, state.starFaculty.isNotEmpty()))
                     }
                 }
             }
 
             // Accountability matrix
             if (state.accountabilityMatrix.isNotEmpty()) {
-                VSectionHeader(title = "ACCOUNTABILITY MATRIX")
-                state.accountabilityMatrix.forEach { f -> AccountabilityCard(f) }
+                VSectionHeader(title = appString(StringKeys.SCH_ACCOUNTABILITY_MATRIX))
+                state.accountabilityMatrix.forEachIndexed { i, f -> AccountabilityCard(f, modifier = Modifier.staggeredItemEntrance(i, state.accountabilityMatrix.isNotEmpty())) }
             }
 
             // Department efficiencies
             if (state.deptEfficiencies.isNotEmpty()) {
-                VSectionHeader(title = "DEPARTMENT EFFICIENCY")
+                VSectionHeader(title = appString(StringKeys.SCH_DEPARTMENT_EFFICIENCY))
                 VCard {
                     state.deptEfficiencies.forEachIndexed { i, d ->
                         if (i > 0) Spacer(Modifier.height(10.dp))
-                        DeptRow(d)
+                        DeptRow(d, modifier = Modifier.staggeredItemEntrance(i, state.deptEfficiencies.isNotEmpty()))
                     }
                 }
             }
@@ -145,37 +155,35 @@ private fun TeacherPerformanceContent(
 }
 
 @Composable
-private fun StarRow(t: StarTeacher) {
-    val c = VTheme.colors
+private fun StarRow(t: StarTeacher, modifier: Modifier = Modifier) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         VBadge(text = "#${t.rank}", tone = if (t.rank == 1) VBadgeTone.Warning else VBadgeTone.Arctic)
         VAvatar(name = t.name.ifBlank { "?" }, src = t.imageUrl.ifBlank { null }, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(t.name, style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(t.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(Modifier.height(2.dp))
-            Text(t.department, style = VTheme.type.caption.colored(c.ink3))
+            Text(t.department, style = VTypography.caption.copy(color = VColors.ink3))
         }
         Text(
             t.score.toString().take(5),
-            style = VTheme.type.dataSm.colored(c.ink2),
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
         )
     }
 }
 
 @Composable
-private fun AccountabilityCard(f: FacultyAccountability) {
-    val c = VTheme.colors
+private fun AccountabilityCard(f: FacultyAccountability, modifier: Modifier = Modifier) {
     val riskTone = when (f.riskCorrelation.lowercase()) {
         "high risk" -> VBadgeTone.Danger
         "watching" -> VBadgeTone.Warning
         "stable" -> VBadgeTone.Success
         else -> VBadgeTone.Neutral
     }
-    VCard {
+    VCard(modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -186,41 +194,39 @@ private fun AccountabilityCard(f: FacultyAccountability) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         f.name,
-                        style = VTheme.type.bodyStrong.colored(c.ink),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = f.riskCorrelation, tone = riskTone)
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(f.department, style = VTheme.type.caption.colored(c.ink3))
+                Text(f.department, style = VTypography.caption.copy(color = VColors.ink3))
             }
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.weight(1f)) { MiniStat(label = "Compliance", value = "${f.complianceScore}%") }
-            Box(Modifier.weight(1f)) { MiniStat(label = "Delay", value = f.avgUpdateDelay) }
-            Box(Modifier.weight(1f)) { MiniStat(label = "Avg mark", value = f.studentAvgMark) }
+            Box(Modifier.weight(1f)) { MiniStat(label = appString(StringKeys.SCH_COMPLIANCE), value = "${f.complianceScore}%") }
+            Box(Modifier.weight(1f)) { MiniStat(label = appString(StringKeys.SCH_DELAY), value = f.avgUpdateDelay) }
+            Box(Modifier.weight(1f)) { MiniStat(label = appString(StringKeys.SCH_AVG_MARK), value = f.studentAvgMark) }
         }
     }
 }
 
 @Composable
 private fun MiniStat(label: String, value: String) {
-    val c = VTheme.colors
-    Column {
-        Text(label, style = VTheme.type.label.colored(c.ink3))
+        Column {
+        Text(label, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(2.dp))
-        Text(value, style = VTheme.type.dataSm.colored(c.ink))
+        Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
-private fun DeptRow(d: DeptEfficiency) {
-    val c = VTheme.colors
-    Column {
+private fun DeptRow(d: DeptEfficiency, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(d.name, style = VTheme.type.bodyStrong.colored(c.ink))
-            Text("${d.percentage}%", style = VTheme.type.dataSm.colored(c.ink2))
+            Text(d.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text("${d.percentage}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
         }
         Spacer(Modifier.height(6.dp))
         VProgressBar(value = d.percentage.toFloat().coerceIn(0f, 100f))

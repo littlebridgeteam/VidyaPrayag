@@ -46,10 +46,12 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -120,6 +122,8 @@ data class UpsertClassProgressDto(
 )
 
 // ---------------- helpers ----------------
+
+private val ptmLogger = LoggerFactory.getLogger("PtmRouting")
 
 /** Confirms [eventId] belongs to [schoolId]. Must run inside dbQuery {}. */
 private fun ptmOwnedBySchool(eventId: UUID, schoolId: UUID): Boolean =
@@ -192,6 +196,63 @@ fun Route.ptmRouting() {
                         .limit(10)
                         .toList()
 
+                    // Bug 28: Also include PTM-type calendar events that were created
+                    // through the Events/Announcement flow and don't have a matching
+                    // PtmEventsTable entry (matched by title + date).
+                    val ptmTitleDates = PtmEventsTable.selectAll()
+                        .where { PtmEventsTable.schoolId eq schoolId }
+                        .associate { it[PtmEventsTable.title] to it[PtmEventsTable.date] }
+                        .entries.map { (t, d) -> "$t|$d" }
+                        .toSet()
+
+                    val calPtms = CalendarEventsTable.selectAll()
+                        .where {
+                            (CalendarEventsTable.schoolId eq schoolId) and
+                            (CalendarEventsTable.type eq EventType.PTM) and
+                            (CalendarEventsTable.isActive eq true) and
+                            (CalendarEventsTable.status neq EventStatus.CANCELLED)
+                        }
+                        .orderBy(CalendarEventsTable.startDate, SortOrder.ASC)
+                        .toList()
+                        .filter { row ->
+                            val key = "${row[CalendarEventsTable.title]}|${row[CalendarEventsTable.startDate]}"
+                            key !in ptmTitleDates
+                        }
+
+                    // Merge calendar-only PTMs into active event and history
+                    val calUpcoming = calPtms.firstOrNull { row ->
+                        row[CalendarEventsTable.startDate].toString() >= today
+                    }
+                    val activeDto = active?.toActiveDto()
+                    val mergedActive: PtmActiveEventDto? = activeDto ?: calUpcoming?.let { row ->
+                        PtmActiveEventDto(
+                            id = row[CalendarEventsTable.id].value.toString(),
+                            title = row[CalendarEventsTable.title],
+                            date = row[CalendarEventsTable.startDate].toString(),
+                            slot = "",
+                            expectedParents = 0,
+                            checkedInParents = 0,
+                            invitesDelivered = 0,
+                            readReceipts = 0
+                        )
+                    }
+
+                    val calHistory = calPtms.filter { row ->
+                        row[CalendarEventsTable.startDate].toString() < today
+                    }.map { row ->
+                        PtmHistoryDto(
+                            id = row[CalendarEventsTable.id].value.toString(),
+                            date = row[CalendarEventsTable.startDate].toString(),
+                            title = row[CalendarEventsTable.title],
+                            turnout = 0,
+                            totalMet = 0
+                        )
+                    }
+
+                    val mergedHistory = (historyRows.map { it.toHistoryDto() } + calHistory)
+                        .sortedByDescending { it.date }
+                        .take(10)
+
                     val classProgress = active?.let { ev ->
                         PtmClassProgressTable.selectAll()
                             .where { PtmClassProgressTable.ptmEventId eq ev[PtmEventsTable.id].value }
@@ -200,8 +261,8 @@ fun Route.ptmRouting() {
                     } ?: emptyList()
 
                     PtmResponse(
-                        activeEvent = active?.toActiveDto(),
-                        history = historyRows.map { it.toHistoryDto() },
+                        activeEvent = mergedActive,
+                        history = mergedHistory,
                         classProgress = classProgress
                     )
                 }
@@ -218,6 +279,9 @@ fun Route.ptmRouting() {
                 }
                 runCatching { LocalDate.parse(req.date) }.onFailure {
                     call.fail("date must be YYYY-MM-DD"); return@post
+                }
+                if (LocalDate.parse(req.date).isBefore(LocalDate.now())) {
+                    call.fail("PTM date cannot be in the past"); return@post
                 }
                 if (req.expectedParents < 0) { call.fail("expected_parents cannot be negative"); return@post }
 
@@ -266,7 +330,7 @@ fun Route.ptmRouting() {
                         }
                     }
                 }.onFailure {
-                    println("PTM bridge: failed to create calendar event: ${it.message}")
+                    ptmLogger.warn("PTM bridge: failed to create calendar event: {}", it.message, it)
                 }
                 call.created(
                     PtmActiveEventDto(

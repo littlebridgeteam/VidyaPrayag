@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.event.domain.model.SlotBookingDto
 import com.littlebridge.enrollplus.feature.event.domain.model.TeacherPtmEventDto
@@ -40,8 +41,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -51,7 +50,7 @@ fun TeacherPtmEventRegistrationScreenV2(
     viewModel: TeacherEventRegistrationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
+    val c = VtC
     var selectedEventId by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -73,26 +72,28 @@ fun TeacherPtmEventRegistrationScreenV2(
 
         if (state.infoMessage != null) {
             Text(
-                text = state.infoMessage!!,
-                style = VTheme.type.caption.colored(c.successInk),
+                text = state.infoMessage ?: "",
+                style = VtT.caption.coloredV(c.successInk),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
         if (state.errorMessage != null) {
             Text(
-                text = state.errorMessage!!,
-                style = VTheme.type.caption.colored(c.dangerInk),
+                text = state.errorMessage ?: "",
+                style = VtT.caption.coloredV(c.dangerInk),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
 
         if (selectedEventId != null && state.eventDetail != null) {
+            val evId = selectedEventId ?: return
+            val detail = state.eventDetail ?: return
             PtmDetailContent(
-                eventDetail = state.eventDetail!!,
+                eventDetail = detail,
                 slots = state.slots,
                 isCheckingIn = state.isCheckingIn,
                 onCheckIn = { registrationId ->
-                    viewModel.checkinParent(selectedEventId!!, registrationId)
+                    viewModel.checkinParent(evId, registrationId)
                 },
             )
         } else {
@@ -106,6 +107,7 @@ fun TeacherPtmEventRegistrationScreenV2(
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(state.events) { event ->
@@ -130,17 +132,18 @@ private fun PtmDetailContent(
     isCheckingIn: Boolean,
     onCheckIn: (String) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(top = 4.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
             VCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = eventDetail.title, style = VTheme.type.h3.colored(c.ink))
+                    Text(text = eventDetail.title, style = VtT.h3.coloredV(c.ink))
                     Spacer(Modifier.height(4.dp))
-                    Text(text = eventDetail.date, style = VTheme.type.body.colored(c.ink2))
+                    Text(text = eventDetail.date, style = VtT.body.coloredV(c.ink2))
                     Spacer(Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -157,7 +160,7 @@ private fun PtmDetailContent(
             item {
                 Text(
                     text = "No slots configured for this event",
-                    style = VTheme.type.body.colored(c.ink3),
+                    style = VtT.body.coloredV(c.ink3),
                     modifier = Modifier.padding(16.dp),
                 )
             }
@@ -179,7 +182,7 @@ private fun SlotWithBookingsCard(
     isCheckingIn: Boolean,
     onCheckIn: (String) -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -189,7 +192,7 @@ private fun SlotWithBookingsCard(
             ) {
                 Text(
                     text = "${slot.startTime} - ${slot.endTime}",
-                    style = VTheme.type.h3.colored(c.ink),
+                    style = VtT.h3.coloredV(c.ink),
                 )
                 VBadge(
                     text = "${slot.bookedCount}/${slot.capacity}",
@@ -201,7 +204,7 @@ private fun SlotWithBookingsCard(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "No bookings for this slot",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VtT.caption.coloredV(c.ink3),
                 )
             } else {
                 Spacer(Modifier.height(8.dp))
@@ -224,7 +227,7 @@ private fun BookingRow(
     isCheckingIn: Boolean,
     onCheckIn: () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -233,16 +236,16 @@ private fun BookingRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = booking.parentName,
-                style = VTheme.type.body.colored(c.ink),
+                style = VtT.body.coloredV(c.ink),
             )
             Text(
                 text = "Student: ${booking.studentName} • ${booking.attendeeCount} attendee(s)",
-                style = VTheme.type.caption.colored(c.ink3),
+                style = VtT.caption.coloredV(c.ink3),
             )
             if (booking.parentMobile.isNotBlank()) {
                 Text(
                     text = "📞 ${booking.parentMobile}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VtT.caption.coloredV(c.ink3),
                 )
             }
         }
@@ -265,7 +268,7 @@ private fun PtmEventCard(
     event: TeacherPtmEventDto,
     onClick: () -> Unit,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     VCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,17 +277,17 @@ private fun PtmEventCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = event.title,
-                style = VTheme.type.h3.colored(c.ink),
+                style = VtT.h3.coloredV(c.ink),
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = event.date,
-                style = VTheme.type.body.colored(c.ink2),
+                style = VtT.body.coloredV(c.ink2),
             )
             if (event.className.isNotBlank()) {
                 Text(
                     text = "Classes: ${event.className}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VtT.caption.coloredV(c.ink3),
                 )
             }
             Spacer(Modifier.height(8.dp))

@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.shapeInput
@@ -99,7 +98,7 @@ fun VDatePicker(
     }
 
     if (open) {
-        DatePickerDialog(
+        DatePickerSheet(
             initialIso = value.takeIf { it.isNotBlank() } ?: todayIso(),
             onDismiss = { open = false },
             onPick = { iso -> onValueChange(iso); open = false },
@@ -108,7 +107,7 @@ fun VDatePicker(
 }
 
 @Composable
-private fun DatePickerDialog(
+private fun DatePickerSheet(
     initialIso: String,
     onDismiss: () -> Unit,
     onPick: (String) -> Unit,
@@ -119,9 +118,12 @@ private fun DatePickerDialog(
     var viewMonth by remember { mutableStateOf(start.second) } // 1..12
     var selectedIso by remember { mutableStateOf(isoOf(start.first, start.second, start.third)) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        VCard(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = "Select date")
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Month header with prev / next nav
                 Row(
                     Modifier.fillMaxWidth(),
@@ -219,7 +221,6 @@ private fun DatePickerDialog(
             }
         }
     }
-}
 
 private val MONTH_SHORT = listOf(
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",

@@ -24,9 +24,11 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentProfileDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherProfileDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateStudentRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -81,6 +83,17 @@ class StudentsApi(
         studentId: String
     ): NetworkResult<ApiResponse<StudentProfileDto>> = safeApiCall {
         client.get(getUrl("api/v1/school/students/$studentId"))
+    }
+
+    suspend fun updateStudent(
+        token: String,
+        studentId: String,
+        request: UpdateStudentRequest
+    ): NetworkResult<ApiResponse<StudentDto>> = safeApiCall {
+        client.patch(getUrl("api/v1/school/students/$studentId")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
     }
 
     suspend fun getTeacherProfile(

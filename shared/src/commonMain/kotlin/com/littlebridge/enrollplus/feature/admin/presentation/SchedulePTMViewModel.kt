@@ -46,7 +46,9 @@ data class SchedulePTMState(
     val isLoading: Boolean = false,
     val isCreating: Boolean = false,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SchedulePTMViewModel(
@@ -85,7 +87,9 @@ class SchedulePTMViewModel(
                         readReceipts = data?.activeEvent?.readReceipts ?: 0,
                         history = data?.history?.map { it.toUiModel() } ?: emptyList(),
                         classProgress = data?.classProgress?.map { it.toUiModel() } ?: emptyList(),
-                        isLoading = false
+                        isLoading = false,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
@@ -119,6 +123,10 @@ class SchedulePTMViewModel(
     ) {
         if (title.isBlank() || date.isBlank() || slot.isBlank()) {
             _state.value = _state.value.copy(errorMessage = "Title, date and slot are required.")
+            return
+        }
+        if (date.trim() < com.littlebridge.enrollplus.util.todayIso()) {
+            _state.value = _state.value.copy(errorMessage = "PTM date cannot be in the past.")
             return
         }
         viewModelScope.launch {

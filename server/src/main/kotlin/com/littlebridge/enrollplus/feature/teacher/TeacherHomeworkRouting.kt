@@ -62,8 +62,10 @@ import com.littlebridge.enrollplus.core.requireTeacherContext
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.HomeworkAttachmentsTable
 import com.littlebridge.enrollplus.db.HomeworkExtensionsTable
+import com.littlebridge.enrollplus.db.HomeworkSubmissionAttachmentsTable
 import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import io.ktor.http.HttpStatusCode
@@ -158,6 +160,15 @@ data class HwAssignRequest(
 //  letting the canonical envelope provide the single { success, message, data } layer.)
 
 @Serializable
+data class HwSubmissionAttachmentDto(
+    val id: String,
+    val url: String,
+    val filename: String = "",
+    val mime: String = "",
+    @SerialName("size_bytes") val sizeBytes: Long = 0,
+)
+
+@Serializable
 data class HwSubmissionRowDto(
     @SerialName("student_id") val studentId: String,
     @SerialName("student_code") val studentCode: String = "",
@@ -165,6 +176,8 @@ data class HwSubmissionRowDto(
     @SerialName("roll_no") val rollNo: Int? = null,
     val status: String = HwStatus.NOT_SUBMITTED,
     @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("submission_text") val submissionText: String = "",
+    val attachments: List<HwSubmissionAttachmentDto> = emptyList(),
     val grade: String? = null,
     @SerialName("has_extension") val hasExtension: Boolean = false,
     @SerialName("extended_to") val extendedTo: String? = null,
@@ -312,12 +325,31 @@ private suspend fun buildBoard(
         val classExt = exts.filter { it[HomeworkExtensionsTable.studentId] == null }
             .maxByOrNull { it[HomeworkExtensionsTable.newDueDate] }
             ?.get(HomeworkExtensionsTable.newDueDate)
-        BoardRaw(byUuid, byCode, perStudent, classExt)
+
+        val attachmentsBySubmission = if (subs.isEmpty()) {
+            emptyMap()
+        } else {
+            HomeworkSubmissionAttachmentsTable.selectAll()
+                .where { HomeworkSubmissionAttachmentsTable.submissionId inList subs.map { it[HomeworkSubmissionsTable.id].value } }
+                .map { att ->
+                    att[HomeworkSubmissionAttachmentsTable.submissionId] to HwSubmissionAttachmentDto(
+                        id = att[HomeworkSubmissionAttachmentsTable.id].value.toString(),
+                        url = att[HomeworkSubmissionAttachmentsTable.url],
+                        filename = att[HomeworkSubmissionAttachmentsTable.filename],
+                        mime = att[HomeworkSubmissionAttachmentsTable.mime],
+                        sizeBytes = att[HomeworkSubmissionAttachmentsTable.sizeBytes],
+                    )
+                }
+                .groupBy({ it.first }, { it.second })
+        }
+
+        BoardRaw(byUuid, byCode, perStudent, classExt, attachmentsBySubmission)
     }
     val subsByUuid = raw.byUuid
     val subsByCode = raw.byCode
     val extByStudent = raw.perStudent
     val classExtension = raw.classExt
+    val attachmentsBySubmission = raw.attachmentsBySubmission
 
     var submitted = 0; var late = 0; var graded = 0; var notSubmitted = 0
     val rows = roster.map { st ->
@@ -332,6 +364,7 @@ private suspend fun buildBoard(
         }
         val perStudentExt = extByStudent[st.studentId]
         val extendedTo = perStudentExt ?: classExtension
+        val submissionId = sub?.get(HomeworkSubmissionsTable.id)?.value
         HwSubmissionRowDto(
             studentId = st.studentId.toString(),
             studentCode = st.studentCode,
@@ -339,6 +372,8 @@ private suspend fun buildBoard(
             rollNo = st.rollNumber,
             status = status,
             submittedAt = sub?.get(HomeworkSubmissionsTable.submittedAt)?.toString(),
+            submissionText = sub?.get(HomeworkSubmissionsTable.submissionText) ?: "",
+            attachments = submissionId?.let { attachmentsBySubmission[it] } ?: emptyList(),
             grade = sub?.get(HomeworkSubmissionsTable.grade),
             hasExtension = perStudentExt != null || classExtension != null,
             extendedTo = extendedTo?.toString(),
@@ -371,6 +406,7 @@ private data class BoardRaw(
     val byCode: Map<String, ResultRow>,
     val perStudent: Map<UUID, LocalDate>,
     val classExt: LocalDate?,
+    val attachmentsBySubmission: Map<UUID, List<HwSubmissionAttachmentDto>>,
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -423,13 +459,17 @@ private fun Route.homeworkListAndAssign() {
         }
 
         val rosterCount = enrollmentsFor(asg).size
+        val hwIds = rows.map { it[HomeworkTable.id].value }
+        val allSubmissions = if (hwIds.isEmpty()) emptyList() else dbQuery {
+            HomeworkSubmissionsTable.selectAll().where {
+                HomeworkSubmissionsTable.homeworkId inList hwIds
+            }.toList()
+        }
+        val submissionsByHw = allSubmissions.groupBy { it[HomeworkSubmissionsTable.homeworkId] }
+
         val items = rows.map { hw ->
             val hwId = hw[HomeworkTable.id].value
-            val counts = dbQuery {
-                HomeworkSubmissionsTable.selectAll().where {
-                    HomeworkSubmissionsTable.homeworkId eq hwId
-                }.toList()
-            }
+            val counts = submissionsByHw[hwId] ?: emptyList()
             var submitted = 0; var late = 0; var graded = 0
             counts.forEach {
                 when (it[HomeworkSubmissionsTable.status]) {
@@ -540,7 +580,7 @@ private fun Route.homeworkListAndAssign() {
                 body = "${asg.subject}: $title — due $dueDate.",
                 schoolId = ctx.schoolId,
                 actorId = ctx.userId,
-                deepLink = "parent/academics",
+                deepLink = "/parent/academics/homework",
                 refType = "homework",
                 refId = newId.toString(),
             )
@@ -724,6 +764,10 @@ private fun Route.homeworkReview() {
                 }
             }
         }
+
+        // Gamification XP hook — homework reviewed/graded
+        XpHooks.onHomeworkReviewed(targetStudentId, ctx.schoolId, req.grade)
+
         call.ok(HwMutationData(success = true, message = "Submission updated"), message = "Submission updated")
     }
 }

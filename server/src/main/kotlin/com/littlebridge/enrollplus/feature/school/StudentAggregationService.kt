@@ -34,15 +34,24 @@ import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.AssessmentMarksTable
 import com.littlebridge.enrollplus.db.AssessmentsTable
 import com.littlebridge.enrollplus.db.AttendanceRecordsTable
+import com.littlebridge.enrollplus.db.FeeRecordsTable
+import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
+import com.littlebridge.enrollplus.db.HomeworkTable
+import com.littlebridge.enrollplus.db.LibraryIssuesTable
 import com.littlebridge.enrollplus.db.ParentChildLinksTable
+import com.littlebridge.enrollplus.db.PtmEventsTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
+import com.littlebridge.enrollplus.db.TransportAssignmentsTable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -122,16 +131,19 @@ object StudentAggregationService {
         schoolId: UUID,
         className: String,
         section: String
-    ): List<org.jetbrains.exposed.sql.ResultRow> =
-        TeacherSubjectAssignmentsTable.selectAll().where {
+    ): List<org.jetbrains.exposed.sql.ResultRow> {
+        val pattern = "%${className.trim()}%"
+        return TeacherSubjectAssignmentsTable.selectAll().where {
             (TeacherSubjectAssignmentsTable.schoolId eq schoolId) and
-                (TeacherSubjectAssignmentsTable.isActive eq true)
+                (TeacherSubjectAssignmentsTable.isActive eq true) and
+                (TeacherSubjectAssignmentsTable.className like pattern)
         }.filter {
             ClassNaming.sameClassSection(
                 it[TeacherSubjectAssignmentsTable.className], it[TeacherSubjectAssignmentsTable.section],
                 className, section
             )
         }
+    }
 
     private fun resolveTeacherName(schoolId: UUID, teacherId: UUID): String? =
         AppUsersTable.selectAll().where {
@@ -152,9 +164,14 @@ object StudentAggregationService {
                 (ParentChildLinksTable.status eq "approved")
         }.toList()
 
+        val parentIds = links.map { it[ParentChildLinksTable.parentId] }.distinct()
+        val userRows = if (parentIds.isEmpty()) emptyMap() else
+            AppUsersTable.selectAll().where { AppUsersTable.id inList parentIds.map { org.jetbrains.exposed.dao.id.EntityID(it, AppUsersTable) } }
+                .associate { it[AppUsersTable.id].value to it }
+
         return links.map { link ->
             val pid = link[ParentChildLinksTable.parentId]
-            val userRow = AppUsersTable.selectAll().where { AppUsersTable.id eq pid }.firstOrNull()
+            val userRow = userRows[pid]
             val name = userRow?.get(AppUsersTable.fullName)
                 ?: link[ParentChildLinksTable.childName] // last-resort display
                 ?: "Parent"
@@ -236,17 +253,21 @@ object StudentAggregationService {
      * has no graded marks yet so the UI can hide the metric honestly.
      */
     fun academicScoreForStudent(schoolId: UUID, studentCode: String): Float? {
-        val ratios = mutableListOf<Float>()
-        AssessmentsTable.selectAll().where {
+        val assessments = AssessmentsTable.selectAll().where {
             (AssessmentsTable.schoolId eq schoolId) and (AssessmentsTable.isActive eq true)
-        }.forEach { a ->
+        }.filter { it[AssessmentsTable.maxMarks] > 0 }.toList()
+        if (assessments.isEmpty()) return null
+        val assessmentIds = assessments.map { it[AssessmentsTable.id].value }
+        val marks = AssessmentMarksTable.selectAll().where {
+            (AssessmentMarksTable.assessmentId inList assessmentIds) and
+                (AssessmentMarksTable.studentId eq studentCode)
+        }.associateBy { it[AssessmentMarksTable.assessmentId] }
+
+        val ratios = mutableListOf<Float>()
+        assessments.forEach { a ->
             val maxMarks = a[AssessmentsTable.maxMarks]
-            if (maxMarks <= 0) return@forEach
-            val mark = AssessmentMarksTable.selectAll().where {
-                (AssessmentMarksTable.assessmentId eq a[AssessmentsTable.id].value) and
-                    (AssessmentMarksTable.studentId eq studentCode)
-            }.firstOrNull()?.get(AssessmentMarksTable.marks)
-            if (mark != null) ratios += (mark.toFloat() / maxMarks * 100f).coerceIn(0f, 100f)
+            val mark = marks[a[AssessmentsTable.id].value]?.get(AssessmentMarksTable.marks)
+            if (mark != null && maxMarks > 0f) ratios += (mark.toFloat() / maxMarks * 100f).coerceIn(0f, 100f)
         }
         return if (ratios.isEmpty()) null else ratios.average().toFloat()
     }
@@ -487,13 +508,18 @@ object StudentAggregationService {
         }
 
         // Graded marks become "results updated" entries.
-        AssessmentsTable.selectAll().where {
+        val assessments = AssessmentsTable.selectAll().where {
             (AssessmentsTable.schoolId eq schoolId) and (AssessmentsTable.isActive eq true)
-        }.orderBy(AssessmentsTable.createdAt, SortOrder.DESC).limit(limit).forEach { a ->
-            val graded = AssessmentMarksTable.selectAll().where {
-                (AssessmentMarksTable.assessmentId eq a[AssessmentsTable.id].value) and
+        }.orderBy(AssessmentsTable.createdAt, SortOrder.DESC).limit(limit).toList()
+        val assessmentIds = assessments.map { it[AssessmentsTable.id].value }
+        val gradedMarks = if (assessmentIds.isEmpty()) emptyMap() else
+            AssessmentMarksTable.selectAll().where {
+                (AssessmentMarksTable.assessmentId inList assessmentIds) and
                     (AssessmentMarksTable.studentId eq studentCode)
-            }.firstOrNull()
+            }.associateBy { it[AssessmentMarksTable.assessmentId] }
+
+        assessments.forEach { a ->
+            val graded = gradedMarks[a[AssessmentsTable.id].value]
             if (graded?.get(AssessmentMarksTable.marks) != null) {
                 val ts = graded[AssessmentMarksTable.updatedAt]
                 items += ts to StudentActivityDto(
@@ -535,5 +561,146 @@ object StudentAggregationService {
         }
 
         return items.sortedByDescending { it.first }.take(limit).map { it.second }
+    }
+
+    // ───────────────────── People Tab Enrichment Methods ─────────────────────
+
+    /** People Tab: primary parent's display name for the student card. */
+    fun primaryParentNameForStudent(schoolId: UUID, studentCode: String): String? {
+        val links = ParentChildLinksTable.selectAll().where {
+            (ParentChildLinksTable.schoolId eq schoolId) and
+                (ParentChildLinksTable.studentCode eq studentCode) and
+                (ParentChildLinksTable.status eq "approved")
+        }.sortedByDescending { it[ParentChildLinksTable.isPrimaryGuardian] }
+        if (links.isEmpty()) return null
+        val parentId = links.first()[ParentChildLinksTable.parentId]
+        return AppUsersTable.selectAll().where {
+            AppUsersTable.id eq parentId
+        }.firstOrNull()?.get(AppUsersTable.fullName)
+    }
+
+    /** People Tab: homework submission ratio (0..100) for the student card. */
+    fun homeworkPercentForStudent(schoolId: UUID, studentCode: String): Float {
+        val homeworkIds = HomeworkTable.selectAll().where {
+            (HomeworkTable.schoolId eq schoolId) and (HomeworkTable.isActive eq true)
+        }.map { it[HomeworkTable.id].value }
+        if (homeworkIds.isEmpty()) return 0f
+        val total = homeworkIds.size
+        val submitted = HomeworkSubmissionsTable.selectAll().where {
+            (HomeworkSubmissionsTable.homeworkId inList homeworkIds) and
+                (HomeworkSubmissionsTable.studentId eq studentCode) and
+                (HomeworkSubmissionsTable.status neq "not_submitted")
+        }.count()
+        return (submitted * 100f) / total
+    }
+
+    /** People Tab: whether the student has any overdue/unpaid fees. */
+    fun feesPendingForStudent(schoolId: UUID, studentCode: String): Boolean {
+        val student = StudentsTable.selectAll().where {
+            (StudentsTable.schoolId eq schoolId) and
+                (StudentsTable.studentCode eq studentCode)
+        }.firstOrNull() ?: return false
+        val studentId = student[StudentsTable.id].value
+        // Check fee_records via childId or parentId linkage.
+        return FeeRecordsTable.selectAll().where {
+            (FeeRecordsTable.schoolId eq schoolId) and
+                (FeeRecordsTable.status neq "PAID")
+        }.any { row ->
+            row[FeeRecordsTable.childId]?.let { it == studentId } ?: false
+        }
+    }
+
+    /** People Tab: whether a parent meeting is scheduled for this student. */
+    fun parentMeetingScheduledForStudent(schoolId: UUID, studentCode: String): Boolean {
+        val today = LocalDate.now()
+        return PtmEventsTable.selectAll().where {
+            (PtmEventsTable.schoolId eq schoolId)
+        }.any { row ->
+            val eventDate = runCatching { LocalDate.parse(row[PtmEventsTable.date]) }.getOrNull()
+            eventDate != null && !eventDate.isBefore(today)
+        }
+    }
+
+    /** People Tab: composite today-items for the student card. */
+    fun todayItemsForStudent(
+        schoolId: UUID,
+        studentCode: String,
+        className: String,
+        section: String
+    ): List<TodayItemDto> {
+        val today = LocalDate.now()
+        val items = mutableListOf<TodayItemDto>()
+
+        // 1. Attendance today
+        val attendanceToday = AttendanceRecordsTable.selectAll().where {
+            (AttendanceRecordsTable.schoolId eq schoolId) and
+                (AttendanceRecordsTable.type eq "student") and
+                (AttendanceRecordsTable.personId eq studentCode) and
+                (AttendanceRecordsTable.date eq today)
+        }.firstOrNull()
+        if (attendanceToday != null) {
+            val status = attendanceToday[AttendanceRecordsTable.status].lowercase()
+            when (status) {
+                "present" -> items += TodayItemDto("green", "Present today")
+                "absent" -> items += TodayItemDto("red", "Absent today")
+                "late" -> items += TodayItemDto("yellow", "Late today")
+                "leave" -> items += TodayItemDto("sky", "On leave today")
+            }
+        }
+
+        // 2. Homework due today
+        val homeworkDueToday = HomeworkTable.selectAll().where {
+            (HomeworkTable.schoolId eq schoolId) and
+                (HomeworkTable.isActive eq true) and
+                (HomeworkTable.dueDate eq today)
+        }.filter {
+            ClassNaming.sameClassSection(
+                it[HomeworkTable.className], it[HomeworkTable.section], className, section
+            )
+        }
+        if (homeworkDueToday.isNotEmpty()) {
+            val submittedIds = HomeworkSubmissionsTable.selectAll().where {
+                (HomeworkSubmissionsTable.studentId eq studentCode) and
+                    (HomeworkSubmissionsTable.homeworkId inList homeworkDueToday.map { it[HomeworkTable.id].value })
+            }.map { it[HomeworkSubmissionsTable.homeworkId] }.toSet()
+            val pending = homeworkDueToday.count { it[HomeworkTable.id].value !in submittedIds }
+            if (pending > 0) {
+                items += TodayItemDto("yellow", "$pending homework due today")
+            }
+        }
+
+        // 3. Library overdue
+        val studentRow = StudentsTable.selectAll().where {
+            (StudentsTable.schoolId eq schoolId) and
+                (StudentsTable.studentCode eq studentCode)
+        }.firstOrNull()
+        if (studentRow != null) {
+            val studentId = studentRow[StudentsTable.id].value
+            val overdueBooks = LibraryIssuesTable.selectAll().where {
+                (LibraryIssuesTable.schoolId eq schoolId) and
+                    (LibraryIssuesTable.borrowerId eq studentId) and
+                    (LibraryIssuesTable.status eq "issued")
+            }.filter { row ->
+                row[LibraryIssuesTable.dueDate].isBefore(today)
+            }
+            if (overdueBooks.isNotEmpty()) {
+                items += TodayItemDto("yellow", "${overdueBooks.size} book${if (overdueBooks.size > 1) "s" else ""} overdue")
+            }
+        }
+
+        // 4. Transport assignment
+        if (studentRow != null) {
+            val studentId = studentRow[StudentsTable.id].value
+            val transportAssignment = TransportAssignmentsTable.selectAll().where {
+                (TransportAssignmentsTable.schoolId eq schoolId) and
+                    (TransportAssignmentsTable.studentId eq studentId) and
+                    (TransportAssignmentsTable.isActive eq true)
+            }.firstOrNull()
+            if (transportAssignment != null) {
+                items += TodayItemDto("sky", "Bus assigned")
+            }
+        }
+
+        return items
     }
 }

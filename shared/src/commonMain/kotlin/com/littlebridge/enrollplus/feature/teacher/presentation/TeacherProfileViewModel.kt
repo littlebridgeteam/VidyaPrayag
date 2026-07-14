@@ -29,6 +29,8 @@ data class TeacherProfileState(
     val profile: TeacherProfile? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class TeacherProfileViewModel(
@@ -53,7 +55,7 @@ class TeacherProfileViewModel(
             when (val result = repository.getProfile(token)) {
                 is NetworkResult.Success -> {
                     val profile = result.data.data.toUi()
-                    _state.update { it.copy(isLoading = false, profile = profile) }
+                    _state.update { it.copy(isLoading = false, profile = profile, isStale = result.isStale, isOffline = result.isOffline) }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = result.message) }
                 is NetworkResult.ConnectionError -> _state.update { it.copy(isLoading = false, error = "Connection error") }

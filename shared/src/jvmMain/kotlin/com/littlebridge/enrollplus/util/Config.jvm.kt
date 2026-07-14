@@ -1,7 +1,12 @@
 package com.littlebridge.enrollplus.util
 
 actual object Config {
-    actual val authBaseUrl: String = "https://vidyaprayag-1.onrender.com"
-    actual val schoolBaseUrl: String = "https://vidyaprayag-1.onrender.com"
-    actual val isDev: Boolean = false
+    private val fallback = "https://vidyaprayag-1.onrender.com"
+    private val resolvedUrl: String =
+        System.getProperty("devBaseUrl")
+            ?: System.getenv("DEV_BASE_URL")
+            ?: fallback
+    actual val authBaseUrl: String = resolvedUrl
+    actual val schoolBaseUrl: String = resolvedUrl
+    actual val isDev: Boolean = resolvedUrl != fallback
 }

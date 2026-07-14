@@ -1,0 +1,857 @@
+openapi: 3.0.3
+info:
+  title: Enroll+ API
+  description: |
+    School management platform API — attendance, results, fees, messaging,
+    onboarding, PEWS early-warning, AI tutor, and more.
+    All authenticated endpoints require a Bearer JWT token.
+  version: 1.0.0
+  contact:
+    name: Enroll+ Team
+    url: https://enrollplus.app
+servers:
+  - url: /
+    description: Local / same-origin
+  - url: https://api.enrollplus.app
+    description: Production
+tags:
+  - name: Auth
+    description: Authentication and session management
+  - name: Onboarding
+    description: School onboarding wizard
+  - name: Parent
+    description: Parent-facing endpoints
+  - name: Teacher
+    description: Teacher-facing endpoints
+  - name: School
+    description: School-admin endpoints
+  - name: PEWS
+    description: Predictive Early Warning System
+  - name: AI Tutor
+    description: AI-powered tutoring
+  - name: Transport
+    description: Transport routes and vehicles
+  - name: Library
+    description: Library inventory
+  - name: Health
+    description: Health records
+  - name: Alumni
+    description: Alumni management
+  - name: System
+    description: System and config endpoints
+
+paths:
+  /:
+    get:
+      tags: [System]
+      summary: Liveness check
+      responses:
+        '200':
+          description: Server is alive
+
+  /api/v1/config/app-status:
+    get:
+      tags: [System]
+      summary: App status (feature flags, maintenance)
+      responses:
+        '200':
+          description: App status object
+
+  /api/v1/config/version:
+    get:
+      tags: [System]
+      summary: Backend build version (git SHA, build time)
+      responses:
+        '200':
+          description: Version info
+
+  /api/v1/content/landing:
+    get:
+      tags: [System]
+      summary: Landing page content
+      responses:
+        '200':
+          description: Landing content
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with phone/password or OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                password:
+                  type: string
+                otp:
+                  type: string
+                role:
+                  type: string
+                  enum: [parent, teacher, school_admin, super_admin]
+      responses:
+        '200':
+          description: JWT token + user profile
+        '401':
+          description: Invalid credentials
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      responses:
+        '200':
+          description: JWT token + user profile
+        '400':
+          description: Validation error
+
+  /api/v1/auth/otp/request:
+    post:
+      tags: [Auth]
+      summary: Request OTP
+      responses:
+        '200':
+          description: OTP sent
+
+  /api/v1/auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP
+      responses:
+        '200':
+          description: OTP verified
+
+  /api/v1/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password (first-login gate)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Password changed
+
+  /api/v1/onboarding/status:
+    get:
+      tags: [Onboarding]
+      summary: School onboarding status
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Onboarding status with resume step
+
+  /api/v1/parent/dashboard:
+    get:
+      tags: [Parent]
+      summary: Parent dashboard (children, announcements)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+
+  /api/v1/parent/fees:
+    get:
+      tags: [Parent]
+      summary: Parent fee ledger
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fee items
+
+  /api/v1/parent/messages/threads:
+    get:
+      tags: [Parent]
+      summary: Parent message threads
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Thread list
+
+  /api/v1/parent/leave:
+    get:
+      tags: [Parent]
+      summary: List parent leave requests
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Leave requests
+    post:
+      tags: [Parent]
+      summary: Apply for child leave
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Leave request created
+
+  /api/v1/parent/pulse/latest/{childId}:
+    get:
+      tags: [Parent]
+      summary: Latest AI pulse digest for child
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pulse digest
+
+  /api/v1/school/dashboard:
+    get:
+      tags: [School]
+      summary: School admin dashboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard metrics
+
+  /api/v1/school/dashboard/overview:
+    get:
+      tags: [School]
+      summary: Consolidated command-center payload
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Overview data
+
+  /api/v1/school/analytics/overview:
+    get:
+      tags: [School]
+      summary: School analytics overview
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Analytics overview
+
+  /api/v1/school/announcements:
+    get:
+      tags: [School]
+      summary: List announcements
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Announcement list
+    post:
+      tags: [School]
+      summary: Create announcement
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Created announcement
+
+  /api/v1/school/leave-requests:
+    get:
+      tags: [School]
+      summary: List leave requests
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Leave request list
+
+  /api/v1/school/leave-requests/{id}/decide:
+    post:
+      tags: [School]
+      summary: Approve or reject a leave request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Decision recorded
+
+  /api/v1/school/ptm:
+    get:
+      tags: [School]
+      summary: List PTM events
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: PTM events
+    post:
+      tags: [School]
+      summary: Create PTM event
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: PTM event created
+
+  /api/v1/school/messages/threads:
+    get:
+      tags: [School]
+      summary: School message threads
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Thread list
+
+  /api/v1/school/results:
+    get:
+      tags: [School]
+      summary: Exam results
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Results
+
+  /api/v1/school/classes:
+    get:
+      tags: [School]
+      summary: List classes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Class list
+    post:
+      tags: [School]
+      summary: Create class
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Class created
+
+  /api/v1/school/subjects:
+    get:
+      tags: [School]
+      summary: List subjects
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Subject list
+
+  /api/v1/school/timetable:
+    get:
+      tags: [School]
+      summary: School timetable
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Timetable
+
+  /api/v1/school/students:
+    get:
+      tags: [School]
+      summary: Student roster
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Student list
+
+  /api/v1/school/teachers:
+    get:
+      tags: [School]
+      summary: Teacher list
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Teacher list
+    post:
+      tags: [School]
+      summary: Provision a new teacher
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Teacher created
+
+  /api/v1/school/staff:
+    get:
+      tags: [School]
+      summary: Non-teaching staff list
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Staff list
+
+  /api/v1/school/attendance/summary:
+    get:
+      tags: [School]
+      summary: Attendance summary
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Attendance summary
+
+  /api/v1/school/marks/summary:
+    get:
+      tags: [School]
+      summary: Marks summary
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Marks summary
+
+  /api/v1/school/fees/ledger:
+    get:
+      tags: [School]
+      summary: Fee ledger
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fee ledger
+
+  /api/v1/school/link-requests:
+    get:
+      tags: [School]
+      summary: List parent-child link requests
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Link requests
+
+  /api/v1/school/link-requests/{id}/approve:
+    post:
+      tags: [School]
+      summary: Approve a link request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Link approved
+
+  /api/v1/school/link-requests/{id}/reject:
+    post:
+      tags: [School]
+      summary: Reject a link request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Link rejected
+
+  /api/v1/school/profile:
+    get:
+      tags: [School]
+      summary: School profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: School profile
+    put:
+      tags: [School]
+      summary: Edit school profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile updated
+
+  /api/v1/school/calendar:
+    get:
+      tags: [School]
+      summary: Academic calendar
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Calendar events
+
+  /api/v1/school/events:
+    get:
+      tags: [School]
+      summary: List events with registration
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Events
+
+  /api/v1/school/transport/routes:
+    get:
+      tags: [Transport]
+      summary: List transport routes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Routes
+
+  /api/v1/school/transport/vehicles:
+    get:
+      tags: [Transport]
+      summary: List transport vehicles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Vehicles
+
+  /api/v1/school/library/books:
+    get:
+      tags: [Library]
+      summary: List library books
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Book inventory
+
+  /api/v1/school/health-records:
+    get:
+      tags: [Health]
+      summary: List health incidents
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Health records
+
+  /api/v1/school/scholarships/schemes:
+    get:
+      tags: [School]
+      summary: List scholarship schemes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Schemes
+
+  /api/v1/school/scholarships/applications:
+    get:
+      tags: [School]
+      summary: List scholarship applications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Applications
+
+  /api/v1/school/pews/cohort:
+    get:
+      tags: [PEWS]
+      summary: At-risk student cohort
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cohort list
+
+  /api/v1/school/pews/student/{code}:
+    get:
+      tags: [PEWS]
+      summary: Student PEWS detail (signals, interventions)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PEWS student detail
+
+  /api/v1/school/ai/usage:
+    get:
+      tags: [School]
+      summary: AI token usage for school
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usage metrics
+
+  /api/v1/teacher/home:
+    get:
+      tags: [Teacher]
+      summary: Teacher home (today's schedule, tasks)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Home data
+
+  /api/v1/teacher/classes:
+    get:
+      tags: [Teacher]
+      summary: Teacher's class list
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Classes
+
+  /api/v1/teacher/attendance:
+    post:
+      tags: [Teacher]
+      summary: Submit attendance
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Attendance saved
+
+  /api/v1/teacher/homework:
+    get:
+      tags: [Teacher]
+      summary: List homework
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Homework list
+    post:
+      tags: [Teacher]
+      summary: Assign homework
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Homework assigned
+
+  /api/v1/teacher/syllabus:
+    get:
+      tags: [Teacher]
+      summary: Get syllabus (units + progress)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Syllabus tree
+
+  /api/v1/teacher/leave-requests:
+    get:
+      tags: [Teacher]
+      summary: Teacher's leave requests
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Leave requests
+
+  /api/v1/teacher/leave:
+    post:
+      tags: [Teacher]
+      summary: Teacher applies for leave
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Leave applied
+
+  /api/v1/teacher/messages/threads:
+    get:
+      tags: [Teacher]
+      summary: Teacher message threads
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Thread list
+
+  /api/v1/teacher/timetable:
+    get:
+      tags: [Teacher]
+      summary: Teacher's weekly timetable
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Timetable
+
+  /api/v1/tutor/modules:
+    get:
+      tags: [AI Tutor]
+      summary: List tutor modules
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Module list
+
+  /api/v1/tutor/doubt:
+    post:
+      tags: [AI Tutor]
+      summary: Ask AI tutor a doubt
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: AI response
+
+  /api/v1/tutor/practice/grade:
+    post:
+      tags: [AI Tutor]
+      summary: Grade a practice answer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grading result
+
+  /api/v1/tutor/heatmap/scope:
+    get:
+      tags: [AI Tutor]
+      summary: Teacher heatmap scope
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Heatmap data
+
+  /api/v1/user/details:
+    get:
+      tags: [Auth]
+      summary: Get user details
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User details
+
+  /api/v1/user/profile:
+    get:
+      tags: [Auth]
+      summary: Get user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile
+    put:
+      tags: [Auth]
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile updated
+
+  /api/v1/admin/flags:
+    get:
+      tags: [System]
+      summary: List all feature flags (platform-admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of feature flags
+        '403':
+          description: Not authorized (platform-admin required)
+
+  /api/v1/admin/flags/{scope}:
+    get:
+      tags: [System]
+      summary: List feature flags for a scope (platform-admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scope
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of feature flags for the scope
+        '403':
+          description: Not authorized (platform-admin required)
+
+  /api/v1/admin/flags/{scope}/{key}:
+    post:
+      tags: [System]
+      summary: Update a feature flag (platform-admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scope
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isEnabled:
+                  type: boolean
+                value:
+                  type: string
+      responses:
+        '200':
+          description: Flag updated
+        '403':
+          description: Not authorized (platform-admin required)
+
+  /api/v1/docs:
+    get:
+      tags: [System]
+      summary: Swagger UI (interactive API documentation)
+      responses:
+        '200':
+          description: Swagger UI HTML page
+
+  /api/v1/openapi.yaml:
+    get:
+      tags: [System]
+      summary: Raw OpenAPI 3.0 spec
+      responses:
+        '200':
+          description: OpenAPI YAML spec
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

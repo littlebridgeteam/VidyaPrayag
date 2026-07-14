@@ -44,6 +44,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -205,16 +206,17 @@ private fun kotlinx.serialization.json.JsonPrimitive.contentOrNull(): String? =
  * the per-assignment student headcount and the workload summary. Runs inside an
  * Exposed transaction.
  */
-private fun studentCountFor(schoolId: UUID, className: String, section: String): Int =
-    // ROOT FIX (ISSUE 1): match roster to assignment via the ClassNaming key
-    // (case/whitespace/Grade-prefix tolerant) instead of brittle raw eq.
-    StudentsTable.selectAll().where {
-        (StudentsTable.schoolId eq schoolId) and (StudentsTable.isActive eq true)
+private fun studentCountFor(schoolId: UUID, className: String, section: String): Int {
+    val pattern = "%${className.trim()}%"
+    return StudentsTable.selectAll().where {
+        (StudentsTable.schoolId eq schoolId) and (StudentsTable.isActive eq true) and
+            (StudentsTable.className like pattern)
     }.count {
         ClassNaming.sameClassSection(
             it[StudentsTable.className], it[StudentsTable.section], className, section
         )
     }
+}
 
 /** RA-TAM: load this teacher's active assignment rows as DTOs (with live counts). */
 private fun loadTeacherAssignments(schoolId: UUID, teacherId: UUID): List<TeacherAssignmentDto> {
@@ -641,7 +643,8 @@ fun Route.teacherAssignmentRouting() {
                         // row is reused, not duplicated.
                         val existing = TeacherSubjectAssignmentsTable.selectAll().where {
                             (TeacherSubjectAssignmentsTable.schoolId eq ctx.schoolId) and
-                                (TeacherSubjectAssignmentsTable.subject eq resolvedSubjectName)
+                                (TeacherSubjectAssignmentsTable.subject eq resolvedSubjectName) and
+                                (TeacherSubjectAssignmentsTable.className like "%${canonClass.trim()}%")
                         }.firstOrNull {
                             ClassNaming.sameClassSection(
                                 it[TeacherSubjectAssignmentsTable.className],

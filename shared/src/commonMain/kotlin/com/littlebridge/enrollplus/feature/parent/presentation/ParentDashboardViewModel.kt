@@ -85,17 +85,23 @@ data class ParentDashboardState(
     val greeting: String = "",
     val alerts: List<DashboardAlertDto> = emptyList(),
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 
     // attendance
     val attendance: ParentAttendanceData? = null,
     val today: TodayAttendance = TodayAttendance(AttendanceDayState.NoData),
     val attendanceLoading: Boolean = false,
+    val attendanceStale: Boolean = false,
 
     // timetable (today + full week)
     val timetable: ParentTimetableData? = null,
     val todayPeriods: List<LivePeriod> = emptyList(),
     val timetableLoading: Boolean = false,
+    val timetableStale: Boolean = false,
 
     // covered today (syllabus)
     val syllabus: ParentSyllabusData? = null,
@@ -103,6 +109,7 @@ data class ParentDashboardState(
     /** True once the school day is over → the "covered today" card shows its summary state. */
     val schoolDayEnded: Boolean = false,
     val syllabusLoading: Boolean = false,
+    val syllabusStale: Boolean = false,
 
     // marks (academics card)
     val latestMark: ParentMarkDto? = null,
@@ -110,10 +117,12 @@ data class ParentDashboardState(
     /** Recent scored marks for the same subject as [latestMark], oldest→newest, for the sparkline. */
     val markTrend: List<Double> = emptyList(),
     val marksLoading: Boolean = false,
+    val marksStale: Boolean = false,
 
     // fees (fees card)
     val fees: FeeData? = null,
     val feesLoading: Boolean = false,
+    val feesStale: Boolean = false,
 ) {
     val selectedChild: DashboardChildSummary?
         get() = children.firstOrNull { it.id == selectedChildId } ?: children.firstOrNull()
@@ -124,7 +133,7 @@ class ParentDashboardViewModel(
     private val preferenceRepository: PreferenceRepository,
     private val selectedChildHolder: SelectedChildHolder,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(ParentDashboardState())
+    private val _state = MutableStateFlow(ParentDashboardState(isLoading = true))
     val state: StateFlow<ParentDashboardState> = _state.asStateFlow()
 
     init {
@@ -144,7 +153,8 @@ class ParentDashboardViewModel(
 
     fun load() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            val hasData = _state.value.children.isNotEmpty()
+            _state.update { it.copy(isLoading = !hasData, isRefreshing = hasData, error = null) }
             val token = token() ?: run {
                 _state.update { it.copy(isLoading = false, error = "Not signed in") }
                 return@launch
@@ -162,18 +172,53 @@ class ParentDashboardViewModel(
                     _state.update {
                         it.copy(
                             isLoading = false,
+                            isRefreshing = false,
                             greeting = data.greeting,
                             alerts = data.alerts,
                             children = children,
                             selectedChildId = resolved,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
                         )
                     }
                     resolved?.let { loadChildData(it) }
                 }
                 is NetworkResult.Error ->
-                    _state.update { it.copy(isLoading = false, error = result.message) }
+                    _state.update { it.copy(isLoading = false, isRefreshing = false, error = result.message) }
                 is NetworkResult.ConnectionError ->
-                    _state.update { it.copy(isLoading = false, error = "Connection error") }
+                    _state.update { it.copy(isLoading = false, isRefreshing = false, error = "Connection error") }
+            }
+        }
+    }
+
+    /** Pull-to-refresh: re-fetch dashboard + child data without clearing existing data. */
+    fun refresh() {
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val result = repository.getDashboard(token)) {
+                is NetworkResult.Success -> {
+                    val data = result.data.data
+                    val children = data.children.ifEmpty { listOfNotNull(data.childSummary) }
+                    val keep = _state.value.selectedChildId?.takeIf { id -> children.any { c -> c.id == id } }
+                    val resolved = keep ?: children.firstOrNull()?.id
+                    _state.update {
+                        it.copy(
+                            isRefreshing = false,
+                            greeting = data.greeting,
+                            alerts = data.alerts,
+                            children = children,
+                            selectedChildId = resolved,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                            refreshEpoch = it.refreshEpoch + 1,
+                        )
+                    }
+                    resolved?.let { loadChildData(it) }
+                }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isRefreshing = false, isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }
@@ -228,7 +273,7 @@ class ParentDashboardViewModel(
             _state.update { it.copy(feesLoading = true) }
             val token = token() ?: run { _state.update { it.copy(feesLoading = false) }; return@launch }
             when (val r = repository.getFees(token, childId)) {
-                is NetworkResult.Success -> _state.update { it.copy(feesLoading = false, fees = r.data.data) }
+                is NetworkResult.Success -> _state.update { it.copy(feesLoading = false, fees = r.data.data, feesStale = r.isStale) }
                 else -> _state.update { it.copy(feesLoading = false) }
             }
         }
@@ -245,6 +290,7 @@ class ParentDashboardViewModel(
                         attendanceLoading = false,
                         attendance = data,
                         today = resolveToday(data),
+                        attendanceStale = r.isStale,
                     )
                 }
                 else -> _state.update { it.copy(attendanceLoading = false) }
@@ -270,6 +316,7 @@ class ParentDashboardViewModel(
                         timetable = data,
                         todayPeriods = if (isNonSchoolDay) emptyList() else computeTodayPeriods(data),
                         schoolDayEnded = if (isNonSchoolDay) true else computeSchoolDayEnded(data),
+                        timetableStale = r.isStale,
                     )
                 }
                 else -> _state.update { it.copy(timetableLoading = false) }
@@ -288,6 +335,7 @@ class ParentDashboardViewModel(
                         syllabusLoading = false,
                         syllabus = data,
                         coveredToday = computeCoveredToday(data),
+                        syllabusStale = r.isStale,
                     )
                 }
                 else -> _state.update { it.copy(syllabusLoading = false) }
@@ -313,11 +361,11 @@ class ParentDashboardViewModel(
                     // server orders DESC so reverse to oldest→newest. Capped to the last 8.
                     val trend = if (latest != null) {
                         scored.filter { m -> m.subject == latest.subject && m.marks != null && m.maxMarks > 0 }
-                            .map { m -> (m.marks!! / m.maxMarks) * 100.0 }
+                            .map { m -> ((m.marks ?: 0.0) / m.maxMarks) * 100.0 }
                             .take(8)
                             .reversed()
                     } else emptyList()
-                    it.copy(marksLoading = false, latestMark = latest, previousMarkForSubject = prev, markTrend = trend)
+                    it.copy(marksLoading = false, latestMark = latest, previousMarkForSubject = prev, markTrend = trend, marksStale = r.isStale)
                 }
                 else -> _state.update { it.copy(marksLoading = false) }
             }

@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.ui.v2.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import kotlin.math.pow
 
 /**
  * VidyaSetu authoritative color tokens.
@@ -205,7 +206,7 @@ val NightVColors = VColors(
 private fun Color.relativeLuminance(): Double {
     fun channel(c: Float): Double {
         val s = c.toDouble()
-        return if (s <= 0.03928) s / 12.92 else Math.pow((s + 0.055) / 1.055, 2.4)
+        return if (s <= 0.03928) s / 12.92 else ((s + 0.055) / 1.055).pow(2.4)
     }
     val r = channel(red)
     val g = channel(green)

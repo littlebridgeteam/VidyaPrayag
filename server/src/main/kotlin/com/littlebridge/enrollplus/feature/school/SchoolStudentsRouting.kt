@@ -46,6 +46,7 @@ import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
 import com.littlebridge.enrollplus.db.LeaveRequestsTable
 import com.littlebridge.enrollplus.db.ParentChildLinksTable
+import com.littlebridge.enrollplus.db.SchoolClassesTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import io.ktor.http.*
@@ -62,9 +63,16 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 // ───────────────────────────── DTOs ─────────────────────────────
+
+@Serializable
+data class TodayItemDto(
+    val color: String,  // "green"|"yellow"|"red"|"sky"
+    val text: String
+)
 
 @Serializable
 data class StudentDto(
@@ -84,11 +92,32 @@ data class StudentDto(
     @SerialName("teacher_count") val teacherCount: Int = 0,
     @SerialName("parent_count") val parentCount: Int = 0,
     @SerialName("is_new_admission") val isNewAdmission: Boolean = false,
-    val status: String = "active"
+    val status: String = "active",
+    // People Tab enrichment — new fields for enriched card UI.
+    // All defaulted so older clients keep parsing; all DERIVED server-side.
+    @SerialName("parent_name") val parentName: String? = null,
+    @SerialName("homework_percent") val homeworkPercent: Float = 0f,
+    @SerialName("fees_pending") val feesPending: Boolean = false,
+    @SerialName("parent_meeting_scheduled") val parentMeetingScheduled: Boolean = false,
+    @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
 )
 
 @Serializable
 data class StudentListResponse(val students: List<StudentDto>)
+
+@Serializable
+data class StudentPaginationDto(
+    val page: Int,
+    val pageSize: Int,
+    val totalRecords: Int,
+    val hasNext: Boolean
+)
+
+@Serializable
+data class StudentListPaginatedResponse(
+    val students: List<StudentDto>,
+    val pagination: StudentPaginationDto
+)
 
 // RA-SP: a teacher connected to a student, derived from class assignments.
 @Serializable
@@ -126,7 +155,8 @@ data class CreateStudentRequest(
     // ISSUE 2b: parent/guardian phone captured at creation, validated + persisted,
     // and consumed by the parent→child link matcher.
     @SerialName("parent_phone") val parentPhone: String? = null,
-    @SerialName("student_code") val studentCode: String? = null  // optional; auto-generated when blank
+    @SerialName("student_code") val studentCode: String? = null,  // optional; auto-generated when blank
+    @SerialName("admission_date") val admissionDate: String? = null  // YYYY-MM-DD; falls back to today if null
 )
 
 /**
@@ -141,7 +171,8 @@ data class UpdateStudentRequest(
     @SerialName("full_name") val fullName: String? = null,
     @SerialName("class_name") val className: String? = null,
     val section: String? = null,
-    @SerialName("roll_number") val rollNumber: String? = null
+    @SerialName("roll_number") val rollNumber: String? = null,
+    @SerialName("admission_date") val admissionDate: String? = null
 )
 
 @Serializable
@@ -373,6 +404,12 @@ private fun buildTeacherProfile(schoolId: UUID, teacherId: UUID): TeacherProfile
     }
     var expectedSubmissions = 0
     var actualSubmissions = 0
+    val hwIdList = homeworkIds.map { it.id }
+    val submissionCounts = if (hwIdList.isEmpty()) emptyMap() else
+        HomeworkSubmissionsTable.selectAll().where {
+            HomeworkSubmissionsTable.homeworkId inList hwIdList
+        }.groupBy { it[HomeworkSubmissionsTable.homeworkId] }.mapValues { it.value.size }
+
     homeworkIds.forEach { hw ->
         val expected = classSectionCounts[hw.className to hw.section]
             ?: StudentsTable.selectAll().where {
@@ -382,9 +419,7 @@ private fun buildTeacherProfile(schoolId: UUID, teacherId: UUID): TeacherProfile
                     it[StudentsTable.className], it[StudentsTable.section], hw.className, hw.section
                 )
             }
-        val submitted = HomeworkSubmissionsTable.selectAll()
-            .where { HomeworkSubmissionsTable.homeworkId eq hw.id }
-            .count().toInt()
+        val submitted = submissionCounts[hw.id] ?: 0
         expectedSubmissions += expected
         // Cap submissions at the expected headcount so the ratio can never exceed
         // 100% (e.g. stale submissions from since-removed students).
@@ -579,7 +614,10 @@ private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDt
         parentPhone = row[StudentsTable.parentPhone],
         profilePhotoUrl = row[StudentsTable.profilePhotoUrl],
         status = if (row[StudentsTable.isActive]) "active" else "inactive",
-        isNewAdmission = isNewAdmission(row[StudentsTable.createdAt])
+        isNewAdmission = isNewAdmission(
+            row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
+                ?: row[StudentsTable.createdAt]
+        )
     )
 
 /**
@@ -622,10 +660,20 @@ private fun enrichStudentForList(schoolId: UUID, dto: StudentDto): StudentDto {
     val attendance = StudentAggregationService.attendanceForStudent(schoolId, dto.studentCode)
     val teacherCount = StudentAggregationService.teacherCountForStudent(schoolId, dto.className, dto.section)
     val parentCount = StudentAggregationService.parentCountForStudent(schoolId, dto.studentCode)
+    val parentName = StudentAggregationService.primaryParentNameForStudent(schoolId, dto.studentCode)
+    val homeworkPercent = StudentAggregationService.homeworkPercentForStudent(schoolId, dto.studentCode)
+    val feesPending = StudentAggregationService.feesPendingForStudent(schoolId, dto.studentCode)
+    val parentMeetingScheduled = StudentAggregationService.parentMeetingScheduledForStudent(schoolId, dto.studentCode)
+    val todayItems = StudentAggregationService.todayItemsForStudent(schoolId, dto.studentCode, dto.className, dto.section)
     return dto.copy(
         attendancePercent = attendance.percent,
         teacherCount = teacherCount,
-        parentCount = parentCount
+        parentCount = parentCount,
+        parentName = parentName,
+        homeworkPercent = homeworkPercent,
+        feesPending = feesPending,
+        parentMeetingScheduled = parentMeetingScheduled,
+        todayItems = todayItems
     )
 }
 
@@ -713,26 +761,62 @@ fun Route.schoolStudentsRouting() {
                 val ctx = call.requireSchoolContext() ?: return@get
                 val q = call.request.queryParameters["q"]?.trim()?.takeIf { it.isNotBlank() }?.lowercase()
                 val classFilter = call.request.queryParameters["class"]?.trim()?.takeIf { it.isNotBlank() }
-                val students = dbQuery {
-                    StudentsTable.selectAll()
-                        .where { (StudentsTable.schoolId eq ctx.schoolId) and (StudentsTable.isActive eq true) }
-                        .orderBy(StudentsTable.className to SortOrder.ASC, StudentsTable.rollNumber to SortOrder.ASC)
-                        .map(::studentRowToDto)
-                        // Apply the in-memory search/class filter BEFORE enrichment so
-                        // we only run the (per-student) aggregation queries for the rows
-                        // we actually return.
-                        .filter { s ->
-                            (classFilter == null || s.className.equals(classFilter, ignoreCase = true)) &&
-                                (q == null ||
-                                    s.fullName.lowercase().contains(q) ||
-                                    s.rollNumber.lowercase().contains(q) ||
-                                    s.studentCode.lowercase().contains(q))
-                        }
-                        // RA-SP: relationship-aware enrichment via the single source of
-                        // truth so each card shows live attendance/teacher/parent counts.
-                        .map { enrichStudentForList(ctx.schoolId, it) }
+                val pageParam = call.request.queryParameters["page"]?.toIntOrNull()
+                val pageSizeParam = call.request.queryParameters["pageSize"]?.toIntOrNull()
+                val isPaginated = pageParam != null
+
+                if (isPaginated) {
+                    val page = (pageParam ?: 1).coerceAtLeast(1)
+                    val pageSize = (pageSizeParam ?: 10).coerceIn(1, 100)
+                    val offset = (page - 1).toLong() * pageSize
+
+                    val result = dbQuery {
+                        val totalRecords = StudentsTable.selectAll()
+                            .where { (StudentsTable.schoolId eq ctx.schoolId) and (StudentsTable.isActive eq true) }
+                            .count()
+
+                        val students = StudentsTable.selectAll()
+                            .where { (StudentsTable.schoolId eq ctx.schoolId) and (StudentsTable.isActive eq true) }
+                            .orderBy(StudentsTable.className to SortOrder.ASC, StudentsTable.rollNumber to SortOrder.ASC)
+                            .limit(pageSize, offset)
+                            .map(::studentRowToDto)
+                            .filter { s ->
+                                (classFilter == null || s.className.equals(classFilter, ignoreCase = true)) &&
+                                    (q == null ||
+                                        s.fullName.lowercase().contains(q) ||
+                                        s.rollNumber.lowercase().contains(q) ||
+                                        s.studentCode.lowercase().contains(q))
+                            }
+                            .map { enrichStudentForList(ctx.schoolId, it) }
+
+                        StudentListPaginatedResponse(
+                            students = students,
+                            pagination = StudentPaginationDto(
+                                page = page,
+                                pageSize = pageSize,
+                                totalRecords = totalRecords.toInt(),
+                                hasNext = offset + students.size < totalRecords
+                            )
+                        )
+                    }
+                    call.ok(result, message = "Students fetched")
+                } else {
+                    val students = dbQuery {
+                        StudentsTable.selectAll()
+                            .where { (StudentsTable.schoolId eq ctx.schoolId) and (StudentsTable.isActive eq true) }
+                            .orderBy(StudentsTable.className to SortOrder.ASC, StudentsTable.rollNumber to SortOrder.ASC)
+                            .map(::studentRowToDto)
+                            .filter { s ->
+                                (classFilter == null || s.className.equals(classFilter, ignoreCase = true)) &&
+                                    (q == null ||
+                                        s.fullName.lowercase().contains(q) ||
+                                        s.rollNumber.lowercase().contains(q) ||
+                                        s.studentCode.lowercase().contains(q))
+                            }
+                            .map { enrichStudentForList(ctx.schoolId, it) }
+                    }
+                    call.ok(StudentListResponse(students), message = "Students fetched")
                 }
-                call.ok(StudentListResponse(students), message = "Students fetched")
             }
 
             // ---- add a student (school-admin) ----
@@ -760,6 +844,15 @@ fun Route.schoolStudentsRouting() {
                     }
                     PhoneNormalizer.canonical(req.parentPhone)
                 } else null
+
+                val classOk = dbQuery { ClassResolution.classExists(ctx.schoolId, req.className) }
+                if (!classOk) {
+                    call.fail(
+                        "Class \"${req.className}\" is not configured for your school. Add it in Classes & Subjects first.",
+                        HttpStatusCode.BadRequest, "CLASS_NOT_FOUND"
+                    )
+                    return@post
+                }
 
                 val dto = dbQuery {
                     // ISSUE 1: store the canonical class name + section so the derived
@@ -790,6 +883,9 @@ fun Route.schoolStudentsRouting() {
                         it[rollNumber] = req.rollNumber.trim()
                         it[parentPhone] = canonPhone
                         it[isActive] = true
+                        it[admissionDate] = req.admissionDate?.let { d ->
+                            runCatching { LocalDate.parse(d) }.getOrNull()
+                        } ?: LocalDate.now()
                         it[createdAt] = Instant.now()
                     } get StudentsTable.id
 
@@ -844,6 +940,8 @@ fun Route.schoolStudentsRouting() {
                     val newSection = req.section?.takeIf { it.isNotBlank() }
                         ?.let { ClassNaming.canonicalSection(it) } ?: oldSection
                     val newRoll = req.rollNumber?.takeIf { it.isNotBlank() }?.trim()
+                    val newAdmissionDate = req.admissionDate?.takeIf { it.isNotBlank() }
+                        ?.let { d -> runCatching { LocalDate.parse(d) }.getOrNull() }
 
                     StudentsTable.update({
                         (StudentsTable.id eq id) and (StudentsTable.schoolId eq ctx.schoolId)
@@ -852,6 +950,7 @@ fun Route.schoolStudentsRouting() {
                         it[className] = newClass
                         it[section] = newSection
                         if (newRoll != null) it[rollNumber] = newRoll
+                        if (newAdmissionDate != null) it[admissionDate] = newAdmissionDate
                     }
 
                     // RA-LINK: only re-sync when the class+section actually changed —
@@ -902,10 +1001,26 @@ fun Route.schoolStudentsRouting() {
                 // recompute the affected teachers' workload once, after the batch.
                 val touchedClasses = LinkedHashSet<Pair<String, String>>()
                 dbQuery {
+                    // Pre-fetch all configured class keys for this school for fast validation.
+                    val configuredClassKeys = SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.schoolId eq ctx.schoolId }
+                        .flatMap { row ->
+                            listOf(
+                                ClassNaming.classKey(row[SchoolClassesTable.name]),
+                                ClassNaming.classKey(row[SchoolClassesTable.code])
+                            )
+                        }.toSet()
+
                     rows.forEachIndexed { index, r ->
                         val rowNo = index + 1
                         if (r.fullName.isBlank() || r.className.isBlank() || r.rollNumber.isBlank()) {
                             results += BulkImportRowResult(rowNo, false, null, "Name, class and roll number are required.")
+                            return@forEachIndexed
+                        }
+                        // Bug 17: reject rows whose class is not configured for this school.
+                        val typedClassKey = ClassNaming.classKey(r.className.trim().replace(Regex("\\s+"), " "))
+                        if (typedClassKey !in configuredClassKeys) {
+                            results += BulkImportRowResult(rowNo, false, null, "Class \"${r.className}\" is not configured for your school.")
                             return@forEachIndexed
                         }
                         // ISSUE 1: canonical class + section so the derived join holds.
@@ -1108,7 +1223,8 @@ fun Route.schoolStudentsRouting() {
                     // ── RA-SP: relationship-aware aggregation via the single source
                     // of truth, so teachers/parents/insights/activities and the KPI
                     // carousel metrics are always derived from live facts. ──
-                    val admittedAt = row[StudentsTable.createdAt]
+                    val admittedAt = row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
+                        ?: row[StudentsTable.createdAt]
                     val teachers = StudentAggregationService.teachersForStudent(
                         ctx.schoolId, student.className, student.section
                     )

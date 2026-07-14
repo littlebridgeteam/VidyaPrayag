@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.exposed.sql.selectAll
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Hot-reloadable kill-switch configuration sourced from the [PewsFeatureFlagsTable].
@@ -29,11 +30,12 @@ object KillSwitchConfig {
 
     private val flags = ConcurrentHashMap<String, Boolean>()
 
-    @Volatile
-    private var globalKilled: Boolean = false
+    private data class KillSwitchState(
+        val globalKilled: Boolean = false,
+        val loaded: Boolean = false,
+    )
 
-    @Volatile
-    private var loaded: Boolean = false
+    private val state = AtomicReference(KillSwitchState())
 
     /**
      * Start the hot-reload polling loop. Called once at boot from Application.kt.
@@ -64,23 +66,24 @@ object KillSwitchConfig {
         }
         flags.clear()
         flags.putAll(newFlags)
-        globalKilled = newFlags[GLOBAL_MODULE] ?: false
-        loaded = true
-        log.debug("KillSwitchConfig reloaded: {} flags, globalKilled={}", newFlags.size, globalKilled)
+        val newGlobalKilled = newFlags[GLOBAL_MODULE] ?: false
+        state.set(KillSwitchState(globalKilled = newGlobalKilled, loaded = true))
+        log.debug("KillSwitchConfig reloaded: {} flags, globalKilled={}", newFlags.size, newGlobalKilled)
     }
 
     /**
      * True if the global kill switch is active (entire PEWS disabled).
      */
-    fun isGlobalKilled(): Boolean = globalKilled
+    fun isGlobalKilled(): Boolean = state.get().globalKilled
 
     /**
      * True if [moduleName] is killed, either by its own flag or by the global kill.
      * Returns false if flags haven't been loaded yet (fail-open at boot before first reload).
      */
     fun isKilled(moduleName: String): Boolean {
-        if (!loaded) return false
-        return globalKilled || (flags[moduleName] ?: false)
+        val s = state.get()
+        if (!s.loaded) return false
+        return s.globalKilled || (flags[moduleName] ?: false)
     }
 
     /**

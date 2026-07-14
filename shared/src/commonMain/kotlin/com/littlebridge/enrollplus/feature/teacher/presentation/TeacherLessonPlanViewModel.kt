@@ -11,6 +11,7 @@ import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonActivityDt
 import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonCalendarDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonPlanDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.LessonTemplateDto
+import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SaveLessonTemplateRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.SyllabusNodeDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.UpdateLessonPlanRequest
@@ -87,6 +88,8 @@ data class TeacherLessonPlanState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val statusFilter: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
     // ── editor ──
     val editor: LessonPlanEditorState = LessonPlanEditorState(),
     val syllabusUnits: List<SyllabusNodeDto> = emptyList(),
@@ -106,6 +109,11 @@ data class TeacherLessonPlanState(
     val instantiateTemplateId: String? = null,
     val instantiateDate: String = "",
     val isInstantiating: Boolean = false,
+    // ── post-complete quiz suggestion ──
+    val showQuizSuggestion: Boolean = false,
+    val completedPlanTitle: String = "",
+    // ── quiz list for editor attach ──
+    val existingQuizzes: List<QuizDto> = emptyList(),
 )
 
 class TeacherLessonPlanViewModel(
@@ -131,7 +139,7 @@ class TeacherLessonPlanViewModel(
             when (result) {
                 is NetworkResult.Success -> {
                     val items = result.data.data.map { it.toSummary() }
-                    _state.update { it.copy(items = items, isLoading = false) }
+                    _state.update { it.copy(items = items, isLoading = false, isStale = result.isStale, isOffline = result.isOffline) }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = result.message ?: "Failed to load") }
                 is NetworkResult.ConnectionError -> {}
@@ -212,6 +220,12 @@ class TeacherLessonPlanViewModel(
                 is NetworkResult.Success -> _state.update { it.copy(homeworkOptions = hwResult.data.data.items) }
                 else -> {}
             }
+            // Load existing quizzes for the quiz attach picker
+            val quizResult = repository.listQuizzes(t, asgId)
+            when (quizResult) {
+                is NetworkResult.Success -> _state.update { it.copy(existingQuizzes = quizResult.data.data.quizzes) }
+                else -> {}
+            }
         }
     }
 
@@ -257,7 +271,12 @@ class TeacherLessonPlanViewModel(
                     plannedDate = e.plannedDate.ifBlank { null },
                 ))
             } else {
-                repository.updateLessonPlan(t, e.planId!!, UpdateLessonPlanRequest(
+                val planId = e.planId
+                if (planId == null) {
+                    _state.update { it.copy(error = "Cannot update: plan ID is missing") }
+                    return@launch
+                }
+                repository.updateLessonPlan(t, planId, UpdateLessonPlanRequest(
                     curriculumUnitId = e.curriculumUnitId,
                     title = e.title.trim(),
                     objectives = e.objectives,
@@ -282,13 +301,14 @@ class TeacherLessonPlanViewModel(
 
     fun completePlan() {
         val planId = _state.value.editor.planId ?: return
+        val planTitle = _state.value.editor.title
         viewModelScope.launch {
             val t = token() ?: return@launch
             _state.update { it.copy(editor = it.editor.copy(isSaving = true, error = null)) }
             val result = repository.completeLessonPlan(t, planId)
             when (result) {
                 is NetworkResult.Success -> {
-                    _state.update { it.copy(mode = LessonPlanMode.List, editor = LessonPlanEditorState()) }
+                    _state.update { it.copy(mode = LessonPlanMode.List, editor = LessonPlanEditorState(), showQuizSuggestion = true, completedPlanTitle = planTitle) }
                     load(_state.value.assignmentId, _state.value.scopeLabel)
                 }
                 is NetworkResult.Error -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = result.message ?: "Complete failed")) }
@@ -329,6 +349,10 @@ class TeacherLessonPlanViewModel(
                 is NetworkResult.ConnectionError -> {}
             }
         }
+    }
+
+    fun dismissQuizSuggestion() {
+        _state.update { it.copy(showQuizSuggestion = false, completedPlanTitle = "") }
     }
 
     fun closeEditor() {

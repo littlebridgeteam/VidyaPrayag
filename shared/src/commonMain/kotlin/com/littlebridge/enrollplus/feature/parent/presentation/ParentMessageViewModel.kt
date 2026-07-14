@@ -9,6 +9,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentMessageThre
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentRecipientDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSendMessageRequest
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,9 @@ data class ParentMessageState(
     val threads: List<ParentMessageThreadDto> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
+    val refreshEpoch: Int = 0,
 
     // open conversation
     val openThreadId: String? = null,
@@ -40,6 +44,7 @@ data class ParentMessageState(
     val messages: List<ParentMessageDto> = emptyList(),
     val conversationLoading: Boolean = false,
     val conversationError: String? = null,
+    val conversationStale: Boolean = false,
 
     // compose (reply)
     val sending: Boolean = false,
@@ -87,11 +92,26 @@ class ParentMessageViewModel(
             }
             when (val r = repository.getMessageThreads(token)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(loading = false, threads = r.data.data.threads) }
+                    _state.update { it.copy(loading = false, threads = r.data.data.threads, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error ->
                     _state.update { it.copy(loading = false, error = r.message) }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(loading = false, error = "Connection error") }
+            }
+        }
+    }
+
+    /** Pull-to-refresh: re-fetch threads without setting loading flag. */
+    fun refreshThreads() {
+        viewModelScope.launch {
+            val token = token() ?: return@launch
+            when (val r = repository.getMessageThreads(token)) {
+                is NetworkResult.Success ->
+                    _state.update { it.copy(threads = r.data.data.threads, isStale = r.isStale, isOffline = r.isOffline, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.Error ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
+                is NetworkResult.ConnectionError ->
+                    _state.update { it.copy(isStale = true, isOffline = true, refreshEpoch = it.refreshEpoch + 1) }
             }
         }
     }
@@ -121,6 +141,7 @@ class ParentMessageViewModel(
                             conversationLoading = false,
                             messages = data?.messages ?: emptyList(),
                             openThreadName = data?.senderName ?: fallbackName,
+                            conversationStale = r.isStale,
                         )
                     }
                     // opening clears the unread badge server-side; refresh the list.
@@ -219,11 +240,16 @@ class ParentMessageViewModel(
             )
             when (val r = repository.sendMessage(token, req)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_parent_message_sent", mapOf(
+                        "thread_id" to threadId,
+                        "is_new_thread" to false,
+                    ))
                     _state.update { it.copy(sending = false, replyError = null) }
                     // Reload without clearing — no flicker.
                     reloadConversation()
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_parent_message_send_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update {
                         it.copy(
                             messages = it.messages.filterNot { msg -> msg.id == tempId },
@@ -231,6 +257,7 @@ class ParentMessageViewModel(
                             replyError = r.message,
                         )
                     }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update {
                         it.copy(
@@ -377,6 +404,10 @@ class ParentMessageViewModel(
                 is NetworkResult.Success -> {
                     val newThreadId = r.data.data?.threadId
                     val recipientName = _state.value.composeRecipients.firstOrNull { it.id == recipientUserId }?.name ?: ""
+                    AnalyticsTracker.event("vp_parent_message_sent", mapOf(
+                        "thread_id" to (newThreadId ?: ""),
+                        "is_new_thread" to true,
+                    ))
                     _state.update {
                         it.copy(
                             sending = false,
@@ -393,8 +424,10 @@ class ParentMessageViewModel(
                         loadThreads()
                     }
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_parent_message_send_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update { it.copy(sending = false, composeError = r.message) }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(sending = false, composeError = "Connection error") }
             }

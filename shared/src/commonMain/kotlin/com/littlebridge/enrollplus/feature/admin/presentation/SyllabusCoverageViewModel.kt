@@ -54,7 +54,9 @@ data class SyllabusCoverageState(
     val overallPercentage: Int = 0,
     val overallTrend: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class SyllabusCoverageViewModel(
@@ -76,7 +78,7 @@ class SyllabusCoverageViewModel(
             }
             when (val result = analyticsRepository.getSyllabusCoverage(token)) {
                 is NetworkResult.Success -> {
-                    _state.value = parseSyllabus(result.data.data).copy(isLoading = false)
+                    _state.value = parseSyllabus(result.data.data).copy(isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("SyllabusCoverageVM", "getSyllabusCoverage error: ${result.message}")
@@ -145,8 +147,8 @@ class SyllabusCoverageViewModel(
                 overallTrend       = overall?.get("trend")?.jsonPrimitive?.contentOrNull ?: ""
             )
         } catch (e: Exception) {
-            AppLogger.e("SyllabusCoverageVM", "parseSyllabus failed: ${e.message}")
-            SyllabusCoverageState(errorMessage = "Could not parse server response")
+            AppLogger.e("SyllabusCoverageVM", "parseSyllabus failed: ${e.message}", e)
+            SyllabusCoverageState(errorMessage = "Could not parse server response: ${e.message ?: "unknown error"}")
         }
     }
 
@@ -163,7 +165,7 @@ class SyllabusCoverageViewModel(
                 instructor       = o["instructor"]?.jsonPrimitive?.contentOrNull ?: "",
                 isCritical       = o["is_critical"]?.jsonPrimitive?.booleanOrNull ?: false
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("SyllabusCoverageVM", "parseAlert failed: ${e.message}", e); null }
     }
 
     private fun parseMilestone(el: JsonElement): AcademicMilestone? {
@@ -178,6 +180,6 @@ class SyllabusCoverageViewModel(
                 description = o["description"]?.jsonPrimitive?.contentOrNull ?: "",
                 isVerified  = o["is_verified"]?.jsonPrimitive?.booleanOrNull ?: false
             )
-        } catch (_: Exception) { null }
+        } catch (e: Exception) { AppLogger.e("SyllabusCoverageVM", "parseMilestone failed: ${e.message}", e); null }
     }
 }

@@ -26,6 +26,7 @@ class PreferenceManager(
     private val NOTIFICATIONS_DECLINED_KEY = booleanPreferencesKey("notifications_declined")
     private val FONT_SCALE_KEY = floatPreferencesKey("font_scale")
     private val CACHED_BRANDING_KEY = stringPreferencesKey("cached_branding")
+    private val LANGUAGE_PREF_KEY = stringPreferencesKey("language_pref")
 
     override fun getThemeName(): Flow<String> {
         return dataStore.data.map { preferences ->
@@ -222,6 +223,18 @@ class PreferenceManager(
             } else {
                 preferences[CACHED_BRANDING_KEY] = brandingJson
             }
+        }
+    }
+
+    override fun getLanguagePref(): Flow<String> {
+        return dataStore.data.map { preferences ->
+            preferences[LANGUAGE_PREF_KEY] ?: ""
+        }
+    }
+
+    override suspend fun setLanguagePref(lang: String) {
+        dataStore.edit { preferences ->
+            preferences[LANGUAGE_PREF_KEY] = lang
         }
     }
 

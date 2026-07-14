@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,14 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.reportcard.presentation.TeacherReportDraftEditorViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * TeacherReportDraftEditorScreen — allows teachers to edit the AI-generated
@@ -47,7 +46,7 @@ fun TeacherReportDraftEditorScreen(
     viewModel: TeacherReportDraftEditorViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val c = VTheme.colors
+    val c = VtC
 
     LaunchedEffect(draftId) { viewModel.loadDraft(draftId) }
 
@@ -61,8 +60,8 @@ fun TeacherReportDraftEditorScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            VButton(text = "Back", onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Text("Edit Draft", style = VTheme.type.h3.colored(c.ink))
+            VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
+            Text(appString(StringKeys.TC_EDIT_DRAFT), style = VtT.h3.coloredV(c.ink))
         }
 
         when {
@@ -73,10 +72,11 @@ fun TeacherReportDraftEditorScreen(
             }
             state.error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error!!, style = VTheme.type.body.colored(c.danger))
+                    Text(state.error ?: "", style = VtT.body.coloredV(c.danger))
                 }
             }
             state.draft != null -> {
+                val draft = state.draft ?: return
                 Column(
                     Modifier.fillMaxSize().padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -84,37 +84,37 @@ fun TeacherReportDraftEditorScreen(
                     // Draft metadata
                     VCard(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${state.draft!!.className} ${state.draft!!.section} • ${state.draft!!.term}",
-                                style = VTheme.type.body.colored(c.ink).copy(fontWeight = FontWeight.Medium))
-                            Text("Status: ${state.draft!!.status}", style = VTheme.type.caption.colored(c.ink2))
-                            Text("Language: ${state.draft!!.language}", style = VTheme.type.caption.colored(c.ink3))
+                            Text("${draft.className} ${draft.section} • ${draft.term}",
+                                style = VtT.body.coloredV(c.ink).copy(fontWeight = FontWeight.Medium))
+                            Text(appString(StringKeys.TC_STATUS_COLON, "status" to draft.status), style = VtT.caption.coloredV(c.ink2))
+                            Text(appString(StringKeys.TC_LANGUAGE_COLON, "lang" to draft.language), style = VtT.caption.coloredV(c.ink3))
                         }
                     }
 
                     // Editable draft content
-                    Text("AI Narrative (editable)", style = VTheme.type.label.colored(c.ink).copy(fontWeight = FontWeight.Bold))
+                    Text(appString(StringKeys.TC_AI_NARRATIVE_EDITABLE), style = VtT.label.coloredV(c.ink).copy(fontWeight = FontWeight.Bold))
                     OutlinedTextField(
                         value = state.editedContent,
                         onValueChange = { viewModel.updateContent(it) },
                         modifier = Modifier.fillMaxWidth().height(280.dp),
-                        textStyle = VTheme.type.body.colored(c.ink),
+                        textStyle = VtT.body.coloredV(c.ink),
                     )
 
                     if (state.saved) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
-                            Text("Saved successfully", style = VTheme.type.body.colored(c.success))
+                            Text(appString(StringKeys.TC_SAVED_SUCCESSFULLY), style = VtT.body.coloredV(c.success))
                         }
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VButton(
-                            text = if (state.saving) "Saving…" else "Save Draft",
+                            text = if (state.saving) appString(StringKeys.TC_SAVING) else appString(StringKeys.TC_SAVE_DRAFT_BTN),
                             onClick = { viewModel.saveDraft() },
                             enabled = !state.saving,
                         )
                         VButton(
-                            text = "Save & Back",
+                            text = appString(StringKeys.TC_SAVE_AND_BACK),
                             onClick = { viewModel.saveDraft(); onSaved() },
                             variant = VButtonVariant.Secondary,
                             enabled = !state.saving,

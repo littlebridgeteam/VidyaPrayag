@@ -25,6 +25,9 @@ export interface NotificationDto {
   body: string;
   time: string;
   unread: boolean;
+  deep_link?: string;
+  ref_type?: string;
+  ref_id?: string;
 }
 export interface NotificationsDataDto {
   notifications: NotificationDto[];
@@ -296,6 +299,7 @@ export interface ActivityItem {
   action: string;
   target: string;
   iso_time: string;
+  deep_link?: string;
 }
 export interface DashboardIntelligenceDto {
   meta: IntelligenceMeta;
@@ -409,6 +413,41 @@ export interface DevSendNotificationResponse {
 export interface TriggerPewsResponse {
   schools_processed: number;
   at_risk_count: number;
+}
+
+// ── Server Logs (GET /api/v1/admin/dev/logs, /stats) ─────────────────────────
+export interface ServerLogDto {
+  id: string;
+  timestamp: string;
+  level: string;
+  category: string;
+  message: string;
+  actor_id?: string;
+  endpoint?: string;
+  status_code?: number;
+  duration_ms?: number;
+  details?: Record<string, unknown>;
+}
+export interface ServerLogsPageDto {
+  logs: ServerLogDto[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+export interface AiTokenUsageSummary {
+  total_requests: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_errors: number;
+  avg_latency_ms: number;
+  by_model: Record<string, number>;
+}
+export interface ServerLogStatsDto {
+  by_level: Record<string, number>;
+  by_category: Record<string, number>;
+  total_last_24h: number;
+  top_errors: ServerLogDto[];
+  ai_token_usage: AiTokenUsageSummary;
 }
 
 // ── Alumni Management (ALUMNI_MANAGEMENT_SPEC.md) ───────────────────────────
@@ -647,6 +686,12 @@ export interface PewsConfig {
 export interface PewsRunResult {
   at_risk: number;
 }
+
+export interface PewsRunJobResponse {
+  job_id: string;
+}
+
+export type PewsRunResponse = PewsRunResult | PewsRunJobResponse;
 
 export interface PewsJobStatus {
   job_id: string;
@@ -999,4 +1044,118 @@ export interface CopySectionRequest {
   class_name: string;
   from_section: string;
   to_section: string;
+}
+
+// ── Multi-Language i18n (MULTI_LANGUAGE_SPEC.md §9) ─────────────────────────
+
+export interface LanguageDistributionDto {
+  language: string;
+  count: number;
+  percentage: number;
+}
+
+export interface UserLanguagePrefDto {
+  user_id: string;
+  name: string;
+  role: string;
+  language: string;
+}
+
+export interface LanguageAdoptionDto {
+  total_users: number;
+  by_language: LanguageDistributionDto[];
+  by_role: Record<string, LanguageDistributionDto[]>;
+}
+
+export interface UsersByLanguageDto {
+  language: string;
+  roles: Record<string, UserLanguagePrefDto[]>;
+}
+
+export interface ServerStringTranslation {
+  value: string;
+  is_override: boolean;
+  updated_by: string | null;
+  updated_at: string | null;
+}
+
+export interface ServerStringEntry {
+  key: string;
+  translations: Record<string, ServerStringTranslation>;
+}
+
+export interface ServerStringsResponse {
+  strings: ServerStringEntry[];
+  total_keys: number;
+  languages: string[];
+}
+
+export interface UpsertServerStringRequest {
+  lang: string;
+  value: string;
+}
+
+export interface BulkUpsertServerStringItem {
+  key: string;
+  lang: string;
+  value: string;
+}
+
+export interface BulkUpsertServerStringRequest {
+  items: BulkUpsertServerStringItem[];
+}
+
+export interface BulkUpsertServerStringResponse {
+  updated: number;
+  errors: Array<{ key: string; lang: string; error: string }>;
+}
+
+export interface StringOverrideHistoryEntry {
+  id: string;
+  string_key: string;
+  lang: string;
+  old_value: string | null;
+  new_value: string;
+  action: string;
+  changed_by: string | null;
+  changed_by_name: string | null;
+  changed_at: string;
+}
+
+export interface StringOverrideHistoryResponse {
+  history: StringOverrideHistoryEntry[];
+  total: number;
+}
+
+// ── Branded Export System (ExportService.kt) ─────────────────────────────────
+export interface ExportTypeDto {
+  type: string;
+  label: string;
+  category: string;
+  formats: string[];
+  filters: string[];
+  icon: string;
+  admin_only: boolean;
+}
+export interface ExportTypesResponse {
+  exports: ExportTypeDto[];
+}
+export interface ExportRequest {
+  type: string;
+  format: string;
+  class_id?: string;
+  assessment_id?: string;
+  event_id?: string;
+  route_id?: string;
+  homework_id?: string;
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+}
+export interface ExportResponse {
+  download_url: string | null;
+  file_name: string | null;
+  file_size: number;
+  format: string;
+  message: string | null;
 }

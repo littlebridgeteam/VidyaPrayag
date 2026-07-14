@@ -62,6 +62,9 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import java.time.LocalDate
 import java.util.UUID
+import org.slf4j.LoggerFactory
+
+private val analyticsLog = LoggerFactory.getLogger("SchoolAnalyticsRouting")
 
 // ---------------- Top-level DTOs ----------------
 //
@@ -880,7 +883,7 @@ fun Route.schoolAnalyticsRouting() {
                     val kpiObj = (tpl["kpi"] as? JsonObject) ?: JsonObject(emptyMap())
                     val cmsAttendance = (kpiObj["attendance"] as? JsonPrimitive)?.content ?: "0%"
                     val cmsAverage = (kpiObj["average"] as? JsonPrimitive)?.content ?: "0%"
-                    val cmsRank = (kpiObj["rank"] as? JsonPrimitive)?.content?.toIntOrNull() ?: 0
+                    val cmsRank = (kpiObj["rank"] as? JsonPrimitive)?.content?.toIntOrNull() ?: run { analyticsLog.warn("CMS 'rank' missing or unparseable for school_student_analytics_template, defaulting to 0"); 0 }
 
                     val attendanceStr = if (livePct != null) "${livePct}%" else cmsAttendance
 
@@ -988,7 +991,7 @@ fun Route.schoolAnalyticsRouting() {
                                     val o = el.jsonObject
                                     add(buildJsonObject {
                                         put("class", o["name"]?.jsonPrimitive?.content ?: "")
-                                        put("percentage", o["average"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0)
+                                        put("percentage", o["average"]?.jsonPrimitive?.content?.toIntOrNull() ?: run { analyticsLog.warn("CMS class 'average' missing or unparseable, defaulting to 0"); 0 })
                                     })
                                 }
                             }
@@ -1069,9 +1072,9 @@ fun Route.schoolAnalyticsRouting() {
                         // Prefer real risk counts derived from exam averages; fall
                         // back to any seeded counts only when there is no exam data.
                         val critical = if (snapshots.isNotEmpty()) criticalCount
-                            else (risk["critical_count"] as? JsonPrimitive)?.content?.toIntOrNull() ?: 0
+                            else (risk["critical_count"] as? JsonPrimitive)?.content?.toIntOrNull() ?: run { analyticsLog.warn("CMS 'critical_count' missing or unparseable, defaulting to 0"); 0 }
                         val medium = if (snapshots.isNotEmpty()) mediumCount
-                            else (risk["medium_count"] as? JsonPrimitive)?.content?.toIntOrNull() ?: 0
+                            else (risk["medium_count"] as? JsonPrimitive)?.content?.toIntOrNull() ?: run { analyticsLog.warn("CMS 'medium_count' missing or unparseable, defaulting to 0"); 0 }
                         // low = total active - already-flagged buckets, floored at 0
                         val low = (liveActive - critical - medium).coerceAtLeast(0)
                         risk["critical_count"] = JsonPrimitive(critical)
@@ -1109,7 +1112,7 @@ fun Route.schoolAnalyticsRouting() {
                                 val o = el.jsonObject
                                 add(buildJsonObject {
                                     put("name", o["name"]?.jsonPrimitive?.content ?: "")
-                                    val score = o["score"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+                                    val score = o["score"]?.jsonPrimitive?.content?.toIntOrNull() ?: run { analyticsLog.warn("CMS subject 'score' missing or unparseable, defaulting to 0"); 0 }
                                     put("percentage", score / 100.0)
                                 })
                             }

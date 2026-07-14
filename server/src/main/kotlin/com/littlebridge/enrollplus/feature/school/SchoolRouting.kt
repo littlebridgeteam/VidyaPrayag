@@ -35,6 +35,7 @@ import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.db.AcademicCalendarTable
+import com.littlebridge.enrollplus.db.CalendarEventsTable
 import com.littlebridge.enrollplus.db.AttendanceRecordsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FacultyTable
@@ -43,12 +44,29 @@ import com.littlebridge.enrollplus.db.StudentsTable
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
+import io.ktor.server.request.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 import java.time.LocalDate
+import java.time.Instant
+
+@Serializable
+data class AttendanceMark(
+    val id: String,
+    val status: String
+)
+
+@Serializable
+data class AttendanceSaveRequest(
+    val type: String,
+    val date: String,
+    val marks: List<AttendanceMark>
+)
 
 @Serializable
 data class AnalyticsResponse(
@@ -137,25 +155,37 @@ fun Route.schoolRouting() {
                 }
 
                 val events = dbQuery {
-                    AcademicCalendarTable.selectAll()
-                        .where { AcademicCalendarTable.schoolId eq schoolId }
-                        .filter { row ->
-                            val d = runCatching { LocalDate.parse(row[AcademicCalendarTable.date]) }.getOrNull()
-                                ?: return@filter false
-                            val inRange = !d.isBefore(rangeStart) && !d.isAfter(rangeEnd)
-                            val stdOk = standard.isNullOrBlank() ||
-                                row[AcademicCalendarTable.standard] == null ||
-                                row[AcademicCalendarTable.standard] == standard
-                            inRange && stdOk
+                    // Read from CalendarEventsTable (the new academic calendar system)
+                    // — active events (DRAFT + PUBLISHED for school staff; parents only see PUBLISHED).
+                    CalendarEventsTable.selectAll()
+                        .where {
+                            (CalendarEventsTable.schoolId eq schoolId) and
+                                (CalendarEventsTable.isActive eq true)
                         }
-                        .map {
-                            CalendarEventDto(
-                                date = it[AcademicCalendarTable.date],
-                                day = it[AcademicCalendarTable.day],
-                                eventId = it[AcademicCalendarTable.eventId],
-                                eventTitle = it[AcademicCalendarTable.eventTitle],
-                                eventDescription = it[AcademicCalendarTable.eventDescription] ?: ""
-                            )
+                        .filter { row ->
+                            val s = row[CalendarEventsTable.startDate]
+                            val e = row[CalendarEventsTable.endDate]
+                            !s.isAfter(rangeEnd) && !e.isBefore(rangeStart)
+                        }
+                        .sortedBy { it[CalendarEventsTable.startDate] }
+                        .flatMap { row ->
+                            val s = row[CalendarEventsTable.startDate]
+                            val e = row[CalendarEventsTable.endDate]
+                            val dates = if (s == e) listOf(s) else {
+                                generateSequence(s) { it.plusDays(1) }
+                                    .takeWhile { !it.isAfter(e) }
+                                    .toList()
+                            }
+                            dates.filter { d -> !d.isBefore(rangeStart) && !d.isAfter(rangeEnd) }
+                                .map { d ->
+                                    CalendarEventDto(
+                                        date = d.toString(),
+                                        day = d.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() },
+                                        eventId = row[CalendarEventsTable.eventCode],
+                                        eventTitle = row[CalendarEventsTable.title],
+                                        eventDescription = row[CalendarEventsTable.description]
+                                    )
+                                }
                         }
                 }
 
@@ -225,11 +255,12 @@ fun Route.schoolRouting() {
                     call.fail("'grade' is required for type=student"); return@get
                 }
 
+                val safeGrade = grade
                 val resp = dbQuery {
                     // Pull people list (students of that grade, or all faculty).
                     val people: List<Triple<String, String, String?>> = if (type == "student") {
                         StudentsTable.selectAll()
-                            .where { (StudentsTable.schoolId eq schoolId) and (StudentsTable.className eq grade!!) and (StudentsTable.isActive eq true) }
+                            .where { (StudentsTable.schoolId eq schoolId) and (StudentsTable.className eq (safeGrade ?: "")) and (StudentsTable.isActive eq true) }
                             .map { Triple(it[StudentsTable.studentCode], it[StudentsTable.fullName], it[StudentsTable.profilePhotoUrl]) }
                     } else {
                         FacultyTable.selectAll()
@@ -265,6 +296,62 @@ fun Route.schoolRouting() {
                     )
                 }
                 call.ok(resp, message = "Daily attendance fetched successfully")
+            }
+
+            // ---- attendance/daily (POST: save marks) ----
+            post("/attendance/daily") {
+                val ctx = call.requireSchoolContext() ?: return@post
+                val schoolId = ctx.schoolId
+                val req = call.receive<AttendanceSaveRequest>()
+                val type = req.type.lowercase()
+                if (type !in setOf("student", "faculty")) {
+                    call.fail("type must be 'student' or 'faculty'"); return@post
+                }
+                val dateValue = try {
+                    LocalDate.parse(req.date)
+                } catch (_: Exception) {
+                    call.fail("Invalid date format. Use YYYY-MM-DD."); return@post
+                }
+                val validStatuses = setOf("present", "absent", "late", "leave", "half_day")
+                val marks = req.marks.filter { it.status.lowercase() in validStatuses }
+                if (marks.isEmpty()) {
+                    call.fail("No valid attendance marks provided"); return@post
+                }
+
+                dbQuery {
+                    marks.forEach { mark ->
+                        val personId = mark.id
+                        val status = mark.status.lowercase()
+                        val existing = AttendanceRecordsTable.selectAll()
+                            .where {
+                                (AttendanceRecordsTable.schoolId eq schoolId) and
+                                    (AttendanceRecordsTable.date eq dateValue) and
+                                    (AttendanceRecordsTable.type eq type) and
+                                    (AttendanceRecordsTable.personId eq personId)
+                            }
+                            .singleOrNull()
+
+                        if (existing != null) {
+                            AttendanceRecordsTable.update({
+                                (AttendanceRecordsTable.id eq existing[AttendanceRecordsTable.id])
+                            }) {
+                                it[AttendanceRecordsTable.status] = status
+                                it[AttendanceRecordsTable.markedAt] = Instant.now()
+                            }
+                        } else {
+                            AttendanceRecordsTable.insert {
+                                it[AttendanceRecordsTable.schoolId] = schoolId
+                                it[AttendanceRecordsTable.date] = dateValue
+                                it[AttendanceRecordsTable.type] = type
+                                it[AttendanceRecordsTable.personId] = personId
+                                it[AttendanceRecordsTable.status] = status
+                                it[AttendanceRecordsTable.attSource] = "manual"
+                                it[AttendanceRecordsTable.markedAt] = Instant.now()
+                            }
+                        }
+                    }
+                }
+                call.ok(mapOf("saved" to marks.size), message = "Attendance saved successfully")
             }
         }
     }

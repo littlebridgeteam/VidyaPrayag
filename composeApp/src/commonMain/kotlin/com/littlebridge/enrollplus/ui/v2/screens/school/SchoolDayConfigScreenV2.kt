@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolDayConfigDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolDaySlotDto
@@ -39,12 +40,16 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 private val VALID_LEVELS = setOf("ALL", "PRIMARY", "SECONDARY")
@@ -71,7 +76,7 @@ fun SchoolDayConfigScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        VBackHeader(title = "School Day Config", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SCH_SCHOOL_DAY_CONFIG), onBack = onBack)
         SchoolDayConfigContent(
             state = state,
             onRetry = viewModel::loadConfigs,
@@ -119,8 +124,7 @@ private fun SchoolDayConfigContent(
     onDeactivate: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    var composerOpen by remember { mutableStateOf(false) }
+        var composerOpen by remember { mutableStateOf(false) }
     var editingId by remember { mutableStateOf<String?>(null) }
     var name by remember { mutableStateOf("") }
     var days by remember { mutableStateOf("1,2,3,4,5") }
@@ -136,9 +140,9 @@ private fun SchoolDayConfigContent(
 
     VConfirmDialog(
         visible = deactivateTargetId != null,
-        title = "Deactivate config?",
-        message = "This will deactivate the school day configuration. You can reactivate it later.",
-        confirmLabel = "Deactivate",
+        title = appString(StringKeys.SCH_DEACTIVATE_CONFIG),
+        message = appString(StringKeys.SCH_DEACTIVATE_CONFIG_MSG),
+        confirmLabel = appString(StringKeys.SCH_DEACTIVATE),
         onConfirm = {
             deactivateTargetId?.let { onDeactivate(it) }
             deactivateTargetId = null
@@ -156,7 +160,7 @@ private fun SchoolDayConfigContent(
     ) {
         if (showForm) {
             ConfigFormCard(
-                title = if (isEditing) "Edit Day Config" else "New Day Config",
+                title = if (isEditing) appString(StringKeys.SCH_EDIT_DAY_CONFIG) else appString(StringKeys.SCH_NEW_DAY_CONFIG),
                 name = name, onNameChange = { name = it },
                 days = days, onDaysChange = { days = it },
                 daysValid = daysValid,
@@ -167,9 +171,11 @@ private fun SchoolDayConfigContent(
                 formValid = formValid,
                 onSubmit = {
                     if (isEditing) {
-                        onUpdate(editingId!!, name, days, level, slots) {
-                            editingId = null
-                            name = ""; days = "1,2,3,4,5"; level = "ALL"; slots = emptyList()
+                        editingId?.let { editId ->
+                            onUpdate(editId, name, days, level, slots) {
+                                editingId = null
+                                name = ""; days = "1,2,3,4,5"; level = "ALL"; slots = emptyList()
+                            }
                         }
                     } else {
                         onCreate(name, days, level, slots) {
@@ -188,7 +194,7 @@ private fun SchoolDayConfigContent(
             )
         } else {
             VButton(
-                text = "New Day Config",
+                text = appString(StringKeys.SCH_NEW_DAY_CONFIG),
                 onClick = { composerOpen = true },
                 full = true,
                 variant = VButtonVariant.Primary,
@@ -200,14 +206,15 @@ private fun SchoolDayConfigContent(
             loading = state.isLoading,
             error = state.errorMessage,
             isEmpty = state.configs.isEmpty() && !showForm,
-            emptyTitle = "No day configs yet",
-            emptyBody = "Create your first school day configuration to define the bell schedule.",
+            emptyTitle = appString(StringKeys.SCH_NO_DAY_CONFIGS),
+            emptyBody = appString(StringKeys.SCH_NO_DAY_CONFIGS_DESC),
             emptyIcon = VIcons.Calendar,
             onRetry = onRetry,
+            skeleton = { SkeletonList(rows = 4) },
         ) {
             if (state.configs.isNotEmpty()) {
-                VSectionHeader(title = "CONFIGURATIONS")
-                state.configs.forEach { config ->
+                VSectionHeader(title = appString(StringKeys.SCH_CONFIGURATIONS))
+                state.configs.forEachIndexed { index, config ->
                     ConfigCard(
                         config = config,
                         onDeactivate = { deactivateTargetId = it },
@@ -220,13 +227,14 @@ private fun SchoolDayConfigContent(
                             composerOpen = false
                         },
                         isSaving = state.isSaving,
+                        modifier = Modifier.staggeredItemEntrance(index, state.configs.isNotEmpty()),
                     )
                 }
             }
 
             val info = state.infoMessage
             if (info != null && !showForm) {
-                Text(info, style = VTheme.type.caption.colored(c.successInk))
+                Text(info, style = VTypography.caption.copy(color = VColors.success))
             }
         }
     }
@@ -238,9 +246,9 @@ private fun ConfigCard(
     onDeactivate: (String) -> Unit,
     onEdit: () -> Unit,
     isSaving: Boolean,
+    modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    VCard {
+        VCard(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -249,16 +257,16 @@ private fun ConfigCard(
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (config.isActive) {
-                        VBadge(text = "ACTIVE", tone = VBadgeTone.Success)
+                        VBadge(text = appString(StringKeys.SCH_ACTIVE), tone = VBadgeTone.Success)
                     } else {
-                        VBadge(text = "INACTIVE", tone = VBadgeTone.Neutral)
+                        VBadge(text = appString(StringKeys.SCH_INACTIVE), tone = VBadgeTone.Neutral)
                     }
-                    Text(config.name, style = VTheme.type.h3.colored(c.ink))
+                    Text(config.name, style = VTypography.h3.copy(color = VColors.ink))
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Days: ${config.applicableDays}  ·  Level: ${config.classLevel}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    appString(StringKeys.SCH_DAYS_LEVEL, "days" to config.applicableDays, "level" to config.classLevel),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }
         }
@@ -266,7 +274,7 @@ private fun ConfigCard(
         if (config.slots.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             config.slots.forEachIndexed { i, slot ->
-                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.border1))
+                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
                 SlotRow(slot)
             }
         }
@@ -275,7 +283,7 @@ private fun ConfigCard(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f)) {
                 VButton(
-                    text = "Edit",
+                    text = appString(StringKeys.COMMON_BUTTON_EDIT),
                     onClick = onEdit,
                     full = true,
                     variant = VButtonVariant.Secondary,
@@ -286,7 +294,7 @@ private fun ConfigCard(
             if (config.isActive) {
                 Box(Modifier.weight(1f)) {
                     VButton(
-                        text = "Deactivate",
+                        text = appString(StringKeys.SCH_DEACTIVATE),
                         onClick = { onDeactivate(config.id) },
                         full = true,
                         variant = VButtonVariant.Secondary,
@@ -302,8 +310,7 @@ private fun ConfigCard(
 
 @Composable
 private fun SlotRow(slot: SchoolDaySlotDto) {
-    val c = VTheme.colors
-    Row(
+        Row(
         Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -311,38 +318,38 @@ private fun SlotRow(slot: SchoolDaySlotDto) {
         Box(
             Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(slotTypeColor(slot.slotType, c))
+                .background(slotTypeColor(slot.slotType))
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
             Text(
                 slot.slotType,
-                style = VTheme.type.label.colored(c.ink),
+                style = VTypography.label.copy(color = VColors.ink),
             )
         }
         Column(Modifier.weight(1f)) {
             if (slot.label.isNotBlank()) {
-                Text(slot.label, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(slot.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             }
             Text(
                 "${slot.startTime} – ${slot.endTime}",
-                style = VTheme.type.caption.colored(c.ink3),
+                style = VTypography.caption.copy(color = VColors.ink3),
             )
         }
         Text(
             "#${slot.slotIndex}",
-            style = VTheme.type.dataSm.colored(c.ink2),
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
         )
     }
 }
 
 @Composable
-private fun slotTypeColor(type: String, c: com.littlebridge.enrollplus.ui.v2.theme.VColors): androidx.compose.ui.graphics.Color {
+private fun slotTypeColor(type: String): androidx.compose.ui.graphics.Color {
     return when (type) {
-        "TEACHING" -> c.accent.copy(alpha = 0.1f)
-        "BREAK" -> c.warning.copy(alpha = 0.1f)
-        "ASSEMBLY" -> c.teal.copy(alpha = 0.1f)
-        "LAB" -> c.lavenderLight.copy(alpha = 0.3f)
-        else -> c.cream
+        "TEACHING" -> VColors.violet.copy(alpha = 0.1f)
+        "BREAK" -> VColors.gold.copy(alpha = 0.1f)
+        "ASSEMBLY" -> VColors.sky.copy(alpha = 0.1f)
+        "LAB" -> VColors.violetSoft.copy(alpha = 0.3f)
+        else -> VColors.cream
     }
 }
 
@@ -359,24 +366,23 @@ private fun ConfigFormCard(
     onCancel: () -> Unit,
     infoMessage: String?,
 ) {
-    val c = VTheme.colors
-    VCard {
-        Text(title, style = VTheme.type.h3.colored(c.ink))
+        VCard {
+        Text(title, style = VTypography.h3.copy(color = VColors.ink))
         Spacer(Modifier.height(12.dp))
-        VInput(value = name, onValueChange = onNameChange, label = "Name", placeholder = "e.g. Default Weekday")
+        VInput(value = name, onValueChange = onNameChange, label = appString(StringKeys.SCH_NAME), placeholder = appString(StringKeys.SCH_NAME_PH))
         Spacer(Modifier.height(8.dp))
-        VInput(value = days, onValueChange = onDaysChange, label = "Applicable Days", placeholder = "1,2,3,4,5 (Mon-Fri)")
+        VInput(value = days, onValueChange = onDaysChange, label = appString(StringKeys.SCH_APPLICABLE_DAYS), placeholder = appString(StringKeys.SCH_APPLICABLE_DAYS_PH))
         if (!daysValid && days.isNotBlank()) {
-            Text("Format: comma-separated 1-7", style = VTheme.type.caption.colored(c.dangerInk))
+            Text(appString(StringKeys.SCH_FORMAT_DAYS), style = VTypography.caption.copy(color = VColors.error))
         }
         Spacer(Modifier.height(8.dp))
-        VInput(value = level, onValueChange = onLevelChange, label = "Class Level", placeholder = "ALL / PRIMARY / SECONDARY")
+        VInput(value = level, onValueChange = onLevelChange, label = appString(StringKeys.SCH_CLASS_LEVEL), placeholder = appString(StringKeys.SCH_CLASS_LEVEL_PH))
         if (!levelValid && level.isNotBlank()) {
-            Text("Must be: ALL, PRIMARY, or SECONDARY", style = VTheme.type.caption.colored(c.dangerInk))
+            Text(appString(StringKeys.SCH_MUST_BE_LEVEL), style = VTypography.caption.copy(color = VColors.error))
         }
 
         Spacer(Modifier.height(12.dp))
-        Text("Slots (${slots.size})", style = VTheme.type.bodyStrong.colored(c.ink))
+        Text(appString(StringKeys.SCH_SLOTS_N, "count" to slots.size.toString()), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
         if (slots.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             slots.forEachIndexed { idx, slot ->
@@ -403,7 +409,7 @@ private fun ConfigFormCard(
         }
         Spacer(Modifier.height(8.dp))
         VButton(
-            text = "+ Add Slot",
+            text = appString(StringKeys.SCH_ADD_SLOT),
             onClick = {
                 val nextIndex = if (slots.isNotEmpty()) slots.maxOf { it.slotIndex } + 1 else 0
                 onSlotsChange(slots + emptySlot(nextIndex))
@@ -416,14 +422,14 @@ private fun ConfigFormCard(
 
         infoMessage?.let {
             Spacer(Modifier.height(8.dp))
-            Text(it, style = VTheme.type.caption.colored(c.successInk))
+            Text(it, style = VTypography.caption.copy(color = VColors.success))
         }
 
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f)) {
                 VButton(
-                    text = "Cancel",
+                    text = appString(StringKeys.COMMON_BUTTON_CLOSE),
                     onClick = onCancel,
                     full = true,
                     variant = VButtonVariant.Secondary,
@@ -432,7 +438,7 @@ private fun ConfigFormCard(
             }
             Box(Modifier.weight(1f)) {
                 VButton(
-                    text = if (isSaving) "Saving…" else "Save",
+                    text = if (isSaving) appString(StringKeys.SCH_SAVING) else appString(StringKeys.SCH_SAVE),
                     onClick = onSubmit,
                     full = true,
                     variant = VButtonVariant.Primary,
@@ -454,11 +460,10 @@ private fun SlotEditorRow(
     onTypeChange: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
-    val c = VTheme.colors
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(c.cream).padding(8.dp)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(VColors.cream).padding(8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("#${slot.slotIndex}", style = VTheme.type.dataSm.colored(c.ink2))
-            Text(slot.slotType, style = VTheme.type.label.colored(slotTypeColor(slot.slotType, c)))
+            Text("#${slot.slotIndex}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
+            Text(slot.slotType, style = VTypography.label.copy(color = slotTypeColor(slot.slotType)))
             Box(Modifier.weight(1f)) {}
             VButton(
                 text = "×",
@@ -473,15 +478,15 @@ private fun SlotEditorRow(
                 VInput(
                     value = slot.label,
                     onValueChange = onLabelChange,
-                    label = "Label",
-                    placeholder = "e.g. Period 1",
+                    label = appString(StringKeys.SCH_LABEL),
+                    placeholder = appString(StringKeys.SCH_LABEL_PH),
                 )
             }
             Box(Modifier.weight(1f)) {
                 VInput(
                     value = slot.startTime,
                     onValueChange = onStartChange,
-                    label = "Start",
+                    label = appString(StringKeys.SCH_START),
                     placeholder = "08:00",
                 )
             }
@@ -489,7 +494,7 @@ private fun SlotEditorRow(
                 VInput(
                     value = slot.endTime,
                     onValueChange = onEndChange,
-                    label = "End",
+                    label = appString(StringKeys.SCH_END),
                     placeholder = "08:45",
                 )
             }

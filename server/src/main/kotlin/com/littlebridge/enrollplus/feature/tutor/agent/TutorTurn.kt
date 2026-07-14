@@ -103,6 +103,10 @@ object TutorTurnCodec {
             // so downstream code doesn't NPE.
             ?.let { if (it.studentFacing == null) it.copy(studentFacing = StudentFacing(text = "I'm here to help. What would you like to work on?")) else it }
     } catch (e: Exception) {
+        org.slf4j.LoggerFactory.getLogger("TutorTurnCodec").warn(
+            "TutorTurn parse failed: {} | raw (first 500 chars): {}",
+            e.message, raw.take(500)
+        )
         null
     }
 

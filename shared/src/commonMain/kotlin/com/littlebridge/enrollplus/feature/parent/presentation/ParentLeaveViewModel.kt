@@ -9,6 +9,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.CreateParentLeave
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentLeaveDto
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +30,8 @@ data class ParentLeaveState(
     val requests: List<ParentLeaveDto> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 
     // apply-form transient state
     val submitting: Boolean = false,
@@ -94,7 +97,7 @@ class ParentLeaveViewModel(
             // The parent's own leave requests.
             when (val r = repository.getLeaveRequests(token)) {
                 is NetworkResult.Success ->
-                    _state.update { it.copy(loading = false, requests = r.data.data.requests) }
+                    _state.update { it.copy(loading = false, requests = r.data.data.requests, isStale = r.isStale, isOffline = r.isOffline) }
                 is NetworkResult.Error ->
                     _state.update { it.copy(loading = false, error = r.message) }
                 is NetworkResult.ConnectionError ->
@@ -135,11 +138,14 @@ class ParentLeaveViewModel(
             )
             when (val r = repository.applyLeave(token, request)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_leave_applied", mapOf("child_id" to childId))
                     _state.update { it.copy(submitting = false, submittedOk = true) }
                     load() // refresh the list with the new pending request
                 }
-                is NetworkResult.Error ->
+                is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_leave_apply_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.update { it.copy(submitting = false, submitError = r.message) }
+                }
                 is NetworkResult.ConnectionError ->
                     _state.update { it.copy(submitting = false, submitError = "Connection error") }
             }

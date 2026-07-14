@@ -39,16 +39,18 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 internal fun GenerateTab(
     state: IdCardState,
     viewModel: IdCardViewModel,
 ) {
-    val c = VTheme.colors
-    var selectedTemplateId by remember { mutableStateOf<String?>(null) }
+        var selectedTemplateId by remember { mutableStateOf<String?>(null) }
     var selectedScope by remember { mutableStateOf("all_students") }
     var classIdInput by remember { mutableStateOf("") }
 
@@ -60,19 +62,19 @@ internal fun GenerateTab(
     ) {
         state.error?.let { err ->
             VCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Text(err, color = c.dangerInk, style = VTheme.type.body)
+                Text(err, color = VColors.error, style = VTypography.body)
             }
         }
         state.infoMessage?.let { msg ->
             VCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Text(msg, color = c.successInk, style = VTheme.type.body)
+                Text(msg, color = VColors.success, style = VTypography.body)
             }
         }
 
         if (state.templates.isEmpty()) {
             VEmptyState(
-                title = "No templates available",
-                body = "Create a template first in the Templates tab.",
+                title = appString(StringKeys.SCH_NO_TEMPLATES),
+                body = appString(StringKeys.SCH_NO_TEMPLATES_DESC),
                 icon = Icons.Filled.School,
                 modifier = Modifier.padding(top = 48.dp),
             )
@@ -80,7 +82,7 @@ internal fun GenerateTab(
             return
         }
 
-        Text("SELECT TEMPLATE", style = VTheme.type.label.colored(c.ink3))
+        Text(appString(StringKeys.SCH_SELECT_TEMPLATE), style = VTypography.label.copy(color = VColors.ink3))
         Spacer(modifier = Modifier.height(8.dp))
 
         state.templates.forEach { template ->
@@ -90,7 +92,7 @@ internal fun GenerateTab(
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
                     .then(
-                        if (isSelected) Modifier.border(2.dp, c.accent, RoundedCornerShape(12.dp))
+                        if (isSelected) Modifier.border(2.dp, VColors.violet, RoundedCornerShape(12.dp))
                         else Modifier
                     )
                     .clickable(
@@ -104,14 +106,14 @@ internal fun GenerateTab(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(template.name, style = VTheme.type.bodyStrong.colored(c.ink))
+                        Text(template.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                         Text(
-                            "${template.roleType.replaceFirstChar { it.uppercase() }} • ${if (template.isActive) "Active" else "Inactive"}",
-                            style = VTheme.type.caption.colored(c.ink2),
+                            appString(StringKeys.SCH_TEMPLATE_STATUS, "role" to template.roleType.replaceFirstChar { it.uppercase() }, "status" to if (template.isActive) appString(StringKeys.SCH_ACTIVE_LABEL) else appString(StringKeys.SCH_INACTIVE)),
+                            style = VTypography.caption.copy(color = VColors.ink2),
                         )
                     }
                     if (isSelected) {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -119,13 +121,13 @@ internal fun GenerateTab(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("SELECT SCOPE", style = VTheme.type.label.colored(c.ink3))
+        Text(appString(StringKeys.SCH_SELECT_SCOPE), style = VTypography.label.copy(color = VColors.ink3))
         Spacer(modifier = Modifier.height(8.dp))
 
         listOf(
-            "all_students" to "All Students",
-            "all_staff" to "All Staff",
-            "class" to "By Class",
+            "all_students" to appString(StringKeys.SCH_ALL_STUDENTS),
+            "all_staff" to appString(StringKeys.SCH_ALL_STAFF),
+            "class" to appString(StringKeys.SCH_BY_CLASS),
         ).forEach { (scope, label) ->
             val isSelected = selectedScope == scope
             VCard(
@@ -133,7 +135,7 @@ internal fun GenerateTab(
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
                     .then(
-                        if (isSelected) Modifier.border(2.dp, c.accent, RoundedCornerShape(12.dp))
+                        if (isSelected) Modifier.border(2.dp, VColors.violet, RoundedCornerShape(12.dp))
                         else Modifier
                     )
                     .clickable(
@@ -146,9 +148,9 @@ internal fun GenerateTab(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(label, style = VTheme.type.body.colored(c.ink))
+                    Text(label, style = VTypography.body.copy(color = VColors.ink))
                     if (isSelected) {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -159,7 +161,7 @@ internal fun GenerateTab(
             OutlinedTextField(
                 value = classIdInput,
                 onValueChange = { classIdInput = it },
-                label = { Text("Class ID (UUID)") },
+                label = { Text(appString(StringKeys.SCH_CLASS_ID_UUID)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
@@ -168,7 +170,7 @@ internal fun GenerateTab(
         Spacer(modifier = Modifier.height(24.dp))
 
         VButton(
-            text = if (state.isGenerating) "Generating..." else "Generate Cards",
+            text = if (state.isGenerating) appString(StringKeys.SCH_GENERATING) else appString(StringKeys.SCH_GENERATE_CARDS),
             onClick = {
                 selectedTemplateId?.let { tid ->
                     viewModel.clearMessages()
@@ -187,8 +189,8 @@ internal fun GenerateTab(
             VProgressBar(value = 50f, tone = VBadgeTone.Accent, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Rendering and uploading cards in parallel...",
-                style = VTheme.type.caption.colored(c.ink3),
+                text = appString(StringKeys.SCH_RENDERING_CARDS),
+                style = VTypography.caption.copy(color = VColors.ink3),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )

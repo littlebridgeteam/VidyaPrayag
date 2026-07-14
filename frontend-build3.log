@@ -1,0 +1,247 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Type-safe project accessors is an incubating feature.
+
+> Configure project :composeApp
+WARNING: The option setting 'android.usesSdkInManifest.disallowed=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.sdk.defaultTargetSdkToCompileSdkIfUnset=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.enableAppCompileTimeRClass=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.r8.optimizedResourceShrinking=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.defaults.buildfeatures.resvalues=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+[VidyaPrayag] dev flavor baseUrl = http://127.0.0.1:8080
+WARNING: API 'applicationVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling applicationVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'testVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling testVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'unitTestVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+w: Deprecated 'Android Style' Source Directory
+Usage of 'Android Style' source directory composeApp\src\androidTest\kotlin is deprecated.
+Use composeApp\src\androidInstrumentedTest\kotlin instead.
+
+To suppress this warning: put the following in your gradle.properties:
+kotlin.mpp.androidSourceSetLayoutV2AndroidStyleDirs.nowarn=true
+Solution: Please migrate to the new source directory: composeApp\src\androidInstrumentedTest\kotlin
+Learn more: https://kotl.in/android-source-set-layout-v2
+
+w: Disabled Kotlin/Native Targets
+The following Kotlin/Native targets cannot be built on this machine and are disabled:
+iosArm64, iosSimulatorArm64
+Solution: To hide this message, add 'kotlin.native.ignoreDisabledTargets=true' to the Gradle properties.
+
+w: Kotlin/Native and Kotlin Versions Incompatible
+'2.1.0' Kotlin/Native is being used with an newer '2.2.10' Kotlin.
+Solution: Please adjust versions to avoid incompatibilities.
+
+
+> Configure project :shared
+[VidyaPrayag] dev flavor baseUrl = http://127.0.0.1:8080
+WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+w: Disabled Kotlin/Native Targets
+The following Kotlin/Native targets cannot be built on this machine and are disabled:
+iosArm64, iosSimulatorArm64
+Solution: To hide this message, add 'kotlin.native.ignoreDisabledTargets=true' to the Gradle properties.
+
+w: Kotlin/Native and Kotlin Versions Incompatible
+'2.1.0' Kotlin/Native is being used with an newer '2.2.10' Kotlin.
+Solution: Please adjust versions to avoid incompatibilities.
+
+w: Default Kotlin Hierarchy Template Not Applied Correctly
+The Default Kotlin Hierarchy Template was not applied to 'project ':shared'':
+Explicit .dependsOn() edges were configured for the following source sets:
+[androidMain, iosArm64Main, iosSimulatorArm64Main, jvmMain, roomMain]
+
+Consider removing dependsOn-calls or disabling the default template by adding
+    'kotlin.mpp.applyDefaultHierarchyTemplate=false'
+to your gradle.properties
+Solution: Please remove the dependsOn-calls or disable the default template.
+Learn more about hierarchy templates: https://kotl.in/hierarchy-template
+
+w: Unused Kotlin Source Sets
+The Kotlin source set iosMain was configured but not added to any Kotlin compilation.
+Solution: You can add a source set to a target's compilation by connecting it with the compilation's default source set using 'dependsOn'.
+See https://kotl.in/connecting-source-sets
+
+
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForCommonMain UP-TO-DATE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:generateActualResourceCollectorsForAndroidMain UP-TO-DATE
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:preBuild UP-TO-DATE
+> Task :composeApp:preDevDebugBuild UP-TO-DATE
+> Task :composeApp:generateDevDebugBuildConfig UP-TO-DATE
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain UP-TO-DATE
+> Task :composeApp:convertXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidDebug NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidDebug NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAndroidDev NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidDev NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidDev NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidDev NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAndroidDevDebug NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidDevDebug NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidDevDebug NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidDevDebug NO-SOURCE
+> Task :shared:preBuild UP-TO-DATE
+> Task :shared:preDevDebugBuild UP-TO-DATE
+> Task :shared:writeDevDebugAarMetadata UP-TO-DATE
+> Task :composeApp:checkDevDebugAarMetadata UP-TO-DATE
+> Task :composeApp:generateDevDebugResValues UP-TO-DATE
+> Task :composeApp:processDevDebugGoogleServices UP-TO-DATE
+> Task :composeApp:mapDevDebugSourceSetPaths UP-TO-DATE
+> Task :shared:processDevDebugNavigationResources UP-TO-DATE
+> Task :composeApp:processDevDebugNavigationResources UP-TO-DATE
+> Task :composeApp:compileDevDebugNavigationResources UP-TO-DATE
+> Task :composeApp:generateDevDebugResources UP-TO-DATE
+> Task :shared:generateDevDebugResValues UP-TO-DATE
+> Task :shared:generateDevDebugResources UP-TO-DATE
+> Task :shared:packageDevDebugResources UP-TO-DATE
+> Task :composeApp:mergeDevDebugResources UP-TO-DATE
+> Task :composeApp:copyDevDebugComposeResourcesToAndroidAssets UP-TO-DATE
+> Task :composeApp:packageDevDebugResources UP-TO-DATE
+> Task :composeApp:parseDevDebugLocalResources UP-TO-DATE
+> Task :composeApp:createDevDebugCompatibleScreenManifests UP-TO-DATE
+> Task :composeApp:extractDeepLinksDevDebug UP-TO-DATE
+> Task :shared:extractDeepLinksDevDebug UP-TO-DATE
+> Task :shared:processDevDebugManifest UP-TO-DATE
+> Task :composeApp:processDevDebugMainManifest UP-TO-DATE
+> Task :composeApp:processDevDebugManifest UP-TO-DATE
+> Task :composeApp:processDevDebugManifestForPackage UP-TO-DATE
+> Task :shared:mapDevDebugSourceSetPaths UP-TO-DATE
+> Task :shared:compileDevDebugLibraryResources UP-TO-DATE
+> Task :shared:parseDevDebugLocalResources UP-TO-DATE
+> Task :shared:generateDevDebugRFile UP-TO-DATE
+> Task :composeApp:processDevDebugResources UP-TO-DATE
+> Task :shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :shared:generateDevDebugBuildConfig UP-TO-DATE
+> Task :shared:kspDevDebugKotlinAndroid UP-TO-DATE
+> Task :shared:compileDevDebugKotlinAndroid UP-TO-DATE
+> Task :shared:javaPreCompileDevDebug UP-TO-DATE
+> Task :shared:compileDevDebugJavaWithJavac UP-TO-DATE
+> Task :shared:bundleLibCompileToJarDevDebug UP-TO-DATE
+> Task :composeApp:compileDevDebugKotlinAndroid
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/components/VIcons.kt:69:35 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/components/VIcons.kt:79:42 'val Icons.Filled.KeyboardArrowLeft: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowLeft.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/components/VIcons.kt:80:43 'val Icons.Filled.KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/library/LibraryUixComponents2.kt:241:14 'fun rememberSwipeToDismissBoxState(initialValue: SwipeToDismissBoxValue = ..., confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = ..., positionalThreshold: (@ParameterName(...) Float) -> Float = ...): SwipeToDismissBoxState' is deprecated. confirmValueChange is deprecated without replacement. Rather than relying on a callback to veto state changes, the anchor set should not include disallowed anchors. See androidx.compose.foundation.samples.AnchoredDraggableDynamicAnchorsSample for an example of using dynamic anchors over confirmValueChange.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/parent/ParentAcademicsScreenV2.kt:761:20 Condition is always 'true'.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/parent/ParentConversationsScreenV2.kt:82:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/parent/ParentPortalV2.kt:307:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/parent/SkillTestCard.kt:415:33 Condition is always 'true'.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/school/ClassesSubjectsScreenV2.kt:1836:56 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/school/ClassesSubjectsScreenV2.kt:1881:56 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/school/ClassesSubjectsScreenV2.kt:2018:56 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/school/ClassesSubjectsScreenV2.kt:2063:56 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/school/PewsStudentDetailScreenV2.kt:398:25 Condition is always 'true'.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/school/SchoolPortalV2.kt:233:9 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/teacher/TeacherPewsScreenV2.kt:294:37 Condition is always 'true'.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/teacher/TeacherPortalV2.kt:192:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///C:/Users/HP/Devin1/VidyaPrayag/composeApp/src/commonMain/kotlin/com/littlebridge/enrollplus/ui/v2/screens/teacher/TeacherPortalV2.kt:196:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+
+[Incubating] Problems report is available at: file:///C:/Users/HP/Devin1/VidyaPrayag/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 31s
+43 actionable tasks: 5 executed, 38 up-to-date

@@ -723,12 +723,15 @@ private fun Route.syllabusToggleProgress() {
                         (CurriculumUnitsTable.isActive eq true)
                 }.map { it[CurriculumUnitsTable.id].value }
 
-                childIds.forEach { childId ->
-                    val childProg = SyllabusProgressTable.selectAll().where {
-                        (SyllabusProgressTable.unitId eq childId) and
+                val existingProg = if (childIds.isEmpty()) emptyMap() else
+                    SyllabusProgressTable.selectAll().where {
+                        (SyllabusProgressTable.unitId inList childIds) and
                             (SyllabusProgressTable.section eq section) and
                             (SyllabusProgressTable.assignmentId eq asg.assignmentId)
-                    }.singleOrNull()
+                    }.associateBy { it[SyllabusProgressTable.unitId] }
+
+                childIds.forEach { childId ->
+                    val childProg = existingProg[childId]
 
                     if (childProg != null) {
                         SyllabusProgressTable.update({
@@ -866,14 +869,16 @@ private fun Route.syllabusParse() {
         val classLevel = asg.className
         val subject = asg.subject
         val parsed = if (sourceType == "IMAGE") {
-            val imageBase64 = fetchImageAsBase64(req.sourceUrl!!)
+            val url = req.sourceUrl ?: run { call.fail("source_url is required", HttpStatusCode.BadRequest, "MISSING_URL"); return@post }
+            val imageBase64 = fetchImageAsBase64(url)
             if (imageBase64 == null) {
                 call.fail("Could not fetch image from URL", HttpStatusCode.BadGateway, "IMAGE_FETCH_FAILED"); return@post
             }
-            val mimeType = guessMimeType(req.sourceUrl)
+            val mimeType = guessMimeType(url)
             SyllabusAiService.parseSyllabusImage(imageBase64, mimeType, classLevel, subject, ctx.schoolId)
         } else {
-            SyllabusAiService.parseSyllabusText(req.rawText!!, classLevel, subject, ctx.schoolId)
+            val text = req.rawText ?: run { call.fail("raw_text is required", HttpStatusCode.BadRequest, "MISSING_TEXT"); return@post }
+            SyllabusAiService.parseSyllabusText(text, classLevel, subject, ctx.schoolId)
         }
 
         if (parsed == null) {
@@ -1642,15 +1647,59 @@ private fun Route.syllabusPopupPrefsGet() {
 // Helpers for the agentic endpoints.
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val imageHttpClient by lazy { HttpClient(CIO) }
+private val imageHttpClient by lazy {
+    HttpClient(CIO).also { com.littlebridge.enrollplus.core.HttpClientRegistry.register(it) }
+}
 private val log = LoggerFactory.getLogger("TeacherSyllabusRouting")
 
-private suspend fun fetchImageAsBase64(url: String): String? = try {
-    val resp = imageHttpClient.get(url)
-    val bytes = resp.readRawBytes()
-    java.util.Base64.getEncoder().encodeToString(bytes)
-} catch (e: Exception) {
-    null
+private const val MAX_IMAGE_BYTES = 5 * 1024 * 1024L // 5 MB cap
+
+private val ALLOWED_IMAGE_SCHEMES = setOf("http", "https")
+
+private fun isInternalOrBlockedHost(host: String): Boolean {
+    return try {
+        val addr = java.net.InetAddress.getByName(host)
+        addr.isLoopbackAddress ||
+            addr.isAnyLocalAddress ||
+            addr.isLinkLocalAddress ||
+            addr.isSiteLocalAddress ||
+            addr.isMulticastAddress ||
+            // Cloud metadata endpoints (169.254.169.254 etc.) — isSiteLocal covers 10.x/172.16-31.x/192.168.x
+            // but 169.254.x is link-local (covered by isLinkLocalAddress). Double-check the AWS/GCP metadata IP:
+            host == "169.254.169.254" ||
+            host == "metadata.google.internal"
+    } catch (e: Exception) {
+        true
+    }
+}
+
+private suspend fun fetchImageAsBase64(url: String): String? {
+    return try {
+        val parsed = io.ktor.http.URLBuilder(url).build()
+        if (parsed.protocol.name !in ALLOWED_IMAGE_SCHEMES) {
+            log.warn("fetchImageAsBase64: refusing URL {} — unsupported scheme '{}'", url, parsed.protocol.name)
+            return null
+        }
+        if (isInternalOrBlockedHost(parsed.host)) {
+            log.warn("fetchImageAsBase64: refusing URL {} — host '{}' resolves to internal/blocked address", url, parsed.host)
+            return null
+        }
+        val resp = imageHttpClient.get(url)
+        val contentLength = resp.headers[io.ktor.http.HttpHeaders.ContentLength]?.toLongOrNull()
+        if (contentLength != null && contentLength > MAX_IMAGE_BYTES) {
+            log.warn("fetchImageAsBase64: refusing image {} — Content-Length {} exceeds {} byte cap", url, contentLength, MAX_IMAGE_BYTES)
+            return null
+        }
+        val bytes = resp.readRawBytes()
+        if (bytes.size > MAX_IMAGE_BYTES) {
+            log.warn("fetchImageAsBase64: refusing image {} — actual {} bytes exceeds {} byte cap", url, bytes.size, MAX_IMAGE_BYTES)
+            return null
+        }
+        java.util.Base64.getEncoder().encodeToString(bytes)
+    } catch (e: Exception) {
+        log.warn("fetchImageAsBase64: failed to fetch {}", url, e)
+        null
+    }
 }
 
 private fun guessMimeType(url: String): String {
@@ -1668,6 +1717,7 @@ private fun parseTopicIdsJson(jsonStr: String): List<String> {
         val arr = kotlinx.serialization.json.Json.parseToJsonElement(jsonStr).jsonArray
         arr.map { it.jsonPrimitive.content }
     } catch (e: Exception) {
+        log.warn("parseTopicIdsJson: failed to parse JSON: {}", jsonStr.take(200), e)
         emptyList()
     }
 }

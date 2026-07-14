@@ -60,17 +60,29 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun TeacherMessagesScreenV2(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
+    initialThreadId: String? = null,
     viewModel: TeacherMessageViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+
+    LaunchedEffect(Unit) { viewModel.loadThreads() }
+
+    // Deep-link: auto-open a specific conversation when initialThreadId is provided.
+    LaunchedEffect(initialThreadId, state.threads) {
+        if (initialThreadId != null && state.openThreadId == null && !state.loading && state.threads.isNotEmpty()) {
+            val thread = state.threads.firstOrNull { it.id == initialThreadId }
+            if (thread != null) {
+                viewModel.markAsRead(thread.id)
+                viewModel.openThread(thread.id, thread.senderName)
+            }
+        }
+    }
 
     val backHandler: () -> Unit = {
         when {
@@ -178,7 +190,7 @@ private fun TeacherThreadListContent(
 
 @Composable
 private fun TeacherThreadRow(thread: TeacherMessageThreadDto, onClick: () -> Unit) {
-    val c = VTheme.colors
+    val c = VtC
     val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
@@ -203,14 +215,14 @@ private fun TeacherThreadRow(thread: TeacherMessageThreadDto, onClick: () -> Uni
             ) {
                 Text(
                     thread.senderName,
-                    style = VTheme.type.bodyStrong.colored(c.ink).copy(fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold),
+                    style = VtT.bodyStrong.coloredV(c.ink).copy(fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold),
                     modifier = Modifier.weight(1f, fill = false),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     thread.time,
-                    style = VTheme.type.caption.colored(if (thread.isRead) c.ink3 else c.accent),
+                    style = VtT.caption.coloredV(if (thread.isRead) c.ink3 else c.accent),
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -220,7 +232,7 @@ private fun TeacherThreadRow(thread: TeacherMessageThreadDto, onClick: () -> Uni
             ) {
                 Text(
                     thread.lastMessage,
-                    style = VTheme.type.body.colored(if (thread.isRead) c.ink3 else c.ink2),
+                    style = VtT.body.coloredV(if (thread.isRead) c.ink3 else c.ink2),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -235,7 +247,7 @@ private fun TeacherThreadRow(thread: TeacherMessageThreadDto, onClick: () -> Uni
                     ) {
                         Text(
                             if (thread.unreadCount > 99) "99+" else thread.unreadCount.toString(),
-                            style = VTheme.type.caption.colored(Color.White).copy(fontWeight = FontWeight.Bold),
+                            style = VtT.caption.coloredV(Color.White).copy(fontWeight = FontWeight.Bold),
                         )
                     }
                 }
@@ -257,7 +269,7 @@ private fun TeacherConversationContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     var reply by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
@@ -313,7 +325,7 @@ private fun TeacherConversationContent(
                 ) {
                     Text(
                         replyError,
-                        style = VTheme.type.caption.colored(c.dangerInk),
+                        style = VtT.caption.coloredV(c.dangerInk),
                         modifier = Modifier.weight(1f),
                     )
                     val dismissInteraction = remember { MutableInteractionSource() }
@@ -355,7 +367,7 @@ private fun TeacherConversationContent(
 
 @Composable
 private fun TeacherMessageBubble(msg: TeacherMessageDto) {
-    val c = VTheme.colors
+    val c = VtC
     val isMine = msg.isMine
     val isDeleted = msg.deletedAt != null
 
@@ -383,14 +395,14 @@ private fun TeacherMessageBubble(msg: TeacherMessageDto) {
             if (isDeleted) {
                 Text(
                     "This message was deleted",
-                    style = VTheme.type.body.colored(textColor).copy(
+                    style = VtT.body.coloredV(textColor).copy(
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     ),
                 )
             } else {
                 Text(
                     msg.body,
-                    style = VTheme.type.body.colored(textColor),
+                    style = VtT.body.coloredV(textColor),
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -444,13 +456,13 @@ private fun TeacherMessageBubble(msg: TeacherMessageDto) {
                 }
                 Text(
                     msg.time,
-                    style = VTheme.type.caption.colored(timeColor).copy(fontSize = 10.sp),
+                    style = VtT.caption.coloredV(timeColor).copy(fontSize = 10.sp),
                 )
                 if (msg.editedAt != null && !isDeleted) {
                     Spacer(Modifier.size(4.dp))
                     Text(
                         "edited",
-                        style = VTheme.type.caption.colored(timeColor).copy(fontSize = 9.sp),
+                        style = VtT.caption.coloredV(timeColor).copy(fontSize = 9.sp),
                     )
                 }
             }
@@ -468,7 +480,7 @@ private fun TeacherComposeBar(
     onSend: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
+    val c = VtC
     val canSend = text.isNotBlank() && enabled
 
     Column(
@@ -499,7 +511,7 @@ private fun TeacherComposeBar(
                     placeholder = {
                         Text(
                             placeholder,
-                            style = VTheme.type.body.colored(c.placeholder),
+                            style = VtT.body.coloredV(c.placeholder),
                         )
                     },
                     enabled = enabled,
@@ -517,7 +529,7 @@ private fun TeacherComposeBar(
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                     keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-                    textStyle = VTheme.type.body.colored(c.ink),
+                    textStyle = VtT.body.coloredV(c.ink),
                 )
             }
 

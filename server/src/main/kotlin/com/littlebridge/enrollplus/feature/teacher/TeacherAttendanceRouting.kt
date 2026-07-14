@@ -53,6 +53,7 @@ import com.littlebridge.enrollplus.db.LeaveRequestsTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.feature.calendar.EventStatus
 import com.littlebridge.enrollplus.feature.calendar.EventType
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import io.ktor.http.HttpStatusCode
@@ -72,6 +73,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.WeekFields
 import java.util.UUID
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,8 +130,94 @@ data class AttendanceSaveResultDto(
     val date: String,
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Analytics DTOs
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Serializable
+data class AttendanceAnalyticsDto(
+    @SerialName("assignment_id") val assignmentId: String,
+    val scope: String = "",
+    @SerialName("class_name") val className: String = "",
+    val section: String = "",
+    val subject: String = "",
+    @SerialName("overall_percentage") val overallPercentage: Int = 0,
+    @SerialName("total_marked_days") val totalMarkedDays: Int = 0,
+    @SerialName("total_students") val totalStudents: Int = 0,
+    @SerialName("present_count") val presentCount: Int = 0,
+    @SerialName("absent_count") val absentCount: Int = 0,
+    @SerialName("late_count") val lateCount: Int = 0,
+    @SerialName("leave_count") val leaveCount: Int = 0,
+    @SerialName("at_risk_students") val atRiskStudents: List<AtRiskStudentDto> = emptyList(),
+    @SerialName("weekly_trend") val weeklyTrend: List<WeeklyTrendDto> = emptyList(),
+    @SerialName("daily_breakdown") val dailyBreakdown: List<DailyAttendanceDto> = emptyList(),
+    @SerialName("trend_direction") val trendDirection: String = "stable", // up | down | stable
+)
+
+@Serializable
+data class AtRiskStudentDto(
+    @SerialName("student_id") val studentId: String,
+    val name: String,
+    @SerialName("roll_no") val rollNo: String = "",
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+    @SerialName("total_days") val totalDays: Int = 0,
+    @SerialName("present_days") val presentDays: Int = 0,
+    @SerialName("absent_days") val absentDays: Int = 0,
+    @SerialName("late_days") val lateDays: Int = 0,
+    @SerialName("leave_days") val leaveDays: Int = 0,
+)
+
+@Serializable
+data class WeeklyTrendDto(
+    val week: String, // ISO week label e.g. "2026-W28"
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+    @SerialName("marked_days") val markedDays: Int = 0,
+    @SerialName("present_count") val presentCount: Int = 0,
+    @SerialName("total_count") val totalCount: Int = 0,
+)
+
+@Serializable
+data class DailyAttendanceDto(
+    val date: String,
+    @SerialName("present_count") val presentCount: Int = 0,
+    @SerialName("absent_count") val absentCount: Int = 0,
+    @SerialName("late_count") val lateCount: Int = 0,
+    @SerialName("leave_count") val leaveCount: Int = 0,
+    @SerialName("total_count") val totalCount: Int = 0,
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+)
+
+@Serializable
+data class AttendanceAnalyticsResponse(
+    val success: Boolean = true,
+    val data: AttendanceAnalyticsDto,
+)
+
+@Serializable
+data class StudentAnalyticsDto(
+    @SerialName("student_id") val studentId: String,
+    val name: String,
+    @SerialName("roll_no") val rollNo: String = "",
+    @SerialName("attendance_percentage") val attendancePercentage: Int = 0,
+    @SerialName("total_days") val totalDays: Int = 0,
+    @SerialName("present_days") val presentDays: Int = 0,
+    @SerialName("absent_days") val absentDays: Int = 0,
+    @SerialName("late_days") val lateDays: Int = 0,
+    @SerialName("leave_days") val leaveDays: Int = 0,
+    val history: List<DailyAttendanceDto> = emptyList(),
+)
+
+@Serializable
+data class StudentAnalyticsResponse(
+    val success: Boolean = true,
+    val data: StudentAnalyticsDto,
+)
+
 // Valid student attendance states (Doc 06 §3 — adds `leave`, D-ATT-1).
 private val VALID_ATTENDANCE = setOf("present", "absent", "late", "leave")
+
+// Default at-risk threshold (Indian schools: 75% is the CBSE minimum).
+private const val AT_RISK_THRESHOLD = 75
 
 // E9: back-dating beyond this window is blocked ("Contact admin to mark older
 // than N days"). Future dates are blocked outright. A single source of truth so
@@ -333,6 +421,7 @@ fun Route.teacherAttendanceRouting() {
                 // RA-41 alert behaviour the deleted handler had). Keyed by
                 // student_code, since NotifyRecipients.parentsOfStudent expects it.
                 val flaggedCodes = mutableListOf<Pair<String, String>>() // (studentCode, status)
+                val presentStudentIds = mutableListOf<UUID>() // for XP hook
                 val saved = dbQuery {
                     var count = 0
                     for (m in req.marks) {
@@ -342,6 +431,8 @@ fun Route.teacherAttendanceRouting() {
                         val enrolled = rosterById[sid] ?: continue // not in this class → ignore
                         if (status == "absent" || status == "late") {
                             flaggedCodes += enrolled.studentCode to status
+                        } else if (status == "present") {
+                            presentStudentIds += sid
                         }
                         // Upsert on (school, date, type, student, assignment).
                         val existing = AttendanceRecordsTable.selectAll().where {
@@ -386,6 +477,11 @@ fun Route.teacherAttendanceRouting() {
                     count
                 }
 
+                // Gamification XP hook — award XP for present students
+                for (sid in presentStudentIds) {
+                    XpHooks.onAttendancePresent(sid, ctx.schoolId)
+                }
+
                 // RA-41 (preserved from the deleted legacy handler): alert each
                 // affected parent when their child is absent/late. Recipients are
                 // resolved per student_code within this school (multi-tenant safe).
@@ -405,7 +501,7 @@ fun Route.teacherAttendanceRouting() {
                             body = "Your child was $verb$context on ${date}.",
                             schoolId = ctx.schoolId,
                             actorId = ctx.userId,
-                            deepLink = "parent/academics/attendance",
+                            deepLink = "/parent/academics/attendance",
                             refType = "attendance",
                             refId = code,
                         )
@@ -416,6 +512,228 @@ fun Route.teacherAttendanceRouting() {
                     AttendanceSaveResultDto(saved = saved, date = date.toString()),
                     message = "Attendance saved",
                 )
+            }
+
+            // ── GET /attendance/analytics — class-level attendance analytics ────
+            get("/attendance/analytics") {
+                val ctx = call.requireTeacherContext() ?: return@get
+                val assignmentParam = call.request.queryParameters["assignmentId"]
+                    ?: call.request.queryParameters["assignment_id"]
+                val assignment = call.requireOwnedAssignment(ctx, assignmentParam) ?: return@get
+
+                val today = todayIst()
+                val fromDate = call.request.queryParameters["from"]?.takeIf { it.isNotBlank() }
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                    ?: today.minusDays(89) // default: last 90 days
+                val toDate = call.request.queryParameters["to"]?.takeIf { it.isNotBlank() }
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                    ?: today
+
+                val roster = enrollmentsFor(assignment)
+
+                val data = dbQuery {
+                    // All attendance records for this assignment in the date range
+                    val records = AttendanceRecordsTable.selectAll().where {
+                        (AttendanceRecordsTable.schoolId eq ctx.schoolId) and
+                            (AttendanceRecordsTable.type eq "student") and
+                            (AttendanceRecordsTable.assignmentId eq assignment.assignmentId) and
+                            (AttendanceRecordsTable.date greaterEq fromDate) and
+                            (AttendanceRecordsTable.date lessEq toDate)
+                    }.toList()
+
+                    // Overall counts
+                    val present = records.count { it[AttendanceRecordsTable.status] == "present" }
+                    val absent = records.count { it[AttendanceRecordsTable.status] == "absent" }
+                    val late = records.count { it[AttendanceRecordsTable.status] == "late" }
+                    val leave = records.count { it[AttendanceRecordsTable.status] == "leave" }
+                    val total = records.size
+                    val overallPct = if (total == 0) 0 else ((present + late) * 100 / total)
+
+                    // Distinct marked days
+                    val markedDays = records.map { it[AttendanceRecordsTable.date] }.distinct().size
+
+                    // Per-student stats
+                    val byStudent = records.groupBy { it[AttendanceRecordsTable.studentId] }
+                    val atRiskStudents = roster.mapNotNull { s ->
+                        val sRecords = byStudent[s.studentId] ?: emptyList()
+                        if (sRecords.isEmpty()) return@mapNotNull null
+                        val sPresent = sRecords.count { it[AttendanceRecordsTable.status] == "present" }
+                        val sAbsent = sRecords.count { it[AttendanceRecordsTable.status] == "absent" }
+                        val sLate = sRecords.count { it[AttendanceRecordsTable.status] == "late" }
+                        val sLeave = sRecords.count { it[AttendanceRecordsTable.status] == "leave" }
+                        val sTotal = sRecords.size
+                        val sPct = if (sTotal == 0) 0 else ((sPresent + sLate) * 100 / sTotal)
+                        if (sPct < AT_RISK_THRESHOLD) {
+                            AtRiskStudentDto(
+                                studentId = s.studentId.toString(),
+                                name = s.fullName,
+                                rollNo = s.rollNumber?.toString() ?: "",
+                                attendancePercentage = sPct,
+                                totalDays = sTotal,
+                                presentDays = sPresent,
+                                absentDays = sAbsent,
+                                lateDays = sLate,
+                                leaveDays = sLeave,
+                            )
+                        } else null
+                    }.sortedBy { it.attendancePercentage }
+
+                    // Weekly trend (last 8 ISO weeks)
+                    val weekField = WeekFields.ISO.weekOfWeekBasedYear()
+                    val byWeek = records.groupBy { r ->
+                        val d = r[AttendanceRecordsTable.date]
+                        val wby = d.get(WeekFields.ISO.weekBasedYear())
+                        val w = d.get(weekField)
+                        "%04d-W%02d".format(wby, w)
+                    }
+                    val weeklyTrend = byWeek.entries.sortedBy { it.key }.takeLast(8).map { (week, wRecords) ->
+                        val wPresent = wRecords.count { it[AttendanceRecordsTable.status] == "present" }
+                        val wTotal = wRecords.size
+                        val wPct = if (wTotal == 0) 0 else (wPresent * 100 / wTotal)
+                        WeeklyTrendDto(
+                            week = week,
+                            attendancePercentage = wPct,
+                            markedDays = wRecords.map { it[AttendanceRecordsTable.date] }.distinct().size,
+                            presentCount = wPresent,
+                            totalCount = wTotal,
+                        )
+                    }
+
+                    // Trend direction: compare last 2 weeks
+                    val trendDir = if (weeklyTrend.size >= 2) {
+                        val last = weeklyTrend.last().attendancePercentage
+                        val prev = weeklyTrend[weeklyTrend.size - 2].attendancePercentage
+                        when {
+                            last > prev + 5 -> "up"
+                            last < prev - 5 -> "down"
+                            else -> "stable"
+                        }
+                    } else "stable"
+
+                    // Daily breakdown (last 30 days)
+                    val byDay = records.groupBy { it[AttendanceRecordsTable.date] }
+                    val dailyBreakdown = byDay.entries.sortedBy { it.key }.takeLast(30).map { (day, dRecords) ->
+                        val dPresent = dRecords.count { it[AttendanceRecordsTable.status] == "present" }
+                        val dAbsent = dRecords.count { it[AttendanceRecordsTable.status] == "absent" }
+                        val dLate = dRecords.count { it[AttendanceRecordsTable.status] == "late" }
+                        val dLeave = dRecords.count { it[AttendanceRecordsTable.status] == "leave" }
+                        val dTotal = dRecords.size
+                        val dPct = if (dTotal == 0) 0 else ((dPresent + dLate) * 100 / dTotal)
+                        DailyAttendanceDto(
+                            date = day.toString(),
+                            presentCount = dPresent,
+                            absentCount = dAbsent,
+                            lateCount = dLate,
+                            leaveCount = dLeave,
+                            totalCount = dTotal,
+                            attendancePercentage = dPct,
+                        )
+                    }
+
+                    val scopeLabel = listOfNotNull(
+                        "${assignment.className}-${assignment.section}".takeIf { assignment.className.isNotBlank() },
+                        assignment.subject.takeIf { it.isNotBlank() },
+                    ).joinToString(" · ")
+
+                    AttendanceAnalyticsDto(
+                        assignmentId = assignment.assignmentId.toString(),
+                        scope = scopeLabel,
+                        className = assignment.className,
+                        section = assignment.section,
+                        subject = assignment.subject,
+                        overallPercentage = overallPct,
+                        totalMarkedDays = markedDays,
+                        totalStudents = roster.size,
+                        presentCount = present,
+                        absentCount = absent,
+                        lateCount = late,
+                        leaveCount = leave,
+                        atRiskStudents = atRiskStudents,
+                        weeklyTrend = weeklyTrend,
+                        dailyBreakdown = dailyBreakdown,
+                        trendDirection = trendDir,
+                    )
+                }
+                call.ok(data, message = "Analytics loaded")
+            }
+
+            // ── GET /attendance/analytics/student — per-student analytics ──────
+            get("/attendance/analytics/student") {
+                val ctx = call.requireTeacherContext() ?: return@get
+                val assignmentParam = call.request.queryParameters["assignmentId"]
+                    ?: call.request.queryParameters["assignment_id"]
+                val assignment = call.requireOwnedAssignment(ctx, assignmentParam) ?: return@get
+                val studentParam = call.request.queryParameters["studentId"]
+                    ?: call.request.queryParameters["student_id"]
+                if (studentParam.isNullOrBlank()) {
+                    call.fail("studentId is required", HttpStatusCode.BadRequest, "BAD_REQUEST")
+                    return@get
+                }
+                val studentUuid = runCatching { UUID.fromString(studentParam) }.getOrNull() ?: run {
+                    call.fail("Invalid studentId", HttpStatusCode.BadRequest, "BAD_REQUEST")
+                    return@get
+                }
+
+                // Verify this student is in the teacher's roster
+                val roster = enrollmentsFor(assignment)
+                val enrolled = roster.firstOrNull { it.studentId == studentUuid }
+                if (enrolled == null) {
+                    call.fail("Student not found in this class", HttpStatusCode.Forbidden, "NOT_IN_ROSTER")
+                    return@get
+                }
+
+                val today = todayIst()
+                val fromDate = call.request.queryParameters["from"]?.takeIf { it.isNotBlank() }
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                    ?: today.minusDays(89)
+                val toDate = call.request.queryParameters["to"]?.takeIf { it.isNotBlank() }
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                    ?: today
+
+                val data = dbQuery {
+                    val records = AttendanceRecordsTable.selectAll().where {
+                        (AttendanceRecordsTable.schoolId eq ctx.schoolId) and
+                            (AttendanceRecordsTable.type eq "student") and
+                            (AttendanceRecordsTable.assignmentId eq assignment.assignmentId) and
+                            (AttendanceRecordsTable.studentId eq studentUuid) and
+                            (AttendanceRecordsTable.date greaterEq fromDate) and
+                            (AttendanceRecordsTable.date lessEq toDate)
+                    }.sortedBy { it[AttendanceRecordsTable.date] }
+
+                    val sPresent = records.count { it[AttendanceRecordsTable.status] == "present" }
+                    val sAbsent = records.count { it[AttendanceRecordsTable.status] == "absent" }
+                    val sLate = records.count { it[AttendanceRecordsTable.status] == "late" }
+                    val sLeave = records.count { it[AttendanceRecordsTable.status] == "leave" }
+                    val sTotal = records.size
+                    val sPct = if (sTotal == 0) 0 else ((sPresent + sLate) * 100 / sTotal)
+
+                    val history = records.map { r ->
+                        val day = r[AttendanceRecordsTable.date]
+                        DailyAttendanceDto(
+                            date = day.toString(),
+                            presentCount = if (r[AttendanceRecordsTable.status] == "present") 1 else 0,
+                            absentCount = if (r[AttendanceRecordsTable.status] == "absent") 1 else 0,
+                            lateCount = if (r[AttendanceRecordsTable.status] == "late") 1 else 0,
+                            leaveCount = if (r[AttendanceRecordsTable.status] == "leave") 1 else 0,
+                            totalCount = 1,
+                            attendancePercentage = if (r[AttendanceRecordsTable.status] == "present" || r[AttendanceRecordsTable.status] == "late") 100 else 0,
+                        )
+                    }
+
+                    StudentAnalyticsDto(
+                        studentId = studentUuid.toString(),
+                        name = enrolled.fullName,
+                        rollNo = enrolled.rollNumber?.toString() ?: "",
+                        attendancePercentage = sPct,
+                        totalDays = sTotal,
+                        presentDays = sPresent,
+                        absentDays = sAbsent,
+                        lateDays = sLate,
+                        leaveDays = sLeave,
+                        history = history,
+                    )
+                }
+                call.ok(data, message = "Student analytics loaded")
             }
         }
     }

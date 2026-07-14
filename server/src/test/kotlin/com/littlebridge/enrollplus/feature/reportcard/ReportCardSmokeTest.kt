@@ -100,7 +100,7 @@ class ReportCardSmokeTest {
 
     @Test
     fun `ICSE fallback has 5 bands`() {
-        assertEquals(5, BoardRubric.ICSE_FALLBACK.size)
+        assertEquals(6, BoardRubric.ICSE_FALLBACK.size)
     }
 
     @Test

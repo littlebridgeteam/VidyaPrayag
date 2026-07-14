@@ -51,7 +51,8 @@ data class ChildSummary(
     @SerialName("overall_progress") val overallProgress: Double,
     @SerialName("current_level") val currentLevel: Int,
     @SerialName("attendance_status") val attendanceStatus: String,
-    @SerialName("profile_pic") val profilePic: String? = null
+    @SerialName("profile_pic") val profilePic: String? = null,
+    @SerialName("school_name") val schoolName: String? = null
 )
 
 @Serializable
@@ -107,6 +108,20 @@ data class DiscoveredSchool(
 data class SchoolDiscoveryResponse(
     val schools: List<DiscoveredSchool>,
     @SerialName("sorted_by") val sortedBy: String  // "distance" | "city" | "name"
+)
+
+@Serializable
+data class SchoolSearchResult(
+    val id: String,
+    val name: String,
+    val board: String,
+    val city: String,
+    @SerialName("logo_url") val logoUrl: String? = null
+)
+
+@Serializable
+data class SchoolSearchData(
+    val schools: List<SchoolSearchResult>
 )
 
 /** Great-circle distance (km) between two lat/lng points (Haversine). */
@@ -194,7 +209,13 @@ fun Route.parentDashboardRouting() {
                                 overallProgress = childRow[ChildrenTable.overallProgress],
                                 currentLevel = childRow[ChildrenTable.currentLevel],
                                 attendanceStatus = liveStatus ?: childRow[ChildrenTable.attendanceStatus],
-                                profilePic = childRow[ChildrenTable.profilePic]
+                                profilePic = childRow[ChildrenTable.profilePic],
+                                schoolName = childSchoolId?.let { sid ->
+                                    SchoolsTable.selectAll()
+                                        .where { SchoolsTable.id eq sid }
+                                        .singleOrNull()
+                                        ?.get(SchoolsTable.name)
+                                }
                             )
                         }
                     // First child mirrored into child_summary for backward compatibility.
@@ -319,7 +340,7 @@ fun Route.parentDashboardRouting() {
                         // Geo mode: keep those within radius (if given), nearest first.
                         val located = mapped.filter { it.distanceKm != null }
                         val withinRadius = if (radiusKm != null)
-                            located.filter { it.distanceKm!! <= radiusKm } else located
+                            located.filter { (it.distanceKm ?: Double.MAX_VALUE) <= radiusKm } else located
                         val result = withinRadius.sortedBy { it.distanceKm }
                             .let { if (radiusKm == null) it + mapped.filter { s -> s.distanceKm == null } else it }
                             .take(limit)
@@ -340,6 +361,42 @@ fun Route.parentDashboardRouting() {
                     SchoolDiscoveryResponse(schools = schools, sortedBy = sortedBy),
                     message = "Discovered ${schools.size} school(s)"
                 )
+            }
+
+            // ----- school search by name -----
+            // GET /api/v1/parent/schools/search?q=<query>
+            //
+            // Case-insensitive LIKE search on the school name. Returns up to
+            // 20 active schools matching the query, shaped as SchoolSearchData
+            // so the client's SchoolSearchResponse deserialises correctly.
+            get("/schools/search") {
+                call.principalUserId() ?: run {
+                    call.fail("Invalid token", HttpStatusCode.Unauthorized); return@get
+                }
+                val query = call.request.queryParameters["q"]?.trim().orEmpty()
+                if (query.isBlank()) {
+                    call.ok(SchoolSearchData(emptyList()), message = "Empty query")
+                    return@get
+                }
+
+                val results = dbQuery {
+                    SchoolsTable.selectAll()
+                        .where { SchoolsTable.isActive eq true }
+                        .toList()
+                        .filter { it[SchoolsTable.name].contains(query, ignoreCase = true) }
+                        .take(20)
+                        .map { row ->
+                            SchoolSearchResult(
+                                id = row[SchoolsTable.id].value.toString(),
+                                name = row[SchoolsTable.name],
+                                board = row[SchoolsTable.board],
+                                city = row[SchoolsTable.city],
+                                logoUrl = row[SchoolsTable.logoUrl]
+                            )
+                        }
+                }
+
+                call.ok(SchoolSearchData(results), message = "Found ${results.size} school(s)")
             }
         }
     }

@@ -8,8 +8,16 @@
  * No axios, the platform `fetch` covers everything we need (see ARCHITECTURE.md §5).
  */
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8080";
+export const API_BASE_URL = (() => {
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "NEXT_PUBLIC_API_BASE_URL must be set in production. Refusing to default to localhost."
+    );
+  }
+  return "http://localhost:8080";
+})();
 
 export interface ApiEnvelope<T> {
   success: boolean;
@@ -79,6 +87,9 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   }
 
   if (!res.ok || (envelope && envelope.success === false)) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      window.localStorage.removeItem("enrollplus.admin.v1");
+    }
     const message =
       envelope?.message ?? `Request failed (${res.status}). Please try again.`;
     throw new ApiError(message, res.status, envelope?.error_code);

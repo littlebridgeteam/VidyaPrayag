@@ -1,0 +1,20 @@
+name = "devin-bug-bridge"
+main = "src/index.js"
+compatibility_date = "2024-07-01"
+
+# Cron: process queue every 2 minutes
+[triggers]
+crons = ["*/2 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "devin-bug-bridge-db"
+database_id = "12dde3af-dfb5-4a76-b71c-884825f7ef9f"
+
+[vars]
+# These are non-secrets; update with your real values
+SLACK_CHANNEL_BUGS = "C0BGW821VLM"
+BRANCH_NAME = "slack_fix"
+MAX_BATCH_SIZE = "3"
+SUPABASE_URL = "https://eucxtzoqaybyydgqvawy.supabase.co"
+SUPABASE_BUCKET = "devin-bug-screenshots"

@@ -32,6 +32,8 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.PulseDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.PulseMarkEntry
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 
@@ -65,7 +67,7 @@ fun PulseCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(VIcons.Activity, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
                 Text(
-                    "WEEKLY PULSE",
+                    appString(StringKeys.PUL_WEEKLY_PULSE),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                 )
             }
@@ -97,7 +99,7 @@ fun PulseCard(
             )
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Attendance",
+                    appString(StringKeys.PUL_ATTENDANCE),
                     style = VTheme.type.label.colored(c.ink3).copy(fontSize = 12.sp),
                 )
                 Spacer(Modifier.height(2.dp))
@@ -115,17 +117,17 @@ fun PulseCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     PulseStatChip(
-                        label = "HW",
+                        label = appString(StringKeys.PUL_HW),
                         value = "${pulse.homeworkCompleted}/${pulse.homeworkCompleted + pulse.homeworkPending}",
                         tint = if (pulse.homeworkPending > 0) c.warning else c.success,
                     )
                     PulseStatChip(
-                        label = "Msgs",
+                        label = appString(StringKeys.PUL_MSGS),
                         value = "${pulse.unreadMessages}",
                         tint = if (pulse.unreadMessages > 0) c.accent else c.ink3,
                     )
                     PulseStatChip(
-                        label = "Alerts",
+                        label = appString(StringKeys.PUL_ALERTS),
                         value = "${pulse.announcementsCount}",
                         tint = c.ink3,
                     )
@@ -153,7 +155,7 @@ fun PulseCard(
         if (pulse.marksSummary.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             Text(
-                "Marks This Week",
+                appString(StringKeys.PUL_MARKS_THIS_WEEK),
                 style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
             )
             Spacer(Modifier.height(6.dp))
@@ -167,7 +169,7 @@ fun PulseCard(
         if (pulse.actionableItems.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             Text(
-                "Action Items",
+                appString(StringKeys.PUL_ACTION_ITEMS),
                 style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
             )
             Spacer(Modifier.height(6.dp))
@@ -195,7 +197,7 @@ fun PulseCard(
         if (pulse.upcomingEvents.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             Text(
-                "Upcoming",
+                appString(StringKeys.PUL_UPCOMING),
                 style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
             )
             Spacer(Modifier.height(6.dp))

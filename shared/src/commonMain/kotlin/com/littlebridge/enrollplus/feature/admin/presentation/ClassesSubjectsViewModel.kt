@@ -28,6 +28,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateSchoolClassR
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateSchoolSubjectRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.SchoolClassesRepository
 import com.littlebridge.enrollplus.feature.admin.domain.repository.TeachersRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +48,8 @@ data class ClassesSubjectsState(
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class ClassesSubjectsViewModel(
@@ -71,7 +74,7 @@ class ClassesSubjectsViewModel(
             if (token.isNullOrBlank()) return@launch
             when (val r = teachersRepository.getTeachers(token, page = 1, pageSize = 100)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList())
+                    _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassesVM", "teachers error: ${r.message}")
@@ -122,7 +125,7 @@ class ClassesSubjectsViewModel(
             when (val result = repository.listClasses(token)) {
                 is NetworkResult.Success -> {
                     val classes = result.data.data?.classes ?: emptyList()
-                    _state.value = _state.value.copy(classes = classes, isLoading = false)
+                    _state.value = _state.value.copy(classes = classes, isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassesVM", "list error: ${result.message}")
@@ -226,6 +229,8 @@ class ClassesSubjectsViewModel(
                     _state.value = _state.value.copy(
                         subjectsByClass = _state.value.subjectsByClass + (classId to subjects),
                         selectedClassId = classId,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
@@ -332,7 +337,7 @@ class ClassesSubjectsViewModel(
             }
             when (val result = repository.getTimetable(token, classFilter)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(timetable = result.data.data, isLoading = false)
+                    _state.value = _state.value.copy(timetable = result.data.data, isLoading = false, isStale = result.isStale, isOffline = result.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("ClassesVM", "timetable error: ${result.message}")
@@ -362,11 +367,13 @@ class ClassesSubjectsViewModel(
             }
             when (val r = repository.createPeriod(token, CreatePeriodRequest(teacherId, className, section, subject, weekday, startTime, endTime, room))) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_timetable_period_created", mapOf("class" to className, "weekday" to weekday))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Period created")
                     onDone?.invoke()
                     loadTimetable()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_timetable_period_create_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.value = _state.value.copy(isSaving = false, errorMessage = r.message)
                 }
                 is NetworkResult.ConnectionError -> {
@@ -390,11 +397,16 @@ class ClassesSubjectsViewModel(
                     val msg = if (data != null && data.errorCount > 0) {
                         "${data.createdCount} periods created, ${data.errorCount} errors"
                     } else "${data?.createdCount ?: 0} periods created"
+                    AnalyticsTracker.event("vp_timetable_bulk_create", mapOf(
+                        "created" to (data?.createdCount ?: 0),
+                        "errors" to (data?.errorCount ?: 0),
+                    ))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = msg)
                     onDone?.invoke()
                     loadTimetable()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_timetable_bulk_create_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.value = _state.value.copy(isSaving = false, errorMessage = r.message)
                 }
                 is NetworkResult.ConnectionError -> {
@@ -414,11 +426,13 @@ class ClassesSubjectsViewModel(
             }
             when (val r = repository.updatePeriod(token, periodId, UpdatePeriodRequest(weekday, startTime, endTime, room, isActive))) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_timetable_period_updated", mapOf("period_id" to periodId))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Period updated")
                     onDone?.invoke()
                     loadTimetable()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_timetable_period_update_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.value = _state.value.copy(isSaving = false, errorMessage = r.message)
                 }
                 is NetworkResult.ConnectionError -> {
@@ -438,10 +452,12 @@ class ClassesSubjectsViewModel(
             }
             when (val r = repository.deletePeriod(token, periodId)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_timetable_period_deleted", mapOf("period_id" to periodId))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Period deleted")
                     loadTimetable()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_timetable_period_delete_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.value = _state.value.copy(isSaving = false, errorMessage = r.message)
                 }
                 is NetworkResult.ConnectionError -> {
@@ -459,7 +475,7 @@ class ClassesSubjectsViewModel(
             if (token.isNullOrBlank()) return@launch
             when (val r = repository.listExceptions(token, date)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(exceptions = r.data.data?.exceptions ?: emptyList())
+                    _state.value = _state.value.copy(exceptions = r.data.data?.exceptions ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     _state.value = _state.value.copy(errorMessage = r.message)
@@ -526,7 +542,7 @@ class ClassesSubjectsViewModel(
             if (token.isNullOrBlank()) return@launch
             when (val r = repository.listChangeRequests(token, status)) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(changeRequests = r.data.data?.requests ?: emptyList())
+                    _state.value = _state.value.copy(changeRequests = r.data.data?.requests ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     _state.value = _state.value.copy(errorMessage = r.message)

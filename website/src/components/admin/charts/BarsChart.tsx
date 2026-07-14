@@ -94,7 +94,17 @@ export function BarsChart({
           radius={[10, 10, 4, 4]}
           maxBarSize={48}
           animationDuration={650}
-          onClick={(d) => onSelect?.(d as unknown as BarDatum)}
+          onClick={(d: unknown) => {
+            if (onSelect && d && typeof d === "object" && "payload" in d) {
+              const payload = (d as { payload?: unknown }).payload;
+              if (payload && typeof payload === "object" && "label" in payload && "value" in payload) {
+                const p = payload as { label: unknown; value: unknown; meta?: unknown };
+                if (typeof p.label === "string" && typeof p.value === "number") {
+                  onSelect({ label: p.label, value: p.value, meta: typeof p.meta === "string" ? p.meta : undefined });
+                }
+              }
+            }
+          }}
           cursor={onSelect ? "pointer" : "default"}
         >
           {data.map((d, i) => {

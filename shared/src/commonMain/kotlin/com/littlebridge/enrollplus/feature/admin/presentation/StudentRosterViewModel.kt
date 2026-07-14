@@ -15,8 +15,11 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.BulkImportStudentsRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateStudentRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.LinkRequestCountDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentDto
+import com.littlebridge.enrollplus.feature.admin.domain.repository.LinkRequestsRepository
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +31,8 @@ data class StudentRosterState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val students: List<StudentDto> = emptyList(),
+    // People Tab: parent→child link request badge count
+    val linkRequestCount: Int = 0,
     // add-student dialog
     val isSaving: Boolean = false,
     val addError: String? = null,
@@ -35,11 +40,14 @@ data class StudentRosterState(
     val removingIds: Set<String> = emptySet(),
     // bulk import dialog (manual multi-add + CSV)
     val isImporting: Boolean = false,
-    val importError: String? = null
+    val importError: String? = null,
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false
 )
 
 class StudentRosterViewModel(
     private val repository: StudentsRepository,
+    private val linkRequestsRepository: LinkRequestsRepository,
     private val preferenceRepository: PreferenceRepository
 ) : ViewModel() {
 
@@ -56,16 +64,29 @@ class StudentRosterViewModel(
                 _state.value = _state.value.copy(isLoading = false, error = "You are not signed in. Please log in again.")
                 return@launch
             }
-            when (val r = repository.getStudents(token)) {
+            val studentsResult = repository.getStudents(token)
+            val countResult = linkRequestsRepository.getLinkRequestCount(token)
+            val count = when (countResult) {
+                is NetworkResult.Success -> countResult.data.data?.let { it.pending + it.needsReview } ?: 0
+                else -> 0
+            }
+            when (studentsResult) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(isLoading = false, error = null, students = r.data.data?.students.orEmpty())
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = null,
+                        students = studentsResult.data.data?.students.orEmpty(),
+                        linkRequestCount = count,
+                        isStale = studentsResult.isStale,
+                        isOffline = studentsResult.isOffline,
+                    )
                 }
                 is NetworkResult.Error -> {
-                    AppLogger.e("StudentRosterVM", "getStudents error: ${r.message}")
-                    _state.value = _state.value.copy(isLoading = false, error = r.message)
+                    AppLogger.e("StudentRosterVM", "getStudents error: ${studentsResult.message}")
+                    _state.value = _state.value.copy(isLoading = false, error = studentsResult.message, linkRequestCount = count)
                 }
                 is NetworkResult.ConnectionError -> {
-                    _state.value = _state.value.copy(isLoading = false, error = "Connection error. Check your internet.")
+                    _state.value = _state.value.copy(isLoading = false, error = "Connection error. Check your internet.", linkRequestCount = count)
                 }
             }
         }
@@ -77,6 +98,7 @@ class StudentRosterViewModel(
         section: String,
         rollNumber: String,
         parentPhone: String,
+        admissionDate: String? = null,
     ) {
         if (fullName.isBlank() || className.isBlank() || rollNumber.isBlank()) {
             _state.value = _state.value.copy(addError = "Name, class and roll number are required.")
@@ -104,14 +126,17 @@ class StudentRosterViewModel(
                 className = className.trim(),
                 section = section.trim().ifBlank { null },
                 rollNumber = rollNumber.trim(),
-                parentPhone = parentPhone.trim().ifBlank { null }
+                parentPhone = parentPhone.trim().ifBlank { null },
+                admissionDate = admissionDate?.takeIf { it.isNotBlank() }
             )
             when (val r = repository.createStudent(token, req)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_student_created", mapOf("class" to className))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Student added")
                     load()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_student_create_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StudentRosterVM", "createStudent error: ${r.message}")
                     _state.value = _state.value.copy(isSaving = false, addError = r.message)
                 }
@@ -146,10 +171,16 @@ class StudentRosterViewModel(
                         if (res.failed == 0) "Imported ${res.inserted} students"
                         else "Imported ${res.inserted} of ${res.total} (${res.failed} skipped)"
                     } else "Students imported"
+                    AnalyticsTracker.event("vp_student_bulk_import", mapOf(
+                        "inserted" to (res?.inserted ?: 0),
+                        "failed" to (res?.failed ?: 0),
+                        "total" to (res?.total ?: 0),
+                    ))
                     _state.value = _state.value.copy(isImporting = false, infoMessage = summary)
                     load()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_student_bulk_import_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StudentRosterVM", "importStudents error: ${r.message}")
                     _state.value = _state.value.copy(isImporting = false, importError = r.message)
                 }
@@ -170,6 +201,7 @@ class StudentRosterViewModel(
             _state.value = _state.value.copy(removingIds = _state.value.removingIds + studentId)
             when (val r = repository.deleteStudent(token, studentId)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_student_deleted", mapOf("student_id" to studentId))
                     _state.value = _state.value.copy(
                         removingIds = _state.value.removingIds - studentId,
                         students = _state.value.students.filterNot { it.id == studentId },
@@ -177,6 +209,7 @@ class StudentRosterViewModel(
                     )
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_student_delete_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StudentRosterVM", "deleteStudent error: ${r.message}")
                     _state.value = _state.value.copy(removingIds = _state.value.removingIds - studentId, error = r.message)
                 }

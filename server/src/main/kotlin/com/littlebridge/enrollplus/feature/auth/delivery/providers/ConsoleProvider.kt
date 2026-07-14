@@ -48,11 +48,6 @@ object ConsoleProvider : OtpProvider {
             "[OTP/console] identifier={} purpose={} code={} ttl={}min",
             request.identifier, request.purpose, request.code, request.ttlMinutes,
         )
-        // ALSO echo to stdout for `docker logs` simplicity.
-        println(
-            ">>> [OTP/console] ${request.identifier} (${request.purpose}) " +
-                "→ CODE: ${request.code}  (valid ${request.ttlMinutes} min)"
-        )
         return OtpDeliveryResult.Sent(
             providerName = name,
             channel = channel,

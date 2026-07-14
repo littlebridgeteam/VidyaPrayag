@@ -53,6 +53,8 @@ import com.littlebridge.enrollplus.feature.parent.presentation.AttendanceDayStat
 import com.littlebridge.enrollplus.feature.parent.presentation.TodayAttendance
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
@@ -158,7 +160,7 @@ private fun TodayFace(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 VStatusDot(color = tone.dot, size = 6.dp)
                 Text(
-                    "ATTENDANCE · TODAY",
+                    appString(StringKeys.PATT_ATTENDANCE_TODAY),
                     style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                 )
             }
@@ -203,14 +205,15 @@ private fun TodayFace(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (hasMonth) {
-                AttendanceRing(percent = attendance!!.attendanceRate.coerceIn(0, 100), modifier = Modifier.size(56.dp))
+                val att = attendance ?: return@Row
+                AttendanceRing(percent = att.attendanceRate.coerceIn(0, 100), modifier = Modifier.size(56.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "This month",
+                        appString(StringKeys.PATT_THIS_MONTH),
                         style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                     )
                     Text(
-                        "${attendance.attendanceRate}% present",
+                        appString(StringKeys.PATT_PERCENT_PRESENT, "rate" to att.attendanceRate.coerceIn(0, 100)),
                         style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
                     )
                     Text(monthBreakdown(attendance), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp))
@@ -220,15 +223,15 @@ private fun TodayFace(
                 EmptyRing(modifier = Modifier.size(56.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "This month",
+                        appString(StringKeys.PATT_THIS_MONTH),
                         style = VTheme.type.label.colored(c.ink3).copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                     )
                     Text(
-                        "Tracking from today",
+                        appString(StringKeys.PATT_TRACKING_FROM_TODAY),
                         style = VTheme.type.bodyStrong.colored(c.navyDeep).copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
                     )
                     Text(
-                        "The month fills in as the class is marked",
+                        appString(StringKeys.PATT_MONTH_FILLS),
                         style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 10.sp),
                     )
                 }
@@ -249,7 +252,7 @@ private fun TodayFace(
         if (onExpand != null) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "Swipe for the month calendar",
+                appString(StringKeys.PATT_SWIPE_CALENDAR),
                 style = VTheme.type.label.colored(c.ink3).copy(fontSize = 9.sp, letterSpacing = 0.4.sp),
             )
         }
@@ -371,10 +374,10 @@ private fun CalendarFace(attendance: ParentAttendanceData?, onCollapse: () -> Un
 
         // COLOR IS SEMANTIC: present=green, late=amber, absent=red, holiday=navy.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LegendDot(c.successInk, "Present")
-            LegendDot(c.warningInk, "Late")
-            LegendDot(c.dangerInk, "Absent")
-            LegendDot(c.navy, "Holiday")
+            LegendDot(c.successInk, appString(StringKeys.PATT_PRESENT))
+            LegendDot(c.warningInk, appString(StringKeys.PATT_LATE))
+            LegendDot(c.dangerInk, appString(StringKeys.PATT_ABSENT))
+            LegendDot(c.navy, appString(StringKeys.PATT_HOLIDAY))
         }
     }
 }
@@ -508,12 +511,13 @@ private fun AttendanceRing(percent: Int, modifier: Modifier = Modifier) {
 }
 
 /** A real, honest month breakdown line built from the backend counts. */
+@Composable
 private fun monthBreakdown(a: ParentAttendanceData): String {
     val attended = a.presentDays + a.lateDays
     val parts = buildList {
-        add("$attended of ${a.totalDays} school days")
-        if (a.lateDays > 0) add("${a.lateDays} late")
-        if (a.absentDays > 0) add("${a.absentDays} absent")
+        add(appString(StringKeys.PATT_SCHOOL_DAYS, "attended" to attended, "total" to a.totalDays))
+        if (a.lateDays > 0) add(appString(StringKeys.PATT_LATE_DAYS, "count" to a.lateDays))
+        if (a.absentDays > 0) add(appString(StringKeys.PATT_ABSENT_DAYS, "count" to a.absentDays))
     }
     return parts.joinToString(" · ")
 }
@@ -538,39 +542,39 @@ private fun toneFor(state: AttendanceDayState): AttendanceTone {
         // parent scans for. The lavender brand accent is reserved for the journey ring / active
         // states, never overloaded to mean attendance-present.
         AttendanceDayState.Present -> AttendanceTone(
-            "Present", "Marked present today", "Your child is in school",
+            appString(StringKeys.PATT_PRESENT), appString(StringKeys.PATT_MARKED_PRESENT), appString(StringKeys.PATT_IN_SCHOOL),
             c.successInk, c.success.copy(alpha = 0.45f), c.successInk,
             c.success.copy(alpha = 0.22f), VIcons.ShieldCheck,
         )
         AttendanceDayState.Late -> AttendanceTone(
-            "Late", "Arrived late today", "Marked present, after the bell",
+            appString(StringKeys.PATT_LATE), appString(StringKeys.PATT_ARRIVED_LATE), appString(StringKeys.PATT_MARKED_PRESENT_LATE),
             c.warningInk, c.warning.copy(alpha = 0.55f), c.warningInk,
             c.warning.copy(alpha = 0.28f), VIcons.Clock,
         )
         AttendanceDayState.Absent -> AttendanceTone(
-            "Absent", "Marked absent today", "No attendance recorded for today",
+            appString(StringKeys.PATT_ABSENT), appString(StringKeys.PATT_MARKED_ABSENT), appString(StringKeys.PATT_NO_ATTENDANCE_TODAY),
             c.dangerInk, c.danger.copy(alpha = 0.55f), c.dangerInk,
             c.danger.copy(alpha = 0.28f), VIcons.AlertCircle,
         )
         // Holiday/Vacation read in calm navy so they stay distinct from the violet "present" state.
         AttendanceDayState.Holiday -> AttendanceTone(
-            "Holiday", "School holiday today", "Enjoy the day off",
+            appString(StringKeys.PATT_HOLIDAY), appString(StringKeys.PATT_SCHOOL_HOLIDAY), appString(StringKeys.PATT_ENJOY_DAY_OFF),
             c.navy, c.navy.copy(alpha = 0.10f), c.navy,
             c.navy.copy(alpha = 0.07f), VIcons.Calendar,
         )
         AttendanceDayState.Vacation -> AttendanceTone(
-            "Break", "On vacation", "Enjoy the break",
+            appString(StringKeys.PATT_BREAK), appString(StringKeys.PATT_ON_VACATION), appString(StringKeys.PATT_ENJOY_BREAK),
             c.navy, c.navy.copy(alpha = 0.10f), c.navy,
             c.navy.copy(alpha = 0.07f), VIcons.Sparkles,
         )
         AttendanceDayState.Sunday -> AttendanceTone(
-            "Sunday", "No school today", "It's a Sunday",
+            appString(StringKeys.PATT_SUNDAY), appString(StringKeys.PATT_NO_SCHOOL), appString(StringKeys.PATT_SUNDAY_DESC),
             c.ink3, c.cream, c.ink2,
             c.cream, VIcons.Calendar,
         )
         // Awaiting is genuinely a "pending" state → amber/orange, NOT purple.
         AttendanceDayState.NoData -> AttendanceTone(
-            "Awaiting", "Attendance not marked yet", "You'll see today's status once the class is marked",
+            appString(StringKeys.PATT_AWAITING), appString(StringKeys.PATT_NOT_MARKED_YET), appString(StringKeys.PATT_WAITING_CLASS),
             c.warningInk, c.warning.copy(alpha = 0.40f), c.warningInk,
             c.warning.copy(alpha = 0.18f), VIcons.Clock,
         )

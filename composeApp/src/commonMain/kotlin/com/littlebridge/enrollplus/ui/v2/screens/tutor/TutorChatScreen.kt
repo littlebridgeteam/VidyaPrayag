@@ -38,7 +38,8 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.tutor.domain.model.SubjectItemDto
 import com.littlebridge.enrollplus.feature.tutor.presentation.ChatMessage
 import com.littlebridge.enrollplus.feature.tutor.presentation.TutorChatViewModel
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
@@ -46,8 +47,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -87,20 +91,20 @@ fun TutorChatScreen(
     Box(
         modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
     ) {
         Column(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            VBackHeader(
-                title = "AI Tutor",
+            PremiumOverlayHeader(
+                title = appString(StringKeys.TUT_AI_TUTOR),
                 onBack = onBack,
                 action = {
                     if (state.conversationHistory.isNotEmpty()) {
                         Text(
-                            "Clear",
-                            style = VTheme.type.caption.colored(c.accent),
+                            appString(StringKeys.TUT_CLEAR),
+                            style = VTypography.caption.copy(color = VColors.violet),
                             modifier = Modifier.clickable { viewModel.clearConversation() },
                         )
                     }
@@ -109,15 +113,15 @@ fun TutorChatScreen(
 
             if (state.error != null) {
                 VEmptyState(
-                    title = "Error",
-                    body = state.error!!,
+                    title = appString(StringKeys.TUT_ERROR),
+                    body = state.error ?: "",
                     icon = VIcons.AlertTriangle,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )
             } else if (state.conversationHistory.isEmpty() && !state.isLoading) {
                 VEmptyState(
-                    title = "Ask a question",
-                    body = "Type your doubt below. The AI tutor will guide you step by step. You can pick a subject for more specific help, or ask a general question.",
+                    title = appString(StringKeys.TUT_ASK_QUESTION),
+                    body = appString(StringKeys.TUT_ASK_QUESTION_DESC),
                     icon = VIcons.BookOpen,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )
@@ -161,7 +165,7 @@ fun TutorChatScreen(
                     value = state.question,
                     onValueChange = viewModel::updateQuestion,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Type your doubt...", style = VTheme.type.caption.colored(c.placeholder)) },
+                    placeholder = { Text(appString(StringKeys.TUT_TYPE_DOUBT), style = VTheme.type.caption.colored(c.placeholder)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = c.accent,
@@ -170,7 +174,7 @@ fun TutorChatScreen(
                     maxLines = 3,
                 )
                 VButton(
-                    text = "Ask",
+                    text = appString(StringKeys.TUT_ASK),
                     modifier = Modifier.fillMaxWidth(),
                     size = VButtonSize.Md,
                     variant = VButtonVariant.Primary,
@@ -213,7 +217,7 @@ private fun ChatBubble(msg: ChatMessage) {
                 )
                 if (msg.nextPrompt != null) {
                     Text(
-                        msg.nextPrompt!!,
+                        msg.nextPrompt ?: "",
                         style = VTheme.type.caption.colored(if (isUser) c.accentTint else c.accent),
                         fontWeight = FontWeight.Medium,
                     )
@@ -221,7 +225,7 @@ private fun ChatBubble(msg: ChatMessage) {
                 if (msg.isPractice && msg.practiceQuestions != null) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Practice questions ready!",
+                        appString(StringKeys.TUT_PRACTICE_READY),
                         style = VTheme.type.caption.colored(if (isUser) c.accentTint else c.teal),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp,
@@ -244,10 +248,10 @@ private fun SubjectPicker(
 
     val selected = subjects.find { it.subjectId == selectedSubjectId }
     val label = when {
-        isLoading -> "Loading subjects..."
-        selectedSubjectId.isEmpty() -> "General (no subject)"
+        isLoading -> appString(StringKeys.TUT_LOADING_SUBJECTS)
+        selectedSubjectId.isEmpty() -> appString(StringKeys.TUT_GENERAL)
         selected != null -> selected.subjectName
-        else -> "General (no subject)"
+        else -> appString(StringKeys.TUT_GENERAL)
     }
 
     Box {
@@ -283,7 +287,7 @@ private fun SubjectPicker(
             DropdownMenuItem(
                 text = {
                     Text(
-                        "General (no subject)",
+                        appString(StringKeys.TUT_GENERAL),
                         style = VTheme.type.body.colored(c.ink),
                     )
                 },

@@ -19,6 +19,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.CreateStaffRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.StaffDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateStaffRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StaffRepository
+import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +37,9 @@ data class StaffRosterState(
     val addError: String? = null,
     val infoMessage: String? = null,
     // profile / edit / delete
-    val removingIds: Set<String> = emptySet()
+    val removingIds: Set<String> = emptySet(),
+    val isStale: Boolean = false,
+    val isOffline: Boolean = false,
 )
 
 class StaffViewModel(
@@ -60,7 +63,7 @@ class StaffViewModel(
             val q = query ?: _state.value.query
             when (val r = repository.getStaff(token, query = q.ifBlank { null })) {
                 is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(isLoading = false, error = null, staff = r.data.data?.staff.orEmpty())
+                    _state.value = _state.value.copy(isLoading = false, error = null, staff = r.data.data?.staff.orEmpty(), isStale = r.isStale, isOffline = r.isOffline)
                 }
                 is NetworkResult.Error -> {
                     AppLogger.e("StaffVM", "getStaff error: ${r.message}")
@@ -99,10 +102,12 @@ class StaffViewModel(
             )
             when (val r = repository.createStaff(token, req)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_staff_created", mapOf("role" to role))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Staff member added")
                     load()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_staff_create_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StaffVM", "createStaff error: ${r.message}")
                     _state.value = _state.value.copy(isSaving = false, addError = r.message)
                 }
@@ -123,10 +128,12 @@ class StaffViewModel(
             _state.value = _state.value.copy(isSaving = true, addError = null, infoMessage = null)
             when (val r = repository.updateStaff(token, staffId, request)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_staff_updated", mapOf("staff_id" to staffId))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Staff member updated")
                     load()
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_staff_update_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     _state.value = _state.value.copy(isSaving = false, addError = r.message)
                 }
                 is NetworkResult.ConnectionError -> {
@@ -147,6 +154,7 @@ class StaffViewModel(
             _state.value = _state.value.copy(removingIds = _state.value.removingIds + staffId)
             when (val r = repository.deleteStaff(token, staffId)) {
                 is NetworkResult.Success -> {
+                    AnalyticsTracker.event("vp_staff_deleted", mapOf("staff_id" to staffId))
                     _state.value = _state.value.copy(
                         removingIds = _state.value.removingIds - staffId,
                         staff = _state.value.staff.filterNot { it.id == staffId },
@@ -154,6 +162,7 @@ class StaffViewModel(
                     )
                 }
                 is NetworkResult.Error -> {
+                    AnalyticsTracker.event("vp_staff_delete_failed", mapOf("error_reason" to (r.message ?: "unknown")))
                     AppLogger.e("StaffVM", "deleteStaff error: ${r.message}")
                     _state.value = _state.value.copy(removingIds = _state.value.removingIds - staffId, error = r.message)
                 }

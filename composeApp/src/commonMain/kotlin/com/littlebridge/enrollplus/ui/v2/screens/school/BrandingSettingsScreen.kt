@@ -25,14 +25,17 @@ import com.littlebridge.enrollplus.feature.branding.presentation.BrandingViewMod
 import com.littlebridge.enrollplus.platform.rememberMediaPicker
 import com.littlebridge.enrollplus.ui.v2.components.*
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import coil3.compose.AsyncImage
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-private val PRESET_COLORS = listOf(
+internal val BRANDING_PRESET_COLORS = listOf(
     "#2563EB",
     "#7C3AED",
     "#059669",
@@ -45,7 +48,7 @@ private val PRESET_COLORS = listOf(
 
 private val SUBDOMAIN_REGEX = Regex("^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$")
 
-private fun parseHexColor(hex: String): Color {
+internal fun parseBrandingHexColor(hex: String): Color {
     return try {
         val value = hex.removePrefix("#")
         if (value.length == 3) {
@@ -138,8 +141,7 @@ private fun BrandingSettingsContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = VTheme.colors
-    val branding = state.branding
+        val branding = state.branding
 
     var primaryColor by remember(branding?.primaryColor) {
         mutableStateOf(branding?.primaryColor ?: "#2563EB")
@@ -157,9 +159,9 @@ private fun BrandingSettingsContent(
 
     VConfirmDialog(
         visible = showResetConfirm,
-        title = "Reset branding?",
-        message = "All colors will be reset to defaults. Your uploaded assets will be kept.",
-        confirmLabel = "Reset",
+        title = appString(StringKeys.BRAND_RESET_TITLE),
+        message = appString(StringKeys.BRAND_RESET_MSG),
+        confirmLabel = appString(StringKeys.BRAND_RESET_BTN),
         onConfirm = {
             showResetConfirm = false
             onResetBranding()
@@ -171,7 +173,7 @@ private fun BrandingSettingsContent(
     Column(
         modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(VColors.cream)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -187,13 +189,13 @@ private fun BrandingSettingsContent(
                 Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(c.ink.copy(alpha = 0.06f))
+                    .background(VColors.ink.copy(alpha = 0.06f))
                     .clickable { onBack() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(20.dp))
+                Icon(VIcons.ArrowLeft, contentDescription = "Back", tint = VColors.ink, modifier = Modifier.size(20.dp))
             }
-            Text("Branding Kit", style = VTheme.type.h2.colored(c.ink))
+            Text(appString(StringKeys.BRAND_TITLE), style = VTypography.h2.copy(color = VColors.ink))
         }
 
         VStateHost(
@@ -201,6 +203,7 @@ private fun BrandingSettingsContent(
             error = state.error,
             isEmpty = branding == null && !state.isLoading,
             onRetry = onRetry,
+            skeleton = { SkeletonProfile() },
         ) {
             Column(
                 Modifier
@@ -217,8 +220,8 @@ private fun BrandingSettingsContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(VIcons.Check, contentDescription = null, tint = c.successInk, modifier = Modifier.size(18.dp))
-                            Text(msg, style = VTheme.type.body.colored(c.ink))
+                            Icon(VIcons.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(18.dp))
+                            Text(msg, style = VTypography.body.copy(color = VColors.ink))
                         }
                     }
                 }
@@ -228,8 +231,8 @@ private fun BrandingSettingsContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(VIcons.AlertTriangle, contentDescription = null, tint = c.dangerInk, modifier = Modifier.size(18.dp))
-                            Text(err, style = VTheme.type.body.colored(c.dangerInk))
+                            Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.error, modifier = Modifier.size(18.dp))
+                            Text(err, style = VTypography.body.copy(color = VColors.error))
                         }
                     }
                 }
@@ -243,10 +246,10 @@ private fun BrandingSettingsContent(
                     ) {
                         Text(
                             b.schoolName,
-                            style = VTheme.type.h3.colored(c.ink),
+                            style = VTypography.h3.copy(color = VColors.ink),
                         )
                         VBadge(
-                            text = if (b.isCustomized) "Customized" else "Default",
+                            text = if (b.isCustomized) appString(StringKeys.BRAND_CUSTOMIZED) else appString(StringKeys.BRAND_DEFAULT),
                             tone = if (b.isCustomized) VBadgeTone.Success else VBadgeTone.Neutral,
                         )
                     }
@@ -261,26 +264,26 @@ private fun BrandingSettingsContent(
                 )
 
                 // ── Color Pickers ──────────────────────────────────────────
-                Text("Brand Colors", style = VTheme.type.h3.colored(c.ink))
-                ColorPickerSection(
-                    label = "Primary Color",
+                Text(appString(StringKeys.BRAND_COLORS), style = VTypography.h3.copy(color = VColors.ink))
+                BrandingColorPickerSection(
+                    label = appString(StringKeys.BRAND_PRIMARY_COLOR),
                     currentColor = primaryColor,
                     onColorSelected = { primaryColor = it },
                 )
-                ColorPickerSection(
-                    label = "Secondary Color",
+                BrandingColorPickerSection(
+                    label = appString(StringKeys.BRAND_SECONDARY_COLOR),
                     currentColor = secondaryColor,
                     onColorSelected = { secondaryColor = it },
                 )
-                ColorPickerSection(
-                    label = "Accent Color",
+                BrandingColorPickerSection(
+                    label = appString(StringKeys.BRAND_ACCENT_COLOR),
                     currentColor = accentColor,
                     onColorSelected = { accentColor = it },
                 )
 
                 // ── Save Colors Button ─────────────────────────────────────
                 VButton(
-                    text = "Save Colors",
+                    text = appString(StringKeys.BRAND_SAVE_COLORS),
                     onClick = {
                         onUpdateBranding(
                             UpdateBrandingRequest(
@@ -297,13 +300,13 @@ private fun BrandingSettingsContent(
 
                 // ── Brand Assets Section ───────────────────────────────────
                 Spacer(Modifier.height(8.dp))
-                Text("Brand Assets", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.BRAND_ASSETS), style = VTypography.h3.copy(color = VColors.ink))
                 Text(
-                    "Upload your school's logo, app icon, and splash screen. These appear on the login screen, splash, and app icon.",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    appString(StringKeys.BRAND_ASSETS_DESC),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
                 AssetUploadRow(
-                    label = "Logo",
+                    label = appString(StringKeys.BRAND_LOGO),
                     field = "logo",
                     url = branding?.logoUrl,
                     isUploading = state.uploadingField == "logo",
@@ -311,7 +314,7 @@ private fun BrandingSettingsContent(
                     onDelete = onDeleteAsset,
                 )
                 AssetUploadRow(
-                    label = "Dark Logo",
+                    label = appString(StringKeys.BRAND_DARK_LOGO),
                     field = "logo_dark",
                     url = branding?.logoDarkUrl,
                     isUploading = state.uploadingField == "logo_dark",
@@ -319,7 +322,7 @@ private fun BrandingSettingsContent(
                     onDelete = onDeleteAsset,
                 )
                 AssetUploadRow(
-                    label = "Favicon",
+                    label = appString(StringKeys.BRAND_FAVICON),
                     field = "favicon",
                     url = branding?.faviconUrl,
                     isUploading = state.uploadingField == "favicon",
@@ -327,7 +330,7 @@ private fun BrandingSettingsContent(
                     onDelete = onDeleteAsset,
                 )
                 AssetUploadRow(
-                    label = "App Icon",
+                    label = appString(StringKeys.BRAND_APP_ICON),
                     field = "app_icon",
                     url = branding?.appIconUrl,
                     isUploading = state.uploadingField == "app_icon",
@@ -335,7 +338,7 @@ private fun BrandingSettingsContent(
                     onDelete = onDeleteAsset,
                 )
                 AssetUploadRow(
-                    label = "Splash Screen",
+                    label = appString(StringKeys.BRAND_SPLASH),
                     field = "splash_screen",
                     url = branding?.splashScreenUrl,
                     isUploading = state.uploadingField == "splash_screen",
@@ -343,7 +346,7 @@ private fun BrandingSettingsContent(
                     onDelete = onDeleteAsset,
                 )
                 AssetUploadRow(
-                    label = "Login Background",
+                    label = appString(StringKeys.BRAND_LOGIN_BG),
                     field = "login_background",
                     url = branding?.loginBackgroundUrl,
                     isUploading = state.uploadingField == "login_background",
@@ -353,10 +356,10 @@ private fun BrandingSettingsContent(
 
                 // ── Subdomain Section ──────────────────────────────────────
                 Spacer(Modifier.height(8.dp))
-                Text("Custom Subdomain", style = VTheme.type.h3.colored(c.ink))
+                Text(appString(StringKeys.BRAND_SUBDOMAIN), style = VTypography.h3.copy(color = VColors.ink))
                 Text(
-                    "Set a custom web address for your school's portal, e.g. dpsrkpuram.vidyaprayag.com",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    appString(StringKeys.BRAND_SUBDOMAIN_DESC),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
 
                 branding?.customSubdomain?.let { existing ->
@@ -367,14 +370,14 @@ private fun BrandingSettingsContent(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column {
-                                Text("Current subdomain", style = VTheme.type.caption.colored(c.ink3))
+                                Text(appString(StringKeys.BRAND_CURRENT_SUBDOMAIN), style = VTypography.caption.copy(color = VColors.ink3))
                                 Text(
                                     "$existing.vidyaprayag.com",
-                                    style = VTheme.type.bodyStrong.colored(c.ink),
+                                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                                 )
                             }
                             VButton(
-                                text = "Remove",
+                                text = appString(StringKeys.BRAND_REMOVE),
                                 onClick = { onRemoveSubdomain() },
                                 variant = VButtonVariant.Ghost,
                                 tone = VButtonTone.Rose,
@@ -397,9 +400,9 @@ private fun BrandingSettingsContent(
                                 onSubdomainInputChanged()
                             },
                             modifier = Modifier.weight(1f),
-                            label = "Subdomain",
-                            placeholder = "e.g. dpsrkpuram",
-                            hint = "4-32 chars, lowercase letters, numbers & hyphens",
+                            label = appString(StringKeys.BRAND_SUBDOMAIN_LABEL),
+                            placeholder = appString(StringKeys.BRAND_SUBDOMAIN_PLACE),
+                            hint = appString(StringKeys.BRAND_SUBDOMAIN_HINT),
                         )
                     }
                     Row(
@@ -407,7 +410,7 @@ private fun BrandingSettingsContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         VButton(
-                            text = "Check",
+                            text = appString(StringKeys.BRAND_CHECK),
                             onClick = { onCheckSubdomain(subdomainInput) },
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Sm,
@@ -415,7 +418,7 @@ private fun BrandingSettingsContent(
                             loading = state.isLoading,
                         )
                         VButton(
-                            text = "Assign",
+                            text = appString(StringKeys.BRAND_ASSIGN),
                             onClick = { onAssignSubdomain(subdomainInput) },
                             variant = VButtonVariant.Primary,
                             size = VButtonSize.Sm,
@@ -433,12 +436,12 @@ private fun BrandingSettingsContent(
                                 Icon(
                                     if (available) VIcons.Check else VIcons.Close,
                                     contentDescription = null,
-                                    tint = if (available) c.successInk else c.dangerInk,
+                                    tint = if (available) VColors.success else VColors.error,
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Text(
-                                    if (available) "Subdomain is available!" else "Subdomain is already taken.",
-                                    style = VTheme.type.body.colored(if (available) c.successInk else c.dangerInk),
+                                    if (available) appString(StringKeys.BRAND_SUBDOMAIN_AVAIL) else appString(StringKeys.BRAND_SUBDOMAIN_TAKEN),
+                                    style = VTypography.body.copy(color = if (available) VColors.success else VColors.error),
                                 )
                             }
                         }
@@ -448,7 +451,7 @@ private fun BrandingSettingsContent(
                 // ── Reset to defaults ──────────────────────────────────────
                 Spacer(Modifier.height(16.dp))
                 VButton(
-                    text = "Reset to Defaults",
+                    text = appString(StringKeys.BRAND_RESET_DEFAULTS),
                     onClick = { showResetConfirm = true },
                     variant = VButtonVariant.Ghost,
                     tone = VButtonTone.Rose,
@@ -460,23 +463,22 @@ private fun BrandingSettingsContent(
 }
 
 @Composable
-private fun BrandingPreviewCard(
+internal fun BrandingPreviewCard(
     branding: SchoolBranding?,
     primaryColor: String,
     secondaryColor: String,
     accentColor: String,
 ) {
-    val c = VTheme.colors
-    val primary = parseHexColor(primaryColor)
-    val secondary = parseHexColor(secondaryColor)
-    val accent = parseHexColor(accentColor)
+        val primary = parseBrandingHexColor(primaryColor)
+    val secondary = parseBrandingHexColor(secondaryColor)
+    val accent = parseBrandingHexColor(accentColor)
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Live Preview", style = VTheme.type.bodyStrong.colored(c.ink))
+            Text(appString(StringKeys.BRAND_LIVE_PREVIEW), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
 
             // Mock login header
             Box(
@@ -488,7 +490,7 @@ private fun BrandingPreviewCard(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    branding?.schoolName ?: "Your School",
+                    branding?.schoolName ?: appString(StringKeys.BRAND_YOUR_SCHOOL),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -508,7 +510,7 @@ private fun BrandingPreviewCard(
                         .background(accent),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Primary Button", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(appString(StringKeys.BRAND_PRIMARY_BTN), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
                 Box(
                     modifier = Modifier
@@ -519,7 +521,7 @@ private fun BrandingPreviewCard(
                         .border(1.dp, secondary, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Secondary", color = secondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(appString(StringKeys.BRAND_SECONDARY_BTN), color = secondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
             }
 
@@ -528,16 +530,16 @@ private fun BrandingPreviewCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ColorSwatch("Primary", primary)
-                ColorSwatch("Secondary", secondary)
-                ColorSwatch("Accent", accent)
+                BrandingColorSwatch(appString(StringKeys.BRAND_SWATCH_PRIMARY), primary)
+                BrandingColorSwatch(appString(StringKeys.BRAND_SWATCH_SECONDARY), secondary)
+                BrandingColorSwatch(appString(StringKeys.BRAND_SWATCH_ACCENT), accent)
             }
         }
     }
 }
 
 @Composable
-private fun ColorSwatch(label: String, color: Color) {
+internal fun BrandingColorSwatch(label: String, color: Color) {
     Column(
         modifier = Modifier.fillMaxWidth(0.33f),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -550,19 +552,18 @@ private fun ColorSwatch(label: String, color: Color) {
                 .background(color)
                 .border(2.dp, Color.White, CircleShape),
         )
-        Text(label, style = VTheme.type.caption.colored(VTheme.colors.ink3), fontSize = 10.sp)
+        Text(label, style = VTypography.caption.copy(color = VColors.ink3), fontSize = 10.sp)
     }
 }
 
 @Composable
-private fun ColorPickerSection(
+internal fun BrandingColorPickerSection(
     label: String,
     currentColor: String,
     onColorSelected: (String) -> Unit,
 ) {
-    val c = VTheme.colors
-    var hexInput by remember(currentColor) { mutableStateOf(currentColor) }
-    val parsedColor = parseHexColor(hexInput)
+        var hexInput by remember(currentColor) { mutableStateOf(currentColor) }
+    val parsedColor = parseBrandingHexColor(hexInput)
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -574,13 +575,13 @@ private fun ColorPickerSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(label, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Box(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
                         .background(parsedColor)
-                        .border(2.dp, c.border2, CircleShape),
+                        .border(2.dp, VColors.line, CircleShape),
                 )
             }
 
@@ -589,15 +590,15 @@ private fun ColorPickerSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                PRESET_COLORS.forEach { hex ->
+                BRANDING_PRESET_COLORS.forEach { hex ->
                     Box(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(parseHexColor(hex))
+                            .background(parseBrandingHexColor(hex))
                             .border(
                                 width = if (hex.equals(hexInput, ignoreCase = true)) 3.dp else 0.dp,
-                                color = c.ink,
+                                color = VColors.ink,
                                 shape = CircleShape,
                             )
                             .clickable {
@@ -618,7 +619,7 @@ private fun ColorPickerSection(
                         onColorSelected(hexInput)
                     }
                 },
-                label = "Hex color",
+                label = appString(StringKeys.BRAND_HEX_COLOR),
                 placeholder = "#2563EB",
                 singleLine = true,
             )
@@ -635,8 +636,7 @@ private fun AssetUploadRow(
     onUpload: (String, ByteArray, String, String) -> Unit,
     onDelete: (String) -> Unit,
 ) {
-    val c = VTheme.colors
-    val picker = rememberMediaPicker(
+        val picker = rememberMediaPicker(
         onPicked = { bytes, mimeType, fileName ->
             onUpload(field, bytes, fileName, mimeType)
         },
@@ -654,7 +654,7 @@ private fun AssetUploadRow(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(c.ink.copy(alpha = 0.06f)),
+                    .background(VColors.ink.copy(alpha = 0.06f)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (url != null) {
@@ -664,15 +664,15 @@ private fun AssetUploadRow(
                         modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
                     )
                 } else {
-                    Icon(VIcons.Upload, contentDescription = null, tint = c.ink3, modifier = Modifier.size(20.dp))
+                    Icon(VIcons.Upload, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(20.dp))
                 }
             }
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, style = VTheme.type.bodyStrong.colored(c.ink))
+                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Text(
-                    if (url != null) "Uploaded" else "Not set",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    if (url != null) appString(StringKeys.BRAND_UPLOADED) else appString(StringKeys.BRAND_NOT_SET),
+                    style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }
 
@@ -680,12 +680,12 @@ private fun AssetUploadRow(
                 androidx.compose.material3.CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = c.accent,
+                    color = VColors.violet,
                 )
             } else {
                 if (url != null) {
                     VButton(
-                        text = "Remove",
+                        text = appString(StringKeys.BRAND_REMOVE),
                         onClick = { onDelete(field) },
                         variant = VButtonVariant.Ghost,
                         tone = VButtonTone.Rose,
@@ -693,7 +693,7 @@ private fun AssetUploadRow(
                     )
                 }
                 VButton(
-                    text = if (url != null) "Replace" else "Upload",
+                    text = if (url != null) appString(StringKeys.BRAND_REPLACE) else appString(StringKeys.BRAND_UPLOAD),
                     onClick = { picker.launchImage() },
                     variant = VButtonVariant.Secondary,
                     size = VButtonSize.Sm,

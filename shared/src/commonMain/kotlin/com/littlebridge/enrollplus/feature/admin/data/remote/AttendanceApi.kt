@@ -11,9 +11,14 @@ import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.safeApiCall
 import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceSaveRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 
 class AttendanceApi(
     private val client: HttpClient,
@@ -44,6 +49,16 @@ class AttendanceApi(
             parameter("type", type)
             grade?.let { parameter("grade", it) }
             date?.let { parameter("date", it) }
+        }
+    }
+
+    suspend fun saveDailyAttendance(
+        token: String,
+        request: AttendanceSaveRequest
+    ): NetworkResult<ApiResponse<Map<String, Int>>> = safeApiCall {
+        client.post(getUrl("api/v1/school/attendance/daily")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
         }
     }
 }

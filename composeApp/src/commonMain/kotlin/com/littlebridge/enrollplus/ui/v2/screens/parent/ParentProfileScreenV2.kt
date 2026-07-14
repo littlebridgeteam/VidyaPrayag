@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.parent
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,15 +33,22 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
-import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
+import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
+import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.util.AnalyticsTracker
+import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -67,11 +75,16 @@ fun ParentProfileScreenV2(
     val state by viewModel.state.collectAsStateV2()
     val themeMode by viewModel.themeMode.collectAsStateV2()
     val customThemeId by viewModel.customThemeId.collectAsStateV2()
+    val localeManager = koinInject<LocaleManager>()
+    val currentLocale by localeManager.currentLocale.collectAsStateV2()
     ParentProfileContent(
         state = state,
         themeMode = themeMode,
         customThemeId = customThemeId,
+        currentLocale = currentLocale,
+        onLanguageSelect = { lang -> localeManager.setLocale(lang) },
         onThemeSelect = { mode, customId ->
+            AnalyticsTracker.event("vp_parent_theme_change", mapOf("theme" to mode))
             viewModel.setThemeMode(mode)
             viewModel.setCustomThemeId(customId)
         },
@@ -91,6 +104,8 @@ private fun ParentProfileContent(
     state: ParentProfileState,
     themeMode: String,
     customThemeId: String?,
+    currentLocale: String,
+    onLanguageSelect: (String) -> Unit,
     onThemeSelect: (String, String?) -> Unit,
     onBack: () -> Unit,
     onLogout: () -> Unit,
@@ -117,12 +132,14 @@ private fun ParentProfileContent(
         icon = VIcons.AlertTriangle,
     )
 
-    Column(modifier.fillMaxSize()
-        .statusBarsPadding()
-        .imePadding()
-        .navigationBarsPadding()
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(VColors.cream)
+            .imePadding()
+            .navigationBarsPadding()
     ) {
-        VBackHeader(title = "Profile", onBack = onBack)
+        PremiumOverlayHeader(title = "Profile", onBack = onBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -140,7 +157,7 @@ private fun ParentProfileContent(
                 onRetry = onRetry,
                 skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile() },
             ) {
-                val me = state.profile!!
+                val me = state.profile ?: return@VStateHost
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Column(
                         Modifier.fillMaxWidth(),
@@ -179,11 +196,11 @@ private fun ParentProfileContent(
                             ProfileRow("Change password", "Keep your account secure", null),
                             ProfileRow(
                                 "Help & support",
-                                "Email ${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}",
+                                "Email support@vidyaprayag.in",
                                 {
                                     runCatching {
                                         uriHandler.openUri(
-                                            "mailto:${com.littlebridge.enrollplus.ui.v2.screens.auth.SUPPORT_EMAIL}" +
+                                            "mailto:support@vidyaprayag.in" +
                                                 "?subject=VidyaSetu%20Support",
                                         )
                                     }
@@ -212,6 +229,19 @@ private fun ParentProfileContent(
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+
+                        // ── Language picker ───────────────────────────────────
+                        VCard {
+                            Column {
+                                Text(appString(StringKeys.PP_LANGUAGE), style = VTheme.type.bodyStrong.colored(c.ink))
+                                Spacer(Modifier.height(10.dp))
+                                VLanguagePicker(
+                                    currentLang = currentLocale,
+                                    onSelect = onLanguageSelect,
+                                )
                             }
                         }
                         Spacer(Modifier.height(8.dp))

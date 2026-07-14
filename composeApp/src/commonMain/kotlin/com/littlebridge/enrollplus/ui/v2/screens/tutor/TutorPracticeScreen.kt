@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -33,6 +34,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -63,13 +66,14 @@ fun TutorPracticeScreen(
     Box(
         modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(c.background)
     ) {
         Column(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            VBackHeader(title = "Practice", onBack = onBack)
+            VBackHeader(title = appString(StringKeys.TUT_PRACTICE), onBack = onBack)
 
             val q = state.currentQuestion
             when {
@@ -81,7 +85,7 @@ fun TutorPracticeScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = c.teal, modifier = Modifier.size(36.dp))
                             Text(
-                                "Grading...",
+                                appString(StringKeys.TUT_GRADING),
                                 style = VTheme.type.caption.colored(c.ink3),
                                 modifier = Modifier.padding(top = 12.dp),
                             )
@@ -90,16 +94,19 @@ fun TutorPracticeScreen(
                 }
                 q == null -> {
                     VEmptyState(
-                        title = "No practice question",
-                        body = "Practice questions will appear here after a doubt session.",
+                        title = appString(StringKeys.TUT_NO_QUESTION),
+                        body = appString(StringKeys.TUT_NO_QUESTION_DESC),
                         icon = VIcons.BookOpen,
                     )
                 }
                 state.gradeResult != null -> {
-                    GradeResultContent(
-                        result = state.gradeResult!!,
-                        onNext = viewModel::nextQuestion,
-                    )
+                    val result = state.gradeResult
+                    if (result != null) {
+                        GradeResultContent(
+                            result = result,
+                            onNext = viewModel::nextQuestion,
+                        )
+                    }
                 }
                 else -> {
                     QuestionContent(
@@ -149,9 +156,10 @@ private fun QuestionContent(
             }
         }
 
-        if (question.options != null) {
+        val opts = question.options
+        if (opts != null) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                question.options!!.forEach { option ->
+                opts.forEach { option ->
                     val isSelected = option == selectedAnswer
                     VCard(
                         modifier = Modifier
@@ -187,13 +195,13 @@ private fun QuestionContent(
                 value = selectedAnswer,
                 onValueChange = onSelect,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Type your answer...") },
+                placeholder = { Text(appString(StringKeys.TUT_TYPE_ANSWER)) },
                 shape = RoundedCornerShape(12.dp),
             )
         }
 
         VButton(
-            text = "Submit Answer",
+            text = appString(StringKeys.TUT_SUBMIT_ANSWER),
             modifier = Modifier.fillMaxWidth(),
             size = VButtonSize.Md,
             variant = VButtonVariant.Primary,
@@ -220,12 +228,12 @@ private fun GradeResultContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    if (result.correct) "Correct!" else "Not quite",
+                    if (result.correct) appString(StringKeys.TUT_CORRECT) else appString(StringKeys.TUT_NOT_QUITE),
                     style = VTheme.type.h2.colored(if (result.correct) c.teal else c.warmOrange),
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "Score: ${result.gradePct}%",
+                    appString(StringKeys.TUT_SCORE_PCT).replace("{pct}", result.gradePct.toString()),
                     style = VTheme.type.body.colored(c.ink),
                 )
             }
@@ -234,7 +242,7 @@ private fun GradeResultContent(
         VCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    "Feedback",
+                    appString(StringKeys.TUT_FEEDBACK),
                     style = VTheme.type.caption.colored(c.ink3),
                     fontWeight = FontWeight.Medium,
                 )
@@ -246,7 +254,7 @@ private fun GradeResultContent(
         }
 
         VButton(
-            text = "Next Question",
+            text = appString(StringKeys.TUT_NEXT_QUESTION),
             modifier = Modifier.fillMaxWidth(),
             size = VButtonSize.Md,
             variant = VButtonVariant.Primary,

@@ -39,6 +39,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.util.concurrent.atomic.AtomicReference
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 
@@ -51,8 +52,7 @@ object TransportJobScheduler {
     private const val FINALIZATION_CHECK_INTERVAL_MS = 60 * 60 * 1000L // 1 hour
     private const val FINALIZATION_TARGET_HOUR_UTC = 14 // 8 PM IST ≈ 14:30 UTC
 
-    @Volatile
-    private var lastFinalizationDate: LocalDate? = null
+    private val lastFinalizationDate = AtomicReference<LocalDate?>(null)
 
     fun start(scope: CoroutineScope) {
         // GPS staleness check — every 5 minutes
@@ -166,8 +166,8 @@ object TransportJobScheduler {
         if (nowUtc.hour != FINALIZATION_TARGET_HOUR_UTC) return
 
         // Guard: don't run twice on the same day
-        if (lastFinalizationDate == today) return
-        lastFinalizationDate = today
+        if (lastFinalizationDate.get() == today) return
+        if (!lastFinalizationDate.compareAndSet(null, today)) return
 
         log.info("[$TAG] Finalizing transport attendance for {}", today)
 

@@ -264,6 +264,15 @@ export function validateBasic(d: BasicData): Errors<BasicData> {
 export function validateAcademic(d: AcademicData): string | null {
   const real = d.classes.filter((c) => c.name.trim());
   if (real.length === 0) return "Add at least one class to continue.";
+  for (const c of real) {
+    const hasSubjects = c.subjects
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean).length > 0;
+    if (!hasSubjects) {
+      return `Class "${c.name.trim()}" must have at least one subject.`;
+    }
+  }
   return null;
 }
 
