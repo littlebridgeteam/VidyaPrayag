@@ -71,6 +71,21 @@ jobs:
             echo "build_type=release" >> $GITHUB_OUTPUT
           fi
 
+          # Extract versionName from build.gradle.kts
+          VERSION_NAME=$(grep 'versionName' composeApp/build.gradle.kts | head -1 | sed 's/.*versionName = "//;s/".*//')
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION_NAME"
+
+          # Map flavor to display name: dev→Dev, staging→Stag, prod→Prod
+          FLAVOR=${{ github.event_name == 'workflow_dispatch' && inputs.flavor || 'prod' }}
+          case "$FLAVOR" in
+            dev) FLAVOR_DISPLAY="Dev" ;;
+            staging) FLAVOR_DISPLAY="Stag" ;;
+            prod) FLAVOR_DISPLAY="Prod" ;;
+            *) FLAVOR_DISPLAY="$FLAVOR" ;;
+          esac
+          echo "flavor_display=$FLAVOR_DISPLAY" >> $GITHUB_OUTPUT
+
       - name: Assemble APK
         run: |
           FLAVOR=${{ steps.params.outputs.flavor }}
@@ -102,13 +117,14 @@ jobs:
           echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_NAME"
 
-      - name: Rename APK with tag
+      - name: Rename APK with formatted name
         run: |
-          TAG=${{ steps.tag.outputs.tag }}
-          FLAVOR=${{ steps.params.outputs.flavor }}
+          FLAVOR_DISPLAY=${{ steps.params.outputs.flavor_display }}
           BUILD_TYPE=${{ steps.params.outputs.build_type }}
+          BUILD_TYPE_DISPLAY=$(echo "$BUILD_TYPE" | sed 's/./\U&/')
+          VERSION=${{ steps.params.outputs.version_name }}
           SRC="${{ steps.apk.outputs.apk_path }}"
-          DEST="composeApp/build/outputs/apk/enrollplus-${FLAVOR}-${BUILD_TYPE}-${TAG}.apk"
+          DEST="composeApp/build/outputs/apk/EnRollPlus_${FLAVOR_DISPLAY}_${BUILD_TYPE_DISPLAY}_v${VERSION}.apk"
           cp "$SRC" "$DEST"
           echo "Renamed APK: $DEST"
           ls -lh "$DEST"
@@ -122,6 +138,7 @@ jobs:
           if-no-files-found: error
 
       - name: Create Git tag
+        if: steps.params.outputs.build_type == 'release'
         run: |
           TAG=${{ steps.tag.outputs.tag }}
           git config user.name "github-actions[bot]"
@@ -135,6 +152,7 @@ jobs:
           git push origin "$TAG"
 
       - name: Create GitHub Release
+        if: steps.params.outputs.build_type == 'release'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
@@ -166,9 +184,10 @@ jobs:
           fi
 
           TAG="${{ steps.tag.outputs.tag }}"
-          FLAVOR="${{ steps.params.outputs.flavor }}"
+          FLAVOR="${{ steps.params.outputs.flavor_display }}"
           BUILD_TYPE="${{ steps.params.outputs.build_type }}"
-          APK_FILE=$(ls composeApp/build/outputs/apk/enrollplus-*.apk | head -1)
+          VERSION="${{ steps.params.outputs.version_name }}"
+          APK_FILE=$(ls composeApp/build/outputs/apk/EnRollPlus_*.apk | head -1)
           APK_NAME=$(basename "$APK_FILE")
           APK_SIZE=$(stat -c%s "$APK_FILE")
 
@@ -212,10 +231,17 @@ jobs:
           echo "File uploaded to Slack storage"
 
           # Step 3: Complete the upload and share to channel
+          # Build download link only for release builds (debug has no GitHub Release)
+          if [ "$BUILD_TYPE" = "release" ]; then
+            DOWNLOAD_LINE="Download: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+          else
+            DOWNLOAD_LINE="Download from Actions artifacts: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+
           COMPLETE_RESP=$(curl -s --max-time 30 -X POST https://slack.com/api/files.completeUploadExternal \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
             -H "Content-Type: application/json; charset=utf-8" \
-            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"Enroll+ APK — $TAG\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"📱 *New APK Build*\\n• *Tag:* $TAG\\n• *Flavor:* $FLAVOR\\n• *Build:* $BUILD_TYPE\\n• *Commit:* ${{ github.sha }}\\n• *Triggered by:* ${{ github.actor }}\\n\\nDownload: https://github.com/${{ github.repository }}/releases/tag/$TAG\"}")
+            -d "{\"files\":[{\"id\":\"$FILE_ID\",\"title\":\"EnRollPlus ${FLAVOR} ${BUILD_TYPE} v${VERSION}\"}],\"channel_id\":\"$SLACK_CHANNEL_ID\",\"initial_comment\":\"📱 *New APK Build*\\n• *Name:* $APK_NAME\\n• *Flavor:* $FLAVOR\\n• *Build:* $BUILD_TYPE\\n• *Version:* v${VERSION}\\n• *Commit:* ${{ github.sha }}\\n• *Triggered by:* ${{ github.actor }}\\n\\n$DOWNLOAD_LINE\"}")
 
           echo "completeUploadExternal response: $COMPLETE_RESP"
 
