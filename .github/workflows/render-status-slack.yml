@@ -1,0 +1,75 @@
+name: Render Status & Slack Alerts
+
+on:
+  schedule:
+    # Every 5 minutes, 24/7
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'shared/**'
+      - 'gradle/libs.versions.toml'
+
+permissions:
+  contents: read
+
+jobs:
+  check-render-and-notify:
+    name: Check Render & Notify Slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Render health and notify Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          RENDER_HEALTH_URL: ${{ secrets.RENDER_HEALTH_URL || 'https://vidyaprayag-1.onrender.com/api/v1/health' }}
+          GITHUB_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$SLACK_BOT_TOKEN" ] || [ -z "$SLACK_CHANNEL_ID" ]; then
+            echo "::warning::SLACK_BOT_TOKEN or SLACK_CHANNEL_ID not set — skipping"
+            exit 0
+          fi
+
+          send_slack_message() {
+            local MESSAGE="$1"
+            curl -s -X POST https://slack.com/api/chat.postMessage \
+              -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"channel\":\"$SLACK_CHANNEL_ID\",\"text\":\"$MESSAGE\"}" > /dev/null
+          }
+
+          # ── Handle push to main (new deployment notification) ──
+          if [ "${{ github.event_name }}" = "push" ]; then
+            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+            COMMIT_MSG=$(git log --format=%B -n 1 HEAD 2>/dev/null | head -1 || echo "backend update")
+            send_slack_message "🚀 *New backend deployment pushed to main*\n• *Commit:* \`$SHORT_SHA\` — $COMMIT_MSG\n• *Render URL:* $RENDER_HEALTH_URL\n• *Note:* Render auto-deploys on push — new build should be live shortly.\n• *Triggered by:* ${{ github.actor }}\n• *Run:* $GITHUB_RUN_URL"
+            echo "Sent deployment notification to Slack"
+            exit 0
+          fi
+
+          # ── Scheduled health check ──
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$RENDER_HEALTH_URL")
+          echo "Health check returned: $STATUS"
+
+          if [ "$STATUS" = "200" ]; then
+            echo "Server is healthy (HTTP 200)"
+
+            # Check if we were previously down (using workflow run cache)
+            PREV_STATE_FILE="/tmp/render_prev_state.txt"
+            PREV_STATE="up"
+
+            # Try to fetch previous state from the last successful run's artifact
+            # Since we can't persist state between runs easily, we use a different approach:
+            # Only send "back up" if the previous run failed (check via GitHub API)
+            # For simplicity, we just log the healthy state
+            echo "up" > $PREV_STATE_FILE
+            echo "Server is up — no alert needed"
+
+          else
+            echo "Server returned $STATUS — sending alert"
+            send_slack_message "🔴 *Render server is DOWN*\n• *Health check:* HTTP $STATUS\n• *URL:* $RENDER_HEALTH_URL\n• *Time:* $(date -u +'%Y-%m-%d %H:%M:%S UTC')\n• *Run:* $GITHUB_RUN_URL"
+            echo "down" > /tmp/render_prev_state.txt
+            exit 1
+          fi
