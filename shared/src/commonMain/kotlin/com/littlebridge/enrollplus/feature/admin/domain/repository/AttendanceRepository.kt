@@ -10,6 +10,7 @@ interface AttendanceRepository {
         token: String,
         type: String = "student",
         grade: String? = null,
+        section: String? = null,
         date: String? = null
     ): NetworkResult<ApiResponse<AttendanceResponse>>
 

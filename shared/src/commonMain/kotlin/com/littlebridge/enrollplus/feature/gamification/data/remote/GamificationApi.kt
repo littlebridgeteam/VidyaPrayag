@@ -283,6 +283,14 @@ class GamificationApi(
         }
     }
 
+    suspend fun setGranularFlag(token: String, flagKey: String, enabled: Boolean): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/admin/gamification/flags/granular")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("flagKey" to flagKey, "enabled" to enabled))
+        }
+    }
+
     // ── Admin: Badge Definitions ──────────────────────────────────────
     suspend fun getBadgeDefinitions(token: String): NetworkResult<ApiResponse<List<BadgeDefinition>>> = safeApiCall {
         client.get(getUrl("api/v1/admin/gamification/badges")) {

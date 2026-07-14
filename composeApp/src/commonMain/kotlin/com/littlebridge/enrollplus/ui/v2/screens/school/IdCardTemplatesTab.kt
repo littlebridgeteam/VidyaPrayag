@@ -44,9 +44,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.branding.domain.model.SchoolBranding
 import com.littlebridge.enrollplus.feature.idcard.domain.model.IdCardTemplateDto
 import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardState
 import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.littlebridge.enrollplus.ui.v2.components.ShimmerBox
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
@@ -59,6 +62,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.BrandingColorMapper
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 
@@ -103,10 +107,14 @@ internal fun IdCardStatsBanner(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 VProgressRing(
                     value = if (totalCards > 0) 100f else 0f,
                     size = 56.dp,
@@ -117,16 +125,27 @@ internal fun IdCardStatsBanner(
                 Text(
                     text = appString(StringKeys.IDCARD_TOTAL_CARDS),
                     style = VTypography.caption.copy(color = VColors.ink3),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 StatRow(label = appString(StringKeys.IDCARD_STUDENTS), count = studentCards, color = VColors.violet)
                 StatRow(label = appString(StringKeys.IDCARD_TEACHERS), count = teacherCards, color = VColors.sky)
                 StatRow(label = appString(StringKeys.IDCARD_STAFF), count = staffCards, color = VColors.coral)
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Box(
                     Modifier
                         .size(48.dp)
@@ -150,7 +169,8 @@ internal fun IdCardStatsBanner(
                     text = milestoneLabel,
                     style = VTypography.caption.copy(color = VColors.ink2).copy(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(72.dp),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
         }
@@ -167,6 +187,8 @@ private fun StatRow(label: String, count: Int, color: Color) {
         Text(
             text = "$count $label",
             style = VTypography.caption.copy(color = VColors.ink2),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
     }
 }
@@ -204,6 +226,7 @@ internal fun TemplatesTab(
     state: IdCardState,
     viewModel: IdCardViewModel,
     scrollState: ScrollState = rememberScrollState(),
+    branding: SchoolBranding? = null,
 ) {
         var templateName by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("student") }
@@ -241,11 +264,31 @@ internal fun TemplatesTab(
                 modifier = Modifier.padding(top = 24.dp),
             )
         } else {
-            state.templates.forEach { template ->
+            val activeTemplates = state.templates.filter { it.isActive }
+            val inactiveTemplates = state.templates.filter { !it.isActive }
+
+            activeTemplates.forEach { template ->
                 TemplateCard(
                     template = template,
                     onDeactivate = { viewModel.deactivateTemplate(template.id) },
                 )
+            }
+
+            if (inactiveTemplates.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Inactive templates",
+                    style = VTypography.label.copy(color = VColors.ink3),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                inactiveTemplates.forEach { template ->
+                    TemplateCard(
+                        template = template,
+                        onDeactivate = { viewModel.deactivateTemplate(template.id) },
+                        enabled = false,
+                    )
+                }
             }
         }
 
@@ -322,6 +365,10 @@ internal fun TemplatesTab(
                 roleType = selectedRole,
                 fields = selectedFields,
                 accentArgb = accentColorArgb,
+                logoUrl = branding?.logoUrl,
+                schoolName = branding?.schoolName,
+                brandingPrimaryHex = branding?.primaryColor,
+                brandingAccentHex = branding?.accentColor,
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -337,7 +384,7 @@ internal fun TemplatesTab(
                 },
                 variant = VButtonVariant.Primary,
                 enabled = !state.isLoading && templateName.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(),
+                full = true,
             )
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -384,9 +431,16 @@ private fun LiveCardPreview(
     roleType: String,
     fields: Set<String>,
     accentArgb: Int,
+    logoUrl: String? = null,
+    schoolName: String? = null,
+    brandingPrimaryHex: String? = null,
+    brandingAccentHex: String? = null,
 ) {
-    val accent = Color(accentArgb)
-    
+    val brandPrimary = brandingPrimaryHex?.let { BrandingColorMapper.parseHex(it) }
+    val brandAccent = brandingAccentHex?.let { BrandingColorMapper.parseHex(it) }
+    val accent = brandAccent ?: brandPrimary ?: Color(accentArgb)
+    val displaySchoolName = schoolName?.takeIf { it.isNotBlank() } ?: "Vidya Prayag School"
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -399,7 +453,7 @@ private fun LiveCardPreview(
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            // Header band
+            // Header band — real logo + school name when the school field is selected.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -408,11 +462,32 @@ private fun LiveCardPreview(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 if ("school" in fields) {
-                    Text(
-                        text = "Vidya Prayag School",
-                        style = VTypography.caption.copy(color = Color.White).copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        if (!logoUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = logoUrl,
+                                contentDescription = displaySchoolName,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.White),
+                            )
+                        }
+                        Text(
+                            text = displaySchoolName,
+                            style = VTypography.caption.copy(color = Color.White).copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                    }
                 } else {
                     Text(
                         text = appString(StringKeys.IDCARD_ID_CARD),
@@ -566,6 +641,7 @@ private fun buildConfigJson(fields: Set<String>, accentArgb: Int): String {
 private fun TemplateCard(
     template: IdCardTemplateDto,
     onDeactivate: () -> Unit,
+    enabled: Boolean = true,
 ) {
         VCard(
         modifier = Modifier
@@ -578,12 +654,15 @@ private fun TemplateCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(template.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(
+                    template.name,
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = if (enabled) VColors.ink else VColors.ink3),
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     VBadge(
                         text = template.roleType.replaceFirstChar { it.uppercase() },
-                        tone = VBadgeTone.Accent,
+                        tone = if (enabled) VBadgeTone.Accent else VBadgeTone.Neutral,
                     )
                     if (template.isActive) {
                         VBadge(text = appString(StringKeys.IDCARD_ACTIVE), tone = VBadgeTone.Success, leadingIcon = Icons.Filled.Check)
@@ -592,7 +671,7 @@ private fun TemplateCard(
                     }
                 }
             }
-            if (template.isActive) {
+            if (enabled && template.isActive) {
                 VButton(
                     text = appString(StringKeys.IDCARD_DEACTIVATE),
                     onClick = onDeactivate,

@@ -787,7 +787,7 @@ fun Route.schoolStudentsRouting() {
                                         s.rollNumber.lowercase().contains(q) ||
                                         s.studentCode.lowercase().contains(q))
                             }
-                            .map { enrichStudentForList(ctx.schoolId, it) }
+                            .let { batch -> StudentAggregationService.batchEnrichForList(ctx.schoolId, batch) }
 
                         StudentListPaginatedResponse(
                             students = students,
@@ -813,7 +813,7 @@ fun Route.schoolStudentsRouting() {
                                         s.rollNumber.lowercase().contains(q) ||
                                         s.studentCode.lowercase().contains(q))
                             }
-                            .map { enrichStudentForList(ctx.schoolId, it) }
+                            .let { batch -> StudentAggregationService.batchEnrichForList(ctx.schoolId, batch) }
                     }
                     call.ok(StudentListResponse(students), message = "Students fetched")
                 }

@@ -93,6 +93,7 @@ fun SkillTestCard(
         onSubmitAnswer = { qId, answer -> viewModel.submitAnswer(qId, answer) },
         onNext = { viewModel.nextQuestion() },
         onPrevious = { viewModel.previousQuestion() },
+        onSeeResults = { viewModel.seeResults() },
         onReset = { viewModel.resetTest() },
         onRetryEligibility = { viewModel.loadEligibility(childId) },
     )
@@ -105,6 +106,7 @@ private fun SkillTestCardContent(
     onSubmitAnswer: (String, String) -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onSeeResults: () -> Unit,
     onReset: () -> Unit,
     onRetryEligibility: () -> Unit,
 ) {
@@ -154,6 +156,7 @@ private fun SkillTestCardContent(
                     onSubmitAnswer = onSubmitAnswer,
                     onNext = onNext,
                     onPrevious = onPrevious,
+                    onSeeResults = onSeeResults,
                 )
             }
 
@@ -332,6 +335,7 @@ private fun SkillTestInProgress(
     onSubmitAnswer: (String, String) -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onSeeResults: () -> Unit,
 ) {
     val question = state.currentQuestion
     if (question == null) {
@@ -439,16 +443,34 @@ private fun SkillTestInProgress(
         Text(it, style = VTypography.caption, color = VColors.error)
     }
 
-    // Navigation (only show after answering, before last question)
+    // Navigation buttons — Back (if not first), Next (if answered and not last), See Results (if last and answered)
     val isAnswered = question.id in state.answeredQuestions
-    if (isAnswered && !state.isSubmittingAnswer && state.currentQuestionIndex < state.totalQuestions - 1) {
-        Spacer(Modifier.height(12.dp))
-        VButton("Next Question", onClick = onNext, modifier = Modifier.fillMaxWidth())
-    }
-    if (state.currentQuestionIndex > 0 && !isAnswered) {
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
+    val isLastQuestion = state.currentQuestionIndex >= state.totalQuestions - 1
+    val showNext = isAnswered && !state.isSubmittingAnswer && !isLastQuestion
+    val showSeeResults = isAnswered && !state.isSubmittingAnswer && isLastQuestion
+    val showBack = state.currentQuestionIndex > 0 && !state.isSubmittingAnswer
+    if (showBack || showNext || showSeeResults) {
+        Spacer(Modifier.height(16.dp))
+        if (showSeeResults) {
+            // See Results is a full-width primary action — give it its own line
+            if (showBack) {
+                VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
+                Spacer(Modifier.height(8.dp))
+            }
+            VButton("See Results", onClick = onSeeResults, modifier = Modifier.fillMaxWidth())
+        } else {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = if (showBack && showNext) Arrangement.SpaceBetween else if (showBack) Arrangement.Start else Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (showBack) {
+                    VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
+                }
+                if (showNext) {
+                    VButton("Next Question", onClick = onNext)
+                }
+            }
         }
     }
 }
@@ -567,7 +589,12 @@ private fun SkillTestOptionRow(
             .clip(VShapes.sm)
             .background(bg)
             .border(1.dp, border, VShapes.sm)
-            .clickable(enabled = enabled, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+            .clickable(
+                enabled = enabled,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),

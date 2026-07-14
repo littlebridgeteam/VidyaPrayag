@@ -15,8 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -171,24 +170,26 @@ private fun StudentProfileContent(
             skeleton = { SkeletonProfile() },
         ) {
             val p = state.profile ?: return@VStateHost
-            StudentProfileBody(p)
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                StudentProfileBody(p)
 
-            if (onOpenHealth != null) {
+                if (onOpenHealth != null) {
+                    VSectionHeader(title = appString(StringKeys.SCH_HEALTH_RECORDS))
+                    VActionCard(
+                        title = appString(StringKeys.SCH_HEALTH_RECORDS),
+                        subtitle = appString(StringKeys.SCH_HEALTH_RECORDS_DESC),
+                        icon = VIcons.Heart,
+                        onClick = { onOpenHealth(p.student.id, p.student.fullName) },
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
-                VActionCard(
-                    title = appString(StringKeys.SCH_HEALTH_RECORDS),
-                    subtitle = appString(StringKeys.SCH_HEALTH_RECORDS_DESC),
-                    icon = VIcons.Heart,
-                    onClick = { onOpenHealth(p.student.id, p.student.fullName) },
+                DangerZone(
+                    isRemoving = state.isRemoving,
+                    removeError = state.removeError,
+                    onRequestRemove = { confirmRemove = true },
                 )
             }
-
-            Spacer(Modifier.height(8.dp))
-            DangerZone(
-                isRemoving = state.isRemoving,
-                removeError = state.removeError,
-                onRequestRemove = { confirmRemove = true },
-            )
         }
     }
 
@@ -290,8 +291,11 @@ private fun KpiCarousel(p: StudentProfileDto) {
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(kpis) { kpi -> KpiCard(kpi) }
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            kpis.forEach { kpi -> KpiCard(kpi) }
         }
     }
 }
@@ -347,8 +351,11 @@ private fun TeacherConnections(teachers: List<StudentTeacherDto>) {
         if (teachers.isEmpty()) {
             EmptyCard(VIcons.Users, appString(StringKeys.SCH_NO_TEACHERS_CONNECTED))
         } else {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(teachers) { t -> TeacherConnectionCard(t) }
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                teachers.forEach { t -> TeacherConnectionCard(t) }
             }
         }
     }

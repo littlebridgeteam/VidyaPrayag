@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.ui.v2.screens.school
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -14,7 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,14 +39,10 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 internal val BRANDING_PRESET_COLORS = listOf(
-    "#2563EB",
-    "#7C3AED",
-    "#059669",
-    "#DC2626",
-    "#EA580C",
-    "#D97706",
-    "#0891B2",
-    "#4F46E5",
+    "#2563EB", "#7C3AED", "#059669", "#DC2626",
+    "#EA580C", "#D97706", "#0891B2", "#4F46E5",
+    "#0D9488", "#BE185D", "#1E40AF", "#9333EA",
+    "#16A34A", "#E11D48", "#F59E0B", "#0EA5E9",
 )
 
 private val SUBDOMAIN_REGEX = Regex("^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$")
@@ -564,6 +563,7 @@ internal fun BrandingColorPickerSection(
 ) {
         var hexInput by remember(currentColor) { mutableStateOf(currentColor) }
     val parsedColor = parseBrandingHexColor(hexInput)
+    var showSlider by remember { mutableStateOf(false) }
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -578,35 +578,52 @@ internal fun BrandingColorPickerSection(
                 Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(parsedColor)
-                        .border(2.dp, VColors.line, CircleShape),
+                        .border(2.dp, VColors.line, CircleShape)
+                        .clickable { showSlider = !showSlider },
                 )
             }
 
-            // Preset swatches
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                BRANDING_PRESET_COLORS.forEach { hex ->
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(parseBrandingHexColor(hex))
-                            .border(
-                                width = if (hex.equals(hexInput, ignoreCase = true)) 3.dp else 0.dp,
-                                color = VColors.ink,
-                                shape = CircleShape,
-                            )
-                            .clickable {
-                                hexInput = hex
-                                onColorSelected(hex)
-                            },
-                    )
+            // Expanded preset swatches — 2 rows of 8
+            val chunked = BRANDING_PRESET_COLORS.chunked(8)
+            chunked.forEach { rowColors ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    rowColors.forEach { hex ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .clip(CircleShape)
+                                .background(parseBrandingHexColor(hex))
+                                .border(
+                                    width = if (hex.equals(hexInput, ignoreCase = true)) 3.dp else 0.dp,
+                                    color = VColors.ink,
+                                    shape = CircleShape,
+                                )
+                                .clickable {
+                                    hexInput = hex
+                                    onColorSelected(hex)
+                                    showSlider = false
+                                },
+                        )
+                    }
                 }
+            }
+
+            // Hue slider — tap the color circle to toggle
+            if (showSlider) {
+                HueSliderBar(
+                    currentHex = hexInput,
+                    onColorSelected = { hex ->
+                        hexInput = hex
+                        onColorSelected(hex)
+                    },
+                )
             }
 
             // Hex input
@@ -625,6 +642,162 @@ internal fun BrandingColorPickerSection(
             )
         }
     }
+}
+
+@Composable
+private fun HueSliderBar(
+    currentHex: String,
+    onColorSelected: (String) -> Unit,
+) {
+    val hue = remember(currentHex) {
+        val rgb = parseBrandingHexColor(currentHex)
+        val max = maxOf(rgb.red, rgb.green, rgb.blue)
+        val min = minOf(rgb.red, rgb.green, rgb.blue)
+        val delta = max - min
+        if (delta == 0f) 0f
+        else {
+            val h = when (max) {
+                rgb.red -> 60f * (((rgb.green - rgb.blue) / delta) % 6f)
+                rgb.green -> 60f * (((rgb.blue - rgb.red) / delta) + 2f)
+                else -> 60f * (((rgb.red - rgb.green) / delta) + 4f)
+            }
+            if (h < 0f) h + 360f else h
+        }
+    }
+    var sliderHue by remember { mutableStateOf(hue) }
+    var sliderSat by remember { mutableStateOf(0.8f) }
+    var sliderValue by remember { mutableStateOf(0.9f) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Hue slider with indicator
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(28.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        colorStops = arrayOf(
+                            0f to Color(0xFFFF0000),
+                            0.167f to Color(0xFFFFFF00),
+                            0.333f to Color(0xFF00FF00),
+                            0.5f to Color(0xFF00FFFF),
+                            0.667f to Color(0xFF0000FF),
+                            0.833f to Color(0xFFFF00FF),
+                            1f to Color(0xFFFF0000),
+                        )
+                    )
+                )
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val w = size.width.toFloat()
+                            sliderHue = (offset.x / w).coerceIn(0f, 1f) * 360f
+                            onColorSelected(hsvToHex(sliderHue, sliderSat, sliderValue))
+                        },
+                        onDrag = { change, _ ->
+                            val w = size.width.toFloat()
+                            sliderHue = (change.position.x / w).coerceIn(0f, 1f) * 360f
+                            onColorSelected(hsvToHex(sliderHue, sliderSat, sliderValue))
+                        },
+                    )
+                },
+        ) {
+            val indicatorOffset = maxWidth * (sliderHue / 360f) - 14.dp
+            Box(
+                modifier = Modifier
+                    .offset(x = indicatorOffset)
+                    .align(Alignment.CenterStart)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .border(2.dp, Color.Black, CircleShape),
+            )
+        }
+
+        // Saturation slider
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        colorStops = arrayOf(
+                            0f to Color.White,
+                            1f to hsvToColor(sliderHue, 1f, sliderValue),
+                        )
+                    )
+                )
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val w = size.width.toFloat()
+                            sliderSat = (offset.x / w).coerceIn(0f, 1f)
+                            onColorSelected(hsvToHex(sliderHue, sliderSat, sliderValue))
+                        },
+                        onDrag = { change, _ ->
+                            val w = size.width.toFloat()
+                            sliderSat = (change.position.x / w).coerceIn(0f, 1f)
+                            onColorSelected(hsvToHex(sliderHue, sliderSat, sliderValue))
+                        },
+                    )
+                },
+        )
+
+        // Value (brightness) slider
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        colorStops = arrayOf(
+                            0f to Color.Black,
+                            1f to hsvToColor(sliderHue, sliderSat, 1f),
+                        )
+                    )
+                )
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val w = size.width.toFloat()
+                            sliderValue = (offset.x / w).coerceIn(0f, 1f)
+                            onColorSelected(hsvToHex(sliderHue, sliderSat, sliderValue))
+                        },
+                        onDrag = { change, _ ->
+                            val w = size.width.toFloat()
+                            sliderValue = (change.position.x / w).coerceIn(0f, 1f)
+                            onColorSelected(hsvToHex(sliderHue, sliderSat, sliderValue))
+                        },
+                    )
+                },
+        )
+    }
+}
+
+private fun hsvToColor(h: Float, s: Float, v: Float): Color {
+    val c = v * s
+    val x = c * (1 - kotlin.math.abs((h / 60f) % 2 - 1))
+    val m = v - c
+    val (r, g, b) = when {
+        h < 60f -> Triple(c, x, 0f)
+        h < 120f -> Triple(x, c, 0f)
+        h < 180f -> Triple(0f, c, x)
+        h < 240f -> Triple(0f, x, c)
+        h < 300f -> Triple(x, 0f, c)
+        else -> Triple(c, 0f, x)
+    }
+    return Color(r + m, g + m, b + m)
+}
+
+private fun hsvToHex(h: Float, s: Float, v: Float): String {
+    val c = hsvToColor(h, s, v)
+    val r = (c.red * 255).toInt()
+    val g = (c.green * 255).toInt()
+    val b = (c.blue * 255).toInt()
+    return String.format("#%02X%02X%02X", r, g, b)
 }
 
 @Composable

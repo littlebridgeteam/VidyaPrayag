@@ -42,12 +42,13 @@ import com.littlebridge.enrollplus.ui.v2.navigation.parseDeepLink
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.discovery.AcademicCalendarScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationsScreenV2
+import com.littlebridge.enrollplus.ui.v2.screens.notifications.NotificationPreferencesScreenV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export }
+private enum class TeacherOverlay { None, Notifications, NotificationPreferences, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -229,6 +230,14 @@ fun TeacherPortalV2(
                     localDeepLink = parseDeepLink(deepLinkString, EntryRole.Teacher)
                     overlay = TeacherOverlay.None
                 },
+                onOpenPreferences = { overlay = TeacherOverlay.NotificationPreferences },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.NotificationPreferences -> {
+            NotificationPreferencesScreenV2(
+                onBack = { overlay = TeacherOverlay.None },
                 modifier = modifier,
             )
             return

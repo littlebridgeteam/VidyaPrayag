@@ -124,6 +124,13 @@ object GamificationService {
         }
     }
 
+    private val granularFlagKeys = setOf(
+        "gamification_leaderboards", "gamification_rewards", "gamification_houses",
+        "gamification_quests", "gamification_mentor", "gamification_shoutouts",
+        "gamification_events", "gamification_class_goals", "gamification_combos",
+        "gamification_boosts"
+    )
+
     suspend fun setGamificationEnabled(enabled: Boolean): Boolean = dbQuery {
         val flagsRow = AppConfigTable.selectAll()
             .firstOrNull { it[AppConfigTable.key] == "flags" }
@@ -142,6 +149,30 @@ object GamificationService {
             true
         } catch (e: Exception) {
             logger.error("Failed to set gamification flag: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun setGranularFlag(flagKey: String, enabled: Boolean): Boolean = dbQuery {
+        val dbKey = "gamification_" + flagKey.replace("gamification_", "")
+        if (dbKey !in granularFlagKeys) return@dbQuery false
+        val flagsRow = AppConfigTable.selectAll()
+            .firstOrNull { it[AppConfigTable.key] == "flags" }
+            ?: return@dbQuery false
+        val flagsJson = flagsRow[AppConfigTable.value]
+        try {
+            val parsed = json.parseToJsonElement(flagsJson) as JsonObject
+            val updated = JsonObject(parsed.toMutableMap().apply {
+                this[dbKey] = kotlinx.serialization.json.JsonPrimitive(enabled)
+            })
+            AppConfigTable.update({ AppConfigTable.key eq "flags" }) {
+                it[AppConfigTable.value] = json.encodeToString(JsonObject.serializer(), updated)
+                it[AppConfigTable.updatedAt] = Instant.now()
+            }
+            logger.info("Granular flag $dbKey set to: $enabled")
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to set granular flag $dbKey: ${e.message}")
             false
         }
     }

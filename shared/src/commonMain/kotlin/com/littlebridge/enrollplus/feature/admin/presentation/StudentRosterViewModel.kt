@@ -59,35 +59,40 @@ class StudentRosterViewModel(
     fun load() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) {
-                _state.value = _state.value.copy(isLoading = false, error = "You are not signed in. Please log in again.")
-                return@launch
-            }
-            val studentsResult = repository.getStudents(token)
-            val countResult = linkRequestsRepository.getLinkRequestCount(token)
-            val count = when (countResult) {
-                is NetworkResult.Success -> countResult.data.data?.let { it.pending + it.needsReview } ?: 0
-                else -> 0
-            }
-            when (studentsResult) {
-                is NetworkResult.Success -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        error = null,
-                        students = studentsResult.data.data?.students.orEmpty(),
-                        linkRequestCount = count,
-                        isStale = studentsResult.isStale,
-                        isOffline = studentsResult.isOffline,
-                    )
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) {
+                    _state.value = _state.value.copy(isLoading = false, error = "You are not signed in. Please log in again.")
+                    return@launch
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("StudentRosterVM", "getStudents error: ${studentsResult.message}")
-                    _state.value = _state.value.copy(isLoading = false, error = studentsResult.message, linkRequestCount = count)
+                val studentsResult = repository.getStudents(token)
+                val countResult = linkRequestsRepository.getLinkRequestCount(token)
+                val count = when (countResult) {
+                    is NetworkResult.Success -> countResult.data.data?.let { it.pending + it.needsReview } ?: 0
+                    else -> 0
                 }
-                is NetworkResult.ConnectionError -> {
-                    _state.value = _state.value.copy(isLoading = false, error = "Connection error. Check your internet.", linkRequestCount = count)
+                when (studentsResult) {
+                    is NetworkResult.Success -> {
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = null,
+                            students = studentsResult.data.data?.students.orEmpty(),
+                            linkRequestCount = count,
+                            isStale = studentsResult.isStale,
+                            isOffline = studentsResult.isOffline,
+                        )
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("StudentRosterVM", "getStudents error: ${studentsResult.message}")
+                        _state.value = _state.value.copy(isLoading = false, error = studentsResult.message, linkRequestCount = count)
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        _state.value = _state.value.copy(isLoading = false, error = "Connection error. Check your internet.", linkRequestCount = count)
+                    }
                 }
+            } catch (e: Exception) {
+                AppLogger.e("StudentRosterVM", "load() exception", e)
+                _state.value = _state.value.copy(isLoading = false, error = e.message ?: "Failed to load students")
             }
         }
     }

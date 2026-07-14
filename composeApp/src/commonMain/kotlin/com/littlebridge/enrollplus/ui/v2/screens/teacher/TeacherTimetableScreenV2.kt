@@ -469,7 +469,7 @@ private fun PeriodTimelineCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(VIcons.MapPin, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
                     Text(
-                        appString(StringKeys.TC_ROOM_N, "n" to period.room),
+                        appString(StringKeys.TC_ROOM_N, "room" to period.room),
                         style = VTypography.caption.copy(color = VColors.ink3),
                     )
                 }
@@ -631,7 +631,7 @@ private fun ChangeRequestSheet(
                     VCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("${period.className}-${period.section} ${period.subject}", style = VTypography.body.copy(color = VColors.ink))
-                            Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "n" to period.room)}", style = VTypography.caption.copy(color = VColors.ink2))
+                            Text("${period.startTime}–${period.endTime} · ${appString(StringKeys.TC_ROOM_N, "room" to period.room)}", style = VTypography.caption.copy(color = VColors.ink2))
                         }
                     }
                 }

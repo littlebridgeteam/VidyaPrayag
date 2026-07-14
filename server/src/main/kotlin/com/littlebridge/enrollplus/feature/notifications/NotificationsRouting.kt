@@ -49,6 +49,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Serializable
@@ -99,7 +100,11 @@ fun Route.notificationsRouting() {
                                 category = row[NotificationsTable.category],
                                 title = row[NotificationsTable.title],
                                 body = row[NotificationsTable.body],
-                                time = row[NotificationsTable.createdAt].toString(),
+                                time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+                                    row[NotificationsTable.createdAt].let { ts ->
+                                        java.time.LocalDateTime.ofInstant(ts, java.time.ZoneOffset.UTC)
+                                    }
+                                ),
                                 unread = !row[NotificationsTable.isRead],
                                 deepLink = row[NotificationsTable.deepLink],
                                 refType = row[NotificationsTable.refType],

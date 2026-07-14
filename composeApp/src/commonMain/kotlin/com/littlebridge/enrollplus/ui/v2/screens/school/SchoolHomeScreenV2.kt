@@ -39,6 +39,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -162,6 +164,7 @@ fun SchoolHomeScreenV2(
     onOpenReportEffectiveness: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
     onCreateEvent: () -> Unit = {},
+    onOpenApprovals: () -> Unit = {},
     onOpenPinnedScreen: (String) -> Unit = {},
     onExit: () -> Unit = {},
     viewModel: SchoolDashboardViewModel = koinViewModel(),
@@ -261,6 +264,7 @@ fun SchoolHomeScreenV2(
                     onOpenReportPublish = onOpenReportPublish,
                     onOpenEvents = onOpenEvents,
                     onCreateEvent = onCreateEvent,
+                    onOpenApprovals = onOpenApprovals,
                     onOpenPinnedScreen = onOpenPinnedScreen,
                     onOpenCommandPalette = { commandPaletteVisible = true },
                     onUnpin = pinnedVm::unpin,
@@ -349,6 +353,7 @@ private fun CommandDesk(
     onOpenReportPublish: () -> Unit,
     onOpenEvents: () -> Unit,
     onCreateEvent: () -> Unit,
+    onOpenApprovals: () -> Unit,
     onOpenPinnedScreen: (String) -> Unit,
     onOpenCommandPalette: () -> Unit,
     onUnpin: (String) -> Unit,
@@ -381,7 +386,7 @@ private fun CommandDesk(
         )
 
         QuickShortcuts(
-            onAnnouncement = onOpenNotifications,
+            onAnnouncement = onCreateEvent,
             onEvent = onCreateEvent,
             onReports = onOpenReportPublish,
             onCalendar = onOpenCalendar,
@@ -390,7 +395,7 @@ private fun CommandDesk(
 
         val kpis = overview.kpis.filter { it.available }
         if (kpis.isNotEmpty()) {
-            KpiMiniCardGrid(kpis = kpis, onClick = onOpenAnalytics)
+            KpiMiniCardGrid(kpis = kpis, onClick = onOpenAnalytics, onOpenApprovals = onOpenApprovals)
         }
 
         val insights = overview.insights
@@ -480,7 +485,34 @@ private fun HomeHero(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // School logo — surfaces configured branding in the home header.
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(VTheme.colors.card)
+                    .border(1.dp, VTheme.colors.border1.copy(alpha = 0.5f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!header.logoUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = header.logoUrl,
+                        contentDescription = schoolName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Icon(
+                        imageVector = VIcons.School,
+                        contentDescription = schoolName,
+                        tint = VTheme.colors.ink3,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "$greeting, $name",
@@ -495,6 +527,8 @@ private fun HomeHero(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
+
+            // Notification bell overlaid on the admin avatar (if configured).
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -507,12 +541,34 @@ private fun HomeHero(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = VIcons.Bell,
-                    contentDescription = "Notifications",
-                    tint = VTheme.colors.ink,
-                    modifier = Modifier.size(22.dp),
-                )
+                if (!header.adminAvatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = header.adminAvatarUrl,
+                        contentDescription = "Admin profile",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(VTheme.colors.ink.copy(alpha = 0.25f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = VIcons.Bell,
+                            contentDescription = "Notifications",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = VIcons.Bell,
+                        contentDescription = "Notifications",
+                        tint = VTheme.colors.ink,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
                 if (unreadCount > 0) {
                     VBadge(
                         text = unreadCount.coerceAtMost(99).toString(),
@@ -840,7 +896,7 @@ private fun ShortcutChip(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun KpiMiniCardGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
+private fun KpiMiniCardGrid(kpis: List<OverviewKpi>, onClick: () -> Unit, onOpenApprovals: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -854,7 +910,8 @@ private fun KpiMiniCardGrid(kpis: List<OverviewKpi>, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 row.forEach { kpi ->
-                    KpiMiniCard(kpi = kpi, onClick = onClick, modifier = Modifier.weight(1f))
+                    val onKpiClick = if (kpi.key == "approvals") onOpenApprovals else onClick
+                    KpiMiniCard(kpi = kpi, onClick = onKpiClick, modifier = Modifier.weight(1f))
                 }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
@@ -967,7 +1024,7 @@ private fun PremiumCard(
         interactionSource = remember { MutableInteractionSource() },
         indication = null,
     ) { onClick() } else base
-    Column(modifier = clickable.padding(16.dp)) { content() }
+    Column(modifier = clickable.fillMaxWidth().padding(16.dp)) { content() }
 }
 
 @Composable
@@ -1236,7 +1293,7 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
 private fun TeacherSpotlightCard(ts: OverviewTeacherSpotlight, onClick: () -> Unit) {
     PremiumCard(
         onClick = onClick,
-        modifier = Modifier.padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
     ) {
         CardHeader("Teacher Spotlight", VIcons.GraduationCap)
         Spacer(Modifier.height(12.dp))

@@ -121,6 +121,7 @@ fun MessagesScreenV2(
             isSending = state.isSending,
             onSend = viewModel::composeNew,
             onClose = viewModel::closeCompose,
+            onSearchQueryChange = viewModel::setSearchQuery,
             modifier = modifier.fillMaxSize(),
         )
         return
@@ -137,7 +138,7 @@ fun MessagesScreenV2(
         "Messages"
     }
 
-    Column(modifier.fillMaxSize().statusBarsPadding()) {
+    Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         VBackHeader(title = title, onBack = backHandler, pinRouteId = "overlay_messages")
 
         if (conversation.threadId != null) {
@@ -267,7 +268,7 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit, modifier: Modi
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    thread.lastMessage,
+                    thread.lastMessage.ifBlank { "No message yet" },
                     style = VTypography.body,
                     color = if (thread.isRead) VColors.ink3 else VColors.ink2,
                     maxLines = 1,
@@ -393,7 +394,7 @@ private fun ConversationContent(
             imagePreviewBytes = pickedImage?.first,
             imagePreviewName = pickedImage?.third ?: "",
             onRemoveImage = { pickedImage = null },
-            modifier = Modifier.imePadding().navigationBarsPadding(),
+            modifier = Modifier.imePadding(),
         )
     }
 }
@@ -429,13 +430,17 @@ private fun ComposeNewContent(
     isSending: Boolean,
     onSend: (String, String) -> Unit,
     onClose: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selected by remember { mutableStateOf<MessageRecipient?>(null) }
     var body by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
 
-    Column(modifier.statusBarsPadding().imePadding().navigationBarsPadding()) {
+    // BUG-023: Apply imePadding only to the bottom compose bar, NOT to the root Column.
+    // Applying it to the root caused double insets — the recipient list was pushed up
+    // while the compose bar still sat at the bottom edge behind the keyboard.
+    Column(modifier.statusBarsPadding()) {
         VBackHeader(title = "New message", onBack = onClose)
         Box(Modifier.weight(1f).fillMaxWidth()) {
             VStateHost(
@@ -460,7 +465,40 @@ private fun ComposeNewContent(
                             modifier = Modifier.padding(bottom = 8.dp),
                         )
                     }
-                    items(compose.candidates, key = { it.id }) { recipient ->
+                    // BUG-021: Search bar to filter recipients by name/subtitle.
+                    item {
+                        OutlinedTextField(
+                            value = compose.searchQuery,
+                            onValueChange = onSearchQueryChange,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            placeholder = {
+                                Text(
+                                    "Search teachers, staff, parents…",
+                                    style = VTypography.body,
+                                    color = VColors.ink3,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    VIcons.Search,
+                                    contentDescription = null,
+                                    tint = VColors.ink3,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = VColors.violet,
+                                unfocusedBorderColor = VColors.line,
+                                focusedContainerColor = VColors.cream,
+                                unfocusedContainerColor = VColors.cream,
+                                cursorColor = VColors.violet,
+                            ),
+                            textStyle = VTypography.body.copy(color = VColors.ink),
+                        )
+                    }
+                    items(compose.filteredCandidates, key = { it.id }) { recipient ->
                         RecipientRow(
                             recipient = recipient,
                             isSelected = selected?.id == recipient.id,
@@ -471,7 +509,8 @@ private fun ComposeNewContent(
             }
         }
 
-        // Premium compose bar (unified)
+        // BUG-023: Apply imePadding + navigationBarsPadding ONLY to the compose bar
+        // so it floats above the keyboard without double-insetting the content area.
         PremiumComposeBar(
             text = body,
             onTextChange = { body = it },
@@ -487,6 +526,7 @@ private fun ComposeNewContent(
                 }
             },
             onAttach = {},
+            modifier = Modifier.imePadding().navigationBarsPadding(),
         )
     }
 }

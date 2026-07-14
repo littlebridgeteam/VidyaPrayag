@@ -488,7 +488,11 @@ class AdminGamificationViewModel(
                 return@launch
             }
 
+            var hasError = false
+            var errorMsg: String? = null
+
             val flags = safeCall { repository.getFlags(token) }
+            if (flags == null) { hasError = true; errorMsg = "Failed to load gamification flags" }
             val badges = safeCall { repository.getBadgeDefinitions(token) }
             val levels = safeCall { repository.getLevelDefinitions(token) }
             val houses = safeCall { repository.getHouses(token) }
@@ -503,6 +507,7 @@ class AdminGamificationViewModel(
             _state.update {
                 it.copy(
                     isLoading = false,
+                    error = if (hasError) errorMsg else null,
                     flags = flags,
                     badgeDefinitions = badges ?: emptyList(),
                     levelDefinitions = levels ?: emptyList(),
@@ -537,6 +542,39 @@ class AdminGamificationViewModel(
                 )
             }
             load()
+        }
+    }
+
+    fun setGranularFlag(flagKey: String, enabled: Boolean) {
+        val currentFlags = _state.value.flags
+        if (currentFlags != null) {
+            val updated = when (flagKey) {
+                "gamification_leaderboards" -> currentFlags.copy(gamificationLeaderboards = enabled)
+                "gamification_rewards" -> currentFlags.copy(gamificationRewards = enabled)
+                "gamification_houses" -> currentFlags.copy(gamificationHouses = enabled)
+                "gamification_quests" -> currentFlags.copy(gamificationQuests = enabled)
+                "gamification_mentor" -> currentFlags.copy(gamificationMentor = enabled)
+                "gamification_shoutouts" -> currentFlags.copy(gamificationShoutouts = enabled)
+                "gamification_events" -> currentFlags.copy(gamificationEvents = enabled)
+                "gamification_class_goals" -> currentFlags.copy(gamificationClassGoals = enabled)
+                "gamification_combos" -> currentFlags.copy(gamificationCombos = enabled)
+                "gamification_boosts" -> currentFlags.copy(gamificationBoosts = enabled)
+                else -> currentFlags
+            }
+            _state.update { it.copy(flags = updated) }
+        }
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            val result = repository.setGranularFlag(token, flagKey, enabled)
+            _state.update {
+                it.copy(
+                    actionMessage = when (result) {
+                        is NetworkResult.Success -> "${flagKey.removePrefix("gamification_").replaceFirstChar { it.uppercase() }} ${if (enabled) "enabled" else "disabled"}"
+                        else -> "Failed to update ${flagKey.removePrefix("gamification_")}"
+                    },
+                )
+            }
+            if (result !is NetworkResult.Success) load()
         }
     }
 

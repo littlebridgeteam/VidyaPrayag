@@ -61,31 +61,37 @@ class SchoolTeachersViewModel(
     fun load() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, errorMessage = null)
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) {
-                _state.value = _state.value.copy(isLoading = false, errorMessage = "Not signed in")
-                return@launch
-            }
-            when (val result = repository.getTeachers(token, page = 1, pageSize = TEACHERS_PAGE_SIZE)) {
-                is NetworkResult.Success -> {
-                    val body = result.data.data
-                    _state.value = _state.value.copy(
-                        teachers = body?.teachers.orEmpty(),
-                        isLoading = false,
-                        page = body?.pagination?.page ?: 1,
-                        hasNext = body?.pagination?.hasNext ?: false,
-                        totalRecords = body?.pagination?.totalRecords ?: 0,
-                        isStale = result.isStale,
-                        isOffline = result.isOffline,
-                    )
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) {
+                    _state.value = _state.value.copy(isLoading = false, errorMessage = "Not signed in")
+                    return@launch
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("SchoolTeachersVM", "getTeachers error: ${result.message}")
-                    _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                when (val result = repository.getTeachers(token, page = 1, pageSize = TEACHERS_PAGE_SIZE)) {
+                    is NetworkResult.Success -> {
+                        val body = result.data.data
+                        _state.value = _state.value.copy(
+                            teachers = body?.teachers.orEmpty(),
+                            isLoading = false,
+                            errorMessage = null,
+                            page = body?.pagination?.page ?: 1,
+                            hasNext = body?.pagination?.hasNext ?: false,
+                            totalRecords = body?.pagination?.totalRecords ?: 0,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("SchoolTeachersVM", "getTeachers error: ${result.message}")
+                        _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        _state.value = _state.value.copy(isLoading = false, errorMessage = "Connection error. Check your internet.")
+                    }
                 }
-                is NetworkResult.ConnectionError -> {
-                    _state.value = _state.value.copy(isLoading = false, errorMessage = "Connection error. Check your internet.")
-                }
+            } catch (e: Exception) {
+                AppLogger.e("SchoolTeachersVM", "load() exception", e)
+                _state.value = _state.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load teachers")
             }
         }
     }
@@ -97,35 +103,40 @@ class SchoolTeachersViewModel(
         if (current.isLoading || current.isLoadingMore || !current.hasNext) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoadingMore = true, errorMessage = null)
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) {
-                _state.value = _state.value.copy(isLoadingMore = false, errorMessage = "Not signed in")
-                return@launch
-            }
-            val nextPage = current.page + 1
-            when (val result = repository.getTeachers(token, page = nextPage, pageSize = TEACHERS_PAGE_SIZE)) {
-                is NetworkResult.Success -> {
-                    val body = result.data.data
-                    // De-dupe by id in case a mutation shifted the page window.
-                    val merged = (current.teachers + body?.teachers.orEmpty())
-                        .distinctBy { it.id }
-                    _state.value = _state.value.copy(
-                        teachers = merged,
-                        isLoadingMore = false,
-                        page = body?.pagination?.page ?: nextPage,
-                        hasNext = body?.pagination?.hasNext ?: false,
-                        totalRecords = body?.pagination?.totalRecords ?: current.totalRecords,
-                        isStale = result.isStale,
-                        isOffline = result.isOffline,
-                    )
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) {
+                    _state.value = _state.value.copy(isLoadingMore = false, errorMessage = "Not signed in")
+                    return@launch
                 }
-                is NetworkResult.Error -> {
-                    AppLogger.e("SchoolTeachersVM", "getTeachers(loadMore) error: ${result.message}")
-                    _state.value = _state.value.copy(isLoadingMore = false, errorMessage = result.message)
+                val nextPage = current.page + 1
+                when (val result = repository.getTeachers(token, page = nextPage, pageSize = TEACHERS_PAGE_SIZE)) {
+                    is NetworkResult.Success -> {
+                        val body = result.data.data
+                        // De-dupe by id in case a mutation shifted the page window.
+                        val merged = (current.teachers + body?.teachers.orEmpty())
+                            .distinctBy { it.id }
+                        _state.value = _state.value.copy(
+                            teachers = merged,
+                            isLoadingMore = false,
+                            page = body?.pagination?.page ?: nextPage,
+                            hasNext = body?.pagination?.hasNext ?: false,
+                            totalRecords = body?.pagination?.totalRecords ?: current.totalRecords,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("SchoolTeachersVM", "getTeachers(loadMore) error: ${result.message}")
+                        _state.value = _state.value.copy(isLoadingMore = false, errorMessage = result.message)
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        _state.value = _state.value.copy(isLoadingMore = false, errorMessage = "Connection error. Check your internet.")
+                    }
                 }
-                is NetworkResult.ConnectionError -> {
-                    _state.value = _state.value.copy(isLoadingMore = false, errorMessage = "Connection error. Check your internet.")
-                }
+            } catch (e: Exception) {
+                AppLogger.e("SchoolTeachersVM", "loadMore() exception", e)
+                _state.value = _state.value.copy(isLoadingMore = false, errorMessage = e.message ?: "Failed to load more teachers")
             }
         }
     }

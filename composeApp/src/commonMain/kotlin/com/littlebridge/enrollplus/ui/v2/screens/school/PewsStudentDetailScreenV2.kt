@@ -176,7 +176,7 @@ private fun HeaderCard(s: PewsStudentDto) {
                 Text(s.name, style = VTypography.h3.copy(color = VColors.ink))
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Class ${s.className}${if (s.section.isNotBlank()) "-${s.section}" else ""}",
+                    "Class ${s.className.removePrefix("Class ").removePrefix("class ")}${if (s.section.isNotBlank()) "-${s.section}" else ""}",
                     style = VTypography.caption.copy(color = VColors.ink3),
                 )
             }

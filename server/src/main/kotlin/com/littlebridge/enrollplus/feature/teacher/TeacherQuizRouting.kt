@@ -385,7 +385,8 @@ fun Route.teacherQuizRouting() {
                         it[AnnouncementsTable.type] = "Special"
                         it[AnnouncementsTable.title] = "New Quiz: ${quizTitle.ifBlank { "Quiz" }}"
                         it[AnnouncementsTable.subTitle] = subjectName
-                        it[AnnouncementsTable.description] = "A new quiz has been published for $subjectName${if (className.isNotBlank()) " - Class $className" else ""}. Check the Academics > Quizzes tab to attempt it."
+                        val cleanClass = className.removePrefix("Class ").removePrefix("class ")
+                        it[AnnouncementsTable.description] = "A new quiz has been published for $subjectName${if (cleanClass.isNotBlank()) " - Class $cleanClass" else ""}. Check the Academics > Quizzes tab to attempt it."
                         it[AnnouncementsTable.date] = now.toString().take(10)
                         it[AnnouncementsTable.audienceType] = "CLASS"
                         it[AnnouncementsTable.audienceFilter] = """{"class_name":"$className","subject":"$subjectName"}"""
@@ -405,7 +406,7 @@ fun Route.teacherQuizRouting() {
                         userIds = parents,
                         category = "quiz",
                         title = "New Quiz: ${quizTitle.ifBlank { "Quiz" }}",
-                        body = "A new quiz has been published for $subjectName${if (className.isNotBlank()) " - Class $className" else ""}. Check Academics > Quizzes to attempt it.",
+                        body = "A new quiz has been published for $subjectName${if (className.removePrefix("Class ").removePrefix("class ").isNotBlank()) " - Class ${className.removePrefix("Class ").removePrefix("class ")}" else ""}. Check Academics > Quizzes to attempt it.",
                         schoolId = ctx.schoolId,
                         actorId = ctx.userId,
                         deepLink = "/parent/academics/quizzes",

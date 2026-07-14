@@ -100,15 +100,57 @@ fun AdminGamificationScreenV2(
             ) {
                 CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
             }
+        } else if (state.error != null && state.flags == null) {
+            val errorMsg = state.error ?: ""
+            Column(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(VIcons.AlertTriangle, contentDescription = null, tint = VColors.error, modifier = Modifier.size(40.dp))
+                Spacer(Modifier.height(12.dp))
+                Text(errorMsg, style = VTypography.body, color = VColors.ink2)
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(VShapes.md)
+                        .background(VColors.violet)
+                        .clickable { viewModel.load() }
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                ) {
+                    Text("Retry", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                }
+            }
         } else {
-            LazyColumn(
+            val isEmpty = state.flags == null &&
+                state.badgeDefinitions.isEmpty() &&
+                state.levelDefinitions.isEmpty() &&
+                state.houses.isEmpty() &&
+                state.rewards.isEmpty() &&
+                state.quests.isEmpty() &&
+                state.events.isEmpty() &&
+                state.leaderboard.isEmpty()
+            if (isEmpty) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(40.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Text("No gamification data yet", style = VTypography.body, color = VColors.ink2)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Configure feature flags and create badges, levels, and rewards to get started.", style = VTypography.caption, color = VColors.ink3)
+                }
+            } else {
+                LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
                     start = 24.dp, end = 24.dp, top = 8.dp, bottom = 100.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                item { FeatureFlagsCard(state = state, onToggle = viewModel::setEnabled) }
+                item { FeatureFlagsCard(state = state, onToggle = viewModel::setEnabled, onGranularToggle = viewModel::setGranularFlag) }
                 item { AnalyticsCard(state = state) }
                 item { BadgeDefinitionsCard(badges = state.badgeDefinitions) }
                 item { LevelDefinitionsCard(levels = state.levelDefinitions) }
@@ -119,6 +161,7 @@ fun AdminGamificationScreenV2(
                 item { LeaderboardCard(leaderboard = state.leaderboard) }
                 item { RedemptionsCard(state = state, onApprove = { id -> viewModel.updateRedemptionStatus(id, "APPROVED") }, onReject = { id -> viewModel.updateRedemptionStatus(id, "REJECTED") }) }
                 item { BoostsCard(state = state, onCreateBoost = { type, mult, scope, tid, hrs -> viewModel.createBoost(type, mult, scope, tid, hrs) }) }
+            }
             }
         }
     }
@@ -186,7 +229,11 @@ private fun AdminCard(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun FeatureFlagsCard(state: AdminGamificationState, onToggle: (Boolean) -> Unit) {
+private fun FeatureFlagsCard(
+    state: AdminGamificationState,
+    onToggle: (Boolean) -> Unit,
+    onGranularToggle: (String, Boolean) -> Unit,
+) {
     val flags = state.flags
     AdminCard(title = "Feature Flags") {
         if (flags == null) {
@@ -202,16 +249,16 @@ private fun FeatureFlagsCard(state: AdminGamificationState, onToggle: (Boolean) 
         if (flags.isGamificationEnabled) {
             Spacer(Modifier.height(4.dp))
             Text("Granular Toggles", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-            FlagToggleRow("Leaderboards", "Class & school rankings", flags.gamificationLeaderboards)
-            FlagToggleRow("Rewards Shop", "Spend XP on real rewards", flags.gamificationRewards)
-            FlagToggleRow("House System", "Guilds & collective competition", flags.gamificationHouses)
-            FlagToggleRow("Quests", "Daily, weekly & seasonal quests", flags.gamificationQuests)
-            FlagToggleRow("Mentor System", "Peer mentor & study buddy", flags.gamificationMentor)
-            FlagToggleRow("Shout-Outs", "Peer encouragement", flags.gamificationShoutouts)
-            FlagToggleRow("Seasonal Events", "Limited-edition badges", flags.gamificationEvents)
-            FlagToggleRow("Class Goals", "Collective rewards", flags.gamificationClassGoals)
-            FlagToggleRow("Combos", "Consecutive activity multipliers", flags.gamificationCombos)
-            FlagToggleRow("XP Boosts", "Time-limited multipliers", flags.gamificationBoosts)
+            FlagToggleRow("Leaderboards", "Class & school rankings", flags.gamificationLeaderboards) { onGranularToggle("gamification_leaderboards", it) }
+            FlagToggleRow("Rewards Shop", "Spend XP on real rewards", flags.gamificationRewards) { onGranularToggle("gamification_rewards", it) }
+            FlagToggleRow("House System", "Guilds & collective competition", flags.gamificationHouses) { onGranularToggle("gamification_houses", it) }
+            FlagToggleRow("Quests", "Daily, weekly & seasonal quests", flags.gamificationQuests) { onGranularToggle("gamification_quests", it) }
+            FlagToggleRow("Mentor System", "Peer mentor & study buddy", flags.gamificationMentor) { onGranularToggle("gamification_mentor", it) }
+            FlagToggleRow("Shout-Outs", "Peer encouragement", flags.gamificationShoutouts) { onGranularToggle("gamification_shoutouts", it) }
+            FlagToggleRow("Seasonal Events", "Limited-edition badges", flags.gamificationEvents) { onGranularToggle("gamification_events", it) }
+            FlagToggleRow("Class Goals", "Collective rewards", flags.gamificationClassGoals) { onGranularToggle("gamification_class_goals", it) }
+            FlagToggleRow("Combos", "Consecutive activity multipliers", flags.gamificationCombos) { onGranularToggle("gamification_combos", it) }
+            FlagToggleRow("XP Boosts", "Time-limited multipliers", flags.gamificationBoosts) { onGranularToggle("gamification_boosts", it) }
         }
     }
 }
@@ -229,8 +276,8 @@ private fun FlagToggleRow(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(label, style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium), color = VColors.ink)
-            Text(description, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+            Text(label, style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium), color = VColors.ink, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(description, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         Switch(
             checked = checked,
