@@ -35,7 +35,7 @@ import coil3.compose.AsyncImage
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-private val PRESET_COLORS = listOf(
+internal val BRANDING_PRESET_COLORS = listOf(
     "#2563EB",
     "#7C3AED",
     "#059669",
@@ -48,7 +48,7 @@ private val PRESET_COLORS = listOf(
 
 private val SUBDOMAIN_REGEX = Regex("^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$")
 
-private fun parseHexColor(hex: String): Color {
+internal fun parseBrandingHexColor(hex: String): Color {
     return try {
         val value = hex.removePrefix("#")
         if (value.length == 3) {
@@ -265,17 +265,17 @@ private fun BrandingSettingsContent(
 
                 // ── Color Pickers ──────────────────────────────────────────
                 Text(appString(StringKeys.BRAND_COLORS), style = VTypography.h3.copy(color = VColors.ink))
-                ColorPickerSection(
+                BrandingColorPickerSection(
                     label = appString(StringKeys.BRAND_PRIMARY_COLOR),
                     currentColor = primaryColor,
                     onColorSelected = { primaryColor = it },
                 )
-                ColorPickerSection(
+                BrandingColorPickerSection(
                     label = appString(StringKeys.BRAND_SECONDARY_COLOR),
                     currentColor = secondaryColor,
                     onColorSelected = { secondaryColor = it },
                 )
-                ColorPickerSection(
+                BrandingColorPickerSection(
                     label = appString(StringKeys.BRAND_ACCENT_COLOR),
                     currentColor = accentColor,
                     onColorSelected = { accentColor = it },
@@ -463,15 +463,15 @@ private fun BrandingSettingsContent(
 }
 
 @Composable
-private fun BrandingPreviewCard(
+internal fun BrandingPreviewCard(
     branding: SchoolBranding?,
     primaryColor: String,
     secondaryColor: String,
     accentColor: String,
 ) {
-        val primary = parseHexColor(primaryColor)
-    val secondary = parseHexColor(secondaryColor)
-    val accent = parseHexColor(accentColor)
+        val primary = parseBrandingHexColor(primaryColor)
+    val secondary = parseBrandingHexColor(secondaryColor)
+    val accent = parseBrandingHexColor(accentColor)
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -530,16 +530,16 @@ private fun BrandingPreviewCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ColorSwatch(appString(StringKeys.BRAND_SWATCH_PRIMARY), primary)
-                ColorSwatch(appString(StringKeys.BRAND_SWATCH_SECONDARY), secondary)
-                ColorSwatch(appString(StringKeys.BRAND_SWATCH_ACCENT), accent)
+                BrandingColorSwatch(appString(StringKeys.BRAND_SWATCH_PRIMARY), primary)
+                BrandingColorSwatch(appString(StringKeys.BRAND_SWATCH_SECONDARY), secondary)
+                BrandingColorSwatch(appString(StringKeys.BRAND_SWATCH_ACCENT), accent)
             }
         }
     }
 }
 
 @Composable
-private fun ColorSwatch(label: String, color: Color) {
+internal fun BrandingColorSwatch(label: String, color: Color) {
     Column(
         modifier = Modifier.fillMaxWidth(0.33f),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -557,13 +557,13 @@ private fun ColorSwatch(label: String, color: Color) {
 }
 
 @Composable
-private fun ColorPickerSection(
+internal fun BrandingColorPickerSection(
     label: String,
     currentColor: String,
     onColorSelected: (String) -> Unit,
 ) {
         var hexInput by remember(currentColor) { mutableStateOf(currentColor) }
-    val parsedColor = parseHexColor(hexInput)
+    val parsedColor = parseBrandingHexColor(hexInput)
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -590,12 +590,12 @@ private fun ColorPickerSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                PRESET_COLORS.forEach { hex ->
+                BRANDING_PRESET_COLORS.forEach { hex ->
                     Box(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(parseHexColor(hex))
+                            .background(parseBrandingHexColor(hex))
                             .border(
                                 width = if (hex.equals(hexInput, ignoreCase = true)) 3.dp else 0.dp,
                                 color = VColors.ink,

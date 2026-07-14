@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,10 +37,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.PickedMedia
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosState
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.GalleryPhoto
+import com.littlebridge.enrollplus.feature.branding.domain.model.UpdateBrandingRequest
+import com.littlebridge.enrollplus.feature.branding.presentation.BrandingThemeManager
+import com.littlebridge.enrollplus.feature.branding.presentation.BrandingViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -47,12 +52,14 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.v2.util.rememberImagePicker
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -60,9 +67,41 @@ fun SchoolBrandingScreenV2(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BrandingPhotosViewModel = koinViewModel(),
+    brandingVm: BrandingViewModel = koinViewModel(),
+    brandingThemeManager: BrandingThemeManager = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    val brandingState by brandingVm.state.collectAsStateV2()
     var photoToDelete by remember { mutableStateOf<GalleryPhoto?>(null) }
+
+    LaunchedEffect(Unit) {
+        brandingVm.loadBranding()
+    }
+
+    var hasInitialLoad = remember { mutableStateOf(false) }
+    LaunchedEffect(brandingState.branding) {
+        if (brandingState.branding != null) {
+            if (hasInitialLoad.value) {
+                brandingThemeManager.loadBranding()
+            } else {
+                hasInitialLoad.value = true
+            }
+        }
+    }
+
+    LaunchedEffect(brandingState.infoMessage) {
+        if (brandingState.infoMessage != null) {
+            kotlinx.coroutines.delay(2000)
+            brandingVm.clearInfoMessage()
+        }
+    }
+
+    LaunchedEffect(brandingState.error) {
+        if (brandingState.error != null) {
+            kotlinx.coroutines.delay(5000)
+            brandingVm.clearError()
+        }
+    }
 
     VConfirmDialog(
         visible = photoToDelete != null,
@@ -98,6 +137,8 @@ fun SchoolBrandingScreenV2(
         ) {
             SchoolBrandingContent(
                 state = state,
+                brandingState = brandingState,
+                onUpdateBranding = { req -> brandingVm.updateBranding(req) },
                 onUploadAdmin = viewModel::uploadAdminPhoto,
                 onUploadLogo = viewModel::uploadLogo,
                 onUploadCover = viewModel::uploadCover,
@@ -112,6 +153,8 @@ fun SchoolBrandingScreenV2(
 @Composable
 private fun SchoolBrandingContent(
     state: BrandingPhotosState,
+    brandingState: com.littlebridge.enrollplus.feature.branding.presentation.BrandingState,
+    onUpdateBranding: (UpdateBrandingRequest) -> Unit,
     onUploadAdmin: (PickedMedia) -> Unit,
     onUploadLogo: (PickedMedia) -> Unit,
     onUploadCover: (PickedMedia) -> Unit,
@@ -119,6 +162,17 @@ private fun SchoolBrandingContent(
     onDeleteGallery: (GalleryPhoto) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val branding = brandingState.branding
+    var primaryColor by remember(branding?.primaryColor) {
+        mutableStateOf(branding?.primaryColor ?: "#2563EB")
+    }
+    var secondaryColor by remember(branding?.secondaryColor) {
+        mutableStateOf(branding?.secondaryColor ?: "#1E40AF")
+    }
+    var accentColor by remember(branding?.accentColor) {
+        mutableStateOf(branding?.accentColor ?: "#3B82F6")
+    }
+
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -127,6 +181,62 @@ private fun SchoolBrandingContent(
             .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
+        // ── Custom App Colors ───────────────────────────────────────────
+        SectionHeader("App colors", "Customize your school's accent colors")
+        BrandingPreviewCard(
+            branding = branding,
+            primaryColor = primaryColor,
+            secondaryColor = secondaryColor,
+            accentColor = accentColor,
+        )
+        BrandingColorPickerSection(
+            label = appString(StringKeys.BRAND_PRIMARY_COLOR),
+            currentColor = primaryColor,
+            onColorSelected = { primaryColor = it },
+        )
+        BrandingColorPickerSection(
+            label = appString(StringKeys.BRAND_SECONDARY_COLOR),
+            currentColor = secondaryColor,
+            onColorSelected = { secondaryColor = it },
+        )
+        BrandingColorPickerSection(
+            label = appString(StringKeys.BRAND_ACCENT_COLOR),
+            currentColor = accentColor,
+            onColorSelected = { accentColor = it },
+        )
+        VButton(
+            text = appString(StringKeys.BRAND_SAVE_COLORS),
+            onClick = {
+                onUpdateBranding(
+                    UpdateBrandingRequest(
+                        primaryColor = primaryColor,
+                        secondaryColor = secondaryColor,
+                        accentColor = accentColor,
+                        isCustomized = true,
+                    )
+                )
+            },
+            full = true,
+            loading = brandingState.isLoading,
+        )
+
+        brandingState.infoMessage?.let { msg ->
+            Text(
+                msg,
+                style = VTypography.body.copy(color = VColors.success),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        brandingState.error?.let { err ->
+            Text(
+                err,
+                style = VTypography.body.copy(color = VColors.error),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // ── Photos ───────────────────────────────────────────────────────
+        Spacer(Modifier.height(8.dp))
         SectionHeader("Admin profile", "Your photo across the console")
         AdminProfileCard(
             name = state.adminName,

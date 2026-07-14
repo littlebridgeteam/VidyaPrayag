@@ -172,7 +172,7 @@ private fun SkillTestCardContent(
             // Eligibility error
             state.eligibilityError != null -> {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.eligibilityError!!, style = VTypography.caption, color = VColors.error, textAlign = TextAlign.Center)
+                    Text(state.eligibilityError ?: "", style = VTypography.caption, color = VColors.error, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(8.dp))
                     VButton("Retry", onClick = onRetryEligibility, variant = VButtonVariant.Secondary)
                 }
@@ -181,7 +181,7 @@ private fun SkillTestCardContent(
             // Start error
             state.startError != null -> {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.startError!!, style = VTypography.caption, color = VColors.error, textAlign = TextAlign.Center)
+                    Text(state.startError ?: "", style = VTypography.caption, color = VColors.error, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(8.dp))
                     VButton("Retry", onClick = onStartTest, variant = VButtonVariant.Secondary)
                 }
@@ -293,7 +293,7 @@ private fun SkillTestReady(state: SkillTestState, onStartTest: () -> Unit) {
 
 @Composable
 private fun SkillTestCooldown(state: SkillTestState) {
-    val bs = state.bestScore!!
+    val bs = state.bestScore ?: return
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

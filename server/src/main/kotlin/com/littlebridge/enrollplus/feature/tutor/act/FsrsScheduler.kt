@@ -103,7 +103,8 @@ class FsrsScheduler(
             topicId, childId, rating, updatedCard.stability, updatedCard.due)
 
         // Return the updated row
-        return repo.findByChildAndTopic(childId, topicId)!!
+        return repo.findByChildAndTopic(childId, topicId)
+            ?: error("FsrsScheduler: review state row not found after update for child=$childId topic=$topicId")
     }
 
     /**

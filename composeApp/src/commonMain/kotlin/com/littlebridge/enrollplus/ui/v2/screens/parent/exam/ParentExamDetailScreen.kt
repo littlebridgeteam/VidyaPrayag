@@ -69,7 +69,7 @@ fun ParentExamDetailScreen(
                     .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                val syllabus = syllabusState.syllabus!!
+                val syllabus = syllabusState.syllabus ?: return@VStateHost
 
                 // ── Exam info ─────────────────────────────────────────────────
                 VCard(modifier = Modifier.fillMaxWidth()) {

@@ -139,7 +139,7 @@ class AcademicCalendarPlatformViewModel(
     private fun reloadEvents() {
         viewModelScope.launch {
             val token = token() ?: return@launch
-            _state.value = _state.value.copy(isLoading = true)
+            _state.value = _state.value.copy(isLoading = true, errorMessage = null)
             loadEvents(token)
             _state.value = _state.value.copy(isLoading = false)
         }

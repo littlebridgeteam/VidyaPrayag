@@ -63,7 +63,7 @@ fun ExamTimetableDetailScreen(
             onRetry = { viewModel.loadTimetable(timetableId) },
             modifier = Modifier.fillMaxSize(),
         ) {
-            val tt = detailState.timetable!!
+            val tt = detailState.timetable ?: return@VStateHost
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
@@ -107,14 +107,16 @@ fun ExamTimetableDetailScreen(
                             entry.room?.let { Text("Room: $it", style = VTypography.caption, color = VColors.ink3) }
 
                             // If published and has assessment, show syllabus mapping button
-                            if (tt.status == "published" && entry.assessmentId != null) {
-                                VButton(
-                                    text = "Map Syllabus",
-                                    onClick = { onMapSyllabus(entry.assessmentId!!) },
-                                    variant = VButtonVariant.Secondary,
-                                    size = VButtonSize.Sm,
-                                    full = true,
-                                )
+                            if (tt.status == "published") {
+                                entry.assessmentId?.let { asgId ->
+                                    VButton(
+                                        text = "Map Syllabus",
+                                        onClick = { onMapSyllabus(asgId) },
+                                        variant = VButtonVariant.Secondary,
+                                        size = VButtonSize.Sm,
+                                        full = true,
+                                    )
+                                }
                             }
                         }
                     }

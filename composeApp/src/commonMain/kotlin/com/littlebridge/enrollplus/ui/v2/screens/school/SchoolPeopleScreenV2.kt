@@ -6,11 +6,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -417,7 +419,8 @@ private fun TeachersSubTab(
             Box {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
                         .clip(RoundedCornerShape(10.dp))
                         .background(VColors.surfaceCard)
                         .clickable { menuExpanded = true },

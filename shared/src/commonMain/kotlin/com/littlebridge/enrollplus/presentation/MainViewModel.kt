@@ -137,9 +137,13 @@ class MainViewModel(
                 "role" to (role ?: "unknown"),
             ))
             AnalyticsTracker.setUserId(null)
+            AnalyticsTracker.setCustomUserId(null)
             AnalyticsTracker.setUserProperty("role", null)
+            AnalyticsTracker.setCustomKey("user_id", "")
             AnalyticsTracker.setCustomTag("role", "guest")
             AnalyticsTracker.setCustomTag("auth_status", "unauthenticated")
+            AnalyticsTracker.setCustomTag("user_id", "")
+            AnalyticsTracker.setCustomTag("user_name", "")
             authRepository.logout()
         }
     }

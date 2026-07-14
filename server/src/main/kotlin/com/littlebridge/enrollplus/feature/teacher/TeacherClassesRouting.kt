@@ -173,11 +173,12 @@ internal fun computeFlags(
     }
 
     if (hasAttendance) {
-        val rate = attendance!!.monthRate
+        val att = attendance ?: return flags
+        val rate = att.monthRate
         if (rate != null && rate < ClassFlags.LOW_ATTENDANCE_RATE) {
             flags += ClassFlags.LOW_ATTENDANCE
         }
-        val recentAbsences = attendance.recentStatuses
+        val recentAbsences = att.recentStatuses
             .take(ClassFlags.RECENT_WINDOW)
             .count { it.equals("absent", ignoreCase = true) }
         if (recentAbsences >= ClassFlags.RECENT_ABSENCE_MIN) {
@@ -188,7 +189,7 @@ internal fun computeFlags(
     if (hasMarks) {
         // Failing trend: last 2 published marks below pass (only when a pass line exists).
         val lastTwo = marks.take(2)
-        if (lastTwo.size == 2 && lastTwo.all { it.pass != null && it.marks < it.pass!!.toDouble() }) {
+        if (lastTwo.size == 2 && lastTwo.all { it.pass != null && it.marks < (it.pass ?: 0).toDouble() }) {
             flags += ClassFlags.FAILING_TREND
         }
         // Dropping: latest down >20% (as a fraction of max) vs the prior one.
@@ -614,7 +615,7 @@ internal fun recentMarksInTxn(
                 .mapNotNull { mr ->
                     val asg = byId[mr[AssessmentMarksTable.assessmentId]] ?: return@mapNotNull null
                     StudentMarkPoint(
-                        marks = mr[AssessmentMarksTable.marks]!!,
+                        marks = mr[AssessmentMarksTable.marks] ?: return@mapNotNull null,
                         max = asg[AssessmentsTable.maxMarks],
                         pass = asg[AssessmentsTable.passMarks],
                     )
@@ -654,7 +655,7 @@ internal fun latestPublishedMarkInTxn(
             val asg = byId[latest[AssessmentMarksTable.assessmentId]] ?: return@mapNotNull null
             sid to LatestMarkDto(
                 name = asg[AssessmentsTable.name],
-                marks = latest[AssessmentMarksTable.marks]!!,
+                marks = latest[AssessmentMarksTable.marks] ?: return@mapNotNull null,
                 max = asg[AssessmentsTable.maxMarks],
             )
         }.toMap()

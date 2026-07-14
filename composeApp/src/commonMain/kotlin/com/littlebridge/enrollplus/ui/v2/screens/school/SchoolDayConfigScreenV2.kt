@@ -171,9 +171,11 @@ private fun SchoolDayConfigContent(
                 formValid = formValid,
                 onSubmit = {
                     if (isEditing) {
-                        onUpdate(editingId!!, name, days, level, slots) {
-                            editingId = null
-                            name = ""; days = "1,2,3,4,5"; level = "ALL"; slots = emptyList()
+                        editingId?.let { editId ->
+                            onUpdate(editId, name, days, level, slots) {
+                                editingId = null
+                                name = ""; days = "1,2,3,4,5"; level = "ALL"; slots = emptyList()
+                            }
                         }
                     } else {
                         onCreate(name, days, level, slots) {

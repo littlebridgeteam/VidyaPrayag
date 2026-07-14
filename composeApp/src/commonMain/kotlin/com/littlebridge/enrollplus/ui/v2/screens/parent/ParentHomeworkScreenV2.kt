@@ -87,8 +87,10 @@ fun ParentHomeworkScreenV2(
         PremiumOverlayHeader(title = "Homework", onBack = onBack)
         Box(Modifier.fillMaxSize().statusBarsPadding().imePadding().navigationBarsPadding()) {
             when {
-                state.selectedHomework != null -> HomeworkSubmissionSheet(
-                    homework = state.selectedHomework!!,
+                state.selectedHomework != null -> {
+                    val hw = state.selectedHomework ?: return
+                    HomeworkSubmissionSheet(
+                    homework = hw,
                     text = state.submissionText,
                     attachments = state.attachments,
                     isUploading = state.isUploadingAttachment,
@@ -101,6 +103,7 @@ fun ParentHomeworkScreenV2(
                     onSubmit = viewModel::submit,
                     onBack = { viewModel.selectHomework(null) },
                 )
+                }
                 else -> HomeworkListContent(
                     items = state.items,
                     isLoading = state.isLoading,

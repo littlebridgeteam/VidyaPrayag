@@ -130,9 +130,11 @@ fun ParentPulseScreen(
                     }
 
                     state.showHistory -> {
-                        if (state.pulseHistory.isEmpty() && state.selectedChildId != null) {
-                            LaunchedEffect(state.selectedChildId) {
-                                viewModel.loadHistory(state.selectedChildId!!)
+                        state.selectedChildId?.let { childId ->
+                            if (state.pulseHistory.isEmpty()) {
+                                LaunchedEffect(childId) {
+                                    viewModel.loadHistory(childId)
+                                }
                             }
                         }
                         if (state.pulseHistory.isEmpty()) {
@@ -156,13 +158,14 @@ fun ParentPulseScreen(
                     }
 
                     state.latestPulse != null -> {
+                        val pulse = state.latestPulse ?: return
                         Column(
                             Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
-                            PulseCard(pulse = state.latestPulse!!)
+                            PulseCard(pulse = pulse)
 
                             Row(
                                 Modifier

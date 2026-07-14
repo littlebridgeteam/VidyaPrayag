@@ -142,7 +142,10 @@ fun TeacherProfileScreenV2(
             when {
                 profileState.isLoading && profileState.profile == null ->
                     TCard { Box(Modifier.fillMaxWidth().height(96.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
-                profileState.profile != null -> IdentityHero(profileState.profile!!)
+                profileState.profile != null -> {
+                    val profile = profileState.profile ?: return@item
+                    IdentityHero(profile)
+                }
                 else -> TCard {
                     Column {
                         Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VtT.bodyStrong.coloredV(c.navyDeep))

@@ -211,7 +211,7 @@ private fun ParentBrowseTab(
         }
 
         if (state.error != null && state.books.isEmpty()) {
-            VErrorState(message = state.error!!, onRetry = { viewModel.searchBooks(1) })
+            VErrorState(message = state.error ?: "An error occurred", onRetry = { viewModel.searchBooks(1) })
             return@Column
         }
 

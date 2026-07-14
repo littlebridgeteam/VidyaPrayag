@@ -555,10 +555,11 @@ fun ParentPortalV2(
         }
         ParentOverlay.ExamDetail -> {
             val child = dashboard.selectedChild
-            if (child == null || examAssessmentId == null) { overlay = ParentOverlay.None; return }
+            val asgId = examAssessmentId
+            if (child == null || asgId == null) { overlay = ParentOverlay.None; return }
             com.littlebridge.enrollplus.ui.v2.screens.parent.exam.ParentExamDetailScreen(
                 childId = child.id,
-                assessmentId = examAssessmentId!!,
+                assessmentId = asgId,
                 examTitle = examTitle,
                 onBack = { overlay = ParentOverlay.None; examAssessmentId = null },
                 modifier = modifier,

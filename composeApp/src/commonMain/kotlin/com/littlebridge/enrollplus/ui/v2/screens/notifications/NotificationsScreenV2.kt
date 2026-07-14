@@ -91,10 +91,12 @@ fun NotificationsScreenV2(
     viewModel: NotificationsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    LaunchedEffect(Unit) {
-        AnalyticsTracker.event("vp_notifications_view", mapOf(
-            "unread_count" to state.notifications.count { it.unread },
-        ))
+    LaunchedEffect(state.notifications.size) {
+        if (state.notifications.isNotEmpty()) {
+            AnalyticsTracker.event("vp_notifications_view", mapOf(
+                "unread_count" to state.notifications.count { it.unread },
+            ))
+        }
     }
     NotificationsContent(
         state = state,
@@ -148,7 +150,7 @@ private fun NotificationsContent(
     val unread = items.count { it.unread }
     val visible = if (filterUnread) items.filter { it.unread } else items
 
-    Column(modifier.fillMaxSize().background(VColors.cream).statusBarsPadding()
+    Column(modifier.fillMaxSize().background(VColors.cream)
         .imePadding()
         .navigationBarsPadding()) {
         PremiumNotificationHeader(
