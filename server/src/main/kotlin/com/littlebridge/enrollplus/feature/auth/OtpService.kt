@@ -157,15 +157,22 @@ object OtpService {
     }
 
     private val testFixedCode: String? by lazy {
-        env("OTP_TEST_FIXED_CODE", "").takeIf { it.isNotBlank() }
+        val code = env("OTP_TEST_FIXED_CODE", "").takeIf { it.isNotBlank() }
+        if (code != null) {
+            log.info("[OTP-TEST] Fixed test code is ACTIVE: {}", code)
+        }
+        code
     }
     private val testNumbers: Set<String> by lazy {
-        env("OTP_TEST_NUMBERS", "")
+        val raw = env("OTP_TEST_NUMBERS", "")
             .split(",")
             .map { it.trim() }
             .filter { it.isNotBlank() }
-            .map { normalisePhoneForTest(it) }
-            .toSet()
+        val normalised = raw.map { normalisePhoneForTest(it) }.toSet()
+        if (normalised.isNotEmpty()) {
+            log.info("[OTP-TEST] Test numbers (normalised): {}", normalised)
+        }
+        normalised
     }
     private fun normalisePhoneForTest(raw: String): String {
         val digits = raw.replace("\\s|-".toRegex(), "")
@@ -176,8 +183,13 @@ object OtpService {
             else -> digits
         }
     }
-    private fun isTestNumber(identifier: String): Boolean =
-        testFixedCode != null && identifier in testNumbers
+    private fun isTestNumber(identifier: String): Boolean {
+        val isTest = testFixedCode != null && identifier in testNumbers
+        if (testFixedCode != null && !isTest) {
+            log.debug("[OTP-TEST] {} not in test numbers {}", identifier, testNumbers)
+        }
+        return isTest
+    }
 
     private val rng = SecureRandom()
 
