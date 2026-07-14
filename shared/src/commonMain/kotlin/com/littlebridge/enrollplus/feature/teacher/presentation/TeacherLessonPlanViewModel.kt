@@ -271,7 +271,12 @@ class TeacherLessonPlanViewModel(
                     plannedDate = e.plannedDate.ifBlank { null },
                 ))
             } else {
-                repository.updateLessonPlan(t, e.planId!!, UpdateLessonPlanRequest(
+                val planId = e.planId
+                if (planId == null) {
+                    _state.update { it.copy(error = "Cannot update: plan ID is missing") }
+                    return@launch
+                }
+                repository.updateLessonPlan(t, planId, UpdateLessonPlanRequest(
                     curriculumUnitId = e.curriculumUnitId,
                     title = e.title.trim(),
                     objectives = e.objectives,

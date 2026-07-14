@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -120,6 +121,7 @@ fun StudentLibraryScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(c.background),
     ) {
     Column(
@@ -175,11 +177,12 @@ fun StudentLibraryScreen(
     }
 
     if (state.actionMessage != null) {
+        val msg = state.actionMessage ?: ""
         Box(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            VBadge(text = state.actionMessage!!, tone = VBadgeTone.Accent)
+            VBadge(text = msg, tone = VBadgeTone.Accent)
         }
         LaunchedEffect(state.actionMessage) {
             kotlinx.coroutines.delay(3000)

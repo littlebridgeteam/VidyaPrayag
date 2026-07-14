@@ -219,7 +219,6 @@ private fun SchoolSettingsContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .statusBarsPadding()
                 .imePadding()
                 .navigationBarsPadding()
                 .padding(top = 16.dp, bottom = 140.dp),

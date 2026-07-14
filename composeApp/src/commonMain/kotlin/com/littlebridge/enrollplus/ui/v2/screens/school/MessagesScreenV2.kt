@@ -431,7 +431,7 @@ private fun ComposeNewContent(
         SharedComposeBar(
             text = body,
             onTextChange = { body = it },
-            placeholder = if (selected == null) "Pick a recipient above…" else "Message ${selected!!.name}…",
+            placeholder = if (selected == null) "Pick a recipient above…" else "Message ${selected?.name ?: ""}…",
             enabled = selected != null && !isSending,
             sending = isSending,
             onSend = {

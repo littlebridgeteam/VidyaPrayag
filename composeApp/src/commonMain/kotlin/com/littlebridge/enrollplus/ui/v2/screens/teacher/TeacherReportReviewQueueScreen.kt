@@ -111,7 +111,7 @@ fun TeacherReportReviewQueueScreen(
             state.error != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.error!!, style = VtT.body.coloredV(c.danger))
+                        Text(state.error ?: "", style = VtT.body.coloredV(c.danger))
                         Spacer(Modifier.height(8.dp))
                         VButton(text = appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.loadReviewQueue(className, section, term) })
                     }

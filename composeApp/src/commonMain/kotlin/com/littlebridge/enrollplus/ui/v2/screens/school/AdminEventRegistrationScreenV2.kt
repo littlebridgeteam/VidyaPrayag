@@ -96,22 +96,23 @@ fun AdminEventRegistrationScreenV2(
 
         if (state.infoMessage != null) {
             Text(
-                text = state.infoMessage!!,
+                text = state.infoMessage ?: "",
                 style = VTypography.caption.copy(color = VColors.success),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
         if (state.errorMessage != null) {
             Text(
-                text = state.errorMessage!!,
+                text = state.errorMessage ?: "",
                 style = VTypography.caption.copy(color = VColors.error),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
 
         if (selectedEventId != null && selectedEvent != null) {
-            LaunchedEffect(selectedEventId) {
-                viewModel.loadSlots(selectedEventId!!)
+            val evId = selectedEventId ?: return
+            LaunchedEffect(evId) {
+                viewModel.loadSlots(evId)
             }
             EventManageContent(
                 event = selectedEvent,
@@ -124,7 +125,7 @@ fun AdminEventRegistrationScreenV2(
                 onSlotCapacityChange = { slotCapacity = it },
                 onCreateSlot = {
                     viewModel.createSlot(
-                        eventId = selectedEventId!!,
+                        eventId = evId,
                         startTime = slotStart,
                         endTime = slotEnd,
                         capacity = slotCapacity.toIntOrNull() ?: 1,
@@ -134,26 +135,26 @@ fun AdminEventRegistrationScreenV2(
                 },
                 onAutoGenerate = { rangeStart, rangeEnd, duration, capacity, breakAfter, breakDuration ->
                     viewModel.autoGenerateSlots(
-                        selectedEventId!!,
+                        evId,
                         AutoGenerateSlotsRequest(rangeStart, rangeEnd, duration, capacity, breakAfter, breakDuration),
                     )
                 },
                 onDeleteSlot = { slotId ->
-                    viewModel.deleteSlot(selectedEventId!!, slotId)
+                    viewModel.deleteSlot(evId, slotId)
                 },
                 onCancelEvent = {
-                    viewModel.cancelEvent(selectedEventId!!)
+                    viewModel.cancelEvent(evId)
                     selectedEventId = null
                 },
                 onExportCsv = {
-                    viewModel.exportCsv(selectedEventId!!)
+                    viewModel.exportCsv(evId)
                 },
                 onViewRegistrations = {
-                    viewModel.loadEventRegistrations(selectedEventId!!)
+                    viewModel.loadEventRegistrations(evId)
                 },
                 onToggleRegistration = { enabled ->
                     viewModel.updateRegistrationConfig(
-                        selectedEventId!!,
+                        evId,
                         UpdateRegistrationConfigRequest(registrationEnabled = enabled),
                     )
                 },
@@ -498,7 +499,7 @@ private fun EventManageContent(
                     if (state.csvData != null) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "CSV data ready (${state.csvData!!.length} chars)",
+                            text = "CSV data ready (${state.csvData?.length ?: 0} chars)",
                             style = VTypography.caption.copy(color = VColors.success),
                         )
                     }

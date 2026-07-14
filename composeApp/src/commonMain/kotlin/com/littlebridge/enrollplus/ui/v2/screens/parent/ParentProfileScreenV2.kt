@@ -136,7 +136,6 @@ private fun ParentProfileContent(
         modifier
             .fillMaxSize()
             .background(VColors.cream)
-            .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
     ) {
@@ -158,7 +157,7 @@ private fun ParentProfileContent(
                 onRetry = onRetry,
                 skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile() },
             ) {
-                val me = state.profile!!
+                val me = state.profile ?: return@VStateHost
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Column(
                         Modifier.fillMaxWidth(),

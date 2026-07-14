@@ -77,7 +77,6 @@ class StaffViewModel(
     }
 
     fun onQueryChange(q: String) {
-        AnalyticsTracker.event("vp_staff_search", mapOf("query_length" to q.length))
         _state.value = _state.value.copy(query = q)
         load(q)
     }

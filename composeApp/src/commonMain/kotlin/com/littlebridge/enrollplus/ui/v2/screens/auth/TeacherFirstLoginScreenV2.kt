@@ -149,7 +149,7 @@ fun TeacherFirstLoginScreenV2(
 
             if (error != null) {
                 Text(
-                    text = error!!,
+                    text = error ?: "",
                     style = VTypography.caption,
                     color = VColors.error,
                 )

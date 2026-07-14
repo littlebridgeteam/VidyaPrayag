@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -73,7 +74,8 @@ fun AlumniDetailScreen(
 
     Column(
         modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .statusBarsPadding(),
     ) {
         VBackHeader(title = appString(StringKeys.SCH_ALUMNI_DETAIL), onBack = onBack)
         VPullRefresh(isRefreshing = isLoading && alumni != null, onRefresh = reload) {
@@ -89,7 +91,7 @@ fun AlumniDetailScreen(
             onRetry = reload,
             skeleton = { SkeletonProfile() },
         ) {
-            val data = a!!
+            val data = a ?: return@VStateHost
             VTopTabs(
                 tabs = listOf(appString(StringKeys.SCH_PROFILE), appString(StringKeys.SCH_CAREER), appString(StringKeys.SCH_DONATIONS)),
                 selected = subTab,
@@ -189,8 +191,9 @@ fun AlumniDetailScreen(
                             emptyTitle = appString(StringKeys.SCH_NO_DONATIONS_RECORDED),
                             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 3, withAvatar = false) },
                         ) {
-                            donations!!.forEachIndexed { i, donation ->
-                                VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, donations!!.isNotEmpty())) {
+                            val safeDonations = donations ?: return@VStateHost
+                            safeDonations.forEachIndexed { i, donation ->
+                                VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, safeDonations.isNotEmpty())) {
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text("₹${donation.amount.toInt()}", style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                                         Text(appString(StringKeys.SCH_DATE_COLON, "date" to donation.donationDate), style = VTypography.caption, color = VColors.ink3)

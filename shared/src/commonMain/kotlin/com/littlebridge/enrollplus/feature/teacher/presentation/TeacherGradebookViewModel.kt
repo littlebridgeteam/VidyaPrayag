@@ -230,7 +230,7 @@ class TeacherGradebookViewModel(
                 assignmentId = asg,
                 name = name,
                 type = s.createType,
-                maxMarks = max!!,
+                maxMarks = max,
                 passMarks = pass,
                 examDate = s.createExamDate.takeIf { it.isNotBlank() },
                 linkToCalendar = false,

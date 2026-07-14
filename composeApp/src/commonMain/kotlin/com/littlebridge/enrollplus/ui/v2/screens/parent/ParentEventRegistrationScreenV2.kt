@@ -93,7 +93,7 @@ fun ParentEventRegistrationScreenV2(
 
         if (state.infoMessage != null) {
             Text(
-                text = state.infoMessage!!,
+                text = state.infoMessage ?: "",
                 style = VTypography.caption,
                 color = VColors.success,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
@@ -101,7 +101,7 @@ fun ParentEventRegistrationScreenV2(
         }
         if (state.errorMessage != null) {
             Text(
-                text = state.errorMessage!!,
+                text = state.errorMessage ?: "",
                 style = VTypography.caption,
                 color = VColors.error,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
@@ -109,22 +109,24 @@ fun ParentEventRegistrationScreenV2(
         }
 
         if (selectedEventId != null && state.eventDetail != null) {
+            val evId = selectedEventId ?: return
+            val detail = state.eventDetail ?: return
             EventDetailContent(
-                eventDetail = state.eventDetail!!,
+                eventDetail = detail,
                 isLoading = state.isRegistering || state.isCancelling || state.isRescheduling,
                 onRegister = { slotId, attendeeCount ->
                     viewModel.register(
-                        eventId = selectedEventId!!,
+                        eventId = evId,
                         slotId = slotId,
                         studentId = null,
                         attendeeCount = attendeeCount,
                     )
                 },
                 onCancel = {
-                    viewModel.cancelRegistration(selectedEventId!!)
+                    viewModel.cancelRegistration(evId)
                 },
                 onReschedule = { newSlotId ->
-                    viewModel.reschedule(selectedEventId!!, newSlotId)
+                    viewModel.reschedule(evId, newSlotId)
                 },
             )
         } else if (showMyRegistrations) {
@@ -456,7 +458,7 @@ private fun EventCard(
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (event.myRegistrationStatus != null) {
-                    PremiumBadge(text = event.myRegistrationStatus!!, bg = VColors.successSoft, fg = VColors.success)
+                    PremiumBadge(text = event.myRegistrationStatus ?: "", bg = VColors.successSoft, fg = VColors.success)
                 } else if (event.registrationEnabled || event.type == "PTM") {
                     PremiumBadge(text = "Registration open", bg = VColors.violetSoft, fg = VColors.violet)
                 }

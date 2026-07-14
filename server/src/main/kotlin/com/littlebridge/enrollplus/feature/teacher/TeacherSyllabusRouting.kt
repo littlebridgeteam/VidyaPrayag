@@ -869,14 +869,16 @@ private fun Route.syllabusParse() {
         val classLevel = asg.className
         val subject = asg.subject
         val parsed = if (sourceType == "IMAGE") {
-            val imageBase64 = fetchImageAsBase64(req.sourceUrl!!)
+            val url = req.sourceUrl ?: run { call.fail("source_url is required", HttpStatusCode.BadRequest, "MISSING_URL"); return@post }
+            val imageBase64 = fetchImageAsBase64(url)
             if (imageBase64 == null) {
                 call.fail("Could not fetch image from URL", HttpStatusCode.BadGateway, "IMAGE_FETCH_FAILED"); return@post
             }
-            val mimeType = guessMimeType(req.sourceUrl)
+            val mimeType = guessMimeType(url)
             SyllabusAiService.parseSyllabusImage(imageBase64, mimeType, classLevel, subject, ctx.schoolId)
         } else {
-            SyllabusAiService.parseSyllabusText(req.rawText!!, classLevel, subject, ctx.schoolId)
+            val text = req.rawText ?: run { call.fail("raw_text is required", HttpStatusCode.BadRequest, "MISSING_TEXT"); return@post }
+            SyllabusAiService.parseSyllabusText(text, classLevel, subject, ctx.schoolId)
         }
 
         if (parsed == null) {

@@ -555,7 +555,7 @@ private fun ParentComposeNewContent(
         ParentComposeBar(
             text = body,
             onTextChange = { body = it },
-            placeholder = if (selected == null) "Pick a recipient…" else "Message ${selected!!.name}",
+            placeholder = if (selected == null) "Pick a recipient…" else "Message ${selected?.name ?: ""}",
             enabled = selected != null && !sending,
             sending = sending,
             onSend = {

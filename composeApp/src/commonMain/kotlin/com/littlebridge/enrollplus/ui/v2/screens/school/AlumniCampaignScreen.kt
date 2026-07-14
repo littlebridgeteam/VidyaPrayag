@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -74,7 +75,8 @@ fun AlumniCampaignScreen(
 
     Column(
         modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .statusBarsPadding(),
     ) {
         VBackHeader(title = appString(StringKeys.SCH_CAMPAIGN_DETAIL), onBack = onBack)
         VPullRefresh(isRefreshing = isLoading && campaign != null, onRefresh = reload) {
@@ -90,7 +92,7 @@ fun AlumniCampaignScreen(
             onRetry = reload,
             skeleton = { SkeletonDashboard() },
         ) {
-            val data = c!!
+            val data = c ?: return@VStateHost
             Column(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -133,8 +135,9 @@ fun AlumniCampaignScreen(
                     emptyTitle = appString(StringKeys.SCH_NO_DONATIONS_CAMPAIGN),
                     skeleton = { SkeletonList(rows = 3, withAvatar = false) },
                 ) {
-                    d!!.forEachIndexed { i, donation ->
-                        VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, d.isNotEmpty())) {
+                    val safeDonations = d ?: return@VStateHost
+                    safeDonations.forEachIndexed { i, donation ->
+                        VCard(modifier = Modifier.fillMaxWidth().staggeredItemEntrance(i, safeDonations.isNotEmpty())) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(donation.alumniName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
                                 Text("₹${donation.amount.toInt()}", style = VTypography.body, color = VColors.ink)
