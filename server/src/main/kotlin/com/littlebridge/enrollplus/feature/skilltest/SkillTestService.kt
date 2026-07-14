@@ -43,6 +43,7 @@ import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -113,6 +114,14 @@ object SkillTestService {
             runCatching { ensureQuestionsForGrade(gradeLevel) }
                 .onFailure { log.warn("Background immediate generation failed for grade {}: {}", gradeLevel, it.message) }
         }
+    }
+
+    /**
+     * Cancel the background generation scope. Called from the shutdown hook
+     * to prevent in-flight AI generation from hitting a closed HikariCP pool.
+     */
+    fun shutdown() {
+        generationScope.cancel()
     }
 
     /**
@@ -938,8 +947,12 @@ object SkillTestService {
         }
 
         log.info(
-            "Updated holistic metrics for child {}: literacy={:.2f}, numeracy={:.2f}, creativity={:.2f}, confidence={:.2f}",
-            childId, literacy, numeracy, creativity, confidence
+            "Updated holistic metrics for child {}: literacy={}, numeracy={}, creativity={}, confidence={}",
+            childId,
+            String.format("%.2f", literacy),
+            String.format("%.2f", numeracy),
+            String.format("%.2f", creativity),
+            String.format("%.2f", confidence),
         )
     }
 

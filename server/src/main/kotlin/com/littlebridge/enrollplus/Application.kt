@@ -327,6 +327,8 @@ fun main() {
         // in-flight job polls don't hit a closed HikariDataSource.
         runCatching {
             backgroundJobScope.cancel()
+            // Also cancel SkillTestService's private generation scope
+            com.littlebridge.enrollplus.feature.skilltest.SkillTestService.shutdown()
             // Brief wait for coroutines to observe cancellation
             Thread.sleep(500)
         }
