@@ -48,7 +48,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, NotificationPreferences, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export, SalaryHistory }
+private enum class TeacherOverlay { None, Notifications, NotificationPreferences, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementList, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export, SalaryHistory }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -328,6 +328,16 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.AnnouncementList -> {
+            TeacherAnnouncementListScreen(
+                onBack = { overlay = TeacherOverlay.None },
+                onOpenAnnouncement = { id ->
+                    announcementId = id
+                    overlay = TeacherOverlay.AnnouncementDetail
+                },
+            )
+            return
+        }
         TeacherOverlay.AnnouncementDetail -> {
             TeacherAnnouncementDetailScreen(
                 announcementId = announcementId,
@@ -507,6 +517,7 @@ fun TeacherPortalV2(
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                     onOpenExamTimetable = { overlay = TeacherOverlay.ExamTimetableList },
                     onOpenExport = { overlay = TeacherOverlay.Export },
+                    onOpenAnnouncements = { overlay = TeacherOverlay.AnnouncementList },
                     unreadCount = notifications.unreadCount,
                 )
 

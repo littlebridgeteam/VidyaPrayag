@@ -286,8 +286,8 @@ private fun LessonPlanEditorMode(
     var activityDuration by remember { mutableStateOf("15") }
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 14.dp, bottom = 24.dp),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 14.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Scrollable scoped chrome
@@ -649,8 +649,8 @@ private fun LessonPlanCalendarMode(
     val cal = state.calendar
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 14.dp, bottom = 24.dp),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 14.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {

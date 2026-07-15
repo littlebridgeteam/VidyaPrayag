@@ -125,6 +125,8 @@ fun VStateHost(
     emptyTitle: String = appString(StringKeys.COMMON_EMPTY),
     emptyBody: String? = null,
     emptyIcon: androidx.compose.ui.graphics.vector.ImageVector? = VIcons.FileText,
+    emptyActionLabel: String? = null,
+    onEmptyAction: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
     skeleton: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -135,12 +137,16 @@ fun VStateHost(
         }
     }
 
+    val emptyAction: (@Composable () -> Unit)? = if (emptyActionLabel != null && onEmptyAction != null) {
+        { VButton(text = emptyActionLabel, onClick = onEmptyAction, variant = VButtonVariant.Primary, size = VButtonSize.Md) }
+    } else null
+
     // No skeleton supplied → preserve the original behaviour exactly (spinner loading leg).
     if (skeleton == null) {
         when {
             loading -> VLoadingState(modifier)
             error != null -> VErrorState(message = error, onRetry = onRetry, modifier = modifier)
-            isEmpty -> VEmptyState(modifier = modifier, icon = emptyIcon, title = emptyTitle, body = emptyBody)
+            isEmpty -> VEmptyState(modifier = modifier, icon = emptyIcon, title = emptyTitle, body = emptyBody, action = emptyAction)
             else -> content()
         }
         return
@@ -163,7 +169,7 @@ fun VStateHost(
         when (p) {
             VStatePhase.Loading -> skeleton()
             VStatePhase.Error -> VErrorState(message = error ?: "", onRetry = onRetry)
-            VStatePhase.Empty -> VEmptyState(icon = emptyIcon, title = emptyTitle, body = emptyBody)
+            VStatePhase.Empty -> VEmptyState(icon = emptyIcon, title = emptyTitle, body = emptyBody, action = emptyAction)
             VStatePhase.Content -> content()
         }
     }

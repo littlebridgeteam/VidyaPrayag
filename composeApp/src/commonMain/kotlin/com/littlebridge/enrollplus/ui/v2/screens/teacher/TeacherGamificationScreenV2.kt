@@ -137,6 +137,30 @@ fun TeacherStudentGamificationCard(
                 )
             }
 
+            // Action feedback message — placed right after action buttons so it's visible
+            state.actionMessage?.let { msg ->
+                val isSuccess = !msg.contains("Failed")
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(VShapes.md)
+                        .background(if (isSuccess) VColors.mintSoft else VColors.errorSoft)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        msg,
+                        style = VTypography.caption,
+                        color = if (isSuccess) c.successInk else c.dangerInk,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                LaunchedEffect(msg) {
+                    kotlinx.coroutines.delay(3000)
+                    gamificationViewModel.clearActionMessage()
+                }
+            }
+
             // Quest assignment toggle
             VButton(
                 if (showQuestPicker) appString(StringKeys.GAM_CANCEL_QUEST) else appString(StringKeys.GAM_ASSIGN_QUEST),
@@ -235,30 +259,6 @@ fun TeacherStudentGamificationCard(
                         tone = VButtonTone.Rose,
                         loading = state.isActionLoading,
                     )
-                }
-            }
-
-            // Action feedback message
-            state.actionMessage?.let { msg ->
-                val isSuccess = !msg.contains("Failed")
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(VShapes.md)
-                        .background(if (isSuccess) VColors.mintSoft else VColors.errorSoft)
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        msg,
-                        style = VTypography.caption,
-                        color = if (isSuccess) c.successInk else c.dangerInk,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                LaunchedEffect(msg) {
-                    kotlinx.coroutines.delay(3000)
-                    gamificationViewModel.clearActionMessage()
                 }
             }
         }

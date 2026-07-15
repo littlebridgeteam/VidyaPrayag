@@ -103,6 +103,7 @@ fun TeacherHomeScreenV2(
     onOpenMessages: () -> Unit,
     onOpenExamTimetable: () -> Unit = {},
     onOpenExport: () -> Unit = {},
+    onOpenAnnouncements: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     unreadCount: Int = 0,
     modifier: Modifier = Modifier,
@@ -239,6 +240,7 @@ fun TeacherHomeScreenV2(
                 onHeatmap = onOpenHeatmap,
                 onIdCard = onOpenIdCard,
                 onScheduledMessages = onOpenScheduledMessages,
+                onAnnouncements = onOpenAnnouncements,
             )
         }
 
@@ -690,6 +692,7 @@ private fun QuickActionsGrid(
     onHeatmap: () -> Unit = {},
     onIdCard: () -> Unit = {},
     onScheduledMessages: () -> Unit = {},
+    onAnnouncements: () -> Unit = {},
 ) {
     val actions = listOf(
         QuickAction(appString(StringKeys.TEACHER_ATTENDANCE), VColors.violetSoft, VColors.violet, VIcons.ListChecks, onAttendance),
@@ -704,6 +707,7 @@ private fun QuickActionsGrid(
         QuickAction("Heatmap", VColors.goldSoft, VColors.gold, VIcons.Sparkles, onHeatmap),
         QuickAction("ID card", VColors.violetSoft, VColors.violetInk, VIcons.IdCard, onIdCard),
         QuickAction("Scheduled msgs", VColors.mintSoft, VColors.mint, VIcons.Clock, onScheduledMessages),
+        QuickAction("Announcements", VColors.coralSoft, VColors.coral, VIcons.Megaphone, onAnnouncements),
     )
 
     SurfaceCard {
