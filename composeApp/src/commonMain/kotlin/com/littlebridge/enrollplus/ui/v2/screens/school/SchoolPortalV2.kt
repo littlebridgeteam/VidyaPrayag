@@ -274,6 +274,10 @@ fun SchoolPortalV2(
                 }
             }
         }
+        // At root (no overlay), consume back to prevent app exit.
+        BackHandler(enabled = overlay == SchoolOverlay.None) {
+            // No-op — prevents the system back gesture from killing the app.
+        }
 
         when (overlay) {
             SchoolOverlay.Notifications -> {

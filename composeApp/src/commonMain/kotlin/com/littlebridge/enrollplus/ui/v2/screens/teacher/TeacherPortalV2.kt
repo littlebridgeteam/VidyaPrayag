@@ -220,6 +220,10 @@ fun TeacherPortalV2(
     BackHandler(enabled = overlay == TeacherOverlay.None && tab != "home") {
         tab = "home"
     }
+    // At root (home + no overlay), consume back to prevent app exit.
+    BackHandler(enabled = overlay == TeacherOverlay.None && tab == "home") {
+        // No-op — prevents the system back gesture from killing the app.
+    }
 
     // ── Overlays sit above all tab content ──────────────────────────────────
     when (overlay) {
