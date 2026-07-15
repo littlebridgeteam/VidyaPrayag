@@ -19,6 +19,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AttendanceSummaryD
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLedgerDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.MarksSummaryDto
 import io.ktor.client.HttpClient
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 
 class RecordsApi(
@@ -35,18 +36,24 @@ class RecordsApi(
     suspend fun getAttendanceSummary(
         token: String
     ): NetworkResult<ApiResponse<AttendanceSummaryDto>> = safeApiCall {
-        client.get(getUrl("api/v1/school/attendance/summary"))
+        client.get(getUrl("api/v1/school/attendance/summary")) {
+            bearerAuth(token)
+        }
     }
 
     suspend fun getMarksSummary(
         token: String
     ): NetworkResult<ApiResponse<MarksSummaryDto>> = safeApiCall {
-        client.get(getUrl("api/v1/school/marks/summary"))
+        client.get(getUrl("api/v1/school/marks/summary")) {
+            bearerAuth(token)
+        }
     }
 
     suspend fun getFeeLedger(
         token: String
     ): NetworkResult<ApiResponse<FeeLedgerDto>> = safeApiCall {
-        client.get(getUrl("api/v1/school/fees/ledger"))
+        client.get(getUrl("api/v1/school/fees/ledger")) {
+            bearerAuth(token)
+        }
     }
 }

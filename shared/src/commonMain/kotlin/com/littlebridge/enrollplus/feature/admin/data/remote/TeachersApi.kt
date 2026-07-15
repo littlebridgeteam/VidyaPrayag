@@ -22,6 +22,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherAccountDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCardListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCredentialDto
 import io.ktor.client.HttpClient
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -52,6 +53,7 @@ class TeachersApi(
         pageSize: Int = 20
     ): NetworkResult<ApiResponse<TeacherCardListResponse>> = safeApiCall {
         client.get(getUrl("api/v1/school/teachers")) {
+            bearerAuth(token)
             parameter("page", page)
             parameter("pageSize", pageSize)
         }
@@ -62,6 +64,7 @@ class TeachersApi(
         request: CreateTeacherRequest
     ): NetworkResult<ApiResponse<TeacherAccountDto>> = safeApiCall {
         client.post(getUrl("api/v1/school/teachers")) {
+            bearerAuth(token)
             contentType(ContentType.Application.Json)
             setBody(request)
         }
@@ -71,7 +74,9 @@ class TeachersApi(
         token: String,
         teacherId: String
     ): NetworkResult<ApiResponse<Unit>> = safeApiCall {
-        client.delete(getUrl("api/v1/school/teachers/$teacherId"))
+        client.delete(getUrl("api/v1/school/teachers/$teacherId")) {
+            bearerAuth(token)
+        }
     }
 
     /** RA-32: reissue an initial password; server returns the plaintext once. */
@@ -79,6 +84,8 @@ class TeachersApi(
         token: String,
         teacherId: String
     ): NetworkResult<ApiResponse<TeacherCredentialDto>> = safeApiCall {
-        client.post(getUrl("api/v1/school/teachers/$teacherId/reset-password"))
+        client.post(getUrl("api/v1/school/teachers/$teacherId/reset-password")) {
+            bearerAuth(token)
+        }
     }
 }

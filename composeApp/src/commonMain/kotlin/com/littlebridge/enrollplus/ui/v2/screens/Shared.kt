@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -168,8 +169,18 @@ fun VStateHost(
     ) { p ->
         when (p) {
             VStatePhase.Loading -> skeleton()
-            VStatePhase.Error -> VErrorState(message = error ?: "", onRetry = onRetry)
-            VStatePhase.Empty -> VEmptyState(icon = emptyIcon, title = emptyTitle, body = emptyBody, action = emptyAction)
+            VStatePhase.Error -> Box(
+                Modifier.fillMaxSize().background(VColors.surface),
+                contentAlignment = Alignment.Center,
+            ) {
+                VErrorState(message = error ?: "", onRetry = onRetry)
+            }
+            VStatePhase.Empty -> Box(
+                Modifier.fillMaxSize().background(VColors.surface),
+                contentAlignment = Alignment.Center,
+            ) {
+                VEmptyState(icon = emptyIcon, title = emptyTitle, body = emptyBody, action = emptyAction)
+            }
             VStatePhase.Content -> content()
         }
     }
