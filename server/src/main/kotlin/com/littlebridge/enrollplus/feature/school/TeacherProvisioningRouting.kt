@@ -348,13 +348,19 @@ fun Route.teacherProvisioningRouting() {
                             .where { FacultyTable.externalId eq externalId }
                             .firstOrNull()
                         if (exists == null) {
-                            FacultyTable.insert {
-                                it[FacultyTable.schoolId] = ctx.schoolId
-                                it[FacultyTable.externalId] = externalId
-                                it[FacultyTable.userId] = userId
-                                it[FacultyTable.name] = tRow[AppUsersTable.fullName]
-                                it[isActive] = true
-                                it[createdAt] = tRow[AppUsersTable.createdAt]
+                            try {
+                                FacultyTable.insert {
+                                    it[FacultyTable.schoolId] = ctx.schoolId
+                                    it[FacultyTable.externalId] = externalId
+                                    it[FacultyTable.userId] = userId
+                                    it[FacultyTable.name] = tRow[AppUsersTable.fullName]
+                                    it[isActive] = true
+                                    it[createdAt] = tRow[AppUsersTable.createdAt]
+                                }
+                            } catch (_: Exception) {
+                                // Concurrent request may have inserted the same
+                                // externalId (uniqueIndex). Safe to ignore — the
+                                // row now exists either way.
                             }
                         }
                     }
