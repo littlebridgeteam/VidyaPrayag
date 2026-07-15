@@ -493,7 +493,12 @@ fun TeacherPortalV2(
                     onOpenHealthAlerts = { overlay = TeacherOverlay.HealthAlerts },
                     onOpenTransportAttendance = { overlay = TeacherOverlay.TransportAttendance },
                     onOpenPews = { overlay = TeacherOverlay.Pews },
-                    onOpenReportReview = { overlay = TeacherOverlay.ReportReview },
+                    onOpenReportReview = {
+                        if (reportClassName.isBlank()) {
+                            reportClassName = profile?.classes?.firstOrNull() ?: ""
+                        }
+                        overlay = TeacherOverlay.ReportReview
+                    },
                     onOpenHeatmap = { overlay = TeacherOverlay.Heatmap },
                     onOpenIdCard = { overlay = TeacherOverlay.DigitalIdCard },
                     onOpenScheduledMessages = { overlay = TeacherOverlay.ScheduledMessages },

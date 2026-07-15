@@ -119,7 +119,15 @@ fun TeacherReportReviewQueueScreen(
             }
             state.isEmpty -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(appString(StringKeys.TC_NO_DRAFTS_FOUND), style = VtT.body.coloredV(c.ink2))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(VIcons.ClipboardList, contentDescription = null, tint = c.ink2, modifier = Modifier.size(40.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text(appString(StringKeys.TC_NO_DRAFTS_FOUND), style = VtT.body.coloredV(c.ink2))
+                        if (className.isBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text("Select a class to view report card drafts", style = VtT.caption.coloredV(c.ink3))
+                        }
+                    }
                 }
             }
             else -> {
