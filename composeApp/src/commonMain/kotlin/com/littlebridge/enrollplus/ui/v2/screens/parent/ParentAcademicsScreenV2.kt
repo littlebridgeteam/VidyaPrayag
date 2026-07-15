@@ -427,7 +427,7 @@ private fun OverviewTab(
 
     // ── Academic competencies ──
     if (state.academicCompetencies.isNotEmpty()) {
-        SectionLabel("Academic Competencies")
+        SectionLabel(appString(StringKeys.PAC_ACADEMIC_OVERVIEW))
         val palette = subjectPalette
         state.academicCompetencies.forEachIndexed { idx, comp ->
             val tone = palette[idx % palette.size]
@@ -437,7 +437,7 @@ private fun OverviewTab(
 
     // ── Emotional intelligence ──
     if (state.emotionalIntelligence.isNotEmpty() || state.emotionalDescription.isNotBlank()) {
-        SectionLabel("Emotional Intelligence")
+        SectionLabel(appString(StringKeys.PAC_EMOTIONAL_INTEL))
         EmotionalIntelligenceCard(
             description = state.emotionalDescription,
             metrics = state.emotionalIntelligence,
@@ -446,12 +446,12 @@ private fun OverviewTab(
 
     // ── Achievement badges ──
     if (state.badges.isNotEmpty()) {
-        SectionLabel("Achievements")
+        SectionLabel(appString(StringKeys.PAC_ACHIEVEMENTS))
         BadgesRow(state.badges)
     }
 
     // ── Quick actions (2-column grid, not stacked list) ──
-    SectionLabel("Quick Actions")
+    SectionLabel(appString(StringKeys.PAC_QUICK_ACTIONS))
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -459,14 +459,14 @@ private fun OverviewTab(
         QuickActionTile(
             icon = Icons.Filled.Description,
             iconColor = VColors.violet,
-            title = "Report Card",
+            title = appString(StringKeys.PAC_REPORT_CARD),
             onClick = onOpenReport,
             modifier = Modifier.weight(1f),
         )
         QuickActionTile(
             icon = Icons.Filled.CalendarMonth,
             iconColor = VColors.coral,
-            title = "Apply Leave",
+            title = appString(StringKeys.PAC_APPLY_LEAVE),
             onClick = onOpenLeave,
             modifier = Modifier.weight(1f),
         )
@@ -478,14 +478,14 @@ private fun OverviewTab(
         QuickActionTile(
             icon = Icons.Filled.Favorite,
             iconColor = VColors.error,
-            title = "Health Records",
+            title = appString(StringKeys.PAC_HEALTH_RECORDS),
             onClick = onOpenHealth,
             modifier = Modifier.weight(1f),
         )
         QuickActionTile(
             icon = Icons.Filled.School,
             iconColor = VColors.gold,
-            title = "Syllabus",
+            title = appString(StringKeys.PAC_SYLLABUS),
             onClick = onOpenSyllabus,
             modifier = Modifier.weight(1f),
         )
@@ -525,9 +525,9 @@ private fun AcademicSnapshotCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 if (level > 0) {
-                    MiniBadge(text = "Level $level", color = VColors.violet, bg = VColors.violetSoft)
+                    MiniBadge(text = appString(StringKeys.PAC_LEVEL, "level" to level), color = VColors.violet, bg = VColors.violetSoft)
                 } else {
-                    Text("Academic Overview", style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.PAC_ACADEMIC_OVERVIEW), style = VTypography.caption, color = VColors.ink3)
                 }
             }
             Text(
@@ -562,17 +562,17 @@ private fun AcademicSnapshotCard(
         ) {
             InlineStat(
                 value = attendanceRate?.let { "$it%" } ?: "—",
-                label = "Attendance",
+                label = appString(StringKeys.PAC_ATTENDANCE),
                 modifier = Modifier.weight(1f),
             )
             InlineStat(
                 value = averageScore?.let { "$it%" } ?: "—",
-                label = "Avg Score",
+                label = appString(StringKeys.PAC_AVG_SCORE),
                 modifier = Modifier.weight(1f),
             )
             InlineStat(
                 value = syllabusProgress?.let { "$it%" } ?: "—",
-                label = "Syllabus",
+                label = appString(StringKeys.PAC_SYLLABUS),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -667,7 +667,7 @@ private fun EmotionalIntelligenceCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(Icons.Filled.Spa, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-            Text("Emotional Intelligence", style = VTypography.label, color = VColors.ink, fontWeight = FontWeight.Bold)
+            Text(appString(StringKeys.PAC_EMOTIONAL_INTEL), style = VTypography.label, color = VColors.ink, fontWeight = FontWeight.Bold)
         }
         if (description.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
@@ -763,8 +763,8 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
         CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
-                    Text("This Term", style = VTypography.label, color = VColors.ink3)
-                    Text("Attendance Rate", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(top = 2.dp))
+                    Text(appString(StringKeys.PAC_THIS_TERM), style = VTypography.label, color = VColors.ink3)
+                    Text(appString(StringKeys.PAC_ATTENDANCE_RATE), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(top = 2.dp))
                 }
                 Text(
                     "${data.attendanceRate}%",
@@ -794,8 +794,8 @@ private fun AttendanceTab(academics: ParentAcademicsState, onRetry: () -> Unit) 
                     Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = VColors.success, modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("No Attendance Records", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
-                    Text("Attendance data will appear here once available.", style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.PAC_NO_ATTENDANCE), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text(appString(StringKeys.PAC_NO_ATTENDANCE_DESC), style = VTypography.caption, color = VColors.ink3)
                 }
             }
         }
@@ -991,13 +991,13 @@ private fun SyllabusSubjectCard(
             }
             Text(subjectName, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             if (isAiEstimated) {
-                MiniBadge(text = "AI", color = VColors.violet, bg = VColors.violetSoft)
+                MiniBadge(text = appString(StringKeys.PAC_AI), color = VColors.violet, bg = VColors.violetSoft)
                 Spacer(Modifier.width(4.dp))
             }
             Text("$progress%", style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = tone)
             Icon(
                 if (expanded) Icons.Filled.ExpandMore else Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = if (expanded) "Collapse" else "Expand",
+                contentDescription = if (expanded) appString(StringKeys.PAC_COLLAPSE) else appString(StringKeys.PAC_EXPAND),
                 tint = VColors.ink3,
                 modifier = Modifier.size(18.dp),
             )
@@ -1007,7 +1007,7 @@ private fun SyllabusSubjectCard(
         if (isAiEstimated && estimatedPct > 0) {
             Spacer(Modifier.height(4.dp))
             Text(
-                "Teacher hasn't updated progress. Estimated based on scheduled classes.",
+                appString(StringKeys.PAC_ESTIMATED_NOTE),
                 style = VTypography.caption.copy(fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
                 color = VColors.ink3,
             )
@@ -1031,14 +1031,14 @@ private fun SyllabusSubjectCard(
                     if (u.isCovered) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (u.isAiEstimated) {
-                                Text("EST", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp), color = VColors.violet)
+                                Text(appString(StringKeys.PAC_EST), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp), color = VColors.violet)
                             } else {
                                 Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(13.dp))
-                                Text(u.coveredOn ?: "Covered", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.success)
+                                Text(u.coveredOn ?: appString(StringKeys.PAC_COVERED), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.success)
                             }
                         }
                     } else {
-                        Text("Pending", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.gold)
+                        Text(appString(StringKeys.PAC_PENDING), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.gold)
                     }
                 }
             }
@@ -1121,14 +1121,14 @@ private fun QuizzesTab(
                 }
                 when (quiz.status) {
                     "PUBLISHED" -> {
-                        MiniBadge(text = "Start", color = VColors.violet, bg = VColors.violetSoft)
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Open", tint = VColors.violet, modifier = Modifier.size(16.dp))
+                        MiniBadge(text = appString(StringKeys.PAC_START), color = VColors.violet, bg = VColors.violetSoft)
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = appString(StringKeys.PAC_START), tint = VColors.violet, modifier = Modifier.size(16.dp))
                     }
                     "SUBMITTED" -> {
-                        MiniBadge(text = "Result", color = VColors.success, bg = VColors.successSoft)
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View", tint = VColors.violet, modifier = Modifier.size(16.dp))
+                        MiniBadge(text = appString(StringKeys.PAC_RESULT), color = VColors.success, bg = VColors.successSoft)
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = appString(StringKeys.PAC_RESULT), tint = VColors.violet, modifier = Modifier.size(16.dp))
                     }
-                    else -> MiniBadge(text = "Pending", color = VColors.ink3, bg = VColors.surfaceTint)
+                    else -> MiniBadge(text = appString(StringKeys.PAC_PENDING), color = VColors.ink3, bg = VColors.surfaceTint)
                 }
             }
         }
@@ -1152,10 +1152,10 @@ private fun QuizDetailCard(
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onBack() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = VColors.ink2, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink2, modifier = Modifier.size(18.dp))
             }
             Icon(Icons.Filled.Quiz, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(20.dp))
-            Text(detail.title.ifBlank { "Quiz" }, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(detail.title.ifBlank { appString(StringKeys.PAC_QUIZ) }, style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Text(detail.subject, style = VTypography.caption, color = VColors.ink3)
         }
         Spacer(Modifier.height(16.dp))
@@ -1167,9 +1167,9 @@ private fun QuizDetailCard(
             detail.questions.forEachIndexed { qIdx, q ->
                 Column {
                     val typeLabel = when (q.questionType) {
-                        "TRUE_FALSE" -> " (True/False)"
-                        "FILL_BLANK" -> " (Fill in the blank)"
-                        "MATCH" -> " (Match)"
+                        "TRUE_FALSE" -> " ${appString(StringKeys.PAC_TRUE_FALSE)}"
+                        "FILL_BLANK" -> " ${appString(StringKeys.PAC_FILL_BLANK)}"
+                        "MATCH" -> " ${appString(StringKeys.PAC_MATCH)}"
                         else -> ""
                     }
                     Text("${qIdx + 1}. ${q.question}$typeLabel", style = VTypography.body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink)
@@ -1181,7 +1181,7 @@ private fun QuizDetailCard(
                                 value = textAnswers[q.id] ?: "",
                                 onValueChange = { textAnswers[q.id] = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Type your answer...", style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink3) },
+                                placeholder = { Text(appString(StringKeys.PAC_TYPE_ANSWER), style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink3) },
                                 singleLine = true,
                                 shape = VShapes.sm,
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -1270,7 +1270,7 @@ private fun QuizResultCard(
                 Text("${result.percentage}%", style = VTypography.h3.copy(fontSize = 20.sp), color = VColors.violet, fontWeight = FontWeight.ExtraBold)
             }
             Spacer(Modifier.height(12.dp))
-            Text("Score: ${result.score} / ${result.totalMarks}", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+            Text(appString(StringKeys.PAC_SCORE, "score" to result.score, "total" to result.totalMarks), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(16.dp))
 
             Column(
@@ -1290,10 +1290,10 @@ private fun QuizResultCard(
                         }
                         Spacer(Modifier.height(6.dp))
                         if (qr.selectedAnswer.isNotBlank()) {
-                            Text("Your answer: ${qr.selectedAnswer}", style = VTypography.caption.copy(fontSize = 12.sp), color = if (qr.correct) VColors.success else VColors.error)
+                            Text(appString(StringKeys.PAC_YOUR_ANSWER, "answer" to qr.selectedAnswer), style = VTypography.caption.copy(fontSize = 12.sp), color = if (qr.correct) VColors.success else VColors.error)
                         }
                         if (!qr.correct && qr.correctAnswer.isNotBlank()) {
-                            Text("Correct: ${qr.correctAnswer}", style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = VColors.success)
+                            Text(appString(StringKeys.PAC_CORRECT_ANSWER, "answer" to qr.correctAnswer), style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = VColors.success)
                         }
                         val expl = qr.explanation
                         if (!expl.isNullOrBlank()) {
@@ -1307,7 +1307,7 @@ private fun QuizResultCard(
             Spacer(Modifier.height(16.dp))
 
             if (academics.leaderboardLoading) {
-                Text("Loading leaderboard...", style = VTypography.caption, color = VColors.ink3)
+                Text(appString(StringKeys.PAC_LOADING_LEADERBOARD), style = VTypography.caption, color = VColors.ink3)
             } else if (academics.leaderboardError != null) {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -1316,7 +1316,7 @@ private fun QuizResultCard(
                 ) {
                     Text(academics.leaderboardError ?: "", style = VTypography.caption, color = VColors.ink3, modifier = Modifier.weight(1f))
                     VButton(
-                        "Retry",
+                        appString(StringKeys.COMMON_BUTTON_RETRY),
                         onClick = { onLoadLeaderboard(result.quizId) },
                         variant = VButtonVariant.Secondary,
                     )
@@ -1324,9 +1324,9 @@ private fun QuizResultCard(
             } else {
                 val lb = academics.leaderboard
                 if (lb != null && lb.entries.isNotEmpty()) {
-                    Text("Leaderboard", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                    Text(appString(StringKeys.PAC_LEADERBOARD), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text("${lb.totalParticipants} participants", style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.PAC_PARTICIPANTS, "count" to lb.totalParticipants), style = VTypography.caption, color = VColors.ink3)
                     Spacer(Modifier.height(10.dp))
                     Column(
                         Modifier.fillMaxWidth(),
@@ -1343,7 +1343,7 @@ private fun QuizResultCard(
                             ) {
                                 Text("#${entry.rank}", style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
                                 Text(
-                                    entry.studentName + if (entry.isCurrentStudent) " (You)" else "",
+                                    entry.studentName + if (entry.isCurrentStudent) " ${appString(StringKeys.PAC_YOU)}" else "",
                                     style = VTypography.body.copy(fontSize = 13.sp),
                                     color = VColors.ink,
                                     modifier = Modifier.weight(1f),
@@ -1386,7 +1386,7 @@ private fun HomeworkTab(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         com.littlebridge.enrollplus.ui.components.VButton(
-            text = "Submit Homework",
+            text = appString(StringKeys.PAC_SUBMIT_HOMEWORK),
             onClick = onOpenHomework,
             modifier = Modifier.fillMaxWidth(),
             variant = com.littlebridge.enrollplus.ui.components.VButtonVariant.Primary,
@@ -1395,7 +1395,7 @@ private fun HomeworkTab(
         val data = academics.dailySummary
         val teacherEntries = data?.entries?.filter { !it.isAiEstimated } ?: emptyList()
         if (teacherEntries.isEmpty()) {
-            EmptyState("No log updated by the teacher", "Daily homework summaries will appear here once the teacher updates them.")
+            EmptyState(appString(StringKeys.PAC_NO_LOG), appString(StringKeys.PAC_NO_LOG_DESC))
             return@Column
         }
 
@@ -1461,7 +1461,7 @@ private fun TimetableTab(
                         Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text("Class Schedule", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                        Text(appString(StringKeys.PAC_CLASS_SCHEDULE), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                         Text(timetable.className, style = VTypography.caption, color = VColors.ink2)
                     }
                 }
@@ -1531,7 +1531,7 @@ private fun TimetableTab(
                     }
                     Column(Modifier.weight(1f)) {
                         Text(
-                            period.subject.ifBlank { "Free Period" },
+                            period.subject.ifBlank { appString(StringKeys.PAC_FREE_PERIOD) },
                             style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
                             color = VColors.ink,
                         )
@@ -1539,7 +1539,7 @@ private fun TimetableTab(
                             Text(period.teacherName, style = VTypography.caption, color = VColors.ink2)
                         }
                         if (period.room.isNotBlank()) {
-                            Text("Room ${period.room}", style = VTypography.caption, color = VColors.ink3)
+                            Text(appString(StringKeys.PAC_ROOM, "room" to period.room), style = VTypography.caption, color = VColors.ink3)
                         }
                     }
                     Column(horizontalAlignment = Alignment.End) {
@@ -1558,7 +1558,7 @@ private fun TimetableTab(
                         Box(
                             Modifier.clip(VShapes.full).background(accentColor).padding(horizontal = 8.dp, vertical = 3.dp),
                         ) {
-                            Text("LIVE", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.white)
+                            Text(appString(StringKeys.PAC_LIVE), style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.white)
                         }
                     } else if (isDone) {
                         Icon(Icons.Filled.Check, contentDescription = null, tint = VColors.success, modifier = Modifier.size(16.dp))
@@ -1662,11 +1662,11 @@ private fun ErrorState(message: String, onRetry: (() -> Unit)? = null) {
                 Icon(Icons.Filled.Close, contentDescription = null, tint = VColors.error, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text("Something went wrong", style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                Text(appString(StringKeys.PAC_SOMETHING_WRONG), style = VTypography.body, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                 Text(message, style = VTypography.caption, color = VColors.ink3)
             }
             if (onRetry != null) {
-                VButton("Retry", onClick = onRetry, variant = VButtonVariant.Secondary)
+                VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = onRetry, variant = VButtonVariant.Secondary)
             }
         }
     }

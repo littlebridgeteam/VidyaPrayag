@@ -646,7 +646,15 @@ private fun PasswordForm(
     var new0 by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var reveal by remember { mutableStateOf(false) }
+    var submitted by remember { mutableStateOf(false) }
     val inFlight = result is ActionResult.InFlight
+
+    val newError = if (submitted && new0.isBlank()) "New password is required"
+        else if (submitted && new0.length < 8) "New password must be at least 8 characters"
+        else null
+    val confirmError = if (submitted && confirm.isBlank()) "Please confirm your new password"
+        else if (submitted && new0.isNotBlank() && new0 != confirm) "Passwords don't match"
+        else null
 
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VInput(
@@ -659,11 +667,15 @@ private fun PasswordForm(
             hint = appString(StringKeys.TC_AT_LEAST_),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
+            isError = newError != null,
+            errorText = newError,
         )
         VInput(
             value = confirm, onValueChange = { confirm = it }, label = appString(StringKeys.TC_CONFIRM_NEW_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
+            isError = confirmError != null,
+            errorText = confirmError,
             trailing = {
                 val ix = remember { MutableInteractionSource() }
                 Icon(
@@ -679,12 +691,15 @@ private fun PasswordForm(
         }
         VButton(
             text = appString(StringKeys.TC_UPDATE_PASSWORD),
-            onClick = { onSubmit(old, new0, confirm) },
+            onClick = {
+                submitted = true
+                onSubmit(old, new0, confirm)
+            },
             full = true,
             tone = VButtonTone.Navy,
             stateful = true,
             loading = inFlight,
-            enabled = new0.isNotBlank() && confirm.isNotBlank() && !inFlight,
+            enabled = !inFlight,
         )
     }
 }

@@ -194,17 +194,26 @@ class TeacherGamificationViewModel(
                 _state.update { it.copy(isActionLoading = false) }
                 return@launch
             }
-            val result = repository.spotlightStudent(token, studentId, reason)
-            _state.update {
-                it.copy(
-                    isActionLoading = false,
-                    actionMessage = when (result) {
-                        is NetworkResult.Success -> "Student spotlighted!"
-                        else -> "Failed to spotlight student"
-                    },
-                )
+            try {
+                val result = repository.spotlightStudent(token, studentId, reason)
+                _state.update {
+                    it.copy(
+                        isActionLoading = false,
+                        actionMessage = when (result) {
+                            is NetworkResult.Success -> "Student spotlighted!"
+                            else -> "Failed to spotlight student"
+                        },
+                    )
+                }
+                load()
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        isActionLoading = false,
+                        actionMessage = "Failed to spotlight student",
+                    )
+                }
             }
-            load()
         }
     }
 

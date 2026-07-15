@@ -137,10 +137,14 @@ fun SchoolPeopleScreenV2(
     LaunchedEffect(teacherRefreshKey){
         teachersViewModel.load()
     }
+    LaunchedEffect(Unit) {
+        teachersViewModel.load()
+    }
     LaunchedEffect(studentRefreshKey){
         studentsViewModel.load()
     }
     LaunchedEffect(Unit) {
+        staffViewModel.load()
         classesViewModel.loadClasses()
     }
     SchoolPeopleContent(
@@ -427,8 +431,6 @@ private fun TeachersSubTab(
         q && subjectOk && gradeOk && availabilityOk
     }
 
-    var menuExpanded by remember { mutableStateOf(false) }
-
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
@@ -443,31 +445,14 @@ private fun TeachersSubTab(
                 leadingIcon = VIcons.Search,
                 modifier = Modifier.weight(1f),
             )
-            Box {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(VColors.surfaceCard)
-                        .clickable { menuExpanded = true },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(appString(StringKeys.PPL_ADD_TEACHER)) },
-                        onClick = { menuExpanded = false; onAddClick() },
-                        enabled = !state.isMutating,
-                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                    )
-                }
-            }
+            VButton(
+                text = appString(StringKeys.PPL_ADD_TEACHER),
+                onClick = onAddClick,
+                variant = VButtonVariant.Primary,
+                size = VButtonSize.Sm,
+                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                enabled = !state.isMutating,
+            )
         }
         FilterChipRow(
             chips = listOf(
@@ -819,8 +804,6 @@ private fun StaffSubTab(
         q && deptOk && roleOk && statusOk
     }
 
-    var menuExpanded by remember { mutableStateOf(false) }
-
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
@@ -835,30 +818,14 @@ private fun StaffSubTab(
                 leadingIcon = VIcons.Search,
                 modifier = Modifier.weight(1f),
             )
-            Box {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(VColors.surfaceCard)
-                        .clickable { menuExpanded = true },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(appString(StringKeys.PPL_ADD_STAFF)) },
-                        onClick = { menuExpanded = false; onAddClick() },
-                        enabled = !state.isSaving,
-                        leadingIcon = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                    )
-                }
-            }
+            VButton(
+                text = appString(StringKeys.PPL_ADD_STAFF),
+                onClick = onAddClick,
+                variant = VButtonVariant.Primary,
+                size = VButtonSize.Sm,
+                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                enabled = !state.isSaving,
+            )
         }
         FilterChipRow(
             chips = listOf(

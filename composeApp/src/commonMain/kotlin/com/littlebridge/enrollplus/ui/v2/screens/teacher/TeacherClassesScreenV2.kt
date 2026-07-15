@@ -771,6 +771,7 @@ private fun AssessmentStatusPill(status: String) {
         "published" -> Triple(c.success.copy(alpha = 0.16f), c.successInk, "PUBLISHED")
         "graded", "completed" -> Triple(c.teal.copy(alpha = 0.18f), c.tealDeep, "GRADED")
         "scheduled", "upcoming" -> Triple(c.accentTint, c.accentDeep, "SCHEDULED")
+        "marks_pending" -> Triple(c.warning.copy(alpha = 0.18f), c.warning, appString(StringKeys.TC_MARKS_PENDING))
         else -> Triple(c.cream, c.ink2, status.uppercase())
     }
     TPill(label, bg, fg)
@@ -795,7 +796,7 @@ private fun ActiveHomeworkCard(items: List<ClassHomeworkDto>) {
                         Spacer(Modifier.height(2.dp))
                         Text(
                             buildString {
-                                append(appString(StringKeys.TC_N_TURNED_IN, "submitted" to h.submittedCount.toString(), "total" to total.toString()))
+                                append(appString(StringKeys.TC_N_TURNED_IN, "count" to h.submittedCount.toString(), "total" to total.toString()))
                                 if (!h.dueDate.isNullOrBlank()) append(" · ${appString(StringKeys.TC_DUE_LABEL, "date" to prettyDateShort(h.dueDate))}")
                             },
                             style = VtT.caption.coloredV(c.ink3),

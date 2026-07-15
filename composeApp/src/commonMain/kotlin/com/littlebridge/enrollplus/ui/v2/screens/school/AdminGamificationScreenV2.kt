@@ -58,6 +58,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 @Composable
 fun AdminGamificationScreenV2(
@@ -119,7 +121,7 @@ fun AdminGamificationScreenV2(
                         .clickable { viewModel.load() }
                         .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {
-                    Text("Retry", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                    Text(appString(StringKeys.COMMON_BUTTON_RETRY), style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
                 }
             }
         } else {
@@ -139,9 +141,9 @@ fun AdminGamificationScreenV2(
                 ) {
                     Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.height(12.dp))
-                    Text("No gamification data yet", style = VTypography.body, color = VColors.ink2)
+                    Text(appString(StringKeys.AGAM_NO_DATA), style = VTypography.body, color = VColors.ink2)
                     Spacer(Modifier.height(4.dp))
-                    Text("Configure feature flags and create badges, levels, and rewards to get started.", style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.AGAM_NO_DATA_DESC), style = VTypography.caption, color = VColors.ink3)
                 }
             } else {
                 LazyColumn(
@@ -184,16 +186,16 @@ private fun AdminGamificationHeader(onBack: () -> Unit) {
                 .clickable { onBack() },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(VIcons.ChevronLeft, contentDescription = "Back", tint = VColors.violet, modifier = Modifier.size(20.dp))
+            Icon(VIcons.ChevronLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.violet, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.size(12.dp))
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
-                Text("Gamification", style = VTypography.accentLabel, color = VColors.violet)
+                Text(appString(StringKeys.AGAM_GAMIFICATION), style = VTypography.accentLabel, color = VColors.violet)
             }
             Spacer(Modifier.height(2.dp))
-            Text("Management Console", style = VTypography.h2.copy(fontSize = 20.sp), color = VColors.ink)
+            Text(appString(StringKeys.AGAM_MANAGEMENT_CONSOLE), style = VTypography.h2.copy(fontSize = 20.sp), color = VColors.ink)
         }
     }
 }
@@ -236,30 +238,30 @@ private fun FeatureFlagsCard(
     onGranularToggle: (String, Boolean) -> Unit,
 ) {
     val flags = state.flags
-    AdminCard(title = "Feature Flags") {
+    AdminCard(title = appString(StringKeys.AGAM_FEATURE_FLAGS)) {
         if (flags == null) {
-            Text("Unable to load flags", style = VTypography.caption, color = VColors.ink3)
+            Text(appString(StringKeys.AGAM_UNABLE_LOAD_FLAGS), style = VTypography.caption, color = VColors.ink3)
             return@AdminCard
         }
         FlagToggleRow(
-            label = "Enable Gamification",
-            description = "Master kill switch — turns entire system on/off",
+            label = appString(StringKeys.AGAM_ENABLE_GAM),
+            description = appString(StringKeys.AGAM_ENABLE_GAM_DESC),
             checked = flags.isGamificationEnabled,
             onCheckedChange = onToggle,
         )
         if (flags.isGamificationEnabled) {
             Spacer(Modifier.height(4.dp))
-            Text("Granular Toggles", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-            FlagToggleRow("Leaderboards", "Class & school rankings", flags.gamificationLeaderboards) { onGranularToggle("gamification_leaderboards", it) }
-            FlagToggleRow("Rewards Shop", "Spend XP on real rewards", flags.gamificationRewards) { onGranularToggle("gamification_rewards", it) }
-            FlagToggleRow("House System", "Guilds & collective competition", flags.gamificationHouses) { onGranularToggle("gamification_houses", it) }
-            FlagToggleRow("Quests", "Daily, weekly & seasonal quests", flags.gamificationQuests) { onGranularToggle("gamification_quests", it) }
-            FlagToggleRow("Mentor System", "Peer mentor & study buddy", flags.gamificationMentor) { onGranularToggle("gamification_mentor", it) }
-            FlagToggleRow("Shout-Outs", "Peer encouragement", flags.gamificationShoutouts) { onGranularToggle("gamification_shoutouts", it) }
-            FlagToggleRow("Seasonal Events", "Limited-edition badges", flags.gamificationEvents) { onGranularToggle("gamification_events", it) }
-            FlagToggleRow("Class Goals", "Collective rewards", flags.gamificationClassGoals) { onGranularToggle("gamification_class_goals", it) }
-            FlagToggleRow("Combos", "Consecutive activity multipliers", flags.gamificationCombos) { onGranularToggle("gamification_combos", it) }
-            FlagToggleRow("XP Boosts", "Time-limited multipliers", flags.gamificationBoosts) { onGranularToggle("gamification_boosts", it) }
+            Text(appString(StringKeys.AGAM_GRANULAR_TOGGLES), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+            FlagToggleRow(appString(StringKeys.AGAM_LEADERBOARDS), appString(StringKeys.AGAM_LEADERBOARDS_DESC), flags.gamificationLeaderboards) { onGranularToggle("gamification_leaderboards", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_REWARDS_SHOP), appString(StringKeys.AGAM_REWARDS_SHOP_DESC), flags.gamificationRewards) { onGranularToggle("gamification_rewards", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_HOUSE_SYSTEM), appString(StringKeys.AGAM_HOUSE_SYSTEM_DESC), flags.gamificationHouses) { onGranularToggle("gamification_houses", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_QUESTS_LABEL), appString(StringKeys.AGAM_QUESTS_DESC), flags.gamificationQuests) { onGranularToggle("gamification_quests", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_MENTOR_SYSTEM), appString(StringKeys.AGAM_MENTOR_SYSTEM_DESC), flags.gamificationMentor) { onGranularToggle("gamification_mentor", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_SHOUT_OUTS), appString(StringKeys.AGAM_SHOUT_OUTS_DESC), flags.gamificationShoutouts) { onGranularToggle("gamification_shoutouts", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_SEASONAL_EVENTS), appString(StringKeys.AGAM_SEASONAL_EVENTS_DESC), flags.gamificationEvents) { onGranularToggle("gamification_events", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_CLASS_GOALS), appString(StringKeys.AGAM_CLASS_GOALS_DESC), flags.gamificationClassGoals) { onGranularToggle("gamification_class_goals", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_COMBOS), appString(StringKeys.AGAM_COMBOS_DESC), flags.gamificationCombos) { onGranularToggle("gamification_combos", it) }
+            FlagToggleRow(appString(StringKeys.AGAM_XP_BOOSTS), appString(StringKeys.AGAM_XP_BOOSTS_DESC), flags.gamificationBoosts) { onGranularToggle("gamification_boosts", it) }
         }
     }
 }
@@ -296,15 +298,15 @@ private fun AnalyticsCard(state: AdminGamificationState) {
     val activeQuests = analytics["activeQuests"]?.toString() ?: "—"
     val redemptionRate = analytics["redemptionRate"]?.toString() ?: "—"
 
-    AdminCard(title = "Analytics Overview") {
+    AdminCard(title = appString(StringKeys.AGAM_ANALYTICS_OVERVIEW)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            AnalyticsMetric("Total XP", totalXp, VColors.violet)
-            AnalyticsMetric("Badges", totalBadges, VColors.gold)
-            AnalyticsMetric("Quests", activeQuests, VColors.coral)
-            AnalyticsMetric("Redemptions", redemptionRate, VColors.mint)
+            AnalyticsMetric(appString(StringKeys.GAM_TOTAL_XP), totalXp, VColors.violet)
+            AnalyticsMetric(appString(StringKeys.GAM_BADGES), totalBadges, VColors.gold)
+            AnalyticsMetric(appString(StringKeys.GAM_QUESTS), activeQuests, VColors.coral)
+            AnalyticsMetric(appString(StringKeys.AGAM_REDEMPTIONS), redemptionRate, VColors.mint)
         }
     }
 }

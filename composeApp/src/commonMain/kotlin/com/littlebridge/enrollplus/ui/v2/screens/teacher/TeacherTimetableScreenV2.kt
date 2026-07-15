@@ -190,7 +190,7 @@ fun TeacherTimetableScreenV2(
                         )
                     }
                 } else {
-                    items(periods) { period ->
+                    items(periods, key = { p -> "${selectedDay}-${p.periodId ?: p.startTime}-${p.subject}" }) { period ->
                         PeriodTimelineCard(
                             period = period,
                             onEdit = {
