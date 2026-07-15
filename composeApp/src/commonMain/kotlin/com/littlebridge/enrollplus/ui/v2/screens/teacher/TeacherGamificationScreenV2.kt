@@ -351,7 +351,7 @@ fun TeacherClassGamificationCard(
 
             if (showPepTalkConfirm) {
                 Text(
-                    appString(StringKeys.GAM_PEP_TALK_CONFIRM, "className" to className, "section" to section?.let { " · $it" } ?: ""),
+                    appString(StringKeys.GAM_PEP_TALK_CONFIRM, "className" to className, "section" to (section?.let { " · $it" } ?: "")),
                     style = VTypography.caption, color = c.ink2,
                 )
             }

@@ -505,7 +505,7 @@ fun TeacherPortalV2(
                     onOpenPews = { overlay = TeacherOverlay.Pews },
                     onOpenReportReview = {
                         if (reportClassName.isBlank()) {
-                            reportClassName = profile?.classes?.firstOrNull() ?: ""
+                            reportClassName = profile.profile?.classes?.firstOrNull() ?: ""
                         }
                         overlay = TeacherOverlay.ReportReview
                     },
