@@ -281,11 +281,5 @@ interface TeacherRepository {
 
 
 
-    // ── Attendance Analytics ───────────────────────────────────────────────
-
-    suspend fun getAttendanceAnalytics(token: String, assignmentId: String, from: String? = null, to: String? = null): NetworkResult<AttendanceAnalyticsResponse>
-
-    suspend fun getStudentAnalytics(token: String, assignmentId: String, studentId: String, from: String? = null, to: String? = null): NetworkResult<StudentAnalyticsResponse>
-
 }
 

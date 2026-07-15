@@ -72,6 +72,8 @@ import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageVi
 import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsViewModel
 
 import com.littlebridge.enrollplus.feature.admin.presentation.ResultsViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.FeeSalaryViewModel
+import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherSalaryViewModel
 
 import com.littlebridge.enrollplus.util.AppConfig
 
@@ -514,6 +516,30 @@ val commonModule = module {
 
     single {
 
+        com.littlebridge.enrollplus.feature.admin.data.remote.FeeSalaryApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    single {
+
+        com.littlebridge.enrollplus.feature.teacher.data.remote.TeacherSalaryApi(
+
+            client = get(),
+
+            baseUrl = AppConfig.schoolBaseUrl
+
+        )
+
+    }
+
+    single {
+
         com.littlebridge.enrollplus.feature.admin.data.remote.ResultsApi(
 
             client = get(),
@@ -778,6 +804,18 @@ val commonModule = module {
     single<com.littlebridge.enrollplus.feature.admin.domain.repository.AdminDashboardRepository> {
 
         com.littlebridge.enrollplus.feature.admin.data.repository.AdminDashboardRepositoryImpl(get(), get())
+
+    }
+
+    single<com.littlebridge.enrollplus.feature.admin.domain.repository.FeeSalaryRepository> {
+
+        com.littlebridge.enrollplus.feature.admin.data.repository.FeeSalaryRepositoryImpl(get())
+
+    }
+
+    single<com.littlebridge.enrollplus.feature.teacher.domain.repository.TeacherSalaryRepository> {
+
+        com.littlebridge.enrollplus.feature.teacher.data.repository.TeacherSalaryRepositoryImpl(get())
 
     }
 
@@ -1316,6 +1354,10 @@ val viewModelModule = module {
 
     factory { ResultsViewModel(get(), get()) }
 
+    factory { FeeSalaryViewModel(get(), get()) }
+
+    factory { TeacherSalaryViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.content.presentation.LandingViewModel(get()) }
 
     factory { com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel(get()) }
@@ -1343,8 +1385,6 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherStudentProfileViewModel(get(), get()) } // T-505
 
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceViewModel(get(), get()) }
-
-    factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceAnalyticsViewModel(get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.teacher.presentation.TeacherInsightsViewModel(get(), get()) }
 

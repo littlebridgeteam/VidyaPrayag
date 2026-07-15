@@ -118,6 +118,8 @@ fun SchoolSettingsScreenV2(
     onOpenClassesSubjects: () -> Unit = {},
     // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
     onOpenGamification: () -> Unit = {},
+    // Fee & Salary Management — fee structures, payment tracking, reminder config, salary records.
+    onOpenFeeSalary: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
     brandingViewModel: BrandingPhotosViewModel = koinViewModel(),
@@ -154,6 +156,7 @@ fun SchoolSettingsScreenV2(
         onOpenLibrary = onOpenLibrary,
         onOpenClassesSubjects = onOpenClassesSubjects,
         onOpenGamification = onOpenGamification,
+        onOpenFeeSalary = onOpenFeeSalary,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding(),
@@ -181,6 +184,7 @@ private fun SchoolSettingsContent(
     onOpenLibrary: () -> Unit,
     onOpenClassesSubjects: () -> Unit,
     onOpenGamification: () -> Unit,
+    onOpenFeeSalary: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -281,7 +285,7 @@ private fun SchoolSettingsContent(
                 SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
                 SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
                 SettingRow(VIcons.Sparkles, "Gamification", "Feature flags, badges, rewards, boosts & analytics", false, onClick = onOpenGamification),
-                SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle", true),
+                SettingRow(VIcons.Wallet, "Fee & Salary", "Fee structures, payment tracking, reminders & salary", false, onClick = onOpenFeeSalary),
                 SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
                 SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),
                 SettingRow(

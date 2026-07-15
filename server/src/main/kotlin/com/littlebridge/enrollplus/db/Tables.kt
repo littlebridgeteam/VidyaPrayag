@@ -4637,4 +4637,80 @@ object PlatformFeatureFilesTable : UUIDTable("platform_feature_files", "id") {
     val lastCommitAuthor  = text("last_commit_author").nullable()
 }
 
+// =====================================================================
+// Fee & Salary Management (Phase 1 — ledger-based, no payment gateway)
+// =====================================================================
+
+/**
+ * Recurring fee structure templates per school. When null classId, applies
+ * school-wide. Admin creates these in Settings → Fee & Salary → Fee Structure.
+ */
+object FeeStructuresTable : UUIDTable("fee_structures", "id") {
+    val schoolId    = uuid("school_id")
+    val classId     = uuid("class_id").nullable()
+    val title       = text("title")
+    val description = text("description").nullable()
+    val amount      = double("amount")
+    val currency    = varchar("currency", 8).default("INR")
+    val frequency   = varchar("frequency", 16).default("MONTHLY")
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+    init {
+        uniqueIndex("ux_fee_structures_school_class_title", schoolId, classId, title)
+    }
+}
+
+/**
+ * One-off additional charges per student/month with a description.
+ * Admin adds these individually from the Payment Tracking sub-tab.
+ */
+object FeeAdditionalChargesTable : UUIDTable("fee_additional_charges", "id") {
+    val schoolId    = uuid("school_id")
+    val childId     = uuid("child_id")
+    val classId     = uuid("class_id").nullable()
+    val month       = varchar("month", 7) // YYYY-MM
+    val title       = text("title")
+    val description = text("description").nullable()
+    val amount      = double("amount")
+    val currency    = varchar("currency", 8).default("INR")
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+}
+
+/**
+ * Per-school fee reminder day configuration. The notification scheduler
+ * reads this to determine when to send "fee due" push notifications.
+ */
+object FeeReminderConfigTable : Table("fee_reminder_config") {
+    val schoolId    = uuid("school_id")
+    val reminderDay = integer("reminder_day").default(5) // 1-28
+    val isActive    = bool("is_active").default(true)
+    val updatedAt   = timestamp("updated_at")
+    override val primaryKey = PrimaryKey(schoolId)
+}
+
+/**
+ * Teacher/staff salary records per month. Admin sets up salary from
+ * Fee & Salary → Salary tab. Teacher sees their own history in profile overlay.
+ */
+object SalaryRecordsTable : UUIDTable("salary_records", "id") {
+    val schoolId    = uuid("school_id")
+    val teacherId   = uuid("teacher_id") // FK app_users.id (role=teacher)
+    val month       = varchar("month", 7) // YYYY-MM
+    val baseSalary  = double("base_salary")
+    val allowances  = double("allowances").default(0.0)
+    val deductions  = double("deductions").default(0.0)
+    val netAmount   = double("net_amount")
+    val currency    = varchar("currency", 8).default("INR")
+    val status      = varchar("status", 16).default("UNPAID") // UNPAID | PAID
+    val paidAt      = timestamp("paid_at").nullable()
+    val notes       = text("notes").nullable()
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+    init {
+        uniqueIndex("ux_salary_school_teacher_month", schoolId, teacherId, month)
+    }
+}
+
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

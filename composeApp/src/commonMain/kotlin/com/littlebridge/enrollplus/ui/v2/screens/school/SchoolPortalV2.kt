@@ -86,6 +86,7 @@ private enum class SchoolOverlay {
     ClassDetail,
     GamificationManagement,
     NotificationPreferences,
+    FeeSalaryManagement,
 }
 
 /**
@@ -630,6 +631,13 @@ fun SchoolPortalV2(
                 )
                 return
             }
+            SchoolOverlay.FeeSalaryManagement -> {
+                FeeSalaryManagementScreen(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
+                return
+            }
             SchoolOverlay.None -> Unit
         }
 
@@ -780,6 +788,7 @@ fun SchoolPortalV2(
                         onOpenClassesSubjects = { overlay = SchoolOverlay.ClassesSubjects },
                         // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
                         onOpenGamification = { overlay = SchoolOverlay.GamificationManagement },
+                        onOpenFeeSalary = { overlay = SchoolOverlay.FeeSalaryManagement },
                     )
                 }
             }

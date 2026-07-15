@@ -190,6 +190,63 @@ data class UpdateRedemptionRequest(
     val status: String // APPROVED | REJECTED | FULFILLED
 )
 
+@Serializable
+data class AdminRedemptionDto(
+    val id: String,
+    val studentId: String,
+    val rewardId: String,
+    val xpSpent: Int,
+    val status: String,
+    val createdAt: String
+)
+
+@Serializable
+data class AdminBoostDto(
+    val id: String,
+    val boostType: String,
+    val multiplier: Float,
+    val targetScope: String,
+    val isActive: Boolean,
+    val startsAt: String,
+    val endsAt: String
+)
+
+@Serializable
+data class GamificationAnalyticsDto(
+    val totalStudents: Int,
+    val totalXp: Int,
+    val averageXp: Int,
+    val levelDistribution: Map<String, Int>,
+    val categoryXp: Map<String, Int>,
+    val pendingRedemptions: Int
+)
+
+@Serializable
+data class GamificationOverviewDto(
+    val totalStudents: Int,
+    val totalXp: Int,
+    val levelDistribution: Map<String, Int>,
+    val bottom25Ids: List<String>,
+    val averageXp: Int
+)
+
+@Serializable
+data class SpotlightResultDto(
+    val xpResult: XpAwardResult,
+    val newBadges: List<StudentBadgeDto>
+)
+
+@Serializable
+data class ShoutoutDto(
+    val id: String,
+    val senderId: String,
+    val receiverId: String,
+    val message: String,
+    val templateId: Int,
+    val isPublic: Boolean,
+    val createdAt: String
+)
+
 fun Route.gamificationRouting() {
     authenticate("jwt") {
 
@@ -676,7 +733,7 @@ fun Route.gamificationRouting() {
                     category = "CHARACTER"
                 )
                 val newBadges = BadgeCriteriaEvaluator.evaluateBadges(studentId, ctx.schoolId)
-                call.ok(mapOf("xpResult" to result, "newBadges" to newBadges), "Spotlight awarded: +50 XP")
+                call.ok(SpotlightResultDto(xpResult = result, newBadges = newBadges), "Spotlight awarded: +50 XP")
             }
 
             // ── Teacher Tools: Class Pep Talk (x1.5 XP boost for 24h) ─────
@@ -713,14 +770,14 @@ fun Route.gamificationRouting() {
                         }
                         .orderBy(GameShoutoutsTable.createdAt, SortOrder.DESC)
                         .map {
-                            mapOf(
-                                "id" to it[GameShoutoutsTable.id].value.toString(),
-                                "senderId" to it[GameShoutoutsTable.senderId].toString(),
-                                "receiverId" to it[GameShoutoutsTable.receiverId].toString(),
-                                "message" to it[GameShoutoutsTable.message],
-                                "templateId" to it[GameShoutoutsTable.templateId],
-                                "isPublic" to it[GameShoutoutsTable.isPublic],
-                                "createdAt" to it[GameShoutoutsTable.createdAt].toString()
+                            ShoutoutDto(
+                                id = it[GameShoutoutsTable.id].value.toString(),
+                                senderId = it[GameShoutoutsTable.senderId].toString(),
+                                receiverId = it[GameShoutoutsTable.receiverId].toString(),
+                                message = it[GameShoutoutsTable.message],
+                                templateId = it[GameShoutoutsTable.templateId],
+                                isPublic = it[GameShoutoutsTable.isPublic],
+                                createdAt = it[GameShoutoutsTable.createdAt].toString()
                             )
                         }
                 }
@@ -766,12 +823,12 @@ fun Route.gamificationRouting() {
 
                 val totalXp = allStats.sumOf { it[GameStudentStatsTable.totalXp] }
 
-                call.ok(mapOf(
-                    "totalStudents" to totalStudents,
-                    "totalXp" to totalXp,
-                    "levelDistribution" to levelDistribution,
-                    "bottom25Ids" to bottom25Threshold,
-                    "averageXp" to if (totalStudents > 0) totalXp / totalStudents else 0
+                call.ok(GamificationOverviewDto(
+                    totalStudents = totalStudents,
+                    totalXp = totalXp,
+                    levelDistribution = levelDistribution.mapKeys { it.key.toString() },
+                    bottom25Ids = bottom25Threshold,
+                    averageXp = if (totalStudents > 0) totalXp / totalStudents else 0
                 ), "Gamification overview")
             }
 
@@ -1102,13 +1159,13 @@ fun Route.gamificationRouting() {
                         .where { GameRewardRedemptionsTable.schoolId eq ctx.schoolId }
                         .orderBy(GameRewardRedemptionsTable.createdAt, SortOrder.DESC)
                         .map {
-                            mapOf(
-                                "id" to it[GameRewardRedemptionsTable.id].value.toString(),
-                                "studentId" to it[GameRewardRedemptionsTable.studentId].toString(),
-                                "rewardId" to it[GameRewardRedemptionsTable.rewardId].toString(),
-                                "xpSpent" to it[GameRewardRedemptionsTable.xpSpent],
-                                "status" to it[GameRewardRedemptionsTable.status],
-                                "createdAt" to it[GameRewardRedemptionsTable.createdAt].toString()
+                            AdminRedemptionDto(
+                                id = it[GameRewardRedemptionsTable.id].value.toString(),
+                                studentId = it[GameRewardRedemptionsTable.studentId].toString(),
+                                rewardId = it[GameRewardRedemptionsTable.rewardId].toString(),
+                                xpSpent = it[GameRewardRedemptionsTable.xpSpent],
+                                status = it[GameRewardRedemptionsTable.status],
+                                createdAt = it[GameRewardRedemptionsTable.createdAt].toString()
                             )
                         }
                 }
@@ -1154,14 +1211,14 @@ fun Route.gamificationRouting() {
                         .where { GameXpBoostsTable.schoolId eq ctx.schoolId }
                         .orderBy(GameXpBoostsTable.createdAt, SortOrder.DESC)
                         .map {
-                            mapOf(
-                                "id" to it[GameXpBoostsTable.id].value.toString(),
-                                "boostType" to it[GameXpBoostsTable.boostType],
-                                "multiplier" to it[GameXpBoostsTable.multiplier],
-                                "targetScope" to it[GameXpBoostsTable.targetScope],
-                                "isActive" to it[GameXpBoostsTable.isActive],
-                                "startsAt" to it[GameXpBoostsTable.startsAt].toString(),
-                                "endsAt" to it[GameXpBoostsTable.endsAt].toString()
+                            AdminBoostDto(
+                                id = it[GameXpBoostsTable.id].value.toString(),
+                                boostType = it[GameXpBoostsTable.boostType],
+                                multiplier = it[GameXpBoostsTable.multiplier],
+                                targetScope = it[GameXpBoostsTable.targetScope],
+                                isActive = it[GameXpBoostsTable.isActive],
+                                startsAt = it[GameXpBoostsTable.startsAt].toString(),
+                                endsAt = it[GameXpBoostsTable.endsAt].toString()
                             )
                         }
                 }
@@ -1222,13 +1279,13 @@ fun Route.gamificationRouting() {
                         .count()
                 }
 
-                call.ok(mapOf(
-                    "totalStudents" to totalStudents,
-                    "totalXp" to totalXp,
-                    "averageXp" to if (totalStudents > 0) totalXp / totalStudents else 0,
-                    "levelDistribution" to levelDistribution,
-                    "categoryXp" to categoryXp,
-                    "pendingRedemptions" to pendingRedemptions
+                call.ok(GamificationAnalyticsDto(
+                    totalStudents = totalStudents,
+                    totalXp = totalXp,
+                    averageXp = if (totalStudents > 0) totalXp / totalStudents else 0,
+                    levelDistribution = levelDistribution.mapKeys { it.key.toString() },
+                    categoryXp = categoryXp,
+                    pendingRedemptions = pendingRedemptions
                 ), "Gamification analytics")
             }
         }

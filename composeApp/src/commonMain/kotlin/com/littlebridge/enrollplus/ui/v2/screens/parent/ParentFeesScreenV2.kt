@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
+import com.littlebridge.enrollplus.feature.parent.domain.model.ParentFeeItemDto
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeAnnouncement
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeState
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
@@ -285,6 +286,19 @@ private fun ParentFeesContent(
                             FeeAnnouncementCard(a)
                         }
                     }
+
+                    // ── Fee items breakdown ───────────────────────────────────────
+                    if (state.feeItems.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Fee breakdown",
+                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                            color = VColors.ink,
+                        )
+                        state.feeItems.forEach { item ->
+                            FeeItemCard(item)
+                        }
+                    }
                 } // end content Column
         }
     }
@@ -350,6 +364,59 @@ private fun FeeAnnouncementCard(a: FeeAnnouncement) {
                 a.type,
                 style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                 color = badgeColor.first,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeeItemCard(item: ParentFeeItemDto) {
+    val statusColor = when (item.status) {
+        "PAID" -> VColors.success to VColors.successSoft
+        "OVERDUE" -> VColors.error to VColors.errorSoft
+        else -> VColors.gold to VColors.goldSoft
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.lg)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                item.title,
+                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
+            )
+            item.description?.let {
+                Text(it, style = VTypography.caption, color = VColors.ink2)
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    "${item.currency} ${"%,.0f".format(item.amount)}",
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                    color = VColors.violet,
+                )
+                item.month?.let {
+                    Text("• $it", style = VTypography.caption, color = VColors.ink3)
+                }
+            }
+        }
+        Box(
+            Modifier
+                .clip(VShapes.full)
+                .background(statusColor.second)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        ) {
+            Text(
+                item.status,
+                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                color = statusColor.first,
             )
         }
     }

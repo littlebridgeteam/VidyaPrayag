@@ -60,12 +60,25 @@ data class FeeResponse(
 )
 
 @Serializable
+data class ParentFeeItemDto(
+    val id: String,
+    val title: String,
+    val description: String? = null,
+    val amount: Double,
+    val status: String,
+    val category: String = "Tuition",
+    val month: String? = null,
+    val currency: String = "INR",
+)
+
+@Serializable
 data class FeeData(
     @SerialName("total_collected") val totalCollected: String,
     @SerialName("collection_progress") val collectionProgress: Float,
     @SerialName("outstanding_fees") val outstandingFees: String,
     @SerialName("overdue_count") val overdueCount: Int,
-    val announcements: List<FeeAnnouncementDto>
+    val announcements: List<FeeAnnouncementDto>,
+    @SerialName("fee_items") val feeItems: List<ParentFeeItemDto> = emptyList(),
 )
 
 @Serializable

@@ -91,6 +91,7 @@ fun TeacherProfileScreenV2(
     teacherName: String = "",
     unreadCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
+    onOpenSalary: () -> Unit = {},
     profileViewModel: TeacherProfileViewModel = koinViewModel(),
     actionsViewModel: TeacherProfileActionsViewModel = koinViewModel(),
 ) {
@@ -201,6 +202,21 @@ fun TeacherProfileScreenV2(
                         actionsViewModel.clearPasswordResult()
                     },
                 )
+            }
+        }
+
+        // ── SALARY & PAYMENTS
+        item {
+            SettingsGroup(label = "Salary & Payments", icon = VIcons.Wallet, tint = VColors.violet) {
+                TCard {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clickable { onOpenSalary() },
+                    ) {
+                        Text("View Salary History", style = VtT.h3.coloredV(c.navyDeep))
+                        Spacer(Modifier.height(4.dp))
+                        Text("See your monthly salary breakdown and payment status", style = VtT.caption.coloredV(c.ink3))
+                    }
+                }
             }
         }
 

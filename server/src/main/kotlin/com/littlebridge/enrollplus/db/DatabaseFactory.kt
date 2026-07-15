@@ -37,6 +37,7 @@
 package com.littlebridge.enrollplus.db
 
 import com.littlebridge.enrollplus.core.RuntimeEnvironment
+import com.littlebridge.enrollplus.feature.gamification.GamificationSeeder
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.cdimascio.dotenv.dotenv
@@ -375,11 +376,37 @@ object DatabaseFactory {
         PlatformNotificationsTable,
         PlatformDiscoveredScreensTable,
         PlatformFeatureFilesTable,
-        // Gamification System tables NOT included in schema validation —
-        // they are provisioned separately via docs/db/migration_100_gamification.sql
-        // and are still under development. Including them here would block server
-        // boot until that migration is applied. Gamification code gracefully handles
-        // missing tables at runtime.
+        // Fee & Salary Management (setup_fee_salary_management.sql)
+        // Fee structures, additional charges, reminder config, and salary records.
+        FeeStructuresTable,
+        FeeAdditionalChargesTable,
+        FeeReminderConfigTable,
+        SalaryRecordsTable,
+        // Gamification System (GAMIFICATION_SYSTEM_SPEC.md §26)
+        // Provisioned via docs/db/migration_100_gamification.sql in Postgres;
+        // auto-created on SQLite via SchemaUtils.
+        GameXpLedgerTable,
+        GameStudentStatsTable,
+        GameLevelDefinitionsTable,
+        GameBadgeDefinitionsTable,
+        GameStudentBadgesTable,
+        GameHousesTable,
+        GameStudentHouseAssignmentsTable,
+        GameQuestDefinitionsTable,
+        GameStudentQuestsTable,
+        GameXpBoostsTable,
+        GameRewardCatalogTable,
+        GameRewardRedemptionsTable,
+        GameClassGoalsTable,
+        GameShoutoutsTable,
+        GameMentorAssignmentsTable,
+        GameStudyBuddyPairsTable,
+        GameProgressionPathsTable,
+        GameStudentPathProgressTable,
+        GameTitlesTable,
+        GameSeasonalEventsTable,
+        GameMotivationMessagesTable,
+        GameTeacherEncouragementsTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */
@@ -541,6 +568,26 @@ object DatabaseFactory {
             false
         } else {
             seedDemoRequested
+        }
+
+        // Gamification seed (levels, badges, quests, flags). Idempotent.
+        val seedGamification = (resolve(dotenv, "APP_SEED_GAMIFICATION") ?: "true")
+            .equals("true", ignoreCase = true)
+
+        if (seedGamification) {
+            logger.info("DB_INIT: Running gamification seed...")
+            try {
+                GamificationSeeder.seed()
+                logger.info("DB_INIT: Gamification seed completed successfully.")
+            } catch (e: Exception) {
+                val msg = e.message ?: ""
+                if (msg.contains("relation", ignoreCase = true) && msg.contains("does not exist", ignoreCase = true)) {
+                    logger.warn("DB_INIT_WARNING: Gamification seeding skipped because tables are missing.")
+                    logger.warn("DB_INIT_TIP: Set AUTO_CREATE_TABLES=true or run migration_100_gamification.sql in Supabase.")
+                } else {
+                    logger.error("DB_INIT_ERROR: Gamification seeding failed with unexpected error", e)
+                }
+            }
         }
 
         if (seedDemo) {

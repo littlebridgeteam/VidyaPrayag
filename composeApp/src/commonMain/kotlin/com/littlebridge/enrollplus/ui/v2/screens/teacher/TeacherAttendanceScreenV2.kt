@@ -40,13 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.feature.teacher.domain.model.AtRiskStudentDto
-import com.littlebridge.enrollplus.feature.teacher.domain.model.AttendanceAnalyticsDto
-import com.littlebridge.enrollplus.feature.teacher.domain.model.DailyAttendanceDto
-import com.littlebridge.enrollplus.feature.teacher.domain.model.WeeklyTrendDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsSignalDto
+import com.littlebridge.enrollplus.feature.pews.domain.model.PewsStudentDto
 import com.littlebridge.enrollplus.feature.teacher.presentation.AttendanceStatus
 import com.littlebridge.enrollplus.feature.teacher.presentation.StudentAttendance
-import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceAnalyticsViewModel
+import com.littlebridge.enrollplus.feature.pews.presentation.TeacherPewsViewModel
 import com.littlebridge.enrollplus.feature.teacher.presentation.TeacherAttendanceViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -78,7 +76,7 @@ fun TeacherAttendanceScreenV2(
     onToolChange: (UpdateTool) -> Unit = {},
     onChangeClass: () -> Unit = {},
     viewModel: TeacherAttendanceViewModel = koinViewModel(),
-    analyticsViewModel: TeacherAttendanceAnalyticsViewModel = koinViewModel(),
+    pewsViewModel: TeacherPewsViewModel = koinViewModel(),
     onOpenMessages: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -88,10 +86,8 @@ fun TeacherAttendanceScreenV2(
         if (assignmentId.isNotBlank() && state.assignmentId != assignmentId) viewModel.load(assignmentId)
     }
 
-    LaunchedEffect(showInsights, assignmentId) {
-        if (showInsights && assignmentId.isNotBlank() && analyticsViewModel.state.value.assignmentId != assignmentId) {
-            analyticsViewModel.load(assignmentId)
-        }
+    LaunchedEffect(showInsights) {
+        if (showInsights) pewsViewModel.load()
     }
 
     Box(modifier.fillMaxSize().background(VColors.cream)) {
@@ -103,7 +99,7 @@ fun TeacherAttendanceScreenV2(
                 retryLabel = appString(StringKeys.COMMON_BUTTON_RETRY),
                 onRetry = { viewModel.retry() },
             )
-            showInsights -> AttendanceInsightsBody(analyticsViewModel, scopeLabel, assignmentId) { showInsights = false }
+            showInsights -> AttendanceInsightsBody(pewsViewModel, state.className, state.section, scopeLabel) { showInsights = false }
             else -> AttendanceBody(
                 state.students,
                 viewModel,
@@ -351,21 +347,28 @@ private fun AbsentNotifyBanner(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ATTENDANCE INSIGHTS — Analytics dashboard
+// ATTENDANCE INSIGHTS — PEWS at-risk students for this class
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun AttendanceInsightsBody(
-    viewModel: TeacherAttendanceAnalyticsViewModel,
+    viewModel: TeacherPewsViewModel,
+    className: String,
+    section: String,
     scopeLabel: String,
-    assignmentId: String,
     onBack: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val a = state.analytics
+    val filtered = remember(state.students, className, section) {
+        state.students.filter { s ->
+            className.isBlank() || s.className.equals(className, ignoreCase = true)
+        }.filter { s ->
+            section.isBlank() || s.section.equals(section, ignoreCase = true)
+        }
+    }
 
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 14.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -383,7 +386,7 @@ private fun AttendanceInsightsBody(
                         VtEyebrow("Attendance Insights", dot = VColors.violet)
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            scopeLabel.ifBlank { "${a?.className}-${a?.section} · ${a?.subject}" },
+                            scopeLabel.ifBlank { "$className-$section" },
                             style = VTypography.h3,
                             color = VColors.ink,
                             maxLines = 1,
@@ -393,184 +396,36 @@ private fun AttendanceInsightsBody(
             }
         }
 
-        if (state.isLoading && a == null) {
+        if (state.isLoading && filtered.isEmpty()) {
             item { Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
-        } else if (state.error != null && a == null) {
+        } else if (state.error != null && filtered.isEmpty()) {
             item {
                 VtCard {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text("Couldn't load analytics", style = VTypography.h3.copy(color = VColors.ink))
+                        Text("Couldn't load insights", style = VTypography.h3.copy(color = VColors.ink))
                         Spacer(Modifier.height(8.dp))
-                        VButton("Retry", onClick = { viewModel.retry() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
+                        VButton("Retry", onClick = { viewModel.load() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
                 }
             }
-        } else if (a == null || a.totalMarkedDays == 0) {
+        } else if (filtered.isEmpty()) {
             item {
                 VtCard {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         VtIconDisc(VIcons.Activity, tint = VColors.violet, bg = VColors.violet.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text("No attendance data yet", style = VTypography.h3.copy(color = VColors.ink))
+                        Text("No at-risk students", style = VTypography.h3.copy(color = VColors.ink))
                         Spacer(Modifier.height(4.dp))
-                        Text("Start marking attendance to see insights", style = VTypography.caption, color = VColors.ink3)
+                        Text("All students are on track for this class", style = VTypography.caption, color = VColors.ink3)
                         Spacer(Modifier.height(12.dp))
                         VButton("Mark Attendance", onClick = onBack, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
                 }
             }
         } else {
-            // Hero ring + overall stats
-            item { AnalyticsHeroCard(a) }
-
-            // Status breakdown
-            item { AnalyticsStatusBreakdown(a) }
-
-            // Weekly trend bar chart
-            if (a.weeklyTrend.isNotEmpty()) {
-                item { AnalyticsWeeklyTrendCard(a.weeklyTrend, a.trendDirection) }
-            }
-
-            // At-risk students
-            if (a.atRiskStudents.isNotEmpty()) {
-                item { AnalyticsAtRiskHeader(a.atRiskStudents.size) }
-                items(a.atRiskStudents, key = { it.studentId }) { student ->
-                    AtRiskStudentRow(student) { viewModel.loadStudentAnalytics(student.studentId) }
-                }
-            }
-
-            // Daily heatmap (last 30 days)
-            if (a.dailyBreakdown.isNotEmpty()) {
-                item { AnalyticsHeatmapCard(a.dailyBreakdown) }
-            }
-        }
-
-        // Student detail drill-down
-        if (state.selectedStudentId != null && state.studentAnalytics != null) {
-            val analytics = state.studentAnalytics
-            if (analytics != null) {
-                item { StudentDetailCard(analytics, onClose = { viewModel.closeStudentDetail() }) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AnalyticsHeroCard(a: AttendanceAnalyticsDto) {
-    VtCard {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            // Ring
-            AnalyticsRing(a.overallPercentage, Modifier.size(100.dp))
-            // Stats
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${a.totalMarkedDays} days marked", style = VTypography.body, color = VColors.ink)
-                Text("${a.totalStudents} students in class", style = VTypography.caption, color = VColors.ink3)
-                val trendIcon = when (a.trendDirection) {
-                    "up" -> VIcons.TrendingUp to VColors.success
-                    "down" -> VIcons.TrendingDown to VColors.coral
-                    else -> VIcons.Activity to VColors.ink3
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(trendIcon.first, contentDescription = null, tint = trendIcon.second, modifier = Modifier.size(14.dp))
-                    Text(
-                        when (a.trendDirection) { "up" -> "Trending up"; "down" -> "Trending down"; else -> "Stable" },
-                        style = VTypography.caption, color = trendIcon.second,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AnalyticsRing(percent: Int, modifier: Modifier = Modifier) {
-    val accent = when {
-        percent >= 85 -> VColors.success
-        percent >= 75 -> VColors.violet
-        percent >= 60 -> VColors.gold
-        else -> VColors.coral
-    }
-    val track = accent.copy(alpha = 0.15f)
-    val sweep = (percent / 100f).coerceIn(0f, 1f)
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            val stroke = 8.dp.toPx()
-            val inset = stroke / 2f
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            drawArc(track, 0f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(width = stroke, cap = StrokeCap.Round))
-            drawArc(
-                color = accent,
-                startAngle = -90f, sweepAngle = 360f * sweep, useCenter = false,
-                topLeft = Offset(inset, inset), size = arcSize, style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
-        }
-        Text("$percent%", style = VTypography.h3, color = VColors.ink)
-    }
-}
-
-@Composable
-private fun AnalyticsStatusBreakdown(a: AttendanceAnalyticsDto) {
-    VtCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Status Breakdown", style = VTypography.body, color = VColors.ink)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VtMetricTile(a.presentCount.toString(), "Present", VColors.success, Modifier.weight(1f))
-                VtMetricTile(a.absentCount.toString(), "Absent", VColors.coral, Modifier.weight(1f))
-                VtMetricTile(a.lateCount.toString(), "Late", VColors.gold, Modifier.weight(1f))
-                VtMetricTile(a.leaveCount.toString(), "Leave", VColors.sky, Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun AnalyticsWeeklyTrendCard(trend: List<WeeklyTrendDto>, direction: String) {
-    VtCard {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Weekly Trend", style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f))
-                val dirColor = when (direction) { "up" -> VColors.success; "down" -> VColors.coral; else -> VColors.ink3 }
-                val dirIcon = when (direction) { "up" -> VIcons.TrendingUp; "down" -> VIcons.TrendingDown; else -> VIcons.Activity }
-                Icon(dirIcon, contentDescription = null, tint = dirColor, modifier = Modifier.size(16.dp))
-            }
-            // Bar chart
-            val maxPct = 100
-            Row(
-                Modifier.fillMaxWidth().height(120.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                trend.forEach { w ->
-                    val barHeight = (w.attendancePercentage.toFloat() / maxPct.toFloat()).coerceIn(0f, 1f)
-                    val barColor = when {
-                        w.attendancePercentage >= 85 -> VColors.success
-                        w.attendancePercentage >= 75 -> VColors.violet
-                        w.attendancePercentage >= 60 -> VColors.gold
-                        else -> VColors.coral
-                    }
-                    Column(
-                        Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Box(
-                            Modifier.weight(1f).fillMaxWidth(),
-                            contentAlignment = Alignment.BottomCenter,
-                        ) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth(barHeight.coerceAtLeast(0.02f))
-                                    .height(120.dp * barHeight)
-                                    .clip(VShapes.sm)
-                                    .background(barColor.copy(alpha = 0.8f)),
-                            )
-                        }
-                        Text(
-                            w.week.takeLast(2),
-                            style = VTypography.caption, color = VColors.ink3,
-                        )
-                    }
-                }
+            item { AnalyticsAtRiskHeader(filtered.size) }
+            items(filtered, key = { it.studentCode }) { student ->
+                PewsStudentRow(student)
             }
         }
     }
@@ -586,137 +441,58 @@ private fun AnalyticsAtRiskHeader(count: Int) {
 }
 
 @Composable
-private fun AtRiskStudentRow(student: AtRiskStudentDto, onTap: () -> Unit) {
-    VtCard(onClick = onTap) {
+private fun PewsStudentRow(student: PewsStudentDto) {
+    VtCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             VAvatar(name = student.name, size = 38.dp)
             Column(Modifier.weight(1f)) {
                 Text(student.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
-                Text("Roll ${student.rollNo} · ${student.absentDays} abs · ${student.lateDays} late", style = VTypography.caption, color = VColors.ink3)
-            }
-            // Mini percentage ring
-            Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                val pct = student.attendancePercentage
-                val color = if (pct >= 75) VColors.success else VColors.coral
-                Canvas(Modifier.fillMaxSize()) {
-                    val stroke = 4.dp.toPx()
-                    val inset = stroke / 2f
-                    val arcSize = Size(size.width - stroke, size.height - stroke)
-                    drawArc(color.copy(alpha = 0.15f), 0f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(width = stroke))
-                    drawArc(color, -90f, 360f * (pct / 100f), false, Offset(inset, inset), arcSize, style = Stroke(width = stroke, cap = StrokeCap.Round))
+                val subtitle = buildString {
+                    if (student.className.isNotBlank() && student.section.isNotBlank()) {
+                        append("${student.className}-${student.section} · ")
+                    }
+                    append("risk ${student.riskLevel}")
+                    student.attendancePct?.let { append(" · att $it%") }
+                    student.marksPct?.let { append(" · marks $it%") }
                 }
-                Text("$pct%", style = VTypography.caption, color = color)
-            }
-        }
-    }
-}
-
-@Composable
-private fun AnalyticsHeatmapCard(daily: List<DailyAttendanceDto>) {
-    VtCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Last 30 Days", style = VTypography.body, color = VColors.ink)
-            // Grid: 6 columns x 5 rows
-            val rows = daily.chunked(6)
-            rows.forEach { week ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    week.forEach { day ->
-                        val color = when {
-                            day.attendancePercentage >= 85 -> VColors.success.copy(alpha = 0.7f)
-                            day.attendancePercentage >= 75 -> VColors.violet.copy(alpha = 0.5f)
-                            day.attendancePercentage >= 60 -> VColors.gold.copy(alpha = 0.5f)
-                            day.attendancePercentage > 0 -> VColors.coral.copy(alpha = 0.5f)
-                            else -> VColors.creamDeep
-                        }
-                        Box(
-                            Modifier.weight(1f).height(28.dp).clip(VShapes.sm).background(color),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                day.date.takeLast(2),
-                                style = VTypography.caption, color = VColors.ink3,
-                            )
-                        }
-                    }
-                    // Fill remaining slots
-                    repeat(6 - week.size) {
-                        Box(Modifier.weight(1f).height(28.dp))
-                    }
-                }
-            }
-            // Legend
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                HeatmapLegend(VColors.success.copy(alpha = 0.7f), "≥85%")
-                HeatmapLegend(VColors.violet.copy(alpha = 0.5f), "≥75%")
-                HeatmapLegend(VColors.gold.copy(alpha = 0.5f), "≥60%")
-                HeatmapLegend(VColors.coral.copy(alpha = 0.5f), "<60%")
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeatmapLegend(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(Modifier.size(10.dp).clip(VShapes.sm).background(color))
-        Text(label, style = VTypography.caption, color = VColors.ink3)
-    }
-}
-
-@Composable
-private fun StudentDetailCard(
-    student: com.littlebridge.enrollplus.feature.teacher.domain.model.StudentAnalyticsDto,
-    onClose: () -> Unit,
-) {
-    VtCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                VAvatar(name = student.name, size = 36.dp)
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(student.name, style = VTypography.body, color = VColors.ink)
-                    Text("Roll ${student.rollNo}", style = VTypography.caption, color = VColors.ink3)
-                }
-                Box(
-                    Modifier.size(28.dp).clip(androidx.compose.foundation.shape.CircleShape).background(VColors.creamDeep)
-                        .clickable { onClose() },
-                    contentAlignment = Alignment.Center,
-                ) { Icon(VIcons.Close, contentDescription = "Close", tint = VColors.ink3, modifier = Modifier.size(14.dp)) }
-            }
-            // Summary stats
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VtMetricTile("${student.attendancePercentage}%", "Attendance", VColors.violet, Modifier.weight(1f))
-                VtMetricTile(student.presentDays.toString(), "Present", VColors.success, Modifier.weight(1f))
-                VtMetricTile(student.absentDays.toString(), "Absent", VColors.coral, Modifier.weight(1f))
-                VtMetricTile(student.lateDays.toString(), "Late", VColors.gold, Modifier.weight(1f))
-            }
-            // History list
-            if (student.history.isNotEmpty()) {
-                Text("Recent History", style = VTypography.body, color = VColors.ink)
-                student.history.takeLast(10).forEach { day ->
-                    val statusColor = when {
-                        day.presentCount > 0 -> VColors.success
-                        day.lateCount > 0 -> VColors.gold
-                        day.absentCount > 0 -> VColors.coral
-                        else -> VColors.sky
-                    }
-                    val statusLabel = when {
-                        day.presentCount > 0 -> "Present"
-                        day.lateCount > 0 -> "Late"
-                        day.absentCount > 0 -> "Absent"
-                        else -> "Leave"
-                    }
+                Text(subtitle, style = VTypography.caption, color = VColors.ink3)
+                if (student.signals.isNotEmpty()) {
                     Row(
-                        Modifier.fillMaxWidth().clip(VShapes.sm).background(statusColor.copy(alpha = 0.06f)).padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(top = 6.dp),
                     ) {
-                        Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(statusColor))
-                        Text(prettyDate(day.date), style = VTypography.caption, color = VColors.ink2, modifier = Modifier.weight(1f))
-                        Text(statusLabel, style = VTypography.caption, color = statusColor)
+                        student.signals.take(2).forEach { signal ->
+                            PewsSignalChip(signal)
+                        }
                     }
                 }
             }
+            RiskLevelPill(student.riskLevel)
         }
+    }
+}
+
+@Composable
+private fun RiskLevelPill(level: String) {
+    val (bg, fg) = when (level.lowercase()) {
+        "high" -> VColors.coral.copy(alpha = 0.14f) to VColors.coral
+        "medium" -> VColors.gold.copy(alpha = 0.14f) to VColors.gold
+        else -> VColors.sky.copy(alpha = 0.14f) to VColors.sky
+    }
+    Box(
+        Modifier.clip(VShapes.sm).background(bg).padding(horizontal = 8.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(level.replaceFirstChar { it.uppercase() }, style = VTypography.caption, color = fg)
+    }
+}
+
+@Composable
+private fun PewsSignalChip(signal: PewsSignalDto) {
+    Box(
+        Modifier.clip(VShapes.sm).background(VColors.creamDeep).padding(horizontal = 6.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(signal.label, style = VTypography.caption, color = VColors.ink2)
     }
 }
