@@ -391,6 +391,7 @@ private fun CommandDesk(
             onReports = onOpenReportPublish,
             onCalendar = onOpenCalendar,
             onTransport = onOpenTransport,
+            onNotifications = onOpenNotifications,
         )
 
         val kpis = overview.kpis.filter { it.available }
@@ -836,6 +837,7 @@ private fun QuickShortcuts(
     onReports: () -> Unit,
     onCalendar: () -> Unit,
     onTransport: () -> Unit,
+    onNotifications: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -849,6 +851,7 @@ private fun QuickShortcuts(
         ShortcutChip("Reports", VIcons.FileText, VColors.gold, VColors.goldSoft, onReports)
         ShortcutChip("Calendar", VIcons.Calendar, VColors.mint, VColors.mintSoft, onCalendar)
         ShortcutChip("Transport", VIcons.MapPin, VColors.coral, VColors.coralSoft, onTransport)
+        ShortcutChip("Alerts", VIcons.Bell, VColors.sky, VColors.skySoft, onNotifications)
     }
 }
 

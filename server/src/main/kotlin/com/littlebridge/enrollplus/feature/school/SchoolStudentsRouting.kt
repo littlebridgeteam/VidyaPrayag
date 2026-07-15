@@ -772,11 +772,11 @@ fun Route.schoolStudentsRouting() {
 
                     val result = dbQuery {
                         val totalRecords = StudentsTable.selectAll()
-                            .where { (StudentsTable.schoolId eq ctx.schoolId) and (StudentsTable.isActive eq true) }
+                            .where { StudentsTable.schoolId eq ctx.schoolId }
                             .count()
 
                         val students = StudentsTable.selectAll()
-                            .where { (StudentsTable.schoolId eq ctx.schoolId) and (StudentsTable.isActive eq true) }
+                            .where { StudentsTable.schoolId eq ctx.schoolId }
                             .orderBy(StudentsTable.className to SortOrder.ASC, StudentsTable.rollNumber to SortOrder.ASC)
                             .limit(pageSize, offset)
                             .map(::studentRowToDto)
@@ -803,7 +803,7 @@ fun Route.schoolStudentsRouting() {
                 } else {
                     val students = dbQuery {
                         StudentsTable.selectAll()
-                            .where { (StudentsTable.schoolId eq ctx.schoolId) and (StudentsTable.isActive eq true) }
+                            .where { StudentsTable.schoolId eq ctx.schoolId }
                             .orderBy(StudentsTable.className to SortOrder.ASC, StudentsTable.rollNumber to SortOrder.ASC)
                             .map(::studentRowToDto)
                             .filter { s ->

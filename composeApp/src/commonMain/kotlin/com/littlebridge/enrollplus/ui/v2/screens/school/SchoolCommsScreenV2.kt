@@ -106,13 +106,14 @@ fun SchoolCommsScreenV2(
 }
 
 private enum class CommsSubTab {
-    Announcements, Messages, Ptm;
+    Announcements, Messages, Ptm, Notifications;
 
     @Composable
     fun label(): String = when (this) {
         Announcements -> appString(StringKeys.SCH_ANNOUNCEMENTS)
         Messages -> appString(StringKeys.SCH_MESSAGES)
         Ptm -> appString(StringKeys.SCH_PTM)
+        Notifications -> appString(StringKeys.SCH_NOTIFICATIONS)
     }
 }
 
@@ -243,6 +244,7 @@ private fun SchoolCommsContent(
                     )
                     CommsSubTab.Messages -> MessagesTab(onOpenMessages = onOpenMessages)
                     CommsSubTab.Ptm -> PtmTab(onOpenPtm = onOpenPtm)
+                    CommsSubTab.Notifications -> NotificationsTab()
                 }
             }
         }
@@ -414,6 +416,20 @@ private fun PtmTab(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun NotificationsTab() {
+    Column(
+        Modifier.fillMaxSize().padding(top = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        VComingSoon(
+            title = appString(StringKeys.SCH_NOTIFICATIONS),
+            description = "Notification channel management is coming soon.",
+        )
     }
 }
 

@@ -69,7 +69,7 @@ class ReportAssemblyService(
 
     @Serializable
     data class BatchResult(
-        @Contextual val jobId: UUID,
+        val jobId: String,
         val totalStudents: Int,
         val completed: Int,
         val failed: Int,
@@ -81,8 +81,8 @@ class ReportAssemblyService(
 
     @Serializable
     data class RegenerateResult(
-        @Contextual val draftId: UUID,
-        @Contextual val studentId: UUID,
+        val draftId: String,
+        val studentId: String,
         val success: Boolean,
         val grounded: Boolean,
         val fallbackUsed: Boolean,
@@ -103,7 +103,7 @@ class ReportAssemblyService(
 
     @Serializable
     data class OversightSummary(
-        @Contextual val schoolId: UUID,
+        val schoolId: String,
         val classes: List<ClassOversightRow>,
     )
 
@@ -164,7 +164,7 @@ class ReportAssemblyService(
 
         if (students.isEmpty()) {
             log.warn("Assembly: no students found for class {}-{}", className, section)
-            return BatchResult(UUID.randomUUID(), 0, 0, 0, 0, 0, 0, listOf("No students in class"))
+            return BatchResult(UUID.randomUUID().toString(), 0, 0, 0, 0, 0, 0, listOf("No students in class"))
         }
 
         // 2) Build fact bundles for all students (Tier 0)
@@ -395,7 +395,7 @@ class ReportAssemblyService(
             students.size, completed, flagged, fallbackUsed)
 
         return BatchResult(
-            jobId = UUID.randomUUID(),
+            jobId = UUID.randomUUID().toString(),
             totalStudents = students.size,
             completed = completed,
             failed = failed,
@@ -591,10 +591,10 @@ class ReportAssemblyService(
         log.info("Assembly: regenerating draft {}", draftId)
 
         val existing = draftRepo.findById(draftId)
-            ?: return RegenerateResult(draftId, UUID.randomUUID(), false, false, false, "Draft not found")
+            ?: return RegenerateResult(draftId.toString(), UUID.randomUUID().toString(), false, false, false, "Draft not found")
 
         if (existing.status !in listOf(ReportCardConstants.DraftStatus.DRAFT, ReportCardConstants.DraftStatus.FLAGGED)) {
-            return RegenerateResult(draftId, existing.studentId, false, false, false,
+            return RegenerateResult(draftId.toString(), existing.studentId.toString(), false, false, false,
                 "Draft is in ${existing.status} status — can only regenerate draft or flagged drafts")
         }
 
@@ -639,10 +639,10 @@ class ReportAssemblyService(
                 ),
             )
 
-            RegenerateResult(draftId, existing.studentId, true, narration.groundingPassed, narration.usedFallback)
+            RegenerateResult(draftId.toString(), existing.studentId.toString(), true, narration.groundingPassed, narration.usedFallback)
         }.getOrElse { e ->
             log.error("Assembly: regeneration failed for draft {}: {}", draftId, e.message)
-            RegenerateResult(draftId, existing.studentId, false, false, false, e.message)
+            RegenerateResult(draftId.toString(), existing.studentId.toString(), false, false, false, e.message)
         }
     }
 
@@ -670,7 +670,7 @@ class ReportAssemblyService(
                 publishedCount = drafts.count { it.status == ReportCardConstants.DraftStatus.PUBLISHED },
             )
         }.sortedBy { it.className + "-" + it.section }
-        return OversightSummary(schoolId, rows)
+        return OversightSummary(schoolId.toString(), rows)
     }
 
     /**

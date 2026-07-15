@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -314,9 +315,23 @@ private fun SchoolSettingsContent(
                             ) {
                                 Icon(row.icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
                             }
-                            Column(Modifier.weight(1f)) {
-                                Text(row.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                                Text(row.sub, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+                            Column(Modifier.weight(1f).fillMaxWidth()) {
+                                Text(
+                                    row.title,
+                                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                    color = VColors.ink,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    row.sub,
+                                    style = VTypography.caption.copy(fontSize = 11.sp),
+                                    color = VColors.ink3,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                             if (row.isComingSoon) {
                                 Text(

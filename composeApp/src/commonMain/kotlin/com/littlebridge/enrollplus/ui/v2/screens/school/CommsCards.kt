@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.DeliveryLogItem
@@ -92,6 +93,8 @@ internal fun AnnouncementCard(
                         style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.width(8.dp))
                     CommsBadge(text = badgeText, color = badgeColor, bg = badgeBg)
@@ -110,7 +113,8 @@ internal fun AnnouncementCard(
                         style = VTypography.caption,
                         color = VColors.ink2,
                         modifier = Modifier.padding(top = 6.dp),
-                        maxLines = 2,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
