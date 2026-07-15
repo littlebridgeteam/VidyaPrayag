@@ -3082,6 +3082,77 @@ object StringKeys {
     const val CS_WEEKDAY_FRI               = "cs.weekday_fri"
     const val CS_WEEKDAY_SAT               = "cs.weekday_sat"
     const val CS_WEEKDAY_SUN               = "cs.weekday_sun"
+
+    // ParentActivityScreenV2 (extras)
+    const val PAC_ANNOUNCEMENTS      = "pac.announcements"
+    const val PAC_LOAD_ERROR         = "pac.load_error"
+    const val PAC_ALL_CAUGHT_UP      = "pac.all_caught_up"
+    const val PAC_ALL_CAUGHT_UP_DESC = "pac.all_caught_up_desc"
+
+    // ParentPewsScreenV2 (extras)
+    const val PPEWS_ALL_GOOD         = "ppews.all_good"
+    const val PPEWS_ALL_GOOD_BODY    = "ppews.all_good_body"
+    const val PPEWS_ALL_ON_TRACK     = "ppews.all_on_track"
+    const val PPEWS_ALL_ON_TRACK_BODY = "ppews.all_on_track_body"
+
+    // ParentFeePaymentScreenV2
+    const val PFP_PAY_FEES           = "pfp.pay_fees"
+    const val PFP_OUTSTANDING        = "pfp.outstanding"
+    const val PFP_OVERDUE_HEADS      = "pfp.overdue_heads"
+    const val PFP_PAYMENT_METHOD     = "pfp.payment_method"
+    const val PFP_ONLINE_PAYMENT     = "pfp.online_payment"
+    const val PFP_SECURE_GATEWAY     = "pfp.secure_gateway"
+    const val PFP_PAY_AMOUNT         = "pfp.pay_amount"
+    const val PFP_NO_FEES_DUE        = "pfp.no_fees_due"
+
+    // ParentFeeHistoryScreenV2
+    const val PFH_FEE_HISTORY        = "pfh.fee_history"
+    const val PFH_TOTAL_COLLECTED    = "pfh.total_collected"
+    const val PFH_NO_HISTORY         = "pfh.no_history"
+    const val PFH_NO_HISTORY_DESC    = "pfh.no_history_desc"
+
+    // ParentEventRegistrationScreenV2 (extras)
+    const val PE_EVENTS              = "pe.events"
+    const val PE_EVENT_DETAIL        = "pe.event_detail"
+    const val PE_UPCOMING            = "pe.upcoming"
+    const val PE_MY_REGS             = "pe.my_regs"
+    const val PE_NO_EVENTS           = "pe.no_events"
+    const val PE_VENUE              = "pe.venue"
+    const val PE_REGISTER_BY        = "pe.register_by"
+    const val PE_REGISTERED_STATUS  = "pe.registered_status"
+    const val PE_REG_OPEN           = "pe.reg_open"
+    const val PE_CONFLICTS          = "pe.conflicts"
+    const val PE_SELECT_SLOT        = "pe.select_slot"
+    const val PE_RESCHEDULE         = "pe.reschedule"
+    const val PE_NUM_ATTENDEES      = "pe.num_attendees"
+    const val PE_REGISTER           = "pe.register"
+    const val PE_FULL               = "pe.full"
+    const val PE_YOUR_SLOT          = "pe.your_slot"
+    const val PE_SELECTED           = "pe.selected"
+    const val PE_NO_REGS            = "pe.no_regs"
+    const val PE_SLOT_LABEL         = "pe.slot_label"
+    const val PE_BOOKED             = "pe.booked"
+
+    // ParentHomeworkScreenV2
+    const val PHW_HOMEWORK           = "phw.homework"
+    const val PHW_NO_ACTIVE          = "phw.no_active"
+    const val PHW_NO_ACTIVE_DESC     = "phw.no_active_desc"
+    const val PHW_GRADED            = "phw.graded"
+    const val PHW_SUBMITTED         = "phw.submitted"
+    const val PHW_LATE              = "phw.late"
+    const val PHW_PENDING           = "phw.pending"
+    const val PHW_TAP_TO_VIEW       = "phw.tap_to_view"
+    const val PHW_INSTRUCTIONS      = "phw.instructions"
+    const val PHW_WRITTEN_ANSWER    = "phw.written_answer"
+    const val PHW_ANSWER_PH         = "phw.answer_ph"
+    const val PHW_PHOTO_ATTACH      = "phw.photo_attach"
+    const val PHW_UPLOADING         = "phw.uploading"
+    const val PHW_ADD_PHOTO         = "phw.add_photo"
+    const val PHW_SUBMIT_SUCCESS    = "phw.submit_success"
+    const val PHW_SUBMITTING        = "phw.submitting"
+    const val PHW_SUBMIT            = "phw.submit"
+    const val PHW_ATTACHMENT        = "phw.attachment"
+
 }
 
 object AppStrings {
@@ -4495,6 +4566,71 @@ object AppStrings {
         StringKeys.SCH_THIS_STUDENT                    to "this student",
         StringKeys.SCH_THIS_TEACHER                    to "this teacher",
         StringKeys.SCH_VIEW_PROFILE                    to "View Profile",
+        // ParentActivityScreenV2 (extras)
+        StringKeys.PAC_ANNOUNCEMENTS      to "Announcements",
+        StringKeys.PAC_LOAD_ERROR         to "Couldn't load announcements",
+        StringKeys.PAC_ALL_CAUGHT_UP      to "All caught up",
+        StringKeys.PAC_ALL_CAUGHT_UP_DESC to "New announcements from your school will show up here.",
+        // ParentPewsScreenV2 (extras)
+        StringKeys.PPEWS_ALL_GOOD         to "All good!",
+        StringKeys.PPEWS_ALL_GOOD_BODY    to "There's no specific concern for {name} right now. Keep up the great support!",
+        StringKeys.PPEWS_ALL_ON_TRACK     to "All on track",
+        StringKeys.PPEWS_ALL_ON_TRACK_BODY to "{name} is doing well. No specific concerns at this time.",
+        // ParentFeePaymentScreenV2
+        StringKeys.PFP_PAY_FEES           to "Pay Fees",
+        StringKeys.PFP_OUTSTANDING        to "Outstanding Amount",
+        StringKeys.PFP_OVERDUE_HEADS      to "{count} overdue fee head(s)",
+        StringKeys.PFP_PAYMENT_METHOD     to "Payment Method",
+        StringKeys.PFP_ONLINE_PAYMENT     to "Online Payment",
+        StringKeys.PFP_SECURE_GATEWAY     to "Secure Razorpay gateway",
+        StringKeys.PFP_PAY_AMOUNT         to "Pay {amount}",
+        StringKeys.PFP_NO_FEES_DUE        to "No fees due",
+        // ParentFeeHistoryScreenV2
+        StringKeys.PFH_FEE_HISTORY        to "Fee History",
+        StringKeys.PFH_TOTAL_COLLECTED    to "Total Collected",
+        StringKeys.PFH_NO_HISTORY         to "No payment history",
+        StringKeys.PFH_NO_HISTORY_DESC    to "Once you pay fees, the receipts will show up here.",
+        // ParentEventRegistrationScreenV2 (extras)
+        StringKeys.PE_EVENTS              to "Events",
+        StringKeys.PE_EVENT_DETAIL        to "Event Detail",
+        StringKeys.PE_UPCOMING            to "Upcoming Events",
+        StringKeys.PE_MY_REGS             to "My Registrations",
+        StringKeys.PE_NO_EVENTS           to "No upcoming events with registration",
+        StringKeys.PE_VENUE              to "Venue: {venue}",
+        StringKeys.PE_REGISTER_BY        to "Register by: {date}",
+        StringKeys.PE_REGISTERED_STATUS  to "Registered: {status}",
+        StringKeys.PE_REG_OPEN           to "Registration open",
+        StringKeys.PE_CONFLICTS          to "Conflicts with: {title}",
+        StringKeys.PE_SELECT_SLOT        to "Select a time slot",
+        StringKeys.PE_RESCHEDULE         to "Reschedule",
+        StringKeys.PE_NUM_ATTENDEES      to "Number of attendees",
+        StringKeys.PE_REGISTER           to "Register",
+        StringKeys.PE_FULL               to "Full",
+        StringKeys.PE_YOUR_SLOT          to "Your slot",
+        StringKeys.PE_SELECTED           to "Selected",
+        StringKeys.PE_NO_REGS            to "No registrations yet",
+        StringKeys.PE_SLOT_LABEL         to "Slot: {start} - {end}",
+        StringKeys.PE_BOOKED             to "{booked}/{capacity} booked",
+        // ParentHomeworkScreenV2
+        StringKeys.PHW_HOMEWORK           to "Homework",
+        StringKeys.PHW_NO_ACTIVE          to "No active homework",
+        StringKeys.PHW_NO_ACTIVE_DESC     to "Your child has no pending homework right now.",
+        StringKeys.PHW_GRADED            to "Graded",
+        StringKeys.PHW_SUBMITTED         to "Submitted",
+        StringKeys.PHW_LATE              to "Late",
+        StringKeys.PHW_PENDING           to "Pending",
+        StringKeys.PHW_TAP_TO_VIEW       to "Tap to view or update submission",
+        StringKeys.PHW_INSTRUCTIONS      to "Instructions",
+        StringKeys.PHW_WRITTEN_ANSWER    to "Written answer / notes",
+        StringKeys.PHW_ANSWER_PH         to "Type your child's answer here...",
+        StringKeys.PHW_PHOTO_ATTACH      to "Photo attachments",
+        StringKeys.PHW_UPLOADING         to "Uploading...",
+        StringKeys.PHW_ADD_PHOTO         to "Add photo",
+        StringKeys.PHW_SUBMIT_SUCCESS    to "Homework submitted successfully!",
+        StringKeys.PHW_SUBMITTING        to "Submitting...",
+        StringKeys.PHW_SUBMIT            to "Submit homework",
+        StringKeys.PHW_ATTACHMENT        to "Attachment",
+
     )
 
     private fun enPart2(): Map<String, String> = mapOf(
@@ -7476,6 +7612,71 @@ object AppStrings {
         StringKeys.SCH_THIS_STUDENT                    to "इस छात्र",
         StringKeys.SCH_THIS_TEACHER                    to "इस शिक्षक",
         StringKeys.SCH_VIEW_PROFILE                    to "प्रोफाइल देखें",
+        // ParentActivityScreenV2 (extras)
+        StringKeys.PAC_ANNOUNCEMENTS      to "घोषणाएं",
+        StringKeys.PAC_LOAD_ERROR         to "घोषणाएं लोड नहीं हो सकीं",
+        StringKeys.PAC_ALL_CAUGHT_UP      to "सब ठीक है",
+        StringKeys.PAC_ALL_CAUGHT_UP_DESC to "आपके स्कूल की नई घोषणाएं यहां दिखाई देंगी।",
+        // ParentPewsScreenV2 (extras)
+        StringKeys.PPEWS_ALL_GOOD         to "सब अच्छा है!",
+        StringKeys.PPEWS_ALL_GOOD_BODY    to "{name} के लिए अभी कोई विशेष चिंता नहीं है। बढ़िया सहयोग जारी रखें!",
+        StringKeys.PPEWS_ALL_ON_TRACK     to "सब ठीक है",
+        StringKeys.PPEWS_ALL_ON_TRACK_BODY to "{name} अच्छा कर रहा/रही है। इस समय कोई विशेष चिंता नहीं है।",
+        // ParentFeePaymentScreenV2
+        StringKeys.PFP_PAY_FEES           to "फीस भुगतान करें",
+        StringKeys.PFP_OUTSTANDING        to "बकाया राशि",
+        StringKeys.PFP_OVERDUE_HEADS      to "{count} अतिदेय फीस शीर्ष",
+        StringKeys.PFP_PAYMENT_METHOD     to "भुगतान विधि",
+        StringKeys.PFP_ONLINE_PAYMENT     to "ऑनलाइन भुगतान",
+        StringKeys.PFP_SECURE_GATEWAY     to "सुरक्षित Razorpay गेटवे",
+        StringKeys.PFP_PAY_AMOUNT         to "भुगतान करें {amount}",
+        StringKeys.PFP_NO_FEES_DUE        to "कोई फीस बाकी नहीं",
+        // ParentFeeHistoryScreenV2
+        StringKeys.PFH_FEE_HISTORY        to "फीस इतिहास",
+        StringKeys.PFH_TOTAL_COLLECTED    to "कुल वसूल",
+        StringKeys.PFH_NO_HISTORY         to "कोई भुगतान इतिहास नहीं",
+        StringKeys.PFH_NO_HISTORY_DESC    to "जब आप फीस जमा करेंगे, रसीदें यहां दिखेंगी।",
+        // ParentEventRegistrationScreenV2 (extras)
+        StringKeys.PE_EVENTS              to "कार्यक्रम",
+        StringKeys.PE_EVENT_DETAIL        to "कार्यक्रम विवरण",
+        StringKeys.PE_UPCOMING            to "आगामी कार्यक्रम",
+        StringKeys.PE_MY_REGS             to "मेरे पंजीकरण",
+        StringKeys.PE_NO_EVENTS           to "पंजीकरण के साथ कोई आगामी कार्यक्रम नहीं",
+        StringKeys.PE_VENUE              to "स्थान: {venue}",
+        StringKeys.PE_REGISTER_BY        to "पंजीकरण अंतिम तिथि: {date}",
+        StringKeys.PE_REGISTERED_STATUS  to "पंजीकृत: {status}",
+        StringKeys.PE_REG_OPEN           to "पंजीकरण खुला है",
+        StringKeys.PE_CONFLICTS          to "इससे टकराता है: {title}",
+        StringKeys.PE_SELECT_SLOT        to "समय स्लॉट चुनें",
+        StringKeys.PE_RESCHEDULE         to "पुनर्निर्धारण",
+        StringKeys.PE_NUM_ATTENDEES      to "उपस्थित लोगों की संख्या",
+        StringKeys.PE_REGISTER           to "पंजीकरण करें",
+        StringKeys.PE_FULL               to "भरा हुआ",
+        StringKeys.PE_YOUR_SLOT          to "आपका स्लॉट",
+        StringKeys.PE_SELECTED           to "चुना गया",
+        StringKeys.PE_NO_REGS            to "अभी कोई पंजीकरण नहीं",
+        StringKeys.PE_SLOT_LABEL         to "स्लॉट: {start} - {end}",
+        StringKeys.PE_BOOKED             to "{booked}/{capacity} बुक्ड",
+        // ParentHomeworkScreenV2
+        StringKeys.PHW_HOMEWORK           to "होमवर्क",
+        StringKeys.PHW_NO_ACTIVE          to "कोई सक्रिय होमवर्क नहीं",
+        StringKeys.PHW_NO_ACTIVE_DESC     to "आपके बच्चे के लिए अभी कोई लंबित होमवर्क नहीं है।",
+        StringKeys.PHW_GRADED            to "ग्रेड किया गया",
+        StringKeys.PHW_SUBMITTED         to "जमा किया गया",
+        StringKeys.PHW_LATE              to "देर से",
+        StringKeys.PHW_PENDING           to "लंबित",
+        StringKeys.PHW_TAP_TO_VIEW       to "जमाई देखने या अपडेट करने के लिए टैप करें",
+        StringKeys.PHW_INSTRUCTIONS      to "निर्देश",
+        StringKeys.PHW_WRITTEN_ANSWER    to "लिखित उत्तर / नोट्स",
+        StringKeys.PHW_ANSWER_PH         to "अपने बच्चे का उत्तर यहां टाइप करें...",
+        StringKeys.PHW_PHOTO_ATTACH      to "फोटो अटैचमेंट",
+        StringKeys.PHW_UPLOADING         to "अपलोड हो रहा है...",
+        StringKeys.PHW_ADD_PHOTO         to "फोटो जोड़ें",
+        StringKeys.PHW_SUBMIT_SUCCESS    to "होमवर्क सफलतापूर्वक जमा हो गया!",
+        StringKeys.PHW_SUBMITTING        to "जमा हो रहा है...",
+        StringKeys.PHW_SUBMIT            to "होमवर्क जमा करें",
+        StringKeys.PHW_ATTACHMENT        to "अटैचमेंट",
+
     )
 
     private fun hiPart2(): Map<String, String> = mapOf(

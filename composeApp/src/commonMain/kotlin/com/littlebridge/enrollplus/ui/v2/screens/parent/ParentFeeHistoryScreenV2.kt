@@ -34,6 +34,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * ParentFeeHistoryScreenV2 — premium fee history overlay for the Fees tab.
@@ -55,7 +57,7 @@ fun ParentFeeHistoryScreenV2(
             .fillMaxSize()
             .background(VColors.cream),
     ) {
-        VBackHeader(title = "Fee History", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.PFH_FEE_HISTORY), onBack = onBack)
 
         Column(
             Modifier
@@ -74,7 +76,7 @@ fun ParentFeeHistoryScreenV2(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "Total Collected",
+                    appString(StringKeys.PFH_TOTAL_COLLECTED),
                     style = VTypography.body,
                     color = VColors.white.copy(alpha = 0.85f),
                 )
@@ -88,7 +90,7 @@ fun ParentFeeHistoryScreenV2(
 
             if (state.isLoading) {
                 Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.TeacherSpinner(36.dp)
+                    TeacherSpinner(36.dp)
                 }
             } else {
                 EmptyHistoryCard()
@@ -116,13 +118,13 @@ private fun EmptyHistoryCard() {
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            "No payment history",
+            appString(StringKeys.PFH_NO_HISTORY),
             style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
             color = VColors.ink,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "Once you pay fees, the receipts will show up here.",
+            appString(StringKeys.PFH_NO_HISTORY_DESC),
             style = VTypography.caption,
             color = VColors.ink2,
         )

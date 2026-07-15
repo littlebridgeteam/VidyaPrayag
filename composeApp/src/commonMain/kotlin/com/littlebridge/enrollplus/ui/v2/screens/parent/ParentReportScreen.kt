@@ -96,6 +96,11 @@ fun ParentReportScreen(
                         Icon(VIcons.AlertCircle, contentDescription = null, tint = c.danger, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
                         Text(state.error ?: "", style = VTheme.type.body.colored(c.ink2))
+                        Spacer(Modifier.height(12.dp))
+                        VButton(
+                            text = appString(StringKeys.COMMON_BUTTON_RETRY),
+                            onClick = { viewModel.loadReports(childId); viewModel.loadConferencePack(childId) },
+                        )
                     }
                 }
             }

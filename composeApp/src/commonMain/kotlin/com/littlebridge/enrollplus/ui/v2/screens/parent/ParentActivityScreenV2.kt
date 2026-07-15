@@ -43,6 +43,8 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.util.htmlDecode
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * ParentActivityScreenV2 — school announcements feed, rebuilt with the same premium parent-portal
@@ -85,7 +87,7 @@ private fun ParentActivityContent(
             .padding(bottom = 24.dp),
     ) {
         Text(
-            "Announcements",
+            appString(StringKeys.PAC_ANNOUNCEMENTS),
             style = VTypography.h3,
             color = VColors.ink,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
@@ -99,14 +101,14 @@ private fun ParentActivityContent(
 
             state.error != null && state.announcements.isEmpty() ->
                 EmptyStateCard(
-                    title = "Couldn't load announcements",
+                    title = appString(StringKeys.PAC_LOAD_ERROR),
                     body = state.error ?: "Something went wrong",
                 )
 
             state.announcements.isEmpty() ->
                 EmptyStateCard(
-                    title = "All caught up",
-                    body = "New announcements from your school will show up here.",
+                    title = appString(StringKeys.PAC_ALL_CAUGHT_UP),
+                    body = appString(StringKeys.PAC_ALL_CAUGHT_UP_DESC),
                 )
 
             else -> {
@@ -150,7 +152,7 @@ private fun AnnouncementCard(a: ParentAnnouncement) {
     val (tint, icon) = when (a.category.lowercase()) {
         "holidays", "holiday" -> VColors.violet to VIcons.Calendar
         "ptm" -> VColors.gold to VIcons.UsersGroup
-        "events", "event" -> Color(0xFF6C8DF5) to VIcons.Star
+        "events", "event" -> VColors.sky to VIcons.Star
         "reminder" -> VColors.error to VIcons.Clock
         else -> VColors.sky to VIcons.Bell
     }

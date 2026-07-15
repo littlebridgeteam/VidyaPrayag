@@ -196,7 +196,7 @@ private fun ParentBrowseTab(
             Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(3) {
                     VCard {
-                        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             ShimmerBox(width = 56.dp, height = 84.dp)
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 ShimmerBox(height = 16.dp, modifier = Modifier.fillMaxWidth(0.7f))
@@ -232,7 +232,7 @@ private fun ParentBrowseTab(
             items(state.books, key = { it.id }) { book ->
                 VCard {
                     Row(
-                        Modifier.fillMaxWidth().padding(12.dp),
+                        Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         BookCover(
@@ -317,7 +317,7 @@ private fun ParentMyBooksTab(state: ParentLibraryState) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
             items(state.issuedBooks, key = { it.id }) { issue ->
                 VCard {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(issue.bookTitle, style = VTheme.type.bodyStrong.colored(c.ink))
                         Text(appString(StringKeys.PL_ISSUED, "date" to issue.issueDate), style = VTheme.type.caption.colored(c.ink2))
                         DueDateBadge(dueDate = issue.dueDate)
@@ -357,7 +357,7 @@ private fun ParentReservationsTab(state: ParentLibraryState, viewModel: ParentLi
             items(state.reservations, key = { it.id }) { reservation ->
                 VCard {
                     Row(
-                        Modifier.fillMaxWidth().padding(16.dp),
+                        Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

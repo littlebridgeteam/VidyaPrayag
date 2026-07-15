@@ -33,7 +33,10 @@ import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * ParentFeePaymentScreenV2 — premium pay-now overlay for the Fees tab.
@@ -58,7 +61,7 @@ fun ParentFeePaymentScreenV2(
             .fillMaxSize()
             .background(VColors.cream),
     ) {
-        VBackHeader(title = "Pay Fees", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.PFP_PAY_FEES), onBack = onBack)
 
         Column(
             Modifier
@@ -76,7 +79,7 @@ fun ParentFeePaymentScreenV2(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "Outstanding Amount",
+                    appString(StringKeys.PFP_OUTSTANDING),
                     style = VTypography.body,
                     color = VColors.white.copy(alpha = 0.85f),
                 )
@@ -89,7 +92,7 @@ fun ParentFeePaymentScreenV2(
                 if (state.overdueCount > 0) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "${state.overdueCount} overdue fee head(s)",
+                        appString(StringKeys.PFP_OVERDUE_HEADS, "count" to state.overdueCount.toString()),
                         style = VTypography.caption,
                         color = VColors.gold,
                     )
@@ -105,7 +108,7 @@ fun ParentFeePaymentScreenV2(
                     .padding(20.dp),
             ) {
                 Text(
-                    "Payment Method",
+                    appString(StringKeys.PFP_PAYMENT_METHOD),
                     style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
                     color = VColors.ink,
                 )
@@ -127,12 +130,12 @@ fun ParentFeePaymentScreenV2(
                     }
                     Column {
                         Text(
-                            "Online Payment",
+                            appString(StringKeys.PFP_ONLINE_PAYMENT),
                             style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
                             color = VColors.ink,
                         )
                         Text(
-                            "Secure Razorpay gateway",
+                            appString(StringKeys.PFP_SECURE_GATEWAY),
                             style = VTypography.caption,
                             color = VColors.ink2,
                         )
@@ -149,21 +152,13 @@ fun ParentFeePaymentScreenV2(
             Spacer(Modifier.weight(1f))
 
             // Pay button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(VShapes.full)
-                    .background(if (hasOutstanding) VColors.violet else VColors.lineSoft)
-                    .clickable(enabled = hasOutstanding, onClick = onPay)
-                    .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    if (hasOutstanding) "Pay $outstanding" else "No fees due",
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (hasOutstanding) VColors.white else VColors.ink3,
-                )
-            }
+            VButton(
+                text = if (hasOutstanding) appString(StringKeys.PFP_PAY_AMOUNT, "amount" to outstanding) else appString(StringKeys.PFP_NO_FEES_DUE),
+                onClick = onPay,
+                full = true,
+                enabled = hasOutstanding,
+                loading = state.isLoading,
+            )
         }
     }
 }
