@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -22,9 +24,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeClassOptionDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLateFeeTierDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStructureDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStudentDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeTeacherOptionDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.SalaryRecordDto
 import com.littlebridge.enrollplus.feature.admin.presentation.FeeSalaryTab
 import com.littlebridge.enrollplus.feature.admin.presentation.FeeSalaryViewModel
@@ -86,18 +92,20 @@ private fun FeesTab(
     viewModel: FeeSalaryViewModel,
 ) {
     VTopTabs(
-        tabs = listOf("Structure", "Payments", "Reminders"),
+        tabs = listOf("Structure", "Payments", "Reminders", "Late Fees"),
         selected = when (state.activeFeeSubTab) {
             FeeSubTab.STRUCTURE -> "Structure"
             FeeSubTab.PAYMENT_TRACKING -> "Payments"
             FeeSubTab.REMINDER_SETTINGS -> "Reminders"
+            FeeSubTab.LATE_FEE_TIERS -> "Late Fees"
         },
         onSelect = {
             viewModel.setFeeSubTab(
                 when (it) {
                     "Structure" -> FeeSubTab.STRUCTURE
                     "Payments" -> FeeSubTab.PAYMENT_TRACKING
-                    else -> FeeSubTab.REMINDER_SETTINGS
+                    "Reminders" -> FeeSubTab.REMINDER_SETTINGS
+                    else -> FeeSubTab.LATE_FEE_TIERS
                 }
             )
         },
@@ -107,6 +115,7 @@ private fun FeesTab(
         FeeSubTab.STRUCTURE -> FeeStructureSubTab(state = state, viewModel = viewModel)
         FeeSubTab.PAYMENT_TRACKING -> PaymentTrackingSubTab(state = state, viewModel = viewModel)
         FeeSubTab.REMINDER_SETTINGS -> ReminderSettingsSubTab(state = state, viewModel = viewModel)
+        FeeSubTab.LATE_FEE_TIERS -> LateFeeTiersSubTab(state = state, viewModel = viewModel)
     }
 }
 
@@ -157,10 +166,11 @@ private fun FeeStructureSubTab(
     if (showAddDialog) {
         AddFeeStructureSheet(
             onDismiss = { showAddDialog = false },
-            onCreate = { title, amount, desc ->
-                viewModel.createFeeStructure(title, amount, desc, null)
+            onCreate = { title, amount, desc, classId ->
+                viewModel.createFeeStructure(title, amount, desc, classId)
                 showAddDialog = false
             },
+            classes = state.classes,
         )
     }
 
@@ -223,11 +233,14 @@ private fun FeeStructureCard(
 @Composable
 private fun AddFeeStructureSheet(
     onDismiss: () -> Unit,
-    onCreate: (title: String, amount: Double, description: String?) -> Unit,
+    onCreate: (title: String, amount: Double, description: String?, classId: String?) -> Unit,
+    classes: List<FeeClassOptionDto> = emptyList(),
 ) {
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var selectedClassId by remember { mutableStateOf<String?>(null) }
+    var classDropdownOpen by remember { mutableStateOf(false) }
 
     Column(
         Modifier
@@ -247,7 +260,7 @@ private fun AddFeeStructureSheet(
             onValueChange = { amount = it.filter { it.isDigit() || it == '.' } },
             label = "Amount (₹)",
             placeholder = "e.g. 5000",
-            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+            keyboardType = KeyboardType.Decimal,
         )
         VInput(
             value = description,
@@ -255,6 +268,76 @@ private fun AddFeeStructureSheet(
             label = "Description (optional)",
             placeholder = "e.g. Monthly tuition for all classes",
         )
+        // Class dropdown
+        Text("Class (optional)", style = VTypography.caption, color = VColors.ink2)
+        VCard {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { classDropdownOpen = !classDropdownOpen }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = classes.firstOrNull { it.id == selectedClassId }?.name ?: "All classes",
+                        style = VTypography.body,
+                        color = VColors.ink,
+                    )
+                    Icon(
+                        if (classDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
+                        contentDescription = null,
+                        tint = VColors.ink2,
+                    )
+                }
+                if (classDropdownOpen) {
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedClassId = null
+                                classDropdownOpen = false
+                            }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "All classes",
+                            style = VTypography.body,
+                            color = VColors.ink,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (selectedClassId == null) {
+                            Icon(VIcons.Check, contentDescription = null, tint = VColors.violet)
+                        }
+                    }
+                    classes.forEach { cls ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedClassId = cls.id
+                                    classDropdownOpen = false
+                                }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = cls.name,
+                                style = VTypography.body,
+                                color = VColors.ink,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (cls.id == selectedClassId) {
+                                Icon(VIcons.Check, contentDescription = null, tint = VColors.violet)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
             VButton(
@@ -262,7 +345,7 @@ private fun AddFeeStructureSheet(
                 onClick = {
                     val amt = amount.toDoubleOrNull() ?: 0.0
                     if (title.isNotBlank() && amt > 0) {
-                        onCreate(title.trim(), amt, description.ifBlank { null })
+                        onCreate(title.trim(), amt, description.ifBlank { null }, selectedClassId)
                     }
                 },
                 enabled = title.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) > 0,
@@ -478,7 +561,7 @@ private fun ReminderSettingsSubTab(
                     onValueChange = { reminderDay = it.filter { c -> c.isDigit() }.take(2) },
                     label = "Reminder Day (1-28)",
                     placeholder = "5",
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    keyboardType = KeyboardType.Number,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -570,6 +653,7 @@ private fun SalaryTab(
                 )
                 showAddDialog = false
             },
+            teachers = state.teachers,
         )
     }
 
@@ -640,8 +724,10 @@ private fun SalaryRecordCard(
 private fun AddSalarySheet(
     onDismiss: () -> Unit,
     onCreate: (teacherId: String, month: String, base: Double, allowances: Double, deductions: Double) -> Unit,
+    teachers: List<FeeTeacherOptionDto> = emptyList(),
 ) {
-    var teacherId by remember { mutableStateOf("") }
+    var selectedTeacherId by remember { mutableStateOf<String?>(null) }
+    var teacherDropdownOpen by remember { mutableStateOf(false) }
     var month by remember { mutableStateOf(todayIso().substring(0, 7)) }
     var base by remember { mutableStateOf("") }
     var allowances by remember { mutableStateOf("") }
@@ -654,12 +740,55 @@ private fun AddSalarySheet(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Add Salary Record", style = VTypography.h3, fontWeight = FontWeight.Bold)
-        VInput(
-            value = teacherId,
-            onValueChange = { teacherId = it },
-            label = "Teacher ID",
-            placeholder = "Paste teacher UUID",
-        )
+        Text("Teacher", style = VTypography.caption, color = VColors.ink2)
+        VCard {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { teacherDropdownOpen = !teacherDropdownOpen }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = teachers.firstOrNull { it.id == selectedTeacherId }?.name ?: "Select teacher",
+                        style = VTypography.body,
+                        color = VColors.ink,
+                    )
+                    Icon(
+                        if (teacherDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
+                        contentDescription = null,
+                        tint = VColors.ink2,
+                    )
+                }
+                if (teacherDropdownOpen) {
+                    Spacer(Modifier.height(4.dp))
+                    teachers.forEach { teacher ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedTeacherId = teacher.id
+                                    teacherDropdownOpen = false
+                                }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = teacher.name,
+                                style = VTypography.body,
+                                color = VColors.ink,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (teacher.id == selectedTeacherId) {
+                                Icon(VIcons.Check, contentDescription = null, tint = VColors.violet)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         VInput(
             value = month,
             onValueChange = { month = it },
@@ -671,21 +800,21 @@ private fun AddSalarySheet(
             onValueChange = { base = it.filter { c -> c.isDigit() || c == '.' } },
             label = "Base Salary (₹)",
             placeholder = "30000",
-            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+            keyboardType = KeyboardType.Decimal,
         )
         VInput(
             value = allowances,
             onValueChange = { allowances = it.filter { c -> c.isDigit() || c == '.' } },
             label = "Allowances (₹)",
             placeholder = "0",
-            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+            keyboardType = KeyboardType.Decimal,
         )
         VInput(
             value = deductions,
             onValueChange = { deductions = it.filter { c -> c.isDigit() || c == '.' } },
             label = "Deductions (₹)",
             placeholder = "0",
-            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+            keyboardType = KeyboardType.Decimal,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
@@ -695,11 +824,198 @@ private fun AddSalarySheet(
                     val b = base.toDoubleOrNull() ?: 0.0
                     val al = allowances.toDoubleOrNull() ?: 0.0
                     val de = deductions.toDoubleOrNull() ?: 0.0
-                    if (teacherId.isNotBlank() && month.isNotBlank() && b > 0) {
-                        onCreate(teacherId.trim(), month, b, al, de)
+                    if (selectedTeacherId != null && month.isNotBlank() && b > 0) {
+                        onCreate(selectedTeacherId!!, month, b, al, de)
                     }
                 },
-                enabled = teacherId.isNotBlank() && month.isNotBlank() && (base.toDoubleOrNull() ?: 0.0) > 0,
+                enabled = selectedTeacherId != null && month.isNotBlank() && (base.toDoubleOrNull() ?: 0.0) > 0,
+            )
+        }
+    }
+}
+
+// ── Late Fee Tiers Sub-Tab ────────────────────────────────────────────────────
+
+@Composable
+private fun LateFeeTiersSubTab(
+    state: com.littlebridge.enrollplus.feature.admin.presentation.FeeSalaryState,
+    viewModel: FeeSalaryViewModel,
+) {
+    var showAddDialog by remember { mutableStateOf(false) }
+    var showDeleteId by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Late Fee Tiers", style = VTypography.h3, fontWeight = FontWeight.Bold)
+            VButton(
+                text = "Add Tier",
+                onClick = { showAddDialog = true },
+                variant = VButtonVariant.Primary,
+            )
+        }
+
+        state.actionMessage?.let { msg ->
+            VCard {
+                Text(msg, style = VTypography.body, color = VColors.violet)
+            }
+        }
+
+        if (state.isLoading && state.lateFeeTiers.isEmpty()) {
+            SkeletonList(count = 3)
+            return@Column
+        }
+
+        if (state.lateFeeTiers.isEmpty()) {
+            VCard {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        VIcons.Wallet,
+                        contentDescription = null,
+                        tint = VColors.ink2,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text("No late fee tiers configured", style = VTypography.body, color = VColors.ink2)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Add tiers to automatically charge late fees on overdue payments",
+                        style = VTypography.caption,
+                        color = VColors.ink2,
+                    )
+                }
+            }
+        } else {
+            state.lateFeeTiers.forEach { tier ->
+                LateFeeTierCard(
+                    tier = tier,
+                    onDelete = { showDeleteId = tier.id },
+                )
+            }
+        }
+    }
+
+    if (showAddDialog) {
+        AddLateFeeTierSheet(
+            onDismiss = { showAddDialog = false },
+            onCreate = { days, amount ->
+                viewModel.createLateFeeTier(days, amount)
+                showAddDialog = false
+            },
+        )
+    }
+
+    showDeleteId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Delete Late Fee Tier",
+            message = "Are you sure you want to delete this late fee tier?",
+            confirmLabel = "Delete",
+            onConfirm = { viewModel.deleteLateFeeTier(id); showDeleteId = null },
+            onDismiss = { showDeleteId = null },
+        )
+    }
+}
+
+@Composable
+private fun LateFeeTierCard(
+    tier: FeeLateFeeTierDto,
+    onDelete: () -> Unit,
+) {
+    VCard {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "After ${tier.daysAfterDue} days",
+                    style = VTypography.body,
+                    fontWeight = FontWeight.SemiBold,
+                    color = VColors.ink,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Late fee: ₹${tier.amount}",
+                    style = VTypography.caption,
+                    color = VColors.ink2,
+                )
+            }
+            if (tier.isActive) {
+                VBadge(text = "Active", tone = VBadgeTone.Success)
+            } else {
+                VBadge(text = "Inactive", tone = VBadgeTone.Neutral)
+            }
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                VIcons.Close,
+                contentDescription = "Delete",
+                tint = VColors.error,
+                modifier = Modifier
+                    .padding(4.dp)
+                    .clickable { onDelete() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddLateFeeTierSheet(
+    onDismiss: () -> Unit,
+    onCreate: (daysAfterDue: Int, amount: Double) -> Unit,
+) {
+    var days by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text("Add Late Fee Tier", style = VTypography.h3, fontWeight = FontWeight.Bold)
+        VInput(
+            value = days,
+            onValueChange = { days = it.filter { c -> c.isDigit() } },
+            label = "Days After Due Date",
+            placeholder = "e.g. 7",
+            keyboardType = KeyboardType.Number,
+        )
+        VInput(
+            value = amount,
+            onValueChange = { amount = it.filter { c -> c.isDigit() || c == '.' } },
+            label = "Late Fee Amount (₹)",
+            placeholder = "e.g. 100",
+            keyboardType = KeyboardType.Decimal,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
+            VButton(
+                text = "Create",
+                onClick = {
+                    val d = days.toIntOrNull() ?: 0
+                    val a = amount.toDoubleOrNull() ?: 0.0
+                    if (d > 0 && a > 0) {
+                        onCreate(d, a)
+                    }
+                },
+                enabled = (days.toIntOrNull() ?: 0) > 0 && (amount.toDoubleOrNull() ?: 0.0) > 0,
             )
         }
     }

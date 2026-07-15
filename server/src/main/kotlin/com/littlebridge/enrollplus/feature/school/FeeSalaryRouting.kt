@@ -47,6 +47,7 @@ import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FeeAdditionalChargesTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
+import com.littlebridge.enrollplus.db.FeeLateFeeTiersTable
 import com.littlebridge.enrollplus.db.FeeReminderConfigTable
 import com.littlebridge.enrollplus.db.FeeStructuresTable
 import com.littlebridge.enrollplus.db.SalaryRecordsTable
@@ -68,6 +69,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.orderBy
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
@@ -250,6 +252,63 @@ data class SetSalaryRequest(
 @Serializable
 data class TeacherSalaryResponse(
     val records: List<SalaryRecordDto>,
+)
+
+// ──────────────────────── Class & Teacher Lookup DTOs ────────────────────────
+
+@Serializable
+data class FeeClassOptionDto(
+    val id: String,
+    val name: String,
+    val code: String,
+)
+
+@Serializable
+data class FeeClassListResponse(
+    val classes: List<FeeClassOptionDto>,
+)
+
+@Serializable
+data class FeeTeacherOptionDto(
+    val id: String,
+    val name: String,
+)
+
+@Serializable
+data class FeeTeacherListResponse(
+    val teachers: List<FeeTeacherOptionDto>,
+)
+
+// ─────────────────────────── Late Fee Tier DTOs ───────────────────────────────
+
+@Serializable
+data class FeeLateFeeTierDto(
+    val id: String,
+    @SerialName("school_id") val schoolId: String,
+    @SerialName("days_after_due") val daysAfterDue: Int,
+    val amount: Double,
+    val currency: String = "INR",
+    @SerialName("is_active") val isActive: Boolean = true,
+)
+
+@Serializable
+data class FeeLateFeeTierListResponse(
+    val tiers: List<FeeLateFeeTierDto>,
+)
+
+@Serializable
+data class CreateFeeLateFeeTierRequest(
+    @SerialName("days_after_due") val daysAfterDue: Int,
+    val amount: Double,
+    val currency: String = "INR",
+)
+
+@Serializable
+data class UpdateFeeLateFeeTierRequest(
+    @SerialName("days_after_due") val daysAfterDue: Int,
+    val amount: Double,
+    val currency: String = "INR",
+    @SerialName("is_active") val isActive: Boolean = true,
 )
 
 // ──────────────────────────── Helpers ─────────────────────────────────────────
@@ -528,6 +587,86 @@ fun Route.feeSalaryRouting() {
                 val sectionFilter = call.request.queryParameters["section"]
                 val monthFilter = call.request.queryParameters["month"] ?: LocalDate.now().toString().substring(0, 7)
                 val searchFilter = call.request.queryParameters["search"]?.trim()
+
+                // Auto-transition: mark DUE fees as OVERDUE when dueDate < today.
+                // Also apply late fee tier charges based on days past due date.
+                val today = LocalDate.now().toString()
+                val now = Instant.now()
+                dbQuery {
+                    // Fetch late fee tiers for this school (active only, sorted by daysAfterDue asc)
+                    val tiers = FeeLateFeeTiersTable.selectAll()
+                        .where {
+                            (FeeLateFeeTiersTable.schoolId eq ctx.schoolId) and
+                            (FeeLateFeeTiersTable.isActive eq true)
+                        }
+                        .orderBy(FeeLateFeeTiersTable.daysAfterDue)
+                        .toList()
+
+                    // Find DUE fees that are past their due date
+                    val overdueFees = FeeRecordsTable.selectAll()
+                        .where {
+                            (FeeRecordsTable.schoolId eq ctx.schoolId) and
+                            (FeeRecordsTable.status eq "DUE") and
+                            (FeeRecordsTable.dueDate less today)
+                        }
+                        .toList()
+
+                    overdueFees.forEach { fee ->
+                        val feeId = fee[FeeRecordsTable.id].value
+                        val dueDateStr = fee[FeeRecordsTable.dueDate]
+                        val daysPast = try {
+                            java.time.temporal.ChronoUnit.DAYS.between(
+                                java.time.LocalDate.parse(dueDateStr),
+                                java.time.LocalDate.now()
+                            ).toInt()
+                        } catch (_: Exception) { 0 }
+
+                        // Find the highest applicable tier (most days that still <= daysPast)
+                        val applicableTier = tiers.lastOrNull { it[FeeLateFeeTiersTable.daysAfterDue] <= daysPast }
+
+                        // Transition to OVERDUE
+                        FeeRecordsTable.update({
+                            FeeRecordsTable.id eq feeId
+                        }) {
+                            it[FeeRecordsTable.status] = "OVERDUE"
+                            it[FeeRecordsTable.updatedAt] = now
+                        }
+
+                        // If a late fee tier applies, add it as an additional charge (only once per tier per fee)
+                        if (applicableTier != null) {
+                            val tierAmount = applicableTier[FeeLateFeeTiersTable.amount]
+                            val tierDays = applicableTier[FeeLateFeeTiersTable.daysAfterDue]
+                            val childId = fee[FeeRecordsTable.childId]
+
+                            if (childId != null) {
+                                // Check if this late fee tier was already applied for this child
+                                val alreadyApplied = FeeAdditionalChargesTable.selectAll()
+                                    .where {
+                                        (FeeAdditionalChargesTable.childId eq childId) and
+                                        (FeeAdditionalChargesTable.title eq "Late fee (${tierDays} days)")
+                                    }
+                                    .count() > 0
+
+                                if (!alreadyApplied) {
+                                    val feeMonth = dueDateStr.substring(0, 7)
+                                    FeeAdditionalChargesTable.insert {
+                                        it[FeeAdditionalChargesTable.id] = UUID.randomUUID()
+                                        it[FeeAdditionalChargesTable.schoolId] = ctx.schoolId
+                                        it[FeeAdditionalChargesTable.childId] = childId
+                                        it[FeeAdditionalChargesTable.classId] = null
+                                        it[FeeAdditionalChargesTable.month] = feeMonth
+                                        it[FeeAdditionalChargesTable.title] = "Late fee (${tierDays} days)"
+                                        it[FeeAdditionalChargesTable.description] = "Auto-applied late fee for payment ${daysPast} days overdue"
+                                        it[FeeAdditionalChargesTable.amount] = tierAmount
+                                        it[FeeAdditionalChargesTable.currency] = fee[FeeRecordsTable.currency]
+                                        it[FeeAdditionalChargesTable.createdAt] = now
+                                        it[FeeAdditionalChargesTable.updatedAt] = now
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 val students = dbQuery {
                     val children = ChildrenTable.selectAll()
@@ -967,6 +1106,164 @@ fun Route.feeSalaryRouting() {
                     call.okMessage("Salary marked as paid")
                 } else {
                     call.fail("Salary record not found", HttpStatusCode.NotFound, "NOT_FOUND")
+                }
+            }
+        }
+
+        // ── Admin Class & Teacher Lookups (for dropdowns) ────────────────────
+        route("/api/v1/school/fees/classes") {
+            get {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val list = dbQuery {
+                    SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.schoolId eq ctx.schoolId }
+                        .orderBy(SchoolClassesTable.name)
+                        .map { row ->
+                            FeeClassOptionDto(
+                                id = row[SchoolClassesTable.id].value.toString(),
+                                name = row[SchoolClassesTable.name],
+                                code = row[SchoolClassesTable.code],
+                            )
+                        }
+                }
+                call.ok(FeeClassListResponse(list), message = "Classes fetched")
+            }
+        }
+
+        route("/api/v1/school/fees/teachers") {
+            get {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val list = dbQuery {
+                    AppUsersTable.selectAll()
+                        .where {
+                            (AppUsersTable.schoolId eq ctx.schoolId) and
+                            (AppUsersTable.role eq "teacher") and
+                            (AppUsersTable.isActive eq true)
+                        }
+                        .orderBy(AppUsersTable.fullName)
+                        .map { row ->
+                            FeeTeacherOptionDto(
+                                id = row[AppUsersTable.id].value.toString(),
+                                name = row[AppUsersTable.fullName],
+                            )
+                        }
+                }
+                call.ok(FeeTeacherListResponse(list), message = "Teachers fetched")
+            }
+        }
+
+        // ── Admin Late Fee Tiers ─────────────────────────────────────────────
+        route("/api/v1/school/fees/late-fee-tiers") {
+
+            get {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val list = dbQuery {
+                    FeeLateFeeTiersTable.selectAll()
+                        .where { FeeLateFeeTiersTable.schoolId eq ctx.schoolId }
+                        .orderBy(FeeLateFeeTiersTable.daysAfterDue)
+                        .map { row ->
+                            FeeLateFeeTierDto(
+                                id = row[FeeLateFeeTiersTable.id].value.toString(),
+                                schoolId = row[FeeLateFeeTiersTable.schoolId].toString(),
+                                daysAfterDue = row[FeeLateFeeTiersTable.daysAfterDue],
+                                amount = row[FeeLateFeeTiersTable.amount],
+                                currency = row[FeeLateFeeTiersTable.currency],
+                                isActive = row[FeeLateFeeTiersTable.isActive],
+                            )
+                        }
+                }
+                call.ok(FeeLateFeeTierListResponse(list), message = "Late fee tiers fetched")
+            }
+
+            post {
+                val ctx = call.requireSchoolAdmin() ?: return@post
+                val req = call.receive<CreateFeeLateFeeTierRequest>()
+                if (req.daysAfterDue < 1 || req.amount < 0) {
+                    call.fail("days_after_due must be >= 1 and amount must be >= 0", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@post
+                }
+                val now = Instant.now()
+                val newId = UUID.randomUUID()
+                val dto = dbQuery {
+                    val existing = FeeLateFeeTiersTable.selectAll()
+                        .where {
+                            (FeeLateFeeTiersTable.schoolId eq ctx.schoolId) and
+                            (FeeLateFeeTiersTable.daysAfterDue eq req.daysAfterDue)
+                        }.firstOrNull()
+                    if (existing != null) return@dbQuery null
+
+                    FeeLateFeeTiersTable.insert {
+                        it[FeeLateFeeTiersTable.id] = newId
+                        it[FeeLateFeeTiersTable.schoolId] = ctx.schoolId
+                        it[FeeLateFeeTiersTable.daysAfterDue] = req.daysAfterDue
+                        it[FeeLateFeeTiersTable.amount] = req.amount
+                        it[FeeLateFeeTiersTable.currency] = req.currency
+                        it[FeeLateFeeTiersTable.isActive] = true
+                        it[FeeLateFeeTiersTable.createdAt] = now
+                        it[FeeLateFeeTiersTable.updatedAt] = now
+                    }
+                    FeeLateFeeTierDto(
+                        id = newId.toString(),
+                        schoolId = ctx.schoolId.toString(),
+                        daysAfterDue = req.daysAfterDue,
+                        amount = req.amount,
+                        currency = req.currency,
+                        isActive = true,
+                    )
+                }
+                if (dto != null) {
+                    call.created(dto, "Late fee tier created")
+                } else {
+                    call.fail("A tier with this days_after_due already exists", HttpStatusCode.Conflict, "DUPLICATE")
+                }
+            }
+
+            put("/{id}") {
+                val ctx = call.requireSchoolAdmin() ?: return@put
+                val tierId = parseUuid(call.parameters["id"]) ?: run {
+                    call.fail("Invalid ID", HttpStatusCode.BadRequest, "BAD_REQUEST")
+                    return@put
+                }
+                val req = call.receive<UpdateFeeLateFeeTierRequest>()
+                if (req.daysAfterDue < 1 || req.amount < 0) {
+                    call.fail("days_after_due must be >= 1 and amount must be >= 0", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@put
+                }
+                val now = Instant.now()
+                val updated = dbQuery {
+                    val count = FeeLateFeeTiersTable.update(
+                        { (FeeLateFeeTiersTable.id eq tierId) and (FeeLateFeeTiersTable.schoolId eq ctx.schoolId) }
+                    ) {
+                        it[FeeLateFeeTiersTable.daysAfterDue] = req.daysAfterDue
+                        it[FeeLateFeeTiersTable.amount] = req.amount
+                        it[FeeLateFeeTiersTable.currency] = req.currency
+                        it[FeeLateFeeTiersTable.isActive] = req.isActive
+                        it[FeeLateFeeTiersTable.updatedAt] = now
+                    }
+                    count > 0
+                }
+                if (updated) {
+                    call.okMessage("Late fee tier updated")
+                } else {
+                    call.fail("Late fee tier not found", HttpStatusCode.NotFound, "NOT_FOUND")
+                }
+            }
+
+            delete("/{id}") {
+                val ctx = call.requireSchoolAdmin() ?: return@delete
+                val tierId = parseUuid(call.parameters["id"]) ?: run {
+                    call.fail("Invalid ID", HttpStatusCode.BadRequest, "BAD_REQUEST")
+                    return@delete
+                }
+                val deleted = dbQuery {
+                    FeeLateFeeTiersTable.deleteWhere {
+                        (FeeLateFeeTiersTable.id eq tierId) and (FeeLateFeeTiersTable.schoolId eq ctx.schoolId)
+                    } > 0
+                }
+                if (deleted) {
+                    call.okMessage("Late fee tier deleted")
+                } else {
+                    call.fail("Late fee tier not found", HttpStatusCode.NotFound, "NOT_FOUND")
                 }
             }
         }
