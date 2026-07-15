@@ -45,6 +45,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 @Composable
 fun TeacherFirstLoginScreenV2(
@@ -111,7 +112,7 @@ fun TeacherFirstLoginScreenV2(
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = appString(StringKeys.AUTH_FIRST_LOGIN_DESC),
-                    style = VTypography.bodySmall,
+                    style = VTypography.caption,
                     color = VColors.ink2,
                     textAlign = TextAlign.Center,
                 )

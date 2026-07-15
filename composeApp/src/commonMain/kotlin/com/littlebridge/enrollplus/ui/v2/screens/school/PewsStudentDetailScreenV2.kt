@@ -208,7 +208,7 @@ private fun MetricsCard(s: PewsStudentDto) {
 @Composable
 private fun Metric(label: String, value: String, slope: Double?, modifier: Modifier = Modifier) {
         Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = VTypography.bodySmall.copy(color = VColors.ink).copy(fontWeight = FontWeight.Bold))
+        Text(value, style = VTypography.caption.copy(color = VColors.ink).copy(fontWeight = FontWeight.Bold))
         Spacer(Modifier.height(2.dp))
         Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 11.sp))
         if (slope != null && slope != 0.0) {
@@ -309,7 +309,7 @@ private fun InterventionCard(
     }
     VCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(iv.actionType.replace('_', ' '), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), modifier = Modifier.weight(1f))
+            Text(iv.actionType.replace('_', ' '), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), modifier = Modifier.weight(1f))
             VBadge(text = iv.status.replace('_', ' '), tone = statusTone)
         }
 

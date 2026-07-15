@@ -58,6 +58,7 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.TextStyle
 import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 
 /**
@@ -256,7 +257,7 @@ private fun SyllabusBody(
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         VtIconDisc(VIcons.AlertCircle, tint = VColors.error, bg = VColors.error.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text(appString(StringKeys.TC_NO_NCERT_REFERENCE_FOUND), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                        Text(appString(StringKeys.TC_NO_NCERT_REFERENCE_FOUND), style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                         Text(state.autoFillError ?: "", style = VTypography.caption, color = VColors.ink3)
                         Spacer(Modifier.height(12.dp))
                         EmptyStateOptions(viewModel)
@@ -344,7 +345,7 @@ private fun SyllabusRow(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     u.title,
-                    style = if (u.isChapter) VTypography.body else VTypography.bodySmall,
+                    style = if (u.isChapter) VTypography.body else VTypography.caption,
                     color = VColors.ink,
                     fontWeight = if (u.isChapter) FontWeight.Bold else FontWeight.Medium,
                 )
@@ -498,7 +499,7 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                     Icon(VIcons.ClipboardList, contentDescription = null, tint = VColors.success, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(10.dp))
                     Column {
-                        Text(appString(StringKeys.TC_DAILY_CLASS_LOG), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                        Text(appString(StringKeys.TC_DAILY_CLASS_LOG), style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                         Text("${state.dailyLogClassName} · ${state.dailyLogSubject}", style = VTypography.caption, color = VColors.ink2)
                     }
                     Spacer(Modifier.weight(1f))
@@ -572,7 +573,7 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                             .clickable { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct - 10) },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.Minus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
-                    Text("${state.dailyLogCoveragePct}%", style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                    Text("${state.dailyLogCoveragePct}%", style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Box(
                         Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
                             .clickable { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct + 10) },
@@ -617,7 +618,7 @@ private fun DailyLogChapterRow(title: String, expanded: Boolean, onToggle: () ->
             tint = VColors.ink2,
             modifier = Modifier.size(18.dp),
         )
-        Text(title, style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+        Text(title, style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -723,7 +724,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(10.dp))
-                    Text(appString(StringKeys.TC_GENERATE_QUIZ), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                    Text(appString(StringKeys.TC_GENERATE_QUIZ), style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.weight(1f))
                     Box(
                         Modifier.size(32.dp).clip(CircleShape).background(VColors.surfaceTint)
@@ -760,7 +761,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                             }
                             Text(
                                 u.title,
-                                style = VTypography.bodySmall,
+                                style = VTypography.caption,
                                 color = if (isSelected) VColors.ink else VColors.ink2,
                                 maxLines = 1,
                             )
@@ -802,7 +803,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                             .clickable { viewModel.setQuizNumQuestions(state.quizNumQuestions - 1) },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.Minus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
-                    Text("${state.quizNumQuestions}", style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                    Text("${state.quizNumQuestions}", style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Box(
                         Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
                             .clickable { viewModel.setQuizNumQuestions(state.quizNumQuestions + 1) },
@@ -828,7 +829,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                         ) {
                             Text(
                                 label,
-                                style = VTypography.bodySmall,
+                                style = VTypography.caption,
                                 color = if (selected) VColors.violetInk else VColors.ink2,
                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             )
@@ -1569,33 +1570,6 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
                             Text(appString(StringKeys.TC_NO_ATTEMPTS_YET), style = VTypography.body.copy(color = VColors.ink2))
                         }
                     } else {
-                        // ── Compare Attendance toggle ──
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Box(
-                                Modifier.size(20.dp).clip(CircleShape)
-                                    .background(if (state.compareAttendance) VColors.success else VColors.surfaceTint)
-                                    .border(1.dp, if (state.compareAttendance) VColors.success else VColors.line, CircleShape)
-                                    .clickable { viewModel.toggleCompareAttendance() },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (state.compareAttendance) Icon(VIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-                            }
-                            Text(
-                                "Compare Attendance",
-                                style = VTypography.body.copy(color = VColors.ink2),
-                            )
-                            if (state.attendanceAnalyticsLoading) {
-                                TeacherSpinner(12.dp)
-                            }
-                        }
-
-                        // Build at-risk lookup by name for matching
-                        val atRiskMap = state.attendanceAnalytics?.atRiskStudents?.associateBy { it.name } ?: emptyMap()
-
                         // Column headers
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
@@ -1606,13 +1580,9 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
                             Text(appString(StringKeys.TC_STUDENT), style = VTypography.caption.copy(color = VColors.ink3), modifier = Modifier.weight(1f))
                             Text(appString(StringKeys.TC_SCORE), style = VTypography.caption.copy(color = VColors.ink3))
                             Text("%", style = VTypography.caption.copy(color = VColors.ink3))
-                            if (state.compareAttendance) {
-                                Text("Att", style = VTypography.caption.copy(color = VColors.ink3), modifier = Modifier.width(36.dp))
-                            }
                         }
 
                         lb.entries.forEach { entry ->
-                            val atRisk = atRiskMap[entry.studentName]
                             Row(
                                 Modifier.fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
@@ -1643,30 +1613,6 @@ private fun QuizLeaderboardSheet(viewModel: TeacherSyllabusViewModel) {
                                         if (entry.percentage >= 50) VColors.success else VColors.error
                                     ).copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                                 )
-                                if (state.compareAttendance) {
-                                    if (atRisk != null) {
-                                        Box(
-                                            Modifier.width(36.dp).clip(RoundedCornerShape(4.dp)).background(VColors.error.copy(alpha = 0.12f)),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Text("${atRisk.attendancePercentage}%", style = VTypography.caption.copy(color = VColors.error))
-                                        }
-                                    } else {
-                                        Text("—", style = VTypography.caption.copy(color = VColors.ink3), modifier = Modifier.width(36.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                                    }
-                                }
-                            }
-                        }
-
-                        // Legend for attendance comparison
-                        if (state.compareAttendance && state.attendanceAnalytics != null) {
-                            Row(
-                                Modifier.fillMaxWidth().padding(top = 6.dp, start = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(VColors.error.copy(alpha = 0.12f)))
-                                Text("Below 75% attendance", style = VTypography.caption.copy(color = VColors.ink3))
                             }
                         }
                     }

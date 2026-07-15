@@ -76,7 +76,7 @@ object VtT {
     val h3: TextStyle get() = VTypography.h3
     val body: TextStyle get() = VTypography.body
     val bodyStrong: TextStyle get() = VTypography.body
-    val bodySmall: TextStyle get() = VTypography.bodySmall
+    val bodySmall: TextStyle get() = VTypography.caption
     val caption: TextStyle get() = VTypography.caption
     val label: TextStyle get() = VTypography.label
     val dataLg: TextStyle get() = VTypography.h2       // large numeric figure
@@ -212,7 +212,7 @@ fun VtCompactMetric(value: String, label: String, tint: Color, modifier: Modifie
             .padding(horizontal = 8.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = VTypography.bodySmall.copy(color = VColors.ink))
+        Text(value, style = VTypography.caption.copy(color = VColors.ink))
         Text(label, style = VTypography.caption, color = VColors.ink3)
     }
 }
@@ -247,7 +247,7 @@ fun VtEmptyCard(
             }
             Text(
                 title,
-                style = VTypography.bodySmall.copy(color = VColors.ink),
+                style = VTypography.caption.copy(color = VColors.ink),
                 textAlign = TextAlign.Center,
             )
             if (subtext != null) {

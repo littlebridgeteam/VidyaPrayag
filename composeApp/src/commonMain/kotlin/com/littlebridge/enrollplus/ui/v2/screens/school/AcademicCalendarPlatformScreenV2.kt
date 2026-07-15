@@ -251,7 +251,7 @@ private fun HeroOverview(
                 Column {
                     Text(appString(StringKeys.ACALP_NEXT_EVENT), style = VTypography.label, color = VColors.violetSoft)
                     Spacer(Modifier.height(2.dp))
-                    Text(nextEvent.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                    Text(nextEvent.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
                     Text(
                         formatRange(nextEvent.startDate, nextEvent.endDate),
                         style = VTypography.caption, color = Color.White.copy(alpha = 0.7f),
@@ -282,7 +282,7 @@ private fun HighlightCard(e: AcademicCalendarEventDto, onClick: () -> Unit) {
             Text(CalEventType.label(e.type), style = VTypography.label, color = VColors.ink3)
         }
         Spacer(Modifier.height(6.dp))
-        Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 2)
+        Text(e.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 2)
         Spacer(Modifier.height(4.dp))
         Text(formatRange(e.startDate, e.endDate), style = VTypography.caption, color = VColors.ink2)
         if (e.hasConflicts) {
@@ -360,7 +360,7 @@ private fun InteractiveCalendar(events: List<AcademicCalendarEventDto>, onOpenEv
         ) {
             Text(
                 "${MONTHS[navMonth - 1]} $navYear",
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
                 color = VColors.ink,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -368,13 +368,13 @@ private fun InteractiveCalendar(events: List<AcademicCalendarEventDto>, onOpenEv
                     Modifier.clip(RoundedCornerShape(8.dp)).clickable { prevMonth() }
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
-                    Text("‹", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
+                    Text("‹", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
                 }
                 Box(
                     Modifier.clip(RoundedCornerShape(8.dp)).clickable { nextMonth() }
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
-                    Text("›", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
+                    Text("›", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
                 }
             }
         }
@@ -441,7 +441,7 @@ private fun TimelineList(events: List<AcademicCalendarEventDto>, onOpenEvent: (S
                     Box(Modifier.width(2.dp).height(40.dp).background(VColors.line))
                 }
                 Column(Modifier.padding(bottom = 8.dp).clickable { onOpenEvent(e.id) }) {
-                    Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                    Text(e.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
                     Text(formatRange(e.startDate, e.endDate), style = VTypography.caption, color = VColors.ink2)
                 }
             }
@@ -463,7 +463,7 @@ private fun EventRow(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(typeColor(e.type)))
             Column(Modifier.weight(1f)) {
-                Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(e.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
                 Text(
                     "${CalEventType.label(e.type)} • ${formatRange(e.startDate, e.endDate)}",
                     style = VTypography.caption, color = VColors.ink2,
@@ -487,7 +487,7 @@ private fun MilestoneRow(e: AcademicCalendarEventDto, onClick: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(VIcons.Star, null, tint = VColors.gold, modifier = Modifier.size(18.dp))
             Column(Modifier.weight(1f)) {
-                Text(e.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                Text(e.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
                 Text(formatRange(e.startDate, e.endDate), style = VTypography.caption, color = VColors.ink2)
             }
         }

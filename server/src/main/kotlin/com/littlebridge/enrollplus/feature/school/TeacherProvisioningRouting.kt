@@ -331,28 +331,61 @@ fun Route.teacherProvisioningRouting() {
                 val offset = (page - 1).toLong() * pageSize
 
                 val response = dbQuery {
-                    // (2) total roster size for pagination metadata.
-                    val totalRecords = AppUsersTable.selectAll()
+                    // RECONCILE: ensure every active teacher app_user has a
+                    // mirrored faculty row. Old teachers created before the
+                    // ensureFacultyRow fix would otherwise be invisible.
+                    val activeTeachers = AppUsersTable.selectAll()
                         .where {
                             (AppUsersTable.schoolId eq ctx.schoolId) and
-                                (AppUsersTable.role eq "teacher")
+                                (AppUsersTable.role eq "teacher") and
+                                (AppUsersTable.isActive eq true)
+                        }
+                        .toList()
+                    activeTeachers.forEach { tRow ->
+                        val userId = tRow[AppUsersTable.id].value
+                        val externalId = "U-$userId"
+                        val exists = FacultyTable.selectAll()
+                            .where { FacultyTable.externalId eq externalId }
+                            .firstOrNull()
+                        if (exists == null) {
+                            try {
+                                FacultyTable.insert {
+                                    it[FacultyTable.schoolId] = ctx.schoolId
+                                    it[FacultyTable.externalId] = externalId
+                                    it[FacultyTable.userId] = userId
+                                    it[FacultyTable.name] = tRow[AppUsersTable.fullName]
+                                    it[isActive] = true
+                                    it[createdAt] = tRow[AppUsersTable.createdAt]
+                                }
+                            } catch (_: Exception) {
+                                // Concurrent request may have inserted the same
+                                // externalId (uniqueIndex). Safe to ignore — the
+                                // row now exists either way.
+                            }
+                        }
+                    }
+
+                    // BUG-041: Use FacultyTable as the primary source (matching
+                    // the Home KPI which counts active faculty). This ensures
+                    // faculty rows without app_users entries (e.g. demo seed)
+                    // still appear in the People tab.
+                    val totalRecords = FacultyTable.selectAll()
+                        .where {
+                            (FacultyTable.schoolId eq ctx.schoolId) and
+                                (FacultyTable.isActive eq true)
                         }
                         .count()
 
-                    // (1) one page of teachers — NO isActive filter so inactive
-                    // accounts are still listed (card shows an INACTIVE badge).
-                    val teacherRows = AppUsersTable.selectAll()
+                    val facultyRows = FacultyTable.selectAll()
                         .where {
-                            (AppUsersTable.schoolId eq ctx.schoolId) and
-                                (AppUsersTable.role eq "teacher")
+                            (FacultyTable.schoolId eq ctx.schoolId) and
+                                (FacultyTable.isActive eq true)
                         }
-                        .orderBy(AppUsersTable.fullName, SortOrder.ASC)
+                        .orderBy(FacultyTable.name, SortOrder.ASC)
                         .limit(pageSize, offset)
                         .toList()
 
-                    val teacherIds = teacherRows.map { it[AppUsersTable.id].value }
-
-                    if (teacherIds.isEmpty()) {
+                    if (facultyRows.isEmpty()) {
                         return@dbQuery TeacherCardListResponse(
                             teachers = emptyList(),
                             pagination = TeacherCardPaginationDto(
@@ -364,49 +397,46 @@ fun Route.teacherProvisioningRouting() {
                         )
                     }
 
+                    // Collect userIds for faculty that have app_users links.
+                    val teacherIds = facultyRows.mapNotNull { it[FacultyTable.userId] }
+
+                    // Batch-fetch AppUsersTable rows for profile enrichment.
+                    val appUserPredicate = if (teacherIds.isNotEmpty()) {
+                        teacherIds.map { tid -> AppUsersTable.id eq tid }
+                            .reduce { acc, next -> acc or next }
+                    } else null
+                    val appUserByUserId: Map<UUID, ResultRow> = if (appUserPredicate != null) {
+                        AppUsersTable.selectAll()
+                            .where { appUserPredicate }
+                            .toList()
+                            .associateBy { it[AppUsersTable.id].value }
+                    } else emptyMap()
+
                     // (3) all assignments for the page's teachers in ONE query.
-                    // The codebase avoids `inList`; OR-reduce the teacher ids.
-                    val assignmentPredicate = teacherIds
-                        .map { tid -> TeacherSubjectAssignmentsTable.teacherId eq tid }
-                        .reduce { acc, next -> acc or next }
-                    val assignmentRows = TeacherSubjectAssignmentsTable.selectAll()
-                        .where {
-                            (TeacherSubjectAssignmentsTable.schoolId eq ctx.schoolId) and
-                                (TeacherSubjectAssignmentsTable.isActive eq true) and
-                                assignmentPredicate
-                        }
-                        .toList()
+                    val assignmentPredicate = if (teacherIds.isNotEmpty()) {
+                        teacherIds
+                            .map { tid -> TeacherSubjectAssignmentsTable.teacherId eq tid }
+                            .reduce { acc, next -> acc or next }
+                    } else null
+                    val assignmentRows = if (assignmentPredicate != null) {
+                        TeacherSubjectAssignmentsTable.selectAll()
+                            .where {
+                                (TeacherSubjectAssignmentsTable.schoolId eq ctx.schoolId) and
+                                    (TeacherSubjectAssignmentsTable.isActive eq true) and
+                                    assignmentPredicate
+                            }
+                            .toList()
+                    } else emptyList()
                     val assignmentsByTeacher = assignmentRows.groupBy {
                         it[TeacherSubjectAssignmentsTable.teacherId]
                     }
 
-                    // (4) faculty bridge rows (userId → externalId / department)
-                    // for the page's teachers in ONE query, so we can locate
-                    // faculty attendance and label the role more specifically.
-                    val facultyPredicate = teacherIds
-                        .map { tid -> FacultyTable.userId eq tid }
-                        .reduce { acc, next -> acc or next }
-                    val facultyByUserId: Map<UUID, Pair<String, String?>> =
-                        FacultyTable.selectAll()
-                            .where {
-                                (FacultyTable.schoolId eq ctx.schoolId) and facultyPredicate
-                            }
-                            .toList()
-                            .mapNotNull { row ->
-                                row[FacultyTable.userId]?.let { uid ->
-                                    uid to (row[FacultyTable.externalId] to row[FacultyTable.department])
-                                }
-                            }
-                            .toMap()
-                    val externalIdByUserId: Map<UUID, String> =
-                        facultyByUserId.mapValues { it.value.first }
-
                     // (5) 30-day faculty attendance window, grouped by personId
-                    // (= FacultyTable.externalId). Only fetched when at least one
-                    // teacher on this page actually bridges to a faculty row.
+                    // (= FacultyTable.externalId).
+                    val externalIds = facultyRows.map { it[FacultyTable.externalId] }
                     val cutoff = LocalDate.now().minusDays(30)
                     val attendanceByExternalId: Map<String, List<String>> =
-                        if (externalIdByUserId.isEmpty()) {
+                        if (externalIds.isEmpty()) {
                             emptyMap()
                         } else {
                             AttendanceRecordsTable.selectAll()
@@ -416,11 +446,9 @@ fun Route.teacherProvisioningRouting() {
                                 }
                                 .toList()
                                 .filter {
-                                    // person_id is nullable (Tables.kt); drop rows that
-                                    // can't be attributed before grouping by a String key.
                                     it[AttendanceRecordsTable.personId] != null &&
+                                        it[AttendanceRecordsTable.personId]!! in externalIds &&
                                         runCatching {
-                                            // T-004: date is now a typed `date` (LocalDate) — no parse.
                                             it[AttendanceRecordsTable.date].isAfter(cutoff)
                                         }.getOrDefault(false)
                                 }
@@ -430,11 +458,7 @@ fun Route.teacherProvisioningRouting() {
                                 )
                         }
 
-                    // Student workload source: active students grouped by their
-                    // (className|section) bucket, counted ONCE for the whole
-                    // school. totalStudents per teacher = sum over their distinct
-                    // assigned classes (so co-teaching never double-counts within
-                    // a teacher, and an unassigned teacher gets 0).
+                    // Student workload source: active students grouped by class.
                     val studentCountByClass: Map<Pair<String, String>, Int> =
                         StudentsTable.selectAll()
                             .where {
@@ -447,12 +471,13 @@ fun Route.teacherProvisioningRouting() {
                             }
                             .eachCount()
 
-                    // People Tab enrichment: batched queries for new fields.
                     // (6) Teacher ratings — average per teacher.
-                    val ratingsPredicate = teacherIds
-                        .map { tid -> TeacherRatingsTable.teacherId eq tid }
-                        .reduce { acc, next -> acc or next }
-                    val ratingsByTeacher: Map<UUID, Float> = if (teacherIds.isNotEmpty()) {
+                    val ratingsPredicate = if (teacherIds.isNotEmpty()) {
+                        teacherIds
+                            .map { tid -> TeacherRatingsTable.teacherId eq tid }
+                            .reduce { acc, next -> acc or next }
+                    } else null
+                    val ratingsByTeacher: Map<UUID, Float> = if (ratingsPredicate != null) {
                         TeacherRatingsTable.selectAll()
                             .where {
                                 (TeacherRatingsTable.schoolId eq ctx.schoolId) and ratingsPredicate
@@ -464,13 +489,15 @@ fun Route.teacherProvisioningRouting() {
                             }
                     } else emptyMap()
 
-                    // (7) Today's timetable periods per teacher — for schedule + availability.
+                    // (7) Today's timetable periods per teacher.
                     val today = LocalDate.now()
-                    val todayDayOfWeek = today.dayOfWeek.value  // 1=Monday..7=Sunday
-                    val periodsPredicate = teacherIds
-                        .map { tid -> TeacherPeriodsTable.teacherId eq tid }
-                        .reduce { acc, next -> acc or next }
-                    val periodsByTeacher: Map<UUID, List<ResultRow>> = if (teacherIds.isNotEmpty()) {
+                    val todayDayOfWeek = today.dayOfWeek.value
+                    val periodsPredicate = if (teacherIds.isNotEmpty()) {
+                        teacherIds
+                            .map { tid -> TeacherPeriodsTable.teacherId eq tid }
+                            .reduce { acc, next -> acc or next }
+                    } else null
+                    val periodsByTeacher: Map<UUID, List<ResultRow>> = if (periodsPredicate != null) {
                         TeacherPeriodsTable.selectAll()
                             .where {
                                 (TeacherPeriodsTable.schoolId eq ctx.schoolId) and
@@ -481,11 +508,13 @@ fun Route.teacherProvisioningRouting() {
                             .groupBy { it[TeacherPeriodsTable.teacherId] }
                     } else emptyMap()
 
-                    // (8) Leave requests for today — check if teacher is on leave.
-                    val leavePredicate = teacherIds
-                        .map { tid -> LeaveRequestsTable.requesterId eq tid }
-                        .reduce { acc, next -> acc or next }
-                    val teachersOnLeave: Set<UUID> = if (teacherIds.isNotEmpty()) {
+                    // (8) Leave requests for today.
+                    val leavePredicate = if (teacherIds.isNotEmpty()) {
+                        teacherIds
+                            .map { tid -> LeaveRequestsTable.requesterId eq tid }
+                            .reduce { acc, next -> acc or next }
+                    } else null
+                    val teachersOnLeave: Set<UUID> = if (leavePredicate != null) {
                         LeaveRequestsTable.selectAll()
                             .where {
                                 (LeaveRequestsTable.schoolId eq ctx.schoolId) and
@@ -504,11 +533,15 @@ fun Route.teacherProvisioningRouting() {
                             .toSet()
                     } else emptySet()
 
-                    val cards = teacherRows.map { row ->
-                        val teacherId = row[AppUsersTable.id].value
-                        val assignments = assignmentsByTeacher[teacherId].orEmpty()
+                    val cards = facultyRows.map { fRow ->
+                        val facultyId = fRow[FacultyTable.id].value
+                        val externalId = fRow[FacultyTable.externalId]
+                        val userId = fRow[FacultyTable.userId]
+                        val appUser = userId?.let { appUserByUserId[it] }
+                        val teacherId = userId ?: facultyId
 
-                        // grades = distinct class names; subjects = distinct subjects.
+                        val assignments = userId?.let { assignmentsByTeacher[it].orEmpty() } ?: emptyList()
+
                         val grades = assignments
                             .map { it[TeacherSubjectAssignmentsTable.className] }
                             .filter { it.isNotBlank() }
@@ -518,7 +551,6 @@ fun Route.teacherProvisioningRouting() {
                             .filter { it.isNotBlank() }
                             .distinct()
 
-                        // distinct (className, section) classes this teacher owns.
                         val distinctClasses = assignments
                             .map {
                                 it[TeacherSubjectAssignmentsTable.className] to
@@ -529,55 +561,43 @@ fun Route.teacherProvisioningRouting() {
                         val totalStudents = distinctClasses
                             .sumOf { studentCountByClass[it] ?: 0 }
 
-                        // attendance via the faculty bridge — null when unlinked
-                        // or no records in the window (card shows "—", no guess).
-                        val attendancePercentage = externalIdByUserId[teacherId]
-                            ?.let { ext -> attendanceByExternalId[ext] }
+                        val attendancePercentage = attendanceByExternalId[externalId]
                             ?.takeIf { it.isNotEmpty() }
                             ?.let { statuses ->
                                 val present = statuses.count { it.equals("PRESENT", true) }
                                 kotlin.math.round(present * 100.0 / statuses.size).toInt()
                             }
 
-                        val isActive = row[AppUsersTable.isActive]
-                        // Role label, most-specific first: a bridged faculty
-                        // department (e.g. "Mathematics Teacher"), else the
-                        // teacher's primary assigned subject, else plain "Teacher".
-                        val department = facultyByUserId[teacherId]?.second?.takeIf { it.isNotBlank() }
+                        val isActive = appUser?.get(AppUsersTable.isActive) ?: true
+                        val department = fRow[FacultyTable.department]?.takeIf { it.isNotBlank() }
                         val roleLabel = when {
                             department != null -> "$department Teacher"
                             subjects.isNotEmpty() -> "${subjects.first()} Teacher"
                             else -> "Teacher"
                         }
 
-                        // People Tab enrichment: isClassTeacher from assignments.
                         val isClassTeacher = assignments.any { it[TeacherSubjectAssignmentsTable.isClassTeacher] }
 
-                        // People Tab enrichment: experience from app_users.createdAt.
-                        val experienceYears = runCatching {
-                            java.time.Duration.between(row[AppUsersTable.createdAt], Instant.now()).toDays() / 365
-                        }.getOrDefault(0L).toInt().coerceAtLeast(0)
+                        val experienceYears = appUser?.let {
+                            runCatching {
+                                java.time.Duration.between(it[AppUsersTable.createdAt], Instant.now()).toDays() / 365
+                            }.getOrDefault(0L).toInt().coerceAtLeast(0)
+                        } ?: 0
                         val experienceLabel = if (experienceYears > 0) "$experienceYears yrs" else null
 
-                        // People Tab enrichment: rating from teacher_ratings.
-                        val rating = ratingsByTeacher[teacherId]
-
-                        // People Tab enrichment: workload percent (max 10 classes = 100%).
+                        val rating = userId?.let { ratingsByTeacher[it] }
                         val workloadPercent = (totalClasses * 10).coerceAtMost(100)
 
-                        // People Tab enrichment: schedule from today's periods.
-                        val todayPeriods = periodsByTeacher[teacherId].orEmpty()
+                        val todayPeriods = userId?.let { periodsByTeacher[it].orEmpty() } ?: emptyList()
                         val scheduleLabel = if (todayPeriods.isNotEmpty()) {
                             "${todayPeriods.size} class${if (todayPeriods.size > 1) "es" else ""} today"
                         } else {
                             "No classes today"
                         }
 
-                        // People Tab enrichment: availability derivation.
                         val availability = when {
-                            teacherId in teachersOnLeave -> "leave"
+                            userId != null && userId in teachersOnLeave -> "leave"
                             todayPeriods.isNotEmpty() -> {
-                                // Check if currently within a period time range.
                                 val now = java.time.LocalTime.now()
                                 val currentlyTeaching = todayPeriods.any { p ->
                                     val start = p[TeacherPeriodsTable.startTime]
@@ -592,8 +612,8 @@ fun Route.teacherProvisioningRouting() {
                         TeacherCardDto(
                             id = teacherId.toString(),
                             profile = TeacherCardProfileDto(
-                                name = row[AppUsersTable.fullName],
-                                avatarUrl = row[AppUsersTable.profilePicUrl],
+                                name = appUser?.get(AppUsersTable.fullName) ?: fRow[FacultyTable.name],
+                                avatarUrl = appUser?.get(AppUsersTable.profilePicUrl) ?: fRow[FacultyTable.profilePic],
                                 role = roleLabel,
                                 status = if (isActive) "ACTIVE" else "INACTIVE",
                                 isClassTeacher = isClassTeacher,
@@ -612,7 +632,7 @@ fun Route.teacherProvisioningRouting() {
                             ),
                             activity = TeacherCardActivityDto(
                                 attendancePercentage = attendancePercentage,
-                                lastActiveAt = row[AppUsersTable.lastLoginAt]?.toString()
+                                lastActiveAt = appUser?.get(AppUsersTable.lastLoginAt)?.toString()
                             ),
                             actions = TeacherCardActionsDto(
                                 canViewProfile = true,

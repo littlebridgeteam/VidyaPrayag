@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.DeliveryLogItem
@@ -36,6 +37,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.util.htmlDecode
 
 /**
  * CommsCards — reusable, premium cards for the School Comms hub.
@@ -88,10 +90,12 @@ internal fun AnnouncementCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        announcement.title,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        announcement.title.htmlDecode(),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.width(8.dp))
                     CommsBadge(text = badgeText, color = badgeColor, bg = badgeBg)
@@ -106,11 +110,12 @@ internal fun AnnouncementCard(
                 }
                 if (announcement.description.isNotBlank()) {
                     Text(
-                        announcement.description,
+                        announcement.description.htmlDecode(),
                         style = VTypography.caption,
                         color = VColors.ink2,
                         modifier = Modifier.padding(top = 6.dp),
-                        maxLines = 2,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -144,7 +149,7 @@ internal fun CommsEntryCard(
                 Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Text(description, style = VTypography.caption, color = VColors.ink3, maxLines = 2)
             }
             Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
@@ -189,7 +194,7 @@ internal fun MessagePreviewCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         thread.senderName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
                     )
@@ -254,7 +259,7 @@ internal fun PtmActivePreviewCard(
                     CommsBadge(text = "Active", color = VColors.mint, bg = VColors.mintSoft)
                     Text(
                         title,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         maxLines = 1,
                     )
@@ -302,7 +307,7 @@ internal fun PtmPreviewCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     item.title,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                     color = VColors.ink,
                 )
                 Text(
@@ -370,7 +375,7 @@ internal fun DeliveryLogRowCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         item.announcementTitle.ifBlank { "Announcement" },
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,

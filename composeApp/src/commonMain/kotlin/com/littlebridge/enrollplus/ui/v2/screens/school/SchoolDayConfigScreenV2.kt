@@ -328,7 +328,7 @@ private fun SlotRow(slot: SchoolDaySlotDto) {
         }
         Column(Modifier.weight(1f)) {
             if (slot.label.isNotBlank()) {
-                Text(slot.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(slot.label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             }
             Text(
                 "${slot.startTime} – ${slot.endTime}",
@@ -382,7 +382,7 @@ private fun ConfigFormCard(
         }
 
         Spacer(Modifier.height(12.dp))
-        Text(appString(StringKeys.SCH_SLOTS_N, "count" to slots.size.toString()), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text(appString(StringKeys.SCH_SLOTS_N, "count" to slots.size.toString()), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
         if (slots.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             slots.forEachIndexed { idx, slot ->

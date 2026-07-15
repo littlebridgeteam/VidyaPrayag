@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.TaskAlt
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -99,6 +98,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.SkillTestViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN ENTRY POINT
@@ -126,8 +127,8 @@ fun ParentAcademicsScreenV2(
     viewModel: TrackProgressViewModel = koinViewModel(),
     academicsViewModel: ParentAcademicsViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
-    val academics by academicsViewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateV2()
+    val academics by academicsViewModel.state.collectAsStateV2()
     var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(academics.refreshEpoch, academics.syllabusV2Loading, academics.dailySummaryLoading, academics.quizzesLoading) {
@@ -1642,7 +1643,7 @@ private fun TintedBar(value: Float, fill: Color, height: androidx.compose.ui.uni
 @Composable
 private fun LoadingState() {
     Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+        TeacherSpinner(32.dp, 2.dp)
     }
 }
 

@@ -176,7 +176,7 @@ private fun LinkRequestCard(
         ) {
             VAvatar(name = childName, src = null, size = 40.dp)
             Column(Modifier.weight(1f)) {
-                Text(childName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(childName, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Spacer(Modifier.height(2.dp))
                 val classRoll = buildString {
                     req.className?.takeIf { it.isNotBlank() }?.let { append("Class $it") }

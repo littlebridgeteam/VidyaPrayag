@@ -30,6 +30,7 @@ import com.littlebridge.enrollplus.ui.v2.components.*
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -372,7 +373,7 @@ private fun BrandingSettingsContent(
                                 Text(appString(StringKeys.BRAND_CURRENT_SUBDOMAIN), style = VTypography.caption.copy(color = VColors.ink3))
                                 Text(
                                     "$existing.vidyaprayag.com",
-                                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                                 )
                             }
                             VButton(
@@ -477,7 +478,7 @@ internal fun BrandingPreviewCard(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(appString(StringKeys.BRAND_LIVE_PREVIEW), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.BRAND_LIVE_PREVIEW), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
 
             // Mock login header
             Box(
@@ -575,7 +576,7 @@ internal fun BrandingColorPickerSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -842,7 +843,7 @@ private fun AssetUploadRow(
             }
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Text(
                     if (url != null) appString(StringKeys.BRAND_UPLOADED) else appString(StringKeys.BRAND_NOT_SET),
                     style = VTypography.caption.copy(color = VColors.ink3),
@@ -850,11 +851,7 @@ private fun AssetUploadRow(
             }
 
             if (isUploading) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = VColors.violet,
-                )
+                TeacherSpinner(20.dp, 2.dp)
             } else {
                 if (url != null) {
                     VButton(

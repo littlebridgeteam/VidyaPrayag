@@ -4,6 +4,7 @@ import com.littlebridge.enrollplus.db.CalendarEventsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.EventRegistrationsTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
+import com.littlebridge.enrollplus.db.FeeReminderConfigTable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -39,6 +40,16 @@ object NotificationScheduler {
         val now = Instant.now()
         val oneDayAgo = now.minus(1, ChronoUnit.DAYS)
         val today = LocalDate.now().toString()
+        val todayDay = LocalDate.now().dayOfMonth
+
+        // Read per-school reminder configs so only schools whose reminder_day
+        // matches today's date trigger notifications.
+        val activeSchoolIds = dbQuery {
+            FeeReminderConfigTable.selectAll()
+                .where { FeeReminderConfigTable.isActive eq true }
+                .map { it[FeeReminderConfigTable.schoolId] to it[FeeReminderConfigTable.reminderDay] }
+        }
+        val schoolsToRemind = activeSchoolIds.filter { (_, day) -> day == todayDay }.map { it.first }.toSet()
 
         val dueFees = dbQuery {
             FeeRecordsTable.selectAll()
@@ -47,6 +58,12 @@ object NotificationScheduler {
                     (FeeRecordsTable.dueDate lessEq today) and
                     (FeeRecordsTable.lastRemindedAt.isNull() or (FeeRecordsTable.lastRemindedAt less oneDayAgo))
                 }.toList()
+        }.filter { row ->
+            // Only remind for schools that have today as their reminder day.
+            // Schools without a config entry always remind (backward compat).
+            val sid = row[FeeRecordsTable.schoolId] ?: return@filter true
+            activeSchoolIds.isEmpty() || schoolsToRemind.isEmpty() || sid in schoolsToRemind ||
+                activeSchoolIds.none { it.first == sid }
         }
 
         if (dueFees.isEmpty()) return

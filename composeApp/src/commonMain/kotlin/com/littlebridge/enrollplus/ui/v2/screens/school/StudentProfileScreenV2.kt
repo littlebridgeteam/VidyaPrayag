@@ -270,7 +270,7 @@ private fun HeroFact(icon: ImageVector, label: String, value: String) {
             Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(16.dp))
         }
         Column {
-            Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
             Text(label, style = VTypography.label, color = VColors.ink3)
         }
     }
@@ -319,7 +319,7 @@ private fun KpiCard(data: KpiCardData) {
         }
         Spacer(Modifier.height(12.dp))
         Text(data.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
-        Text(data.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+        Text(data.label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
         Text(data.support, style = VTypography.label, color = VColors.ink3)
     }
 }
@@ -367,7 +367,7 @@ private fun TeacherConnectionCard(t: StudentTeacherDto) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             VAvatar(name = t.name, size = 40.dp)
             Column(Modifier.weight(1f)) {
-                Text(t.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(t.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
                 Text(t.subject, style = VTypography.caption, color = VColors.ink2, maxLines = 1)
             }
         }
@@ -400,7 +400,7 @@ private fun ParentConnectionCard(parent: StudentParentDto) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             VAvatar(name = parent.name, size = 44.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(parent.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(parent.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
                 Text(parent.relation, style = VTypography.caption, color = VColors.ink2)
                 parent.phone?.takeIf { it.isNotBlank() }?.let {
                     Text(it, style = VTypography.label, color = VColors.ink3)
@@ -421,8 +421,8 @@ private fun AttendanceOverview(p: StudentProfileDto) {
         VSectionHeader(title = appString(StringKeys.SCH_ATTENDANCE_OVERVIEW))
         VCard(padding = 18.dp) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(appString(StringKeys.SCH_ATTENDANCE_RATE), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-                Text("${p.attendanceRate}%", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                Text(appString(StringKeys.SCH_ATTENDANCE_RATE), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+                Text("${p.attendanceRate}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
             }
             Spacer(Modifier.height(8.dp))
             VProgressBar(
@@ -509,7 +509,7 @@ private fun TimelineRow(activity: StudentActivityDto, isLast: Boolean) {
             }
         }
         Column(Modifier.padding(bottom = if (isLast) 0.dp else 12.dp)) {
-            Text(activity.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(activity.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
             Text(formatActivityMeta(activity), style = VTypography.label, color = VColors.ink3)
         }
     }
@@ -544,7 +544,7 @@ private fun MarksSection(p: StudentProfileDto) {
                     VCard(padding = 16.dp) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
-                                Text("${m.subject} · ${m.assessmentName}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                                Text("${m.subject} · ${m.assessmentName}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
                                 m.examDate?.let { Text(it, style = VTypography.label, color = VColors.ink3) }
                             }
                             Text(
@@ -573,7 +573,7 @@ private fun LeaveSection(p: StudentProfileDto) {
                     VCard(padding = 16.dp) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Column(Modifier.weight(1f)) {
-                                Text("${l.dateFrom} → ${l.dateTo}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                                Text("${l.dateFrom} → ${l.dateTo}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
                                 Text(l.reason, style = VTypography.caption, color = VColors.ink2)
                             }
                             VBadge(
@@ -606,7 +606,7 @@ private fun FeesSection(p: StudentProfileDto) {
                     VCard(padding = 16.dp) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
-                                Text(f.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                                Text(f.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
                                 f.dueDate?.let { Text(appString(StringKeys.SCH_DUE, "date" to it), style = VTypography.label, color = VColors.ink3) }
                             }
                             Column(horizontalAlignment = Alignment.End) {
@@ -675,7 +675,7 @@ private fun DetailRow(icon: ImageVector, label: String, value: String) {
         }
         Column(Modifier.weight(1f)) {
             Text(label, style = VTypography.label, color = VColors.ink3)
-            Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
         }
     }
 }
@@ -691,7 +691,7 @@ private fun DangerZone(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_DANGER_ZONE))
         VCard(padding = 18.dp, border = true) {
-            Text(appString(StringKeys.SCH_REMOVE_STUDENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.error)
+            Text(appString(StringKeys.SCH_REMOVE_STUDENT), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.error)
             Spacer(Modifier.height(4.dp))
             Text(
                 appString(StringKeys.SCH_REMOVE_STUDENT_DANGER),

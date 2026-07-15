@@ -46,6 +46,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 
 /**
  * AdminReportPublishScreen — admin oversight for report card generation
@@ -57,7 +58,7 @@ fun AdminReportPublishScreen(
     onBack: () -> Unit,
     viewModel: AdminReportPublishViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateV2()
         var termInput by remember { mutableStateOf("Term 1") }
 
     LaunchedEffect(Unit) { viewModel.loadTermConfig() }

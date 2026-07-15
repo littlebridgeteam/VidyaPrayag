@@ -9,10 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,6 +22,7 @@ import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGate
 import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.SchoolOnboardingScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.TeacherFirstLoginScreenV2
@@ -638,13 +636,10 @@ private fun AuthedFlow(
                     Modifier
                         .then(modifier)
                         .fillMaxSize()
-                        .background(c.background),
-                    contentAlignment = Alignment.Center,
+                        .background(c.background)
+                        .statusBarsPadding(),
                 ) {
-                    CircularProgressIndicator(
-                        color = c.accent,
-                        modifier = Modifier.size(36.dp),
-                    )
+                    SkeletonDashboard()
                 }
             }
 

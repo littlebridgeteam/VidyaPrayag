@@ -859,7 +859,7 @@ private fun ImportSheet(
                             Text("📷", style = VTypography.body)
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.CS_PHOTO_OCR), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(appString(StringKeys.CS_PHOTO_OCR), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                             Text(appString(StringKeys.CS_PHOTO_OCR_DESC), style = VTypography.caption.copy(color = VColors.ink2))
                         }
                     }
@@ -880,7 +880,7 @@ private fun ImportSheet(
                             Text("📄", style = VTypography.body)
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.CS_PDF_DOCUMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(appString(StringKeys.CS_PDF_DOCUMENT), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                             Text(appString(StringKeys.CS_PDF_DESC), style = VTypography.caption.copy(color = VColors.ink2))
                         }
                     }
@@ -901,7 +901,7 @@ private fun ImportSheet(
                             Text("📋", style = VTypography.body)
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(appString(StringKeys.CS_PASTE_TEXT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(appString(StringKeys.CS_PASTE_TEXT), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                             Text(appString(StringKeys.CS_PASTE_TEXT_DESC), style = VTypography.caption.copy(color = VColors.ink2))
                         }
                     }
@@ -1268,7 +1268,7 @@ private fun ExistingConfigCard(config: SchoolDayConfigDto) {
             } else {
                 VBadge(text = appString(StringKeys.CS_INACTIVE), tone = VBadgeTone.Neutral)
             }
-            Text(config.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(config.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
         }
         Spacer(Modifier.height(4.dp))
         Text(
@@ -1678,7 +1678,7 @@ private fun SlotAssignmentRow(
                 Modifier.width(72.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(slot.startTime, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(slot.startTime, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Text("↓", style = VTypography.caption.copy(color = VColors.ink3))
                 Text(slot.endTime, style = VTypography.body.copy(color = VColors.ink2))
             }
@@ -1694,7 +1694,7 @@ private fun SlotAssignmentRow(
                 )
                 if (period != null) {
                     Spacer(Modifier.height(2.dp))
-                    Text(period.subject, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                    Text(period.subject, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                     if (period.teacherName.isNotBlank()) {
                         Text(period.teacherName, style = VTypography.caption.copy(color = VColors.ink2))
                     }
@@ -1743,7 +1743,7 @@ private fun ManualPeriodRow(
                 Modifier.width(72.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(period.startTime, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(period.startTime, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Text("↓", style = VTypography.caption.copy(color = VColors.ink3))
                 Text(period.endTime, style = VTypography.body.copy(color = VColors.ink2))
             }
@@ -1752,7 +1752,7 @@ private fun ManualPeriodRow(
 
             // Content
             Column(Modifier.weight(1f)) {
-                Text(period.subject, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(period.subject, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 if (period.teacherName.isNotBlank()) {
                     Text(period.teacherName, style = VTypography.caption.copy(color = VColors.ink2))
                 }
@@ -2581,7 +2581,7 @@ private fun ExceptionCard(
         VCard(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(exception.date, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(exception.date, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Spacer(Modifier.height(4.dp))
                 Text("${exception.kind}", style = VTypography.caption.copy(color = VColors.ink2))
                 if (exception.note.isNotBlank()) {
@@ -2652,7 +2652,7 @@ private fun ChangeRequestCard(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(request.teacherName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                    Text(request.teacherName, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                     Text("${request.className} · ${request.subject}", style = VTypography.caption.copy(color = VColors.ink2))
                 }
                 VBadge(

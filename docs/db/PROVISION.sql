@@ -92,6 +92,7 @@
 --     \i docs/db/migration_025_lesson_planning.sql
 --     \i docs/db/migration_050_health_records.sql
 --     \i docs/db/migration_113_server_logs.sql
+--     \i docs/db/migration_100_gamification.sql
 --     \i scripts/seed-2026-06-07.sql
 --
 -- ----------------------------------------------------------------------------

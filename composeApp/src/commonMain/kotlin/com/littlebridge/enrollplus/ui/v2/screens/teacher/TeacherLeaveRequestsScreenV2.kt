@@ -145,7 +145,7 @@ private fun LeaveRequestCard(
             ) {
                 Text(
                     req.studentName,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 if (!isPending) {

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -50,7 +51,7 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -102,7 +103,7 @@ fun TutorChatScreen(
             .imePadding()
     ) {
         // ── Header ──
-        PremiumOverlayHeader(
+        VBackHeader(
             title = appString(StringKeys.TUT_AI_TUTOR),
             onBack = onBack,
             action = {
@@ -208,6 +209,7 @@ private fun ChatRow(
                         modifier = Modifier.size(16.dp),
                     )
                 }
+                Spacer(Modifier.width(6.dp))
             }
             Text(
                 if (isUser) "You" else "Tutor",
@@ -217,6 +219,7 @@ private fun ChatRow(
                 ),
             )
             if (isUser) {
+                Spacer(Modifier.width(6.dp))
                 Box(
                     Modifier
                         .size(28.dp)

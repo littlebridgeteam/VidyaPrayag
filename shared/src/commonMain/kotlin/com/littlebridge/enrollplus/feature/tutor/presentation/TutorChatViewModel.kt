@@ -88,6 +88,7 @@ class TutorChatViewModel(
                 it.copy(
                     isLoading = true,
                     error = null,
+                    question = "",
                     conversationHistory = it.conversationHistory + ChatMessage(
                         role = "user",
                         text = current.question,
@@ -113,7 +114,6 @@ class TutorChatViewModel(
                             it.copy(
                                 isLoading = false,
                                 turn = turn,
-                                question = "",
                                 isStreaming = true,
                                 streamingText = "",
                                 conversationHistory = it.conversationHistory + ChatMessage(

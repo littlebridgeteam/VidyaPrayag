@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,6 +73,8 @@ import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.util.formatDecimal
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 private enum class StudentLibraryTab {
     Browse, MyBooks, History, Wishlist, Reservations, Acquisition, Profile, Badges, Discussions;
@@ -490,7 +491,7 @@ private fun ProfileTab(state: StudentLibraryState, viewModel: StudentLibraryView
 
     if (state.isLoading && p == null) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = c.accent, modifier = Modifier.size(36.dp))
+            TeacherSpinner(36.dp)
         }
         return
     }
@@ -592,7 +593,7 @@ private fun BadgesTab(state: StudentLibraryState, viewModel: StudentLibraryViewM
 
     if (state.isLoading && state.badges.isEmpty()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = c.accent, modifier = Modifier.size(36.dp))
+            TeacherSpinner(36.dp)
         }
         return
     }

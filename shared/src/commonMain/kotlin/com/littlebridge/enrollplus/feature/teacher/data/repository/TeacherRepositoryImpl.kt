@@ -556,17 +556,5 @@ class TeacherRepositoryImpl(
 
 
 
-    // ── Attendance Analytics ───────────────────────────────────────────────
-
-    override suspend fun getAttendanceAnalytics(token: String, assignmentId: String, from: String?, to: String?): NetworkResult<AttendanceAnalyticsResponse> =
-
-        api.getAttendanceAnalytics(token, assignmentId, from, to)
-
-
-
-    override suspend fun getStudentAnalytics(token: String, assignmentId: String, studentId: String, from: String?, to: String?): NetworkResult<StudentAnalyticsResponse> =
-
-        api.getStudentAnalytics(token, assignmentId, studentId, from, to)
-
 }
 

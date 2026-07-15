@@ -93,23 +93,47 @@ class LeaveRequestsViewModel(
     }
 
     fun approveRequest(id: String) {
+        val previous = _state.value
+        updateRequestStatus(id, "Approved")
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.value = previous
+                return@launch
+            }
             when (leaveRequestsRepository.updateLeaveStatus(token, id, "Approved")) {
                 is NetworkResult.Success -> loadRequests()
-                else -> AppLogger.e("LeaveRequestsVM", "Failed to approve request $id")
+                else -> {
+                    AppLogger.e("LeaveRequestsVM", "Failed to approve request $id")
+                    _state.value = previous
+                }
             }
         }
     }
 
     fun rejectRequest(id: String) {
+        val previous = _state.value
+        updateRequestStatus(id, "Rejected")
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.value = previous
+                return@launch
+            }
             when (leaveRequestsRepository.updateLeaveStatus(token, id, "Rejected")) {
                 is NetworkResult.Success -> loadRequests()
-                else -> AppLogger.e("LeaveRequestsVM", "Failed to reject request $id")
+                else -> {
+                    AppLogger.e("LeaveRequestsVM", "Failed to reject request $id")
+                    _state.value = previous
+                }
             }
         }
+    }
+
+    private fun updateRequestStatus(id: String, status: String) {
+        _state.value = _state.value.copy(
+            requests = _state.value.requests.map {
+                if (it.id == id) it.copy(status = status) else it
+            }
+        )
     }
 
     private fun LeaveRequestDto.toUiModel() = LeaveRequestItem(

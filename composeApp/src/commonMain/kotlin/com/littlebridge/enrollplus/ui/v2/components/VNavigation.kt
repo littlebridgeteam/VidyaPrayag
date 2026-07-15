@@ -154,7 +154,7 @@ fun VTopTabs(
                             onSelect(tab)
                         }
                         .padding(
-                            horizontal = 18.dp,
+                            horizontal = 12.dp,
                             vertical = 10.dp
                         ),
                     contentAlignment = Alignment.Center

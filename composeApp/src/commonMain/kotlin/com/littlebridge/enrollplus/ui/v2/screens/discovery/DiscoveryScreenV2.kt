@@ -66,7 +66,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VLabel
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.PortalTopHeaderMinimal
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -75,6 +75,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.locale.LocalLocale
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /** Internal view state for the discovery flow (mirrors React `DiscoveryApp` view union). */
 private enum class DiscoveryView { List, Profile, Compare }
@@ -231,7 +232,7 @@ private fun DiscoveryList(
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
             )
         } else {
-            PremiumOverlayHeader(
+            VBackHeader(
                 title = appString(StringKeys.DISC_FIND_SCHOOL),
                 onBack = onExit,
             )
@@ -523,7 +524,7 @@ private fun SchoolProfile(
     var enquireOpen by remember { mutableStateOf(false) }
     Box(modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(VColors.cream)) {
-        PremiumOverlayHeader(
+        VBackHeader(
             title = appString(StringKeys.DISC_SCHOOL_PROFILE),
             onBack = onBack,
             action = {
@@ -754,7 +755,7 @@ private fun SchoolCompare(
     val bestSri = items.maxOfOrNull { it.rating } ?: 0.0
 
     Column(modifier.fillMaxSize().background(VColors.cream)) {
-        PremiumOverlayHeader(title = appString(StringKeys.DISC_COMPARE_SCHOOLS), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.DISC_COMPARE_SCHOOLS), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)

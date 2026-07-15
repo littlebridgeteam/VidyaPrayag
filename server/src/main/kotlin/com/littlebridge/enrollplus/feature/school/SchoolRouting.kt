@@ -31,6 +31,7 @@
  */
 package com.littlebridge.enrollplus.feature.school
 
+import com.littlebridge.enrollplus.core.ClassNaming
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requireSchoolContext
@@ -50,7 +51,6 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.LocalDate
@@ -261,13 +261,19 @@ fun Route.schoolRouting() {
                 val safeSection = section?.takeIf { it.isNotBlank() }
                 val resp = dbQuery {
                     // Pull people list (students of that grade, or all faculty).
+                    // Use ClassNaming.sameClassSection for fuzzy matching so
+                    // "Grade 10" / "Class 10" / "10" all match correctly.
                     val people: List<Triple<String, String, String?>> = if (type == "student") {
                         StudentsTable.selectAll()
                             .where {
                                 (StudentsTable.schoolId eq schoolId) and
-                                (StudentsTable.className eq (safeGrade ?: "")) and
-                                (StudentsTable.isActive eq true) and
-                                (if (safeSection != null) (StudentsTable.section eq safeSection) else Op.TRUE)
+                                (StudentsTable.isActive eq true)
+                            }
+                            .filter {
+                                ClassNaming.sameClassSection(
+                                    it[StudentsTable.className], it[StudentsTable.section],
+                                    safeGrade, safeSection,
+                                )
                             }
                             .map { Triple(it[StudentsTable.studentCode], it[StudentsTable.fullName], it[StudentsTable.profilePhotoUrl]) }
                     } else {

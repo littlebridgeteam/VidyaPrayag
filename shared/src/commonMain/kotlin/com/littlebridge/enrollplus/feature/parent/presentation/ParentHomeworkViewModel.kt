@@ -11,6 +11,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.ParentHomeworkIte
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSubmitHomeworkAttachmentDto
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentSubmitHomeworkRequest
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
+import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -95,7 +96,7 @@ class ParentHomeworkViewModel(
         _state.update {
             it.copy(
                 attachments = it.attachments + ParentHomeworkAttachmentDto(
-                    id = "local-${System.currentTimeMillis()}",
+                    id = "local-${Random.nextLong()}",
                     url = url,
                     filename = filename,
                     mime = mime,

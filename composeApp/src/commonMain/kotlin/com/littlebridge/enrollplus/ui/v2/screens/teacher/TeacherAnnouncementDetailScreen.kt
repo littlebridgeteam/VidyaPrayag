@@ -32,7 +32,9 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.util.htmlDecode
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * TeacherAnnouncementDetailScreen — full-screen overlay showing a single
@@ -110,7 +112,7 @@ private fun AnnouncementDetailContent(announcement: Announcement) {
             }
             Spacer(Modifier.height(8.dp))
         }
-        Text(announcement.title, style = VTypography.h2, color = VColors.ink)
+        Text(announcement.title.htmlDecode(), style = VTypography.h2, color = VColors.ink)
         Text(
             announcement.date,
             style = VTypography.caption,
@@ -121,8 +123,8 @@ private fun AnnouncementDetailContent(announcement: Announcement) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
         Spacer(Modifier.height(16.dp))
         Text(
-            announcement.description,
-            style = VTypography.bodySmall.copy(lineHeight = 22.4.sp),
+            announcement.description.htmlDecode(),
+            style = VTypography.caption.copy(lineHeight = 22.4.sp),
             color = VColors.ink2,
         )
     }

@@ -86,6 +86,7 @@ private enum class SchoolOverlay {
     ClassDetail,
     GamificationManagement,
     NotificationPreferences,
+    FeeSalaryManagement,
 }
 
 /**
@@ -114,10 +115,12 @@ fun SchoolPortalV2(
     var overlay by remember { mutableStateOf(SchoolOverlay.None) }
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
+    var messageRecipientId by remember { mutableStateOf<String?>(null) }
     // PEWS — student code carried into the early-warning detail overlay.
     var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
+    var createEventInitialType by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
     val alumniRepo = koinInject<AlumniRepository>()
@@ -271,6 +274,10 @@ fun SchoolPortalV2(
                 }
             }
         }
+        // At root (no overlay), consume back to prevent app exit.
+        BackHandler(enabled = overlay == SchoolOverlay.None) {
+            // No-op — prevents the system back gesture from killing the app.
+        }
 
         when (overlay) {
             SchoolOverlay.Notifications -> {
@@ -313,9 +320,10 @@ fun SchoolPortalV2(
             SchoolOverlay.CreateEvent -> {
                 // Unified 3-step create-event/announcement screen.
                 UnifiedCreateEventScreenV2(
-                    onBack = { overlay = createEventOrigin },
-                    onCreated = { overlay = createEventOrigin },
+                    onBack = { overlay = createEventOrigin; createEventInitialType = null },
+                    onCreated = { overlay = createEventOrigin; createEventInitialType = null },
                     modifier = modifier,
+                    initialType = createEventInitialType,
                 )
                 return
             }
@@ -325,9 +333,10 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.Messages -> {
                 MessagesScreenV2(
-                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null },
+                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null; messageRecipientId = null },
                     modifier = modifier,
                     initialThreadId = deepLinkThreadId,
+                    initialRecipientId = messageRecipientId,
                 )
                 return
             }
@@ -626,6 +635,13 @@ fun SchoolPortalV2(
                 )
                 return
             }
+            SchoolOverlay.FeeSalaryManagement -> {
+                FeeSalaryManagementScreen(
+                    onBack = { overlay = SchoolOverlay.None },
+                    modifier = modifier,
+                )
+                return
+            }
             SchoolOverlay.None -> Unit
         }
 
@@ -702,6 +718,13 @@ fun SchoolPortalV2(
                         // Unified create-event entry from Home quick action.
                         onCreateEvent = {
                             createEventOrigin = SchoolOverlay.None
+                            createEventInitialType = null
+                            overlay = SchoolOverlay.CreateEvent
+                        },
+                        // Bug 4: "Announce" shortcut pre-selects "Update" type.
+                        onCreateAnnouncement = {
+                            createEventOrigin = SchoolOverlay.None
+                            createEventInitialType = "Update"
                             overlay = SchoolOverlay.CreateEvent
                         },
                         onOpenApprovals = { overlay = SchoolOverlay.LinkRequests },
@@ -722,6 +745,11 @@ fun SchoolPortalV2(
                         // RA-TAM — Teacher Listing entry point into the reusable module.
                         onAssignClasses = { id -> selectedTeacherId = id; overlay = SchoolOverlay.TeacherAssignments },
                         onOpenStaff = { id -> selectedStaffId = id; overlay = SchoolOverlay.Staff },
+                        // Bug 5: Message button on StudentCard opens in-app messaging.
+                        onOpenMessages = { recipientId ->
+                            messageRecipientId = recipientId
+                            overlay = SchoolOverlay.Messages
+                        },
                         // Mark students as alumni (graduation bulk action)
                         onGraduateStudents = { studentIds, year ->
                             graduateStudents(studentIds, year)
@@ -764,6 +792,7 @@ fun SchoolPortalV2(
                         onOpenClassesSubjects = { overlay = SchoolOverlay.ClassesSubjects },
                         // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
                         onOpenGamification = { overlay = SchoolOverlay.GamificationManagement },
+                        onOpenFeeSalary = { overlay = SchoolOverlay.FeeSalaryManagement },
                     )
                 }
             }

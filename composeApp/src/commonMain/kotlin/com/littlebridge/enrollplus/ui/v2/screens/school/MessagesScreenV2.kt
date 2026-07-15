@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -95,6 +94,7 @@ fun MessagesScreenV2(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     initialThreadId: String? = null,
+    initialRecipientId: String? = null,
     viewModel: MessagesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -111,6 +111,13 @@ fun MessagesScreenV2(
                 viewModel.markAsRead(thread.id)
                 viewModel.openConversation(thread.id)
             }
+        }
+    }
+
+    // Deep-link: auto-open compose-new with a pre-selected recipient.
+    LaunchedEffect(initialRecipientId) {
+        if (initialRecipientId != null && !compose.isOpen) {
+            viewModel.openCompose()
         }
     }
 
@@ -248,7 +255,7 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit, modifier: Modi
             ) {
                 Text(
                     thread.senderName,
-                    style = VTypography.bodySmall.copy(
+                    style = VTypography.caption.copy(
                         fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold,
                     ),
                     color = VColors.ink,
@@ -549,7 +556,7 @@ private fun RecipientRow(recipient: MessageRecipient, isSelected: Boolean, onCli
         Column(Modifier.weight(1f)) {
             Text(
                 recipient.name,
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
                 color = VColors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

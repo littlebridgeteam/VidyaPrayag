@@ -64,12 +64,25 @@ data class FeesAnnouncement(
 )
 
 @Serializable
+data class ParentFeeItemDto(
+    val id: String,
+    val title: String,
+    val description: String? = null,
+    val amount: Double,
+    val status: String,
+    val category: String = "Tuition",
+    val month: String? = null,
+    val currency: String = "INR",
+)
+
+@Serializable
 data class ParentFeesResponse(
     @SerialName("total_collected") val totalCollected: String,
     @SerialName("collection_progress") val collectionProgress: Float,
     @SerialName("outstanding_fees") val outstandingFees: String,
     @SerialName("overdue_count") val overdueCount: Int,
-    val announcements: List<FeesAnnouncement>
+    val announcements: List<FeesAnnouncement>,
+    @SerialName("fee_items") val feeItems: List<ParentFeeItemDto> = emptyList(),
 )
 
 private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -169,12 +182,26 @@ fun Route.parentFeesRouting() {
                         )
                     )
 
+                    val feeItems = rows.map { row ->
+                        ParentFeeItemDto(
+                            id = row[FeeRecordsTable.id].value.toString(),
+                            title = row[FeeRecordsTable.title],
+                            description = row[FeeRecordsTable.description],
+                            amount = row[FeeRecordsTable.amount],
+                            status = row[FeeRecordsTable.status],
+                            category = row[FeeRecordsTable.category],
+                            month = row[FeeRecordsTable.dueDate]?.substring(0, 7),
+                            currency = row[FeeRecordsTable.currency],
+                        )
+                    }
+
                     ParentFeesResponse(
                         totalCollected = money(collected, currency),
                         collectionProgress = progress,
                         outstandingFees = money(outstanding, currency),
                         overdueCount = overdueCount,
-                        announcements = announcements
+                        announcements = announcements,
+                        feeItems = feeItems,
                     )
                 }
 

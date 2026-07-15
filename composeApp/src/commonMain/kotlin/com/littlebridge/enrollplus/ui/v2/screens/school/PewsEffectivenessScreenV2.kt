@@ -188,7 +188,7 @@ private fun MiniStat(label: String, value: String, color: androidx.compose.ui.gr
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             value,
-            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = color).copy(fontSize = 18.sp, fontWeight = FontWeight.ExtraBold),
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = color).copy(fontSize = 18.sp, fontWeight = FontWeight.ExtraBold),
         )
         Text(label, style = VTypography.caption.copy(color = VColors.ink3).copy(fontSize = 10.sp))
     }

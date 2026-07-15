@@ -65,6 +65,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.util.htmlDecode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -106,13 +107,14 @@ fun SchoolCommsScreenV2(
 }
 
 private enum class CommsSubTab {
-    Announcements, Messages, Ptm;
+    Announcements, Messages, Ptm, Notifications;
 
     @Composable
     fun label(): String = when (this) {
         Announcements -> appString(StringKeys.SCH_ANNOUNCEMENTS)
         Messages -> appString(StringKeys.SCH_MESSAGES)
         Ptm -> appString(StringKeys.SCH_PTM)
+        Notifications -> appString(StringKeys.SCH_NOTIFICATIONS)
     }
 }
 
@@ -243,6 +245,7 @@ private fun SchoolCommsContent(
                     )
                     CommsSubTab.Messages -> MessagesTab(onOpenMessages = onOpenMessages)
                     CommsSubTab.Ptm -> PtmTab(onOpenPtm = onOpenPtm)
+                    CommsSubTab.Notifications -> NotificationsTab()
                 }
             }
         }
@@ -333,7 +336,23 @@ private fun MessagesTab(
     val errorMessage by viewModel.errorMessage.collectAsStateV2()
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(appString(StringKeys.SCH_MESSAGES), style = VTypography.label, color = VColors.ink3)
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(appString(StringKeys.SCH_MESSAGES), style = VTypography.label, color = VColors.ink3)
+            VButton(
+                text = appString(StringKeys.SCH_NEW),
+                onClick = {
+                    viewModel.openCompose()
+                    onOpenMessages()
+                },
+                variant = VButtonVariant.Primary,
+                size = VButtonSize.Sm,
+                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+            )
+        }
         VStateHost(
             modifier = Modifier.fillMaxWidth().weight(1f),
             loading = isLoading,
@@ -418,6 +437,20 @@ private fun PtmTab(
 }
 
 @Composable
+private fun NotificationsTab() {
+    Column(
+        Modifier.fillMaxSize().padding(top = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        VComingSoon(
+            title = appString(StringKeys.SCH_NOTIFICATIONS),
+            description = "Notification channel management is coming soon.",
+        )
+    }
+}
+
+@Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
     val (bg, fg) = if (active) VColors.violetSoft to VColors.violet else VColors.creamDeep to VColors.ink3
     Text(
@@ -468,7 +501,7 @@ private fun AnnouncementDetailV2(
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            Text(announcement.title, style = VTypography.h2, color = VColors.ink)
+            Text(announcement.title.htmlDecode(), style = VTypography.h2, color = VColors.ink)
             Text(
                 appString(StringKeys.SCH_POSTED_BY, "date" to announcement.date),
                 style = VTypography.caption,
@@ -479,8 +512,8 @@ private fun AnnouncementDetailV2(
             Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
             Spacer(Modifier.height(16.dp))
             Text(
-                announcement.description,
-                style = VTypography.bodySmall.copy(lineHeight = 22.4.sp),
+                announcement.description.htmlDecode(),
+                style = VTypography.caption.copy(lineHeight = 22.4.sp),
                 color = VColors.ink2,
             )
         }

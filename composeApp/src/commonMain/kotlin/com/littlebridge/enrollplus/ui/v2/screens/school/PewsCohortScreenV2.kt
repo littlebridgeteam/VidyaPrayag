@@ -623,11 +623,11 @@ private fun PewsStudentRow(s: PewsStudentDto, onClick: () -> Unit, modifier: Mod
             ) {
                 Text(
                     s.name.firstOrNull()?.uppercase() ?: "?",
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2),
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1)
+                Text(s.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     appString(StringKeys.SCH_CLASS_SECTION_DASH, "className" to s.className, "section" to if (s.section.isNotBlank()) "-${s.section}" else ""),

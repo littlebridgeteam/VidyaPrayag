@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -117,6 +118,8 @@ fun SchoolSettingsScreenV2(
     onOpenClassesSubjects: () -> Unit = {},
     // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
     onOpenGamification: () -> Unit = {},
+    // Fee & Salary Management — fee structures, payment tracking, reminder config, salary records.
+    onOpenFeeSalary: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
     brandingViewModel: BrandingPhotosViewModel = koinViewModel(),
@@ -127,7 +130,7 @@ fun SchoolSettingsScreenV2(
     val themeMode by preferenceRepository.getThemeMode().collectAsState(initial = "system")
     val customThemeId by preferenceRepository.getCustomThemeId().collectAsState(initial = null)
     val localeManager = koinInject<LocaleManager>()
-    val currentLocale by localeManager.currentLocale.collectAsState()
+    val currentLocale by localeManager.currentLocale.collectAsStateV2()
     val scope = rememberCoroutineScope()
     SchoolSettingsContent(
         state = state,
@@ -153,6 +156,7 @@ fun SchoolSettingsScreenV2(
         onOpenLibrary = onOpenLibrary,
         onOpenClassesSubjects = onOpenClassesSubjects,
         onOpenGamification = onOpenGamification,
+        onOpenFeeSalary = onOpenFeeSalary,
         onRetry = viewModel::load,
         modifier = modifier.statusBarsPadding()
             .imePadding(),
@@ -180,6 +184,7 @@ private fun SchoolSettingsContent(
     onOpenLibrary: () -> Unit,
     onOpenClassesSubjects: () -> Unit,
     onOpenGamification: () -> Unit,
+    onOpenFeeSalary: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -280,7 +285,7 @@ private fun SchoolSettingsContent(
                 SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
                 SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
                 SettingRow(VIcons.Sparkles, "Gamification", "Feature flags, badges, rewards, boosts & analytics", false, onClick = onOpenGamification),
-                SettingRow(VIcons.Wallet, "Fee structure", "Edit heads & amounts for next cycle", true),
+                SettingRow(VIcons.Wallet, "Fee & Salary", "Fee structures, payment tracking, reminders & salary", false, onClick = onOpenFeeSalary),
                 SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
                 SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),
                 SettingRow(
@@ -314,9 +319,23 @@ private fun SchoolSettingsContent(
                             ) {
                                 Icon(row.icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
                             }
-                            Column(Modifier.weight(1f)) {
-                                Text(row.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                                Text(row.sub, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
+                            Column(Modifier.weight(1f).fillMaxWidth()) {
+                                Text(
+                                    row.title,
+                                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                                    color = VColors.ink,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    row.sub,
+                                    style = VTypography.caption.copy(fontSize = 11.sp),
+                                    color = VColors.ink3,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                             if (row.isComingSoon) {
                                 Text(
@@ -450,7 +469,7 @@ private fun InstitutionalProfileHealthCard(
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(profileTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text(profileTitle, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Text(nextStep, style = VTypography.caption, color = VColors.ink3)
                 }
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
@@ -488,7 +507,7 @@ private fun InstitutionalProfileHealthCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Profile completion", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                        Text("Profile completion", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                         Text("${state.profileCompletion}%", style = VTypography.caption, color = VColors.ink2)
                     }
                     VProgressBar(value = state.profileCompletion.toFloat(), tone = completionTone, height = 8.dp)
@@ -507,7 +526,7 @@ private fun InstitutionalProfileHealthCard(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-                            Text("Media storage", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                            Text("Media storage", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                         }
                         Text("${state.storageUsedHuman} / ${state.totalStorageHuman}", style = VTypography.caption, color = VColors.ink2)
                     }
@@ -570,7 +589,7 @@ private fun BrandingSummaryCard(
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Branding & Photos", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text("Branding & Photos", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Text(
                         text = configuredItems.joinToString(" · ").ifBlank { "Logo, cover, gallery & profile picture" },
                         style = VTypography.caption,
@@ -672,7 +691,7 @@ private fun SummarySettingCard(
                 Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
                 Text(caption, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
             }

@@ -39,9 +39,9 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
@@ -86,7 +86,7 @@ private fun AcademicCalendarContent(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().background(VColors.cream)) {
-        PremiumOverlayHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.CAL_ACADEMIC_TITLE), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,
@@ -103,7 +103,7 @@ private fun AcademicCalendarContent(
                 Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // Month header with navigation pills

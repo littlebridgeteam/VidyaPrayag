@@ -291,7 +291,7 @@ private fun SchoolBrandingContent(
 @Composable
 private fun SectionHeader(title: String, subtitle: String) {
     Column {
-        Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+        Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
         Text(subtitle, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
     }
 }

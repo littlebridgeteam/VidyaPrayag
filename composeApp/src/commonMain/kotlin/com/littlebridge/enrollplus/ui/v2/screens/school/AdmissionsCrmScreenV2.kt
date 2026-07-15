@@ -196,7 +196,7 @@ private fun EnquiryCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         enquiry.studentName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = badgeText, tone = badgeTone)
