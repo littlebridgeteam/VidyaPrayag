@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,8 +30,10 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * ParentFeePaymentScreenV2 — premium pay-now overlay for the Fees tab.
@@ -57,7 +58,7 @@ fun ParentFeePaymentScreenV2(
             .fillMaxSize()
             .background(VColors.cream),
     ) {
-        PremiumOverlayHeader(title = "Pay Fees", onBack = onBack)
+        VBackHeader(title = "Pay Fees", onBack = onBack)
 
         Column(
             Modifier
@@ -141,7 +142,7 @@ fun ParentFeePaymentScreenV2(
 
             if (state.isLoading) {
                 Box(Modifier.fillMaxWidth().height(56.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(28.dp))
+                    TeacherSpinner(28.dp)
                 }
             }
 

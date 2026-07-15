@@ -354,7 +354,7 @@ private fun ImmunizationsTab(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(imm.vaccineName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(imm.vaccineName, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                             Text(appString(StringKeys.HLTH_DOSE, "number" to imm.doseNumber.toString(), "date" to imm.dateAdministered), style = VTypography.caption.copy(color = VColors.ink2))
                             if (!imm.administeredBy.isNullOrBlank()) {
                                 Text(appString(StringKeys.HLTH_BY, "name" to imm.administeredBy), style = VTypography.caption.copy(color = VColors.ink3))
@@ -469,7 +469,7 @@ private fun IncidentsTab(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text(inc.date, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                            Text(inc.date, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                             val pair = when (inc.severity) {
                                 "major" -> appString(StringKeys.HLTH_SEVERITY_MAJOR) to VBadgeTone.Danger
                                 "moderate" -> appString(StringKeys.HLTH_SEVERITY_MODERATE) to VBadgeTone.Warning

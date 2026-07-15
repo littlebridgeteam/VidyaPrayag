@@ -401,7 +401,7 @@ private fun CardGridItem(
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = card.personName,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                     maxLines = 1,
                 )
                 Text(

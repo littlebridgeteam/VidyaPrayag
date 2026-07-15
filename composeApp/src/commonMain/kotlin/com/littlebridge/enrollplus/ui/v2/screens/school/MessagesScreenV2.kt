@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -256,7 +255,7 @@ private fun ThreadRow(thread: MessageThread, onClick: () -> Unit, modifier: Modi
             ) {
                 Text(
                     thread.senderName,
-                    style = VTypography.bodySmall.copy(
+                    style = VTypography.caption.copy(
                         fontWeight = if (thread.isRead) FontWeight.SemiBold else FontWeight.Bold,
                     ),
                     color = VColors.ink,
@@ -557,7 +556,7 @@ private fun RecipientRow(recipient: MessageRecipient, isSelected: Boolean, onCli
         Column(Modifier.weight(1f)) {
             Text(
                 recipient.name,
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
                 color = VColors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

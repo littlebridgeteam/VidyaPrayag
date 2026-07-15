@@ -40,10 +40,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /**
  * ScholarshipsScreenV2 — parent-side scholarships overlay.
@@ -72,7 +73,7 @@ fun ScholarshipsScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
         .navigationBarsPadding()) {
-        PremiumOverlayHeader(title = "Scholarships", onBack = onBack)
+        VBackHeader(title = "Scholarships", onBack = onBack)
         ScholarshipsContent(
             state = state,
             modifier = Modifier.fillMaxSize(),

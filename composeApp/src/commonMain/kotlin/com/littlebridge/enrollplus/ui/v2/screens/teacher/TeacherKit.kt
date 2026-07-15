@@ -51,6 +51,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VColors
 import com.littlebridge.enrollplus.ui.tokens.VColors as VTok
 import com.littlebridge.enrollplus.ui.tokens.VTypography as VTypo
 import com.littlebridge.enrollplus.util.nowMinutesOfDay
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * TeacherKit — the shared visual vocabulary for the rebuilt Teacher Portal.
@@ -166,8 +167,8 @@ fun TeacherCenterState(content: @Composable () -> Unit) {
 
 /** The portal's signature brand-violet spinner. */
 @Composable
-fun TeacherSpinner(size: androidx.compose.ui.unit.Dp = 34.dp) {
-    CircularProgressIndicator(color = VTok.violet, modifier = Modifier.size(size))
+fun TeacherSpinner(size: androidx.compose.ui.unit.Dp = 34.dp, strokeWidth: androidx.compose.ui.unit.Dp = 3.dp) {
+    CircularProgressIndicator(color = VTok.violet, strokeWidth = strokeWidth, modifier = Modifier.size(size))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -324,7 +324,7 @@ private fun NotificationsContent(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         appString(StringKeys.NOTIF_PREFERENCES),
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                         color = VColors.ink2,
                     )
                 }
@@ -475,7 +475,7 @@ private fun NotificationRow(n: VNotification, onClick: () -> Unit) {
                     Text(formatDateTime(n.time), style = VTypography.label.copy(fontSize = 11.sp, letterSpacing = 0.sp), color = VColors.ink3, maxLines = 1)
                 }
                 Spacer(Modifier.height(6.dp))
-                Text(n.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+                Text(n.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
                 Spacer(Modifier.height(2.dp))
                 Text(n.body, style = VTypography.caption, color = VColors.ink2)
             }

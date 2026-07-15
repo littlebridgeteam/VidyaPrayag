@@ -39,6 +39,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * ExamMarksImportScreen — AI-powered marks import overlay.

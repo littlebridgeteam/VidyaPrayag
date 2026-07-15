@@ -130,7 +130,7 @@ fun SchoolSettingsScreenV2(
     val themeMode by preferenceRepository.getThemeMode().collectAsState(initial = "system")
     val customThemeId by preferenceRepository.getCustomThemeId().collectAsState(initial = null)
     val localeManager = koinInject<LocaleManager>()
-    val currentLocale by localeManager.currentLocale.collectAsState()
+    val currentLocale by localeManager.currentLocale.collectAsStateV2()
     val scope = rememberCoroutineScope()
     SchoolSettingsContent(
         state = state,
@@ -322,7 +322,7 @@ private fun SchoolSettingsContent(
                             Column(Modifier.weight(1f).fillMaxWidth()) {
                                 Text(
                                     row.title,
-                                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                                     color = VColors.ink,
                                     modifier = Modifier.fillMaxWidth(),
                                     maxLines = 1,
@@ -469,7 +469,7 @@ private fun InstitutionalProfileHealthCard(
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(profileTitle, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text(profileTitle, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Text(nextStep, style = VTypography.caption, color = VColors.ink3)
                 }
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
@@ -507,7 +507,7 @@ private fun InstitutionalProfileHealthCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Profile completion", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                        Text("Profile completion", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                         Text("${state.profileCompletion}%", style = VTypography.caption, color = VColors.ink2)
                     }
                     VProgressBar(value = state.profileCompletion.toFloat(), tone = completionTone, height = 8.dp)
@@ -526,7 +526,7 @@ private fun InstitutionalProfileHealthCard(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-                            Text("Media storage", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                            Text("Media storage", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                         }
                         Text("${state.storageUsedHuman} / ${state.totalStorageHuman}", style = VTypography.caption, color = VColors.ink2)
                     }
@@ -589,7 +589,7 @@ private fun BrandingSummaryCard(
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Branding & Photos", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text("Branding & Photos", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Text(
                         text = configuredItems.joinToString(" · ").ifBlank { "Logo, cover, gallery & profile picture" },
                         style = VTypography.caption,
@@ -691,7 +691,7 @@ private fun SummarySettingCard(
                 Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
                 Text(caption, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
             }

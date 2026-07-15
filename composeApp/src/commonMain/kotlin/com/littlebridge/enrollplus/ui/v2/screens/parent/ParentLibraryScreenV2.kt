@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,11 +59,12 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.LibraryViewMode
 import com.littlebridge.enrollplus.ui.v2.screens.library.QrShareDialog
 import com.littlebridge.enrollplus.ui.v2.screens.library.ReadingTimeEstimate
 import com.littlebridge.enrollplus.ui.v2.screens.library.ViewModeToggle
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 private enum class ParentLibraryTab {
     Browse, MyBooks, Reservations,
@@ -105,7 +105,7 @@ fun ParentLibraryScreenV2(
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            PremiumOverlayHeader(
+            VBackHeader(
                 title = appString(StringKeys.PL_LIBRARY),
                 onBack = onBack,
             )

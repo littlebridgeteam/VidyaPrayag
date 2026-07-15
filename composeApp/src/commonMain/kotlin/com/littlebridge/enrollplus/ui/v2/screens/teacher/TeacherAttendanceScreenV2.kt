@@ -59,6 +59,7 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * TeacherAttendanceScreenV2 — the scoped attendance plane (Doc 06 §3). Reached PRE-SCOPED with a
@@ -257,7 +258,7 @@ private fun AttendanceStudentRow(s: StudentAttendance, onSetStatus: (String) -> 
             ) {
                 VAvatar(name = displayName, size = 40.dp)
                 Column(Modifier.weight(1f)) {
-                    Text(displayName, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                    Text(displayName, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                     Text(
                         if (locked) appString(StringKeys.TC_ROLL_ON_LEAVE, "no" to displayRoll) else appString(StringKeys.TC_ROLL_NO, "no" to displayRoll),
                         style = VTypography.caption,
@@ -301,7 +302,7 @@ private fun StatusChip(
     ) {
         Text(
             label,
-            style = VTypography.bodySmall,
+            style = VTypography.caption,
             color = if (active) tint else VColors.ink2,
         )
     }
@@ -323,7 +324,7 @@ private fun AbsentNotifyBanner(
                 Column(Modifier.weight(1f)) {
                     Text(
                         appString(StringKeys.TC_N_STUDENTS_ABSENT, "count" to absentCount.toString()),
-                        style = VTypography.bodySmall,
+                        style = VTypography.caption,
                         color = VColors.ink,
                     )
                     Text(
@@ -446,7 +447,7 @@ private fun PewsStudentRow(student: PewsStudentDto) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             VAvatar(name = student.name, size = 38.dp)
             Column(Modifier.weight(1f)) {
-                Text(student.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                Text(student.name, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                 val subtitle = buildString {
                     if (student.className.isNotBlank() && student.section.isNotBlank()) {
                         append("${student.className}-${student.section} · ")

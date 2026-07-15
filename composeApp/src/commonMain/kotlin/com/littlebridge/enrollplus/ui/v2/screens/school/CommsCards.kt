@@ -91,7 +91,7 @@ internal fun AnnouncementCard(
                 ) {
                     Text(
                         announcement.title.htmlDecode(),
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
                         maxLines = 2,
@@ -149,7 +149,7 @@ internal fun CommsEntryCard(
                 Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                 Text(description, style = VTypography.caption, color = VColors.ink3, maxLines = 2)
             }
             Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
@@ -194,7 +194,7 @@ internal fun MessagePreviewCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         thread.senderName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
                     )
@@ -259,7 +259,7 @@ internal fun PtmActivePreviewCard(
                     CommsBadge(text = "Active", color = VColors.mint, bg = VColors.mintSoft)
                     Text(
                         title,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         maxLines = 1,
                     )
@@ -307,7 +307,7 @@ internal fun PtmPreviewCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     item.title,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                     color = VColors.ink,
                 )
                 Text(
@@ -375,7 +375,7 @@ internal fun DeliveryLogRowCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         item.announcementTitle.ifBlank { "Announcement" },
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,

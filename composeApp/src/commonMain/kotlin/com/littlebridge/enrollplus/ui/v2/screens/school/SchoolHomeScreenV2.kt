@@ -100,6 +100,7 @@ import com.littlebridge.enrollplus.util.nowMinutesOfDay
 import com.littlebridge.enrollplus.util.parseIsoDate
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 
 private val EmptyDigest = DailyDigest(
     headline = "",
@@ -174,9 +175,9 @@ fun SchoolHomeScreenV2(
     permissionVm: PermissionViewModel = koinViewModel(),
     pinnedVm: PinnedScreensViewModel = koinViewModel(),
 ) {
-    val dashboardState by viewModel.state.collectAsState()
-    val notifications by notificationsViewModel.state.collectAsState()
-    val pinnedScreens by pinnedVm.screens.collectAsState()
+    val dashboardState by viewModel.state.collectAsStateV2()
+    val notifications by notificationsViewModel.state.collectAsStateV2()
+    val pinnedScreens by pinnedVm.screens.collectAsStateV2()
     var commandPaletteVisible by remember { mutableStateOf(false) }
 
     val adminName = dashboardState.adminName
@@ -191,8 +192,8 @@ fun SchoolHomeScreenV2(
         pinnedVm.setInitial(dashboardState.pinnedScreens)
     }
 
-    val showRationale by permissionVm.showNotificationRationale.collectAsState()
-    val launchPermission by permissionVm.launchPermissionRequest.collectAsState()
+    val showRationale by permissionVm.showNotificationRationale.collectAsStateV2()
+    val launchPermission by permissionVm.launchPermissionRequest.collectAsStateV2()
 
     val permissionLauncher = rememberNotificationPermissionLauncher { granted ->
         permissionVm.onPermissionResult(granted)
@@ -1131,7 +1132,7 @@ private fun AttentionCard(insights: List<OverviewInsight>, onOpen: () -> Unit) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = insight.title,
-                        style = VTypography.bodySmall,
+                        style = VTypography.caption,
                         color = VColors.ink,
                     )
                     if (insight.description.isNotBlank()) {
@@ -1196,7 +1197,7 @@ private fun FeeAnalyticsCard(fa: OverviewFeeAnalytics, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "\u20B9${formatAmount(fa.totalCollected)}",
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                     color = VColors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
@@ -1251,7 +1252,7 @@ private fun ParentEngagementCard(pe: OverviewParentEngagement, onClick: () -> Un
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${pe.activeParents} of ${pe.totalParents} parents active",
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
                     color = VColors.ink,
                 )
                 if (pe.mostEngagedClass.isNotBlank()) {
@@ -1318,7 +1319,7 @@ private fun TeacherSpotlightCard(ts: OverviewTeacherSpotlight, onClick: () -> Un
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = ts.name,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                     color = VColors.ink,
                 )
                 if (ts.department.isNotBlank()) {
@@ -1383,7 +1384,7 @@ private fun UpcomingCard(events: List<OverviewEvent>, onOpenCalendar: () -> Unit
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                 )
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(event.title, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                    Text(event.title, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                     Text(event.date, style = VTypography.caption, color = VColors.ink3)
                 }
             }
@@ -1417,7 +1418,7 @@ private fun AchievementsCard(achievements: List<OverviewAchievement>) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = ach.studentName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                     )
                     Text(ach.title, style = VTypography.caption, color = VColors.ink2)
@@ -1464,7 +1465,7 @@ private fun BirthdaysCard(birthdays: List<OverviewBirthday>) {
                     Text(initials, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.gold)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(bd.name, style = VTypography.bodySmall, color = VColors.ink)
+                    Text(bd.name, style = VTypography.caption, color = VColors.ink)
                     Text(
                         text = if (bd.isToday) "Today \uD83C\uDF89" else bd.date,
                         style = VTypography.caption,
@@ -1505,7 +1506,7 @@ private fun ActivityCard(activities: List<DashboardActivity>) {
                         .background(VColors.violet.copy(alpha = 0.3f)),
                 )
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(act.title, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                    Text(act.title, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                     if (act.description.isNotBlank()) {
                         Text(act.description, style = VTypography.caption, color = VColors.ink3, maxLines = 2)
                     }
@@ -1557,7 +1558,7 @@ private fun PulseCard(pulse: OverviewSchoolPulse, onClick: () -> Unit) {
         ) {
             Text(
                 text = statusText,
-                style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                 color = VColors.ink,
                 modifier = Modifier.weight(1f),
             )

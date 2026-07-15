@@ -26,6 +26,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.util.htmlDecode
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /**
  * AnnouncementDetailScreen — full announcement view reached via deep link
@@ -49,7 +50,7 @@ fun AnnouncementDetailScreen(
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
-        PremiumOverlayHeader(title = "Announcement", onBack = onBack)
+        VBackHeader(title = "Announcement", onBack = onBack)
 
         Column(
             Modifier

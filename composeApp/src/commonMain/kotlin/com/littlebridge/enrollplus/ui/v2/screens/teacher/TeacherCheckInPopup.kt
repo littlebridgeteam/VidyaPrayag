@@ -49,6 +49,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import kotlinx.coroutines.launch
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * TeacherCheckInPopup — the first-login-of-day fingerprint check-in dialog (Doc 06 §2). It rides as

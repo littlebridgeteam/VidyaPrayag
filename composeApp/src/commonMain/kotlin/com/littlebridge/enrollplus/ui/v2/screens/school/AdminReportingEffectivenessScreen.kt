@@ -48,6 +48,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 
 /**
  * AdminReportingEffectivenessScreen — shows the Learn/Flywheel data:
@@ -58,7 +59,7 @@ fun AdminReportingEffectivenessScreen(
     onBack: () -> Unit,
     viewModel: AdminReportEffectivenessViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateV2()
         var currentTerm by remember { mutableStateOf("Term 2") }
     var previousTerm by remember { mutableStateOf("Term 1") }
 

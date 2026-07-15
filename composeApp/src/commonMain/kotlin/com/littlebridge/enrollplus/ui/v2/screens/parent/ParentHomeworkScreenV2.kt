@@ -58,8 +58,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /**
  * ParentHomeworkScreenV2 — overlay where a parent sees the child's active homework
@@ -84,7 +85,7 @@ fun ParentHomeworkScreenV2(
             .fillMaxSize()
             .background(VColors.cream),
     ) {
-        PremiumOverlayHeader(title = "Homework", onBack = onBack)
+        VBackHeader(title = "Homework", onBack = onBack)
         Box(Modifier.fillMaxSize().statusBarsPadding().imePadding().navigationBarsPadding()) {
             when {
                 state.selectedHomework != null -> {

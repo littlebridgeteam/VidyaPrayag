@@ -58,6 +58,7 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.TextStyle
 import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 
 /**
@@ -256,7 +257,7 @@ private fun SyllabusBody(
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         VtIconDisc(VIcons.AlertCircle, tint = VColors.error, bg = VColors.error.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text(appString(StringKeys.TC_NO_NCERT_REFERENCE_FOUND), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.SemiBold)
+                        Text(appString(StringKeys.TC_NO_NCERT_REFERENCE_FOUND), style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.SemiBold)
                         Text(state.autoFillError ?: "", style = VTypography.caption, color = VColors.ink3)
                         Spacer(Modifier.height(12.dp))
                         EmptyStateOptions(viewModel)
@@ -344,7 +345,7 @@ private fun SyllabusRow(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     u.title,
-                    style = if (u.isChapter) VTypography.body else VTypography.bodySmall,
+                    style = if (u.isChapter) VTypography.body else VTypography.caption,
                     color = VColors.ink,
                     fontWeight = if (u.isChapter) FontWeight.Bold else FontWeight.Medium,
                 )
@@ -498,7 +499,7 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                     Icon(VIcons.ClipboardList, contentDescription = null, tint = VColors.success, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(10.dp))
                     Column {
-                        Text(appString(StringKeys.TC_DAILY_CLASS_LOG), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                        Text(appString(StringKeys.TC_DAILY_CLASS_LOG), style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                         Text("${state.dailyLogClassName} · ${state.dailyLogSubject}", style = VTypography.caption, color = VColors.ink2)
                     }
                     Spacer(Modifier.weight(1f))
@@ -572,7 +573,7 @@ private fun DailyLogPopup(viewModel: TeacherSyllabusViewModel) {
                             .clickable { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct - 10) },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.Minus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
-                    Text("${state.dailyLogCoveragePct}%", style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                    Text("${state.dailyLogCoveragePct}%", style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Box(
                         Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
                             .clickable { viewModel.setDailyLogCoveragePct(state.dailyLogCoveragePct + 10) },
@@ -617,7 +618,7 @@ private fun DailyLogChapterRow(title: String, expanded: Boolean, onToggle: () ->
             tint = VColors.ink2,
             modifier = Modifier.size(18.dp),
         )
-        Text(title, style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+        Text(title, style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -723,7 +724,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.violetInk, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(10.dp))
-                    Text(appString(StringKeys.TC_GENERATE_QUIZ), style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                    Text(appString(StringKeys.TC_GENERATE_QUIZ), style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.weight(1f))
                     Box(
                         Modifier.size(32.dp).clip(CircleShape).background(VColors.surfaceTint)
@@ -760,7 +761,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                             }
                             Text(
                                 u.title,
-                                style = VTypography.bodySmall,
+                                style = VTypography.caption,
                                 color = if (isSelected) VColors.ink else VColors.ink2,
                                 maxLines = 1,
                             )
@@ -802,7 +803,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                             .clickable { viewModel.setQuizNumQuestions(state.quizNumQuestions - 1) },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.Minus, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
-                    Text("${state.quizNumQuestions}", style = VTypography.bodySmall, color = VColors.ink, fontWeight = FontWeight.Bold)
+                    Text("${state.quizNumQuestions}", style = VTypography.caption, color = VColors.ink, fontWeight = FontWeight.Bold)
                     Box(
                         Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
                             .clickable { viewModel.setQuizNumQuestions(state.quizNumQuestions + 1) },
@@ -828,7 +829,7 @@ private fun QuizSheet(viewModel: TeacherSyllabusViewModel) {
                         ) {
                             Text(
                                 label,
-                                style = VTypography.bodySmall,
+                                style = VTypography.caption,
                                 color = if (selected) VColors.violetInk else VColors.ink2,
                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             )

@@ -53,6 +53,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /** The five scoped tools the Update tab fronts. */
 enum class UpdateTool(
@@ -194,7 +195,7 @@ private fun ScopeGateMode(
                     )
                     Text(
                         appString(StringKeys.TC_PICK_CLASS_FOR, "tool" to appString(tool.labelKey).lowercase()),
-                        style = VTypography.bodySmall,
+                        style = VTypography.caption,
                         color = VColors.ink2,
                     )
                 }
@@ -215,7 +216,7 @@ private fun ScopeGateMode(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
                                         appString(StringKeys.TC_COULDNT_LOAD_CLASSES),
-                                        style = VTypography.bodySmall.copy(color = VColors.ink),
+                                        style = VTypography.caption.copy(color = VColors.ink),
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(classesState.error ?: "", style = VTypography.caption, color = VColors.ink3)
@@ -387,7 +388,7 @@ internal fun ScopeBar(tool: UpdateTool, label: String, onChange: () -> Unit) {
             )
             Text(
                 label,
-                style = VTypography.bodySmall.copy(color = VColors.ink),
+                style = VTypography.caption.copy(color = VColors.ink),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

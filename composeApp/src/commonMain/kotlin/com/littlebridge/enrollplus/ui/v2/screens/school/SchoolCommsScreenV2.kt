@@ -513,7 +513,7 @@ private fun AnnouncementDetailV2(
             Spacer(Modifier.height(16.dp))
             Text(
                 announcement.description.htmlDecode(),
-                style = VTypography.bodySmall.copy(lineHeight = 22.4.sp),
+                style = VTypography.caption.copy(lineHeight = 22.4.sp),
                 color = VColors.ink2,
             )
         }

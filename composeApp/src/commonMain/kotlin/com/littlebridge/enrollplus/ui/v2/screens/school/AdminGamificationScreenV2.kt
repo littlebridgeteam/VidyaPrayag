@@ -57,6 +57,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 @Composable
 fun AdminGamificationScreenV2(
@@ -98,7 +99,7 @@ fun AdminGamificationScreenV2(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+                TeacherSpinner(32.dp, 2.dp)
             }
         } else if (state.error != null && state.flags == null) {
             val errorMsg = state.error ?: ""
@@ -223,7 +224,7 @@ private fun AdminCard(title: String, content: @Composable () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+        Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
         content()
     }
 }

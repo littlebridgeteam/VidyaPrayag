@@ -210,7 +210,7 @@ private fun AttendeeRow(
     ) {
         VAvatar(name = attendee.name.ifBlank { attendee.initials.ifBlank { "?" } }, src = attendee.imageUrl, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(attendee.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(attendee.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Text(attendee.initials, style = VTypography.caption.copy(color = VColors.ink3))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

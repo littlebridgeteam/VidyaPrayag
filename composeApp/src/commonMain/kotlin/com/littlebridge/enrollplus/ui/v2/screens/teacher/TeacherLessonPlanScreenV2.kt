@@ -52,6 +52,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * TeacherLessonPlanScreenV2 — the scoped lesson plan surface (LESSON_PLANNING_SPEC P1-20).
@@ -175,7 +176,7 @@ private fun LessonPlanListMode(
             state.error != null && state.items.isEmpty() -> item {
                 VtCard {
                     Column {
-                        Text(appString(StringKeys.TC_COULDNT_LOAD_LESSON_PLANS), style = VTypography.bodySmall, color = VColors.ink)
+                        Text(appString(StringKeys.TC_COULDNT_LOAD_LESSON_PLANS), style = VTypography.caption, color = VColors.ink)
                         Spacer(Modifier.height(8.dp))
                         VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retry() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                     }
@@ -189,7 +190,7 @@ private fun LessonPlanListMode(
                     ) {
                         VtIconDisc(VIcons.ClipboardList, tint = VColors.violet, bg = VColors.violet.copy(alpha = 0.14f), size = 48.dp, glyph = 24.dp)
                         Spacer(Modifier.height(10.dp))
-                        Text(appString(StringKeys.TC_NO_LESSON_PLANS_YET), style = VTypography.bodySmall, color = VColors.ink)
+                        Text(appString(StringKeys.TC_NO_LESSON_PLANS_YET), style = VTypography.caption, color = VColors.ink)
                         Text(appString(StringKeys.TC_CREATE_FIRST_LESSON_PLAN), style = VTypography.caption, color = VColors.ink3)
                     }
                 }
@@ -246,7 +247,7 @@ private fun LessonPlanRow(plan: LessonPlanSummary, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 plan.title,
-                style = VTypography.bodySmall,
+                style = VTypography.caption,
                 color = VColors.ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

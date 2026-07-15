@@ -1,4 +1,4 @@
-﻿package com.littlebridge.enrollplus.ui.v2.screens.parent
+package com.littlebridge.enrollplus.ui.v2.screens.parent
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.DropdownMenu
@@ -43,6 +42,7 @@ import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSum
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /**
  * Shared premium portal header used by Home, Academics, Fees, Conversations and Profile tabs.
@@ -260,58 +260,6 @@ fun PortalTabChip(
             ) { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
-}
-
-/**
- * Shared premium header for full-screen parent overlays.
- * Circular bordered back button, bold title, optional trailing action.
- */
-@Composable
-fun PremiumOverlayHeader(
-    title: String,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    action: (@Composable () -> Unit)? = null,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(VColors.surfaceCard)
-                    .border(1.dp, VColors.line, CircleShape)
-                    .clickable(onClick = onBack),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = VColors.ink,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Text(
-                title,
-                style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                color = VColors.ink,
-            )
-        }
-        if (action != null) {
-            Box(Modifier.height(40.dp).wrapContentWidth(), contentAlignment = Alignment.Center) {
-                action()
-            }
-        }
-    }
 }
 
 /**

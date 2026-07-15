@@ -40,6 +40,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * Scoped student-profile drill-down (read-only). Loads `GET /teacher/students/{id}`
@@ -73,7 +74,7 @@ fun TeacherStudentProfilePane(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     VtIconDisc(VIcons.Lock, tint = c.ink3, bg = c.cream, size = 56.dp, glyph = 26.dp)
                     Spacer(Modifier.height(12.dp))
-                    Text(appString(StringKeys.TC_NOT_YOUR_STUDENT), style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                    Text(appString(StringKeys.TC_NOT_YOUR_STUDENT), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         appString(StringKeys.TC_NOT_YOUR_STUDENT_DESC),
@@ -84,7 +85,7 @@ fun TeacherStudentProfilePane(
             }
             state.error != null -> TeacherCenterState {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_PROFILE), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Text(state.error ?: "", style = VTypography.caption, color = c.ink3)
                     Spacer(Modifier.height(14.dp))
@@ -138,7 +139,7 @@ private fun IdentityCard(p: StudentProfileData) {
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(p.name, style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.Bold)
+                Text(p.name, style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     buildString {
@@ -244,7 +245,7 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
                 if (i > 0) Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(e.assessmentName, style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.Bold)
+                        Text(e.assessmentName, style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
                         Text(
                             buildString {
@@ -268,7 +269,7 @@ private fun PerformanceCard(perf: List<StudentPerformanceDto>) {
                             }
                             Text(
                                 "${fmt1(mk.toFloat())}/${e.max}",
-                                style = VTypography.bodySmall,
+                                style = VTypography.caption,
                                 color = tint,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -297,7 +298,7 @@ private fun FlagsCard(flags: List<String>) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Icon(VIcons.AlertTriangle, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-                    Text(text, style = VTypography.bodySmall, color = tint, fontWeight = FontWeight.SemiBold)
+                    Text(text, style = VTypography.caption, color = tint, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -333,7 +334,7 @@ private fun ParentContactCard(name: String?, phone: String?) {
                 VtIconDisc(VIcons.User, tint = c.tealDeep, bg = c.teal.copy(alpha = 0.14f), size = 40.dp, glyph = 18.dp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(name ?: appString(StringKeys.TC_PARENT_GUARDIAN), style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.Bold)
+                    Text(name ?: appString(StringKeys.TC_PARENT_GUARDIAN), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.Bold)
                     if (!phone.isNullOrBlank()) {
                         Spacer(Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {

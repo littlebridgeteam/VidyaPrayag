@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +42,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.util.htmlDecode
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * ParentActivityScreenV2 — school announcements feed, rebuilt with the same premium parent-portal
@@ -94,7 +94,7 @@ private fun ParentActivityContent(
         when {
             state.isLoading && state.announcements.isEmpty() ->
                 Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    TeacherSpinner(36.dp)
                 }
 
             state.error != null && state.announcements.isEmpty() ->

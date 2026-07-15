@@ -30,8 +30,10 @@ import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * ParentFeeHistoryScreenV2 — premium fee history overlay for the Fees tab.
@@ -53,7 +55,7 @@ fun ParentFeeHistoryScreenV2(
             .fillMaxSize()
             .background(VColors.cream),
     ) {
-        PremiumOverlayHeader(title = "Fee History", onBack = onBack)
+        VBackHeader(title = "Fee History", onBack = onBack)
 
         Column(
             Modifier
@@ -86,7 +88,7 @@ fun ParentFeeHistoryScreenV2(
 
             if (state.isLoading) {
                 Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    androidx.compose.material3.TeacherSpinner(36.dp)
                 }
             } else {
                 EmptyHistoryCard()

@@ -213,7 +213,7 @@ private fun StudentCard(
             ) {
                 VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 52.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, maxLines = 1)
+                    Text(student.fullName, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink, maxLines = 1)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             "Roll #${student.rollNumber}",
@@ -357,7 +357,7 @@ private fun StudentProgressLabel(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink3)
-            Text(valueText, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+            Text(valueText, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
         }
         VProgressBar(value = value, tone = tone, height = 6.dp)
     }
@@ -371,7 +371,7 @@ private fun MetricChip(icon: ImageVector, value: String, label: String, modifier
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Icon(icon, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(16.dp))
-        Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+        Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
         Text(label, style = VTypography.label.copy(color = VColors.ink3), maxLines = 1)
     }
 }

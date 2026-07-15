@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +35,8 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 import kotlinx.coroutines.flow.StateFlow
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * Shared helpers for the `ui/v2` screen layer.
@@ -58,7 +59,7 @@ fun VLoadingState(modifier: Modifier = Modifier) {
         modifier.fillMaxSize().padding(vertical = 64.dp),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+        TeacherSpinner(36.dp)
     }
 }
 

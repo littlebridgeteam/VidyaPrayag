@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +59,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VStaleChip
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 @Composable
 fun ParentHomeScreenV2(
@@ -982,7 +982,7 @@ private fun TodayScheduleCard(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
+                TeacherSpinner(24.dp)
             }
             periods.isEmpty() -> Text(
                 text = "No classes scheduled today.",
@@ -1127,7 +1127,7 @@ private fun TodaySummaryCard(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
+                TeacherSpinner(24.dp)
             }
             teacherEntries.isEmpty() -> Text(
                 text = "No log updated by the teacher",
@@ -1221,7 +1221,7 @@ private fun UpdatesCard(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(24.dp))
+                TeacherSpinner(24.dp)
             }
             announcements.isEmpty() -> Text(
                 text = "No announcements yet",

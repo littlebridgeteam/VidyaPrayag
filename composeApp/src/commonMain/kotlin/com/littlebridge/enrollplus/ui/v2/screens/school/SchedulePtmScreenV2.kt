@@ -270,7 +270,7 @@ private fun HistoryRow(h: PTMHistoryItem, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(h.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(h.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
             Text(h.date, style = VTypography.caption.copy(color = VColors.ink3))
         }
@@ -286,7 +286,7 @@ private fun ClassProgressCard(cp: ClassPTMProgress, modifier: Modifier = Modifie
     VCard(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
-                Text(cp.className, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                Text(cp.className, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                 Spacer(Modifier.height(2.dp))
                 Text(cp.teacherName, style = VTypography.caption.copy(color = VColors.ink3))
             }

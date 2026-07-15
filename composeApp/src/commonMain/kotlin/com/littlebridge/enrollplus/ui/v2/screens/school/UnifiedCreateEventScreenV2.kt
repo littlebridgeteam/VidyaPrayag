@@ -213,7 +213,7 @@ private fun StepWhat(
                     background = if (isSel) VColors.sky.copy(alpha = 0.12f) else VColors.surfaceCard,
                     onClick = { viewModel.setType(opt.type) },
                 ) {
-                    Text(opt.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = if (isSel) VColors.sky else VColors.ink))
+                    Text(opt.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = if (isSel) VColors.sky else VColors.ink))
                     Spacer(Modifier.height(2.dp))
                     Text(opt.subtitle, style = VTypography.caption.copy(color = VColors.ink3))
                 }
@@ -379,7 +379,7 @@ private fun TogglePill(
         VCard(onClick = { onToggle(!checked) }) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), modifier = Modifier.weight(1f))
+                Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink), modifier = Modifier.weight(1f))
                 Box(
                     Modifier.size(width = 44.dp, height = 26.dp).clip(RoundedCornerShape(999.dp))
                         .background(if (checked) VColors.sky else VColors.lineSoft)

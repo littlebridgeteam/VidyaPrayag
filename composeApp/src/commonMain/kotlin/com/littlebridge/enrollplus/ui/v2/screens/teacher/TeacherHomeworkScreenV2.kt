@@ -50,6 +50,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.platform.rememberShareHelper
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * TeacherHomeworkScreenV2 — the scoped homework lifecycle (Doc 08 §6–§8), rebuilt on the cream
@@ -133,7 +134,7 @@ private fun HomeworkListMode(
             state.isLoading && state.items.isEmpty() -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
             state.error != null && state.items.isEmpty() -> item {
                 VtCard { Column {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_HOMEWORK), style = VTypography.bodySmall, color = VColors.ink)
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_HOMEWORK), style = VTypography.caption, color = VColors.ink)
                     Spacer(Modifier.height(8.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retry() }, tone = VButtonTone.Mint, size = VButtonSize.Sm)
                 } }
@@ -156,7 +157,7 @@ private fun HomeworkComposer(viewModel: TeacherHomeworkViewModel) {
     val state by viewModel.state.collectAsStateV2()
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(appString(StringKeys.TC_NEW_HOMEWORK), style = VTypography.bodySmall, color = VColors.ink)
+            Text(appString(StringKeys.TC_NEW_HOMEWORK), style = VTypography.caption, color = VColors.ink)
             VInput(value = state.composerTitle, onValueChange = viewModel::setComposerTitle, label = appString(StringKeys.TC_TITLE), placeholder = appString(StringKeys.TC_TITLE_PH))
             VInput(value = state.composerDescription, onValueChange = viewModel::setComposerDescription, label = appString(StringKeys.TC_DETAILS_OPTIONAL), placeholder = appString(StringKeys.TC_INSTRUCTIONS_PH), singleLine = false)
             VDatePicker(value = state.composerDueDate, onValueChange = viewModel::setComposerDueDate, label = appString(StringKeys.TC_DUE_DATE))
@@ -172,7 +173,7 @@ private fun HomeworkComposer(viewModel: TeacherHomeworkViewModel) {
                     contentAlignment = Alignment.Center,
                 ) { if (late) Icon(VIcons.Check, contentDescription = null, tint = VColors.white, modifier = Modifier.size(16.dp)) }
                 Spacer(Modifier.width(12.dp))
-                Text(appString(StringKeys.TC_ALLOW_LATE), style = VTypography.bodySmall, color = VColors.ink)
+                Text(appString(StringKeys.TC_ALLOW_LATE), style = VTypography.caption, color = VColors.ink)
             }
             if (state.composerError != null) Text(state.composerError ?: "", style = VTypography.caption, color = VColors.coral)
             VButton(appString(StringKeys.TC_ASSIGN_HOMEWORK), onClick = { viewModel.assign() }, full = true, tone = VButtonTone.Mint, loading = state.isAssigning, enabled = state.canAssign)
@@ -187,7 +188,7 @@ private fun HomeworkRow(hw: HomeworkSummary, onOpen: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             VtIconDisc(VIcons.FileText, tint = VColors.mint, bg = VColors.mint.copy(alpha = 0.12f), size = 44.dp, glyph = 22.dp)
             Column(Modifier.weight(1f)) {
-                Text(hw.title, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                Text(hw.title, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                 Spacer(Modifier.height(6.dp))
                 androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(8.dp)) {
                     drawRoundRect(color = VColors.creamDeep, size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()))
@@ -248,7 +249,7 @@ private fun HomeworkBoardMode(
                         ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink, modifier = Modifier.size(16.dp)) }
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(board?.title ?: appString(StringKeys.TC_SUBMISSIONS), style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                            Text(board?.title ?: appString(StringKeys.TC_SUBMISSIONS), style = VTypography.caption, color = VColors.ink, maxLines = 1)
                             Text(appString(StringKeys.TC_DUE_LABEL, "date" to prettyDateShort(board?.dueDate)), style = VTypography.caption, color = VColors.ink3)
                         }
                     }
@@ -270,7 +271,7 @@ private fun HomeworkBoardMode(
 
         when {
             state.isBoardLoading && board == null -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
-            board == null -> item { VtCard { Text(appString(StringKeys.TC_COULDNT_LOAD_BOARD), style = VTypography.bodySmall, color = VColors.ink2) } }
+            board == null -> item { VtCard { Text(appString(StringKeys.TC_COULDNT_LOAD_BOARD), style = VTypography.caption, color = VColors.ink2) } }
             else -> items(board.rows, key = { it.studentId }) { row ->
                 BoardStudentRow(row, updating = state.updatingStudentId == row.studentId, onReview = { st -> viewModel.reviewSubmission(row.studentId, st) }, onExtend = { viewModel.openExtension(row.studentId, row.name) })
             }
@@ -302,7 +303,7 @@ private fun BoardStudentRow(row: HomeworkBoardRow, updating: Boolean, onReview: 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Column(Modifier.weight(1f)) {
-                    Text(row.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                    Text(row.name, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                     Text(
                         buildString {
                             append(if (row.rollNo != null) appString(StringKeys.TC_ROLL_NO, "no" to row.rollNo.toString()) else row.studentCode)

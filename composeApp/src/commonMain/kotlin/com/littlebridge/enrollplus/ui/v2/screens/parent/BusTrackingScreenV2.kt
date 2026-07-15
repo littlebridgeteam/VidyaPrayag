@@ -40,12 +40,13 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.cos
 import kotlin.math.sin
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 @Composable
 fun BusTrackingScreenV2(
@@ -71,7 +72,7 @@ fun BusTrackingScreenV2(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        PremiumOverlayHeader(title = appString(StringKeys.BT_BUS_TRACKING), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.BT_BUS_TRACKING), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading && state.routeProgress == null,

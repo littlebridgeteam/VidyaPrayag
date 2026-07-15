@@ -28,6 +28,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 private enum class IdCardTab(val label: String) {
     Templates("Templates"),

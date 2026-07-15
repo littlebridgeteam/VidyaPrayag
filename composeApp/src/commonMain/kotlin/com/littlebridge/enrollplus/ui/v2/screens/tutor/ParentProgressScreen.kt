@@ -31,12 +31,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.VLoadingState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /**
  * ParentProgressScreen — mastery deltas, safety transparency, doubt stats.
@@ -70,7 +71,7 @@ fun ParentProgressScreen(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            PremiumOverlayHeader(title = appString(StringKeys.TUT_PROGRESS_TITLE), onBack = onBack)
+            VBackHeader(title = appString(StringKeys.TUT_PROGRESS_TITLE), onBack = onBack)
 
             when {
                 state.isLoading -> VLoadingState()

@@ -34,6 +34,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.util.htmlDecode
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
 
 /**
  * TeacherAnnouncementDetailScreen — full-screen overlay showing a single
@@ -123,7 +124,7 @@ private fun AnnouncementDetailContent(announcement: Announcement) {
         Spacer(Modifier.height(16.dp))
         Text(
             announcement.description.htmlDecode(),
-            style = VTypography.bodySmall.copy(lineHeight = 22.4.sp),
+            style = VTypography.caption.copy(lineHeight = 22.4.sp),
             color = VColors.ink2,
         )
     }

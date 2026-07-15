@@ -182,7 +182,7 @@ private fun LeaveRequestCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         req.requesterName,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     if (!isPending) {

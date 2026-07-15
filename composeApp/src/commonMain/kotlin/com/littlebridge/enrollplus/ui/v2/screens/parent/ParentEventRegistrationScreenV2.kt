@@ -60,8 +60,9 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 @Composable
 fun ParentEventRegistrationScreenV2(
@@ -79,7 +80,7 @@ fun ParentEventRegistrationScreenV2(
             .background(VColors.cream)
             .statusBarsPadding(),
     ) {
-        PremiumOverlayHeader(
+        VBackHeader(
             title = if (selectedEventId != null) "Event Detail" else "Events",
             onBack = {
                 if (selectedEventId != null) {
