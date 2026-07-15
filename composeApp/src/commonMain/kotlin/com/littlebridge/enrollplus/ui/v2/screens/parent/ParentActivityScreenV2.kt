@@ -41,6 +41,7 @@ import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.util.htmlDecode
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -175,14 +176,14 @@ private fun AnnouncementCard(a: ParentAnnouncement) {
         }
         Column(Modifier.weight(1f)) {
             Text(
-                a.title,
+                a.title.htmlDecode(),
                 style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
                 color = VColors.ink,
             )
             if (a.description.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    a.description,
+                    a.description.htmlDecode(),
                     style = VTypography.caption,
                     color = VColors.ink2,
                 )

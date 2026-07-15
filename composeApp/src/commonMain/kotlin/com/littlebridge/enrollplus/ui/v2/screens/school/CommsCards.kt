@@ -37,6 +37,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
+import com.littlebridge.enrollplus.util.htmlDecode
 
 /**
  * CommsCards — reusable, premium cards for the School Comms hub.
@@ -89,7 +90,7 @@ internal fun AnnouncementCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        announcement.title,
+                        announcement.title.htmlDecode(),
                         style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
                         color = VColors.ink,
                         modifier = Modifier.weight(1f),
@@ -109,7 +110,7 @@ internal fun AnnouncementCard(
                 }
                 if (announcement.description.isNotBlank()) {
                     Text(
-                        announcement.description,
+                        announcement.description.htmlDecode(),
                         style = VTypography.caption,
                         color = VColors.ink2,
                         modifier = Modifier.padding(top = 6.dp),

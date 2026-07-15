@@ -95,6 +95,7 @@ fun MessagesScreenV2(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     initialThreadId: String? = null,
+    initialRecipientId: String? = null,
     viewModel: MessagesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -111,6 +112,13 @@ fun MessagesScreenV2(
                 viewModel.markAsRead(thread.id)
                 viewModel.openConversation(thread.id)
             }
+        }
+    }
+
+    // Deep-link: auto-open compose-new with a pre-selected recipient.
+    LaunchedEffect(initialRecipientId) {
+        if (initialRecipientId != null && !compose.isOpen) {
+            viewModel.openCompose()
         }
     }
 

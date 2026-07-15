@@ -52,6 +52,9 @@ import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageSt
 import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsState
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceSnapshotDto
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -609,6 +612,15 @@ private fun PaceTab(
     onResolve: (String) -> Unit,
     onRecalculate: () -> Unit,
 ) {
+    var selectedSnapshot by remember { mutableStateOf<PaceSnapshotDto?>(null) }
+
+    selectedSnapshot?.let { snap ->
+        PaceSnapshotDetailSheet(
+            snapshot = snap,
+            onDismiss = { selectedSnapshot = null },
+        )
+    }
+
     VStateHost(
         loading = state.isLoading,
         error = state.errorMessage,
@@ -692,7 +704,14 @@ private fun PaceTab(
                     Text(appString(StringKeys.REC_PACE_SNAPSHOTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.snapshots.forEachIndexed { index, snap ->
-                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.snapshots.isNotEmpty())) {
+                            RecordsCreamCard(
+                                modifier = Modifier
+                                    .staggeredItemEntrance(index, state.snapshots.isNotEmpty())
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { selectedSnapshot = snap },
+                            ) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Column(Modifier.weight(1f)) {
                                         Text("${snap.subject} • ${snap.className}-${snap.section}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
@@ -731,6 +750,97 @@ private fun PaceTab(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PaceSnapshotDetailSheet(
+    snapshot: PaceSnapshotDto,
+    onDismiss: () -> Unit,
+) {
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = "Pace Detail")
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "${snapshot.subject} • ${snapshot.className}-${snapshot.section}",
+                style = VTypography.h3,
+                color = VColors.ink,
+            )
+            if (snapshot.teacherName.isNotBlank()) {
+                Text(snapshot.teacherName, style = VTypography.caption, color = VColors.ink3)
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    Text("Covered", style = VTypography.caption, color = VColors.ink3)
+                    Text("${snapshot.coveredTopics} / ${snapshot.totalTopics}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Actual", style = VTypography.caption, color = VColors.ink3)
+                    Text("${snapshot.actualPct}%", style = VTypography.bodySmall.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Expected", style = VTypography.caption, color = VColors.ink3)
+                    Text("${snapshot.expectedPct}%", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink2)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Deviation", style = VTypography.caption, color = VColors.ink3)
+                    Text(
+                        "${if (snapshot.deviationPct >= 0) "+" else ""}${snapshot.deviationPct}%",
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = when (snapshot.status) {
+                            "CRITICAL" -> VColors.coral
+                            "BEHIND" -> VColors.gold
+                            "AHEAD" -> VColors.success
+                            else -> VColors.ink2
+                        },
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            VProgressBar(
+                value = snapshot.actualPct.toFloat(),
+                tone = when (snapshot.status) {
+                    "CRITICAL" -> VBadgeTone.Danger
+                    "BEHIND" -> VBadgeTone.Warning
+                    "AHEAD" -> VBadgeTone.Success
+                    else -> VBadgeTone.Arctic
+                },
+            )
+            Spacer(Modifier.height(4.dp))
+            VBadge(
+                text = snapshot.status.replace('_', ' '),
+                tone = when (snapshot.status) {
+                    "CRITICAL" -> VBadgeTone.Danger
+                    "BEHIND" -> VBadgeTone.Warning
+                    "AHEAD" -> VBadgeTone.Success
+                    else -> VBadgeTone.Arctic
+                },
+            )
+            if (snapshot.calculatedAt != null) {
+                Text(
+                    "Calculated: ${snapshot.calculatedAt}",
+                    style = VTypography.caption.copy(fontSize = 10.sp),
+                    color = VColors.ink3,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            VButton(
+                text = "Close",
+                onClick = onDismiss,
+                variant = VButtonVariant.Ghost,
+                full = true,
+            )
         }
     }
 }

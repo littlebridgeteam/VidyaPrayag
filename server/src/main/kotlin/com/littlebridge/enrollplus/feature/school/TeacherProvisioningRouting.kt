@@ -331,6 +331,34 @@ fun Route.teacherProvisioningRouting() {
                 val offset = (page - 1).toLong() * pageSize
 
                 val response = dbQuery {
+                    // RECONCILE: ensure every active teacher app_user has a
+                    // mirrored faculty row. Old teachers created before the
+                    // ensureFacultyRow fix would otherwise be invisible.
+                    val activeTeachers = AppUsersTable.selectAll()
+                        .where {
+                            (AppUsersTable.schoolId eq ctx.schoolId) and
+                                (AppUsersTable.role eq "teacher") and
+                                (AppUsersTable.isActive eq true)
+                        }
+                        .toList()
+                    activeTeachers.forEach { tRow ->
+                        val userId = tRow[AppUsersTable.id].value
+                        val externalId = "U-$userId"
+                        val exists = FacultyTable.selectAll()
+                            .where { FacultyTable.externalId eq externalId }
+                            .firstOrNull()
+                        if (exists == null) {
+                            FacultyTable.insert {
+                                it[FacultyTable.schoolId] = ctx.schoolId
+                                it[FacultyTable.externalId] = externalId
+                                it[FacultyTable.userId] = userId
+                                it[FacultyTable.name] = tRow[AppUsersTable.fullName]
+                                it[isActive] = true
+                                it[createdAt] = tRow[AppUsersTable.createdAt]
+                            }
+                        }
+                    }
+
                     // BUG-041: Use FacultyTable as the primary source (matching
                     // the Home KPI which counts active faculty). This ensures
                     // faculty rows without app_users entries (e.g. demo seed)

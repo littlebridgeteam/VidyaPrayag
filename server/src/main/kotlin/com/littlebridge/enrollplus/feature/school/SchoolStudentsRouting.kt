@@ -99,6 +99,7 @@ data class StudentDto(
     @SerialName("homework_percent") val homeworkPercent: Float = 0f,
     @SerialName("fees_pending") val feesPending: Boolean = false,
     @SerialName("parent_meeting_scheduled") val parentMeetingScheduled: Boolean = false,
+    @SerialName("parent_user_id") val parentUserId: String? = null,
     @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
 )
 
@@ -603,8 +604,20 @@ private fun teacherInsights(
     return out.take(5)
 }
 
-private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDto =
-    StudentDto(
+private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDto {
+    val studentCode = row[StudentsTable.studentCode]
+    val schoolId = row[StudentsTable.schoolId]
+    val parentUserId = if (studentCode != null && schoolId != null) {
+        ChildrenTable.selectAll()
+            .where {
+                (ChildrenTable.studentCode eq studentCode) and
+                (ChildrenTable.schoolId eq schoolId) and
+                (ChildrenTable.isActive eq true)
+            }
+            .firstOrNull()
+            ?.get(ChildrenTable.parentId)?.toString()
+    } else null
+    return StudentDto(
         id = row[StudentsTable.id].value.toString(),
         studentCode = row[StudentsTable.studentCode],
         fullName = row[StudentsTable.fullName],
@@ -617,8 +630,10 @@ private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDt
         isNewAdmission = isNewAdmission(
             row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
                 ?: row[StudentsTable.createdAt]
-        )
+        ),
+        parentUserId = parentUserId,
     )
+}
 
 /**
  * RA-SP: average attendance % across the active students of a (class, section),

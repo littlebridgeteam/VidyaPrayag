@@ -73,10 +73,17 @@ fun UnifiedCreateEventScreenV2(
     onBack: () -> Unit,
     onCreated: () -> Unit,
     modifier: Modifier = Modifier,
+    initialType: String? = null,
     viewModel: UnifiedCreateEventViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    
+
+    LaunchedEffect(initialType) {
+        if (initialType != null && state.step == 1 && state.form.title.isBlank()) {
+            viewModel.setType(initialType)
+        }
+    }
+
     LaunchedEffect(state.created) {
         if (state.created) {
             onCreated()

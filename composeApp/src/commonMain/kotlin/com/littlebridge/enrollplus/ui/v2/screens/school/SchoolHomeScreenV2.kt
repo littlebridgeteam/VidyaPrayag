@@ -164,6 +164,7 @@ fun SchoolHomeScreenV2(
     onOpenReportEffectiveness: () -> Unit = {},
     onOpenEvents: () -> Unit = {},
     onCreateEvent: () -> Unit = {},
+    onCreateAnnouncement: () -> Unit = {},
     onOpenApprovals: () -> Unit = {},
     onOpenPinnedScreen: (String) -> Unit = {},
     onExit: () -> Unit = {},
@@ -264,6 +265,7 @@ fun SchoolHomeScreenV2(
                     onOpenReportPublish = onOpenReportPublish,
                     onOpenEvents = onOpenEvents,
                     onCreateEvent = onCreateEvent,
+                    onCreateAnnouncement = onCreateAnnouncement,
                     onOpenApprovals = onOpenApprovals,
                     onOpenPinnedScreen = onOpenPinnedScreen,
                     onOpenCommandPalette = { commandPaletteVisible = true },
@@ -353,6 +355,7 @@ private fun CommandDesk(
     onOpenReportPublish: () -> Unit,
     onOpenEvents: () -> Unit,
     onCreateEvent: () -> Unit,
+    onCreateAnnouncement: () -> Unit,
     onOpenApprovals: () -> Unit,
     onOpenPinnedScreen: (String) -> Unit,
     onOpenCommandPalette: () -> Unit,
@@ -386,7 +389,7 @@ private fun CommandDesk(
         )
 
         QuickShortcuts(
-            onAnnouncement = onCreateEvent,
+            onAnnouncement = onCreateAnnouncement,
             onEvent = onCreateEvent,
             onReports = onOpenReportPublish,
             onCalendar = onOpenCalendar,

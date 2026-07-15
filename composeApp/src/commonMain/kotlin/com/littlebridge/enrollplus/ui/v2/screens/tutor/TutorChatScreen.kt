@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -208,6 +209,7 @@ private fun ChatRow(
                         modifier = Modifier.size(16.dp),
                     )
                 }
+                Spacer(Modifier.width(6.dp))
             }
             Text(
                 if (isUser) "You" else "Tutor",
@@ -217,6 +219,7 @@ private fun ChatRow(
                 ),
             )
             if (isUser) {
+                Spacer(Modifier.width(6.dp))
                 Box(
                     Modifier
                         .size(28.dp)

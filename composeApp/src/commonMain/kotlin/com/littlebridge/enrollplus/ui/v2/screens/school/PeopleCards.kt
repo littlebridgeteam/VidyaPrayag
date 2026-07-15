@@ -384,6 +384,7 @@ internal fun StudentCard(
     modifier: Modifier = Modifier,
 ) {
     val alerts = remember(student) { studentAlerts(student) }
+    var menuOpen by remember { mutableStateOf(false) }
 
     VCard(
         modifier = modifier.fillMaxWidth(),
@@ -445,12 +446,40 @@ internal fun StudentCard(
                         )
                     }
                 }
-                Icon(
-                    VIcons.More,
-                    contentDescription = null,
-                    tint = VColors.ink3,
-                    modifier = Modifier.size(18.dp),
-                )
+                Box {
+                    Icon(
+                        VIcons.More,
+                        contentDescription = "More options",
+                        tint = VColors.ink3,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(RoundedCornerShape(50))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { menuOpen = true },
+                    )
+                    DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("View Profile", style = VTypography.caption) },
+                            onClick = { menuOpen = false; onOpen() },
+                            leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Call Parent", style = VTypography.caption) },
+                            onClick = { menuOpen = false; onCall() },
+                            leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Message", style = VTypography.caption) },
+                            onClick = { menuOpen = false; onMessage() },
+                            leadingIcon = { Icon(VIcons.Chat, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                    }
+                }
             }
 
             // Parent info
