@@ -166,6 +166,12 @@ private fun MarksListMode(
 @Composable
 private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDone: () -> Unit) {
     val state by viewModel.state.collectAsStateV2()
+    LaunchedEffect(state.createSuccess) {
+        if (state.createSuccess) {
+            viewModel.clearCreateSuccess()
+            onDone()
+        }
+    }
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(appString(StringKeys.TC_NEW_TEST), style = VTypography.caption, color = VColors.ink)
@@ -210,13 +216,14 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
 private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel) {
     val today = todayIso()
     val examDate = a.examDate
-    val examPassed = examDate == null || examDate <= today
+    val examPassed = examDate != null && examDate <= today
     val canEnter = examPassed && !a.isPublished
     val statusTint: Color
     val statusLabel: String
     when {
         a.isPublished -> { statusTint = VColors.success; statusLabel = appString(StringKeys.TC_PUBLISHED) }
         a.status == AssessmentStatus.MARKS_PENDING -> { statusTint = VColors.gold; statusLabel = appString(StringKeys.TC_MARKS_PENDING) }
+        examDate == null -> { statusTint = VColors.gold; statusLabel = appString(StringKeys.TC_MARKS_PENDING) }
         !examPassed -> { statusTint = VColors.sky; statusLabel = appString(StringKeys.TC_SCHEDULED) }
         else -> { statusTint = VColors.violet; statusLabel = appString(StringKeys.TC_READY_TO_MARK) }
     }
@@ -232,6 +239,7 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
                     buildString {
                         append(appString(StringKeys.TC_MAX_N, "n" to a.maxMarks.toString()))
                         if (examDate != null) append(" · ${prettyDateShort(examDate)}")
+                        else append(" · No date")
                         if (a.rosterCount > 0) append(" · ${appString(StringKeys.TC_ENTERED_N_OF_N, "entered" to a.enteredCount.toString(), "total" to a.rosterCount.toString())}")
                     },
                     style = VTypography.caption,

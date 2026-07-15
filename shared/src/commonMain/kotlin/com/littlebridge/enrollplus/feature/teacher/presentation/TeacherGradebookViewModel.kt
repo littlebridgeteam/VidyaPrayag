@@ -78,6 +78,7 @@ data class TeacherGradebookState(
     val createExamDate: String = "",       // "YYYY-MM-DD"; blank → server default
     val isCreating: Boolean = false,
     val createError: String? = null,
+    val createSuccess: Boolean = false,     // one-shot signal for UI to close the composer
 
     // ── Marks mode ───────────────────────────────────────────────────────────
     val activeAssessment: AssessmentDto? = null,
@@ -192,6 +193,8 @@ class TeacherGradebookViewModel(
 
     fun retryList() = loadList()
 
+    fun clearCreateSuccess() = _state.update { it.copy(createSuccess = false) }
+
     // ── Inline create (scope pre-filled) ─────────────────────────────────────────
 
     fun setCreateName(v: String) = _state.update { it.copy(createName = v, createError = null) }
@@ -219,6 +222,7 @@ class TeacherGradebookViewModel(
             name.isBlank() -> { _state.update { it.copy(createError = "Name is required") }; return }
             max == null || max <= 0 -> { _state.update { it.copy(createError = "Max marks must be greater than 0") }; return }
             pass != null && (pass < 0 || pass > max) -> { _state.update { it.copy(createError = "Pass marks must be between 0 and $max") }; return }
+            s.createType == AssessmentType.SCHEDULED && s.createExamDate.isBlank() -> { _state.update { it.copy(createError = "Pick an exam date") }; return }
         }
         viewModelScope.launch {
             _state.update { it.copy(isCreating = true, createError = null) }
@@ -245,6 +249,7 @@ class TeacherGradebookViewModel(
                             createMaxMarks = "100",
                             createPassMarks = "",
                             createExamDate = "",
+                            createSuccess = true,
                         )
                     }
                     loadList()
