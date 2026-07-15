@@ -388,7 +388,7 @@ private fun ScholarshipApplicationReviewCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     application.scholarshipTitle ?: application.institution,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
@@ -522,7 +522,7 @@ private fun ScholarshipRenewalCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     renewal.scholarshipTitle ?: appString(StringKeys.SCH_RENEWAL_FOR),
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(appString(StringKeys.SCH_RENEWAL_FOR), style = VTypography.caption, color = VColors.ink3)

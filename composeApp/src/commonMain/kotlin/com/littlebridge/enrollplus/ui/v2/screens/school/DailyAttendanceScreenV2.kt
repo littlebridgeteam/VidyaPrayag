@@ -154,44 +154,46 @@ private fun DailyAttendanceContent(
             onRetry = onRetry,
             skeleton = { SkeletonList(rows = 8, withAvatar = true) },
         ) {
-            // Summary
-            VCard {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(Modifier.weight(1f)) {
-                        Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTypography.label.copy(color = VColors.ink3))
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "${state.presentCount} / ${state.totalCount}",
-                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink),
-                        )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Summary
+                VCard {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text(appString(StringKeys.SCH_PRESENT_TODAY), style = VTypography.label.copy(color = VColors.ink3))
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "${state.presentCount} / ${state.totalCount}",
+                                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink),
+                            )
+                        }
+                        VBadge(text = state.attendancePercentage, tone = VBadgeTone.Arctic)
                     }
-                    VBadge(text = state.attendancePercentage, tone = VBadgeTone.Arctic)
                 }
-            }
 
-            VSectionHeader(title = if (isStudents) appString(StringKeys.SCH_STUDENTS_HEADER) else appString(StringKeys.SCH_FACULTY_HEADER))
+                VSectionHeader(title = if (isStudents) appString(StringKeys.SCH_STUDENTS_HEADER) else appString(StringKeys.SCH_FACULTY_HEADER))
 
-            VCard(Modifier.staggeredItemEntrance(0, true)) {
-                state.attendees.forEachIndexed { i, a ->
-                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
-                    AttendeeRow(attendee = a, onSetStatus = { onUpdateStatus(a.id, it) })
+                VCard(Modifier.staggeredItemEntrance(0, true)) {
+                    state.attendees.forEachIndexed { i, a ->
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                        AttendeeRow(attendee = a, onSetStatus = { onUpdateStatus(a.id, it) })
+                    }
                 }
-            }
 
-            if (state.saveError != null) {
-                Text(state.saveError!!, style = VTypography.caption, color = VColors.error)
+                if (state.saveError != null) {
+                    Text(state.saveError!!, style = VTypography.caption, color = VColors.error)
+                }
+                if (state.saveSuccess) {
+                    Text("Attendance saved", style = VTypography.caption, color = VColors.success)
+                }
+                VButton(
+                    text = "Save Attendance",
+                    onClick = onSave,
+                    variant = VButtonVariant.Primary,
+                    full = true,
+                    enabled = !state.isSaving && state.attendees.isNotEmpty(),
+                    loading = state.isSaving,
+                )
             }
-            if (state.saveSuccess) {
-                Text("Attendance saved", style = VTypography.caption, color = VColors.success)
-            }
-            VButton(
-                text = "Save Attendance",
-                onClick = onSave,
-                variant = VButtonVariant.Primary,
-                full = true,
-                enabled = !state.isSaving && state.attendees.isNotEmpty(),
-                loading = state.isSaving,
-            )
         }
     }
 }
@@ -208,7 +210,7 @@ private fun AttendeeRow(
     ) {
         VAvatar(name = attendee.name.ifBlank { attendee.initials.ifBlank { "?" } }, src = attendee.imageUrl, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(attendee.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(attendee.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Text(attendee.initials, style = VTypography.caption.copy(color = VColors.ink3))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

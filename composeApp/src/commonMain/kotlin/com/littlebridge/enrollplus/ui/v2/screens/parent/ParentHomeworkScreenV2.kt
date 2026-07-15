@@ -58,8 +58,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 
 /**
  * ParentHomeworkScreenV2 — overlay where a parent sees the child's active homework
@@ -84,7 +87,7 @@ fun ParentHomeworkScreenV2(
             .fillMaxSize()
             .background(VColors.cream),
     ) {
-        PremiumOverlayHeader(title = "Homework", onBack = onBack)
+        VBackHeader(title = appString(StringKeys.PHW_HOMEWORK), onBack = onBack)
         Box(Modifier.fillMaxSize().statusBarsPadding().imePadding().navigationBarsPadding()) {
             when {
                 state.selectedHomework != null -> {
@@ -128,8 +131,8 @@ private fun HomeworkListContent(
         loading = isLoading && items.isEmpty(),
         error = error,
         isEmpty = items.isEmpty(),
-        emptyTitle = "No active homework",
-        emptyBody = "Your child has no pending homework right now.",
+        emptyTitle = appString(StringKeys.PHW_NO_ACTIVE),
+        emptyBody = appString(StringKeys.PHW_NO_ACTIVE_DESC),
         onRetry = onRetry,
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
     ) {
@@ -148,10 +151,10 @@ private fun HomeworkListContent(
 @Composable
 private fun HomeworkListCard(hw: ParentHomeworkItemDto, onClick: () -> Unit) {
     val (statusLabel, statusTone) = when (hw.status) {
-        "graded" -> "Graded" to VBadgeTone.Accent
-        "submitted" -> "Submitted" to VBadgeTone.Success
-        "late" -> "Late" to VBadgeTone.Warning
-        else -> "Pending" to VBadgeTone.Danger
+        "graded" -> appString(StringKeys.PHW_GRADED) to VBadgeTone.Accent
+        "submitted" -> appString(StringKeys.PHW_SUBMITTED) to VBadgeTone.Success
+        "late" -> appString(StringKeys.PHW_LATE) to VBadgeTone.Warning
+        else -> appString(StringKeys.PHW_PENDING) to VBadgeTone.Danger
     }
 
     VCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
@@ -167,7 +170,7 @@ private fun HomeworkListCard(hw: ParentHomeworkItemDto, onClick: () -> Unit) {
                 VBadge(statusLabel, tone = statusTone)
             }
             if (hw.submissionText.isNotBlank() || hw.attachments.isNotEmpty()) {
-                Text("Tap to view or update submission", style = VTypography.caption.copy(color = VColors.ink3))
+                Text(appString(StringKeys.PHW_TAP_TO_VIEW), style = VTypography.caption.copy(color = VColors.ink3))
             }
         }
     }
@@ -217,7 +220,7 @@ private fun HomeworkSubmissionSheet(
         // Instructions / description
         if (homework.description.isNotBlank()) {
             VCard(modifier = Modifier.fillMaxWidth()) {
-                Text("Instructions", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
+                Text(appString(StringKeys.PHW_INSTRUCTIONS), style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
                 Spacer(Modifier.height(6.dp))
                 Text(homework.description, style = VTypography.body.copy(color = VColors.ink2))
             }
@@ -227,14 +230,14 @@ private fun HomeworkSubmissionSheet(
         VInput(
             value = text,
             onValueChange = onTextChange,
-            label = "Written answer / notes",
-            placeholder = "Type your child's answer here…",
+            label = appString(StringKeys.PHW_WRITTEN_ANSWER),
+            placeholder = appString(StringKeys.PHW_ANSWER_PH),
             singleLine = false,
             modifier = Modifier.fillMaxWidth().height(140.dp),
         )
 
         // Attachments
-        Text("Photo attachments", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
+        Text(appString(StringKeys.PHW_PHOTO_ATTACH), style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = VColors.ink))
         if (attachments.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 attachments.forEach { att ->
@@ -245,7 +248,7 @@ private fun HomeworkSubmissionSheet(
 
         // Add photo button
         VButton(
-            text = if (isUploading) "Uploading…" else "Add photo",
+            text = if (isUploading) appString(StringKeys.PHW_UPLOADING) else appString(StringKeys.PHW_ADD_PHOTO),
             onClick = { picker.launchImage() },
             full = true,
             variant = VButtonVariant.Secondary,
@@ -263,12 +266,12 @@ private fun HomeworkSubmissionSheet(
         }
 
         if (success) {
-            Text("Homework submitted successfully!", style = VTypography.caption.copy(color = VColors.success))
+            Text(appString(StringKeys.PHW_SUBMIT_SUCCESS), style = VTypography.caption.copy(color = VColors.success))
         }
 
         Spacer(Modifier.height(8.dp))
         VButton(
-            text = if (isSubmitting) "Submitting…" else "Submit homework",
+            text = if (isSubmitting) appString(StringKeys.PHW_SUBMITTING) else appString(StringKeys.PHW_SUBMIT),
             onClick = onSubmit,
             full = true,
             tone = VButtonTone.Mint,
@@ -302,11 +305,11 @@ private fun AttachmentRow(
             }
         }
         Column(Modifier.weight(1f)) {
-            Text(attachment.filename.ifBlank { "Attachment" }, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink), maxLines = 1)
+            Text(attachment.filename.ifBlank { appString(StringKeys.PHW_ATTACHMENT) }, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, color = VColors.ink), maxLines = 1)
             Text(attachment.mime, style = VTypography.caption.copy(color = VColors.ink2))
         }
         VButton(
-            text = "Remove",
+            text = appString(StringKeys.COMMON_BUTTON_DELETE),
             onClick = onRemove,
             variant = VButtonVariant.Ghost,
             size = VButtonSize.Sm,

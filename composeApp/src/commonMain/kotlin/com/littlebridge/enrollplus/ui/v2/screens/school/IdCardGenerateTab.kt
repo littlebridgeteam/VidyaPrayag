@@ -106,7 +106,7 @@ internal fun GenerateTab(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(template.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                        Text(template.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                         Text(
                             appString(StringKeys.SCH_TEMPLATE_STATUS, "role" to template.roleType.replaceFirstChar { it.uppercase() }, "status" to if (template.isActive) appString(StringKeys.SCH_ACTIVE_LABEL) else appString(StringKeys.SCH_INACTIVE)),
                             style = VTypography.caption.copy(color = VColors.ink2),

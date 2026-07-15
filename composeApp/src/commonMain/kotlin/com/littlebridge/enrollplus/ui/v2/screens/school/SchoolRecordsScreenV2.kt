@@ -52,6 +52,9 @@ import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageSt
 import com.littlebridge.enrollplus.feature.admin.presentation.SyllabusCoverageViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.PaceAlertsState
+import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceSnapshotDto
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -285,13 +288,13 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
             // ── By department ─────────────────────────────────────────────────
             if (state.departmentProgress.isNotEmpty()) {
                 RecordsCreamCard {
-                    Text(appString(StringKeys.REC_BY_DEPARTMENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text(appString(StringKeys.REC_BY_DEPARTMENT), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         state.departmentProgress.forEachIndexed { index, d ->
                             Column(modifier = Modifier.staggeredItemEntrance(index, state.departmentProgress.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(d.name, style = VTypography.bodySmall, color = VColors.ink)
+                                    Text(d.name, style = VTypography.caption, color = VColors.ink)
                                     Text("${(d.progress * 100).roundToInt()}%", style = VTypography.caption, color = VColors.ink2)
                                 }
                                 Spacer(Modifier.height(4.dp))
@@ -311,14 +314,14 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
             // ── Lagging alerts ────────────────────────────────────────────────
             if (state.alerts.isNotEmpty()) {
                 Column {
-                    Text(appString(StringKeys.REC_LAGGING_CLASSES), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_LAGGING_CLASSES), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.alerts.forEachIndexed { index, a ->
                             RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.alerts.isNotEmpty())) {
                                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Icon(VIcons.AlertCircle, contentDescription = null, tint = if (a.isCritical) VColors.coral else VColors.gold, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text("${a.subject} • ${a.className}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        Text("${a.subject} • ${a.className}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (a.instructor.isNotBlank()) {
                                             Text(a.instructor, style = VTypography.caption, color = VColors.ink3)
                                         }
@@ -337,7 +340,7 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
             // ── Academic milestones ───────────────────────────────────────────
             if (state.milestones.isNotEmpty()) {
                 Column {
-                    Text(appString(StringKeys.REC_MILESTONES), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_MILESTONES), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.milestones.forEachIndexed { index, m ->
                             RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.milestones.isNotEmpty())) {
@@ -347,7 +350,7 @@ private fun CoverageTab(state: SyllabusCoverageState, onRetry: () -> Unit) {
                                         Text(m.day, style = VTypography.h2.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
                                     }
                                     Column(Modifier.weight(1f)) {
-                                        Text(m.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        Text(m.title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (m.description.isNotBlank()) {
                                             Text(m.description, style = VTypography.caption, color = VColors.ink3)
                                         }
@@ -406,13 +409,13 @@ private fun AttendanceTab(
 
             if (data.byClass.isNotEmpty()) {
                 RecordsCreamCard {
-                    Text(appString(StringKeys.REC_BY_CLASS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                    Text(appString(StringKeys.REC_BY_CLASS), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         data.byClass.forEachIndexed { index, row ->
                             Column(modifier = Modifier.staggeredItemEntrance(index, data.byClass.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(row.grade, style = VTypography.bodySmall, color = VColors.ink)
+                                    Text(row.grade, style = VTypography.caption, color = VColors.ink)
                                     Text("${row.present + row.late}/${row.total} • ${row.rate}%", style = VTypography.caption, color = VColors.ink2)
                                 }
                                 Spacer(Modifier.height(4.dp))
@@ -469,7 +472,7 @@ private fun MarksTab(
                     RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, data.assessments.isNotEmpty())) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
-                                Text("${a.subject} • ${a.assessmentName}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                Text("${a.subject} • ${a.assessmentName}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                 Text("${a.className}${a.examDate?.let { " • $it" } ?: ""}", style = VTypography.caption, color = VColors.ink3)
                             }
                             VBadge(
@@ -527,17 +530,17 @@ private fun FeeTab(
 
             if (data.recent.isNotEmpty()) {
                 Column {
-                    Text(appString(StringKeys.REC_RECENT), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_RECENT), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         data.recent.forEachIndexed { index, f ->
                             RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, data.recent.isNotEmpty())) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
                                     Column(Modifier.weight(1f)) {
-                                        Text(f.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        Text(f.title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         Text(f.dueDate?.let { appString(StringKeys.REC_DUE_DATE, "category" to f.category, "date" to it) } ?: f.category, style = VTypography.caption, color = VColors.ink3)
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("${f.currency} ${formatMoney(f.amount)}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        Text("${f.currency} ${formatMoney(f.amount)}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         Spacer(Modifier.height(4.dp))
                                         VBadge(
                                             text = f.status,
@@ -609,6 +612,15 @@ private fun PaceTab(
     onResolve: (String) -> Unit,
     onRecalculate: () -> Unit,
 ) {
+    var selectedSnapshot by remember { mutableStateOf<PaceSnapshotDto?>(null) }
+
+    selectedSnapshot?.let { snap ->
+        PaceSnapshotDetailSheet(
+            snapshot = snap,
+            onDismiss = { selectedSnapshot = null },
+        )
+    }
+
     VStateHost(
         loading = state.isLoading,
         error = state.errorMessage,
@@ -633,7 +645,7 @@ private fun PaceTab(
             // ── Active alerts ──
             if (state.alerts.isNotEmpty()) {
                 Column {
-                    Text(appString(StringKeys.REC_ACTIVE_ALERTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_ACTIVE_ALERTS), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.alerts.forEachIndexed { index, alert ->
                             RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.alerts.isNotEmpty())) {
@@ -649,7 +661,7 @@ private fun PaceTab(
                                         modifier = Modifier.size(18.dp).padding(top = 2.dp),
                                     )
                                     Column(Modifier.weight(1f)) {
-                                        Text("${alert.subject} • ${alert.className}-${alert.section}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        Text("${alert.subject} • ${alert.className}-${alert.section}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (alert.teacherName.isNotBlank()) {
                                             Text(alert.teacherName, style = VTypography.caption, color = VColors.ink3)
                                         }
@@ -689,20 +701,27 @@ private fun PaceTab(
             // ── Pace snapshots ──
             if (state.snapshots.isNotEmpty()) {
                 Column {
-                    Text(appString(StringKeys.REC_PACE_SNAPSHOTS), style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(appString(StringKeys.REC_PACE_SNAPSHOTS), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink, modifier = Modifier.padding(bottom = 8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.snapshots.forEachIndexed { index, snap ->
-                            RecordsCreamCard(modifier = Modifier.staggeredItemEntrance(index, state.snapshots.isNotEmpty())) {
+                            RecordsCreamCard(
+                                modifier = Modifier
+                                    .staggeredItemEntrance(index, state.snapshots.isNotEmpty())
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { selectedSnapshot = snap },
+                            ) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Column(Modifier.weight(1f)) {
-                                        Text("${snap.subject} • ${snap.className}-${snap.section}", style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                                        Text("${snap.subject} • ${snap.className}-${snap.section}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
                                         if (snap.teacherName.isNotBlank()) {
                                             Text(snap.teacherName, style = VTypography.caption, color = VColors.ink3)
                                         }
                                         Text(appString(StringKeys.REC_TOPICS_COVERED, "covered" to snap.coveredTopics, "total" to snap.totalTopics), style = VTypography.caption, color = VColors.ink3)
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("${snap.actualPct}%", style = VTypography.bodySmall.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
+                                        Text("${snap.actualPct}%", style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
                                         Text(appString(StringKeys.REC_EXPECTED, "pct" to snap.expectedPct), style = VTypography.caption.copy(fontSize = 10.sp), color = VColors.ink3)
                                     }
                                 }
@@ -731,6 +750,97 @@ private fun PaceTab(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PaceSnapshotDetailSheet(
+    snapshot: PaceSnapshotDto,
+    onDismiss: () -> Unit,
+) {
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
+    ) {
+        VBottomSheetHeader(title = "Pace Detail")
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "${snapshot.subject} • ${snapshot.className}-${snapshot.section}",
+                style = VTypography.h3,
+                color = VColors.ink,
+            )
+            if (snapshot.teacherName.isNotBlank()) {
+                Text(snapshot.teacherName, style = VTypography.caption, color = VColors.ink3)
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    Text("Covered", style = VTypography.caption, color = VColors.ink3)
+                    Text("${snapshot.coveredTopics} / ${snapshot.totalTopics}", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Actual", style = VTypography.caption, color = VColors.ink3)
+                    Text("${snapshot.actualPct}%", style = VTypography.caption.copy(fontWeight = FontWeight.ExtraBold), color = VColors.ink)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Expected", style = VTypography.caption, color = VColors.ink3)
+                    Text("${snapshot.expectedPct}%", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink2)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Deviation", style = VTypography.caption, color = VColors.ink3)
+                    Text(
+                        "${if (snapshot.deviationPct >= 0) "+" else ""}${snapshot.deviationPct}%",
+                        style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+                        color = when (snapshot.status) {
+                            "CRITICAL" -> VColors.coral
+                            "BEHIND" -> VColors.gold
+                            "AHEAD" -> VColors.success
+                            else -> VColors.ink2
+                        },
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            VProgressBar(
+                value = snapshot.actualPct.toFloat(),
+                tone = when (snapshot.status) {
+                    "CRITICAL" -> VBadgeTone.Danger
+                    "BEHIND" -> VBadgeTone.Warning
+                    "AHEAD" -> VBadgeTone.Success
+                    else -> VBadgeTone.Arctic
+                },
+            )
+            Spacer(Modifier.height(4.dp))
+            VBadge(
+                text = snapshot.status.replace('_', ' '),
+                tone = when (snapshot.status) {
+                    "CRITICAL" -> VBadgeTone.Danger
+                    "BEHIND" -> VBadgeTone.Warning
+                    "AHEAD" -> VBadgeTone.Success
+                    else -> VBadgeTone.Arctic
+                },
+            )
+            if (snapshot.calculatedAt != null) {
+                Text(
+                    "Calculated: ${snapshot.calculatedAt}",
+                    style = VTypography.caption.copy(fontSize = 10.sp),
+                    color = VColors.ink3,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            VButton(
+                text = "Close",
+                onClick = onDismiss,
+                variant = VButtonVariant.Ghost,
+                full = true,
+            )
         }
     }
 }

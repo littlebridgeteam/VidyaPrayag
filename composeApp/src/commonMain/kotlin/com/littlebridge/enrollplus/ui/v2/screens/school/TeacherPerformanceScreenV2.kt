@@ -164,7 +164,7 @@ private fun StarRow(t: StarTeacher, modifier: Modifier = Modifier) {
         VBadge(text = "#${t.rank}", tone = if (t.rank == 1) VBadgeTone.Warning else VBadgeTone.Arctic)
         VAvatar(name = t.name.ifBlank { "?" }, src = t.imageUrl.ifBlank { null }, size = 36.dp)
         Column(Modifier.weight(1f)) {
-            Text(t.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(t.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(Modifier.height(2.dp))
             Text(t.department, style = VTypography.caption.copy(color = VColors.ink3))
         }
@@ -194,7 +194,7 @@ private fun AccountabilityCard(f: FacultyAccountability, modifier: Modifier = Mo
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         f.name,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = f.riskCorrelation, tone = riskTone)
@@ -225,7 +225,7 @@ private fun MiniStat(label: String, value: String) {
 private fun DeptRow(d: DeptEfficiency, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(d.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(d.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Text("${d.percentage}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
         }
         Spacer(Modifier.height(6.dp))

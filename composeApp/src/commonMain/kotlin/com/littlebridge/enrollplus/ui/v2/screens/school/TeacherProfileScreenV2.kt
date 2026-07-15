@@ -230,7 +230,7 @@ private fun HeroFact(icon: ImageVector, label: String, value: String) {
             Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(16.dp))
         }
         Column {
-            Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
             Text(label, style = VTypography.label, color = VColors.ink3)
         }
     }
@@ -319,7 +319,7 @@ private fun KpiCard(data: KpiCardData) {
         }
         Spacer(Modifier.height(12.dp))
         Text(data.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp), color = VColors.ink)
-        Text(data.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+        Text(data.label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
         Text(data.support, style = VTypography.label, color = VColors.ink3)
     }
 }
@@ -344,8 +344,8 @@ private fun PerformanceOverview(p: TeacherProfileDto) {
 private fun MetricBar(label: String, value: Float, tone: VBadgeTone) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-            Text("${value.toInt()}%", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+            Text("${value.toInt()}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
         }
         VProgressBar(value = value, tone = tone, height = 8.dp)
     }
@@ -450,7 +450,7 @@ private fun TimelineRow(activity: TeacherActivityDto, isLast: Boolean) {
             }
         }
         Column(Modifier.padding(bottom = if (isLast) 0.dp else 12.dp)) {
-            Text(activity.title, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(activity.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
             Text(formatActivityMeta(activity), style = VTypography.label, color = VColors.ink3)
         }
     }
@@ -537,7 +537,7 @@ private fun DetailRow(icon: ImageVector, label: String, value: String) {
         }
         Column(Modifier.weight(1f)) {
             Text(label, style = VTypography.label, color = VColors.ink3)
-            Text(value, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
         }
     }
 }
@@ -553,7 +553,7 @@ private fun DangerZone(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_DANGER_ZONE))
         VCard(padding = 18.dp, border = true) {
-            Text(appString(StringKeys.SCH_REMOVE_TEACHER), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.error)
+            Text(appString(StringKeys.SCH_REMOVE_TEACHER), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.error)
             Spacer(Modifier.height(4.dp))
             Text(
                 appString(StringKeys.SCH_REMOVE_TEACHER_DANGER),

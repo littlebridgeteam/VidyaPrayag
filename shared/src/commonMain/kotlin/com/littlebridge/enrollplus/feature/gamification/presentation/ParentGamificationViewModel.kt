@@ -561,20 +561,24 @@ class AdminGamificationViewModel(
                 "gamification_boosts" -> currentFlags.copy(gamificationBoosts = enabled)
                 else -> currentFlags
             }
-            _state.update { it.copy(flags = updated) }
+            _state.update { it.copy(flags = updated, isActionLoading = true, actionMessage = null) }
         }
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }
+                return@launch
+            }
             val result = repository.setGranularFlag(token, flagKey, enabled)
             _state.update {
                 it.copy(
+                    isActionLoading = false,
                     actionMessage = when (result) {
                         is NetworkResult.Success -> "${flagKey.removePrefix("gamification_").replaceFirstChar { it.uppercase() }} ${if (enabled) "enabled" else "disabled"}"
                         else -> "Failed to update ${flagKey.removePrefix("gamification_")}"
                     },
                 )
             }
-            if (result !is NetworkResult.Success) load()
+            load()
         }
     }
 

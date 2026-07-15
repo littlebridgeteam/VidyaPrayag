@@ -66,7 +66,7 @@ fun ScheduledMessagesScreenV2(
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 20.dp),
     ) {
         VBackHeader(title = "Scheduled Messages", onBack = onBack)
         Spacer(Modifier.height(12.dp))
@@ -164,7 +164,7 @@ private fun ScheduledMessageCard(
         val (badgeText, badgeTone) = statusBadge(message.status)
 
     VCard(modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

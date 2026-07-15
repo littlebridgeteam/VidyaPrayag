@@ -87,6 +87,8 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -151,14 +153,14 @@ fun SchoolOnboardingScreenV2(
     var newTeacherName by remember { mutableStateOf("") }
     var newTeacherEmail by remember { mutableStateOf("") }
 
-    val basicSubmitting by basicVm.isSubmitting.collectAsState()
-    val basicError by basicVm.errorMessage.collectAsState()
-    val brandingSubmitting by brandingVm.isSubmitting.collectAsState()
-    val brandingError by brandingVm.errorMessage.collectAsState()
-    val academicSubmitting by academicVm.isSubmitting.collectAsState()
-    val academicError by academicVm.errorMessage.collectAsState()
-    val launchSubmitting by launchVm.isSubmitting.collectAsState()
-    val launchError by launchVm.errorMessage.collectAsState()
+    val basicSubmitting by basicVm.isSubmitting.collectAsStateV2()
+    val basicError by basicVm.errorMessage.collectAsStateV2()
+    val brandingSubmitting by brandingVm.isSubmitting.collectAsStateV2()
+    val brandingError by brandingVm.errorMessage.collectAsStateV2()
+    val academicSubmitting by academicVm.isSubmitting.collectAsStateV2()
+    val academicError by academicVm.errorMessage.collectAsStateV2()
+    val launchSubmitting by launchVm.isSubmitting.collectAsStateV2()
+    val launchError by launchVm.errorMessage.collectAsStateV2()
 
     val isSubmitting = basicSubmitting || brandingSubmitting || academicSubmitting || launchSubmitting
 
@@ -235,8 +237,8 @@ fun SchoolOnboardingScreenV2(
     }
 
     if (step > 6) {
-        val launchState by launchVm.state.collectAsState()
-        val provisionState by teacherProvisionVm.state.collectAsState()
+        val launchState by launchVm.state.collectAsStateV2()
+        val provisionState by teacherProvisionVm.state.collectAsStateV2()
         val resolvedName = launchState.schoolName
             .takeIf { it.isNotBlank() && it != "—" }
             ?: legalName.takeIf { it.isNotBlank() }

@@ -441,7 +441,7 @@ private fun PeriodTimelineCard(
             Modifier.width(66.dp).padding(vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(period.startTime, style = VTypography.bodySmall.copy(color = VColors.ink))
+            Text(period.startTime, style = VTypography.caption.copy(color = VColors.ink))
             Box(Modifier.width(1.dp).height(10.dp).background(VColors.line))
             Text(period.endTime, style = VTypography.caption.copy(color = VColors.ink3))
         }

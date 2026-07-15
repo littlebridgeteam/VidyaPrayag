@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
-import com.littlebridge.enrollplus.feature.teacher.domain.model.AttendanceAnalyticsDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.CreateSyllabusUnitRequest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizDto
 import com.littlebridge.enrollplus.feature.teacher.domain.model.QuizGenerateRequest
@@ -118,10 +117,6 @@ data class TeacherSyllabusState(
     val leaderboard: TeacherQuizLeaderboardData? = null,
     val leaderboardLoading: Boolean = false,
     val leaderboardError: String? = null,
-    // ── Compare attendance toggle ──
-    val compareAttendance: Boolean = false,
-    val attendanceAnalytics: AttendanceAnalyticsDto? = null,
-    val attendanceAnalyticsLoading: Boolean = false,
     // ── Agentic: NCERT auto-fill ──
     val isAutoFilling: Boolean = false,
     val autoFillChapters: List<SylAutoFillChapter> = emptyList(),
@@ -775,34 +770,7 @@ class TeacherSyllabusViewModel(
         }
     }
 
-    fun closeLeaderboard() = _state.update { it.copy(showLeaderboard = false, leaderboard = null, leaderboardError = null, leaderboardQuizId = "", compareAttendance = false, attendanceAnalytics = null) }
-
-    fun toggleCompareAttendance() {
-        val current = _state.value
-        val newValue = !current.compareAttendance
-        _state.update { it.copy(compareAttendance = newValue) }
-        if (newValue && current.attendanceAnalytics == null && !current.attendanceAnalyticsLoading) {
-            loadAttendanceForComparison()
-        }
-    }
-
-    private fun loadAttendanceForComparison() {
-        val assignmentId = _state.value.assignmentId
-        if (assignmentId.isBlank()) return
-        _state.update { it.copy(attendanceAnalyticsLoading = true) }
-        viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first()
-            if (token == null) {
-                _state.update { it.copy(attendanceAnalyticsLoading = false) }
-                return@launch
-            }
-            when (val result = repository.getAttendanceAnalytics(token, assignmentId)) {
-                is NetworkResult.Success -> _state.update { it.copy(attendanceAnalyticsLoading = false, attendanceAnalytics = result.data.data) }
-                is NetworkResult.Error -> _state.update { it.copy(attendanceAnalyticsLoading = false) }
-                is NetworkResult.ConnectionError -> _state.update { it.copy(attendanceAnalyticsLoading = false) }
-            }
-        }
-    }
+    fun closeLeaderboard() = _state.update { it.copy(showLeaderboard = false, leaderboard = null, leaderboardError = null, leaderboardQuizId = "") }
 
     // ── NCERT Auto-fill ──────────────────────────────────────────────────
 

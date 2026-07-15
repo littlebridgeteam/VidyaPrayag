@@ -37,7 +37,6 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -78,6 +77,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * RA-51: parent Messages inbox + conversation detail. Mirror of the admin
@@ -312,7 +312,7 @@ private fun ParentThreadListContent(
         when {
             loading && threads.isEmpty() ->
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                    TeacherSpinner(36.dp)
                 }
 
             error != null && threads.isEmpty() ->
@@ -427,7 +427,7 @@ private fun ParentThreadRow(thread: ParentMessageThreadDto, onClick: () -> Unit)
             ) {
                 Text(
                     thread.lastMessage,
-                    style = VTypography.bodySmall,
+                    style = VTypography.caption,
                     color = if (thread.unreadCount > 0) VColors.ink2 else VColors.ink3,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -509,7 +509,7 @@ private fun ParentComposeNewContent(
             when {
                 loading && recipients.isEmpty() ->
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                        TeacherSpinner(36.dp)
                     }
 
                 error != null && recipients.isEmpty() ->
@@ -675,7 +675,7 @@ private fun ParentConversationContent(
             when {
                 loading && messages.isEmpty() ->
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = VColors.violet, modifier = Modifier.size(36.dp))
+                        TeacherSpinner(36.dp)
                     }
 
                 error != null && messages.isEmpty() ->

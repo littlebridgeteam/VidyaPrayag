@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,11 +38,14 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * ParentReportScreen — replaces the AiReportCardPreview placeholder.
@@ -58,7 +60,7 @@ fun ParentReportScreen(
     onDraftIdConsumed: () -> Unit = {},
     viewModel: ParentReportViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateV2()
     val c = VTheme.colors
 
     LaunchedEffect(childId) {
@@ -80,12 +82,12 @@ fun ParentReportScreen(
         Modifier.fillMaxSize().background(VColors.cream),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        PremiumOverlayHeader(title = appString(StringKeys.PR_AI_REPORT_CARD), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.PR_AI_REPORT_CARD), onBack = onBack)
 
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = c.accent)
+                    TeacherSpinner()
                 }
             }
             state.error != null -> {
@@ -94,6 +96,11 @@ fun ParentReportScreen(
                         Icon(VIcons.AlertCircle, contentDescription = null, tint = c.danger, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
                         Text(state.error ?: "", style = VTheme.type.body.colored(c.ink2))
+                        Spacer(Modifier.height(12.dp))
+                        VButton(
+                            text = appString(StringKeys.COMMON_BUTTON_RETRY),
+                            onClick = { viewModel.loadReports(childId); viewModel.loadConferencePack(childId) },
+                        )
                     }
                 }
             }

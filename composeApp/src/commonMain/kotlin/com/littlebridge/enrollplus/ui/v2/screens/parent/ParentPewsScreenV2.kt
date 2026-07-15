@@ -91,8 +91,8 @@ private fun ParentPewsContent(
         error = state.error,
         isEmpty = !state.isLoading && state.error == null && state.nudge == null,
         emptyIcon = VIcons.ShieldCheck,
-        emptyTitle = "All good!",
-        emptyBody = "There's no specific concern for $childName right now. Keep up the great support!",
+        emptyTitle = appString(StringKeys.PPEWS_ALL_GOOD),
+        emptyBody = appString(StringKeys.PPEWS_ALL_GOOD_BODY, "name" to childName),
         onRetry = onRetry,
         modifier = modifier,
     ) {
@@ -127,12 +127,12 @@ private fun NudgeCard(nudge: PewsParentNudgeDto, onAction: (String) -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(
                     nudge.headline,
-                    style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 15.sp),
+                    style = VTheme.type.bodyStrong.colored(c.ink),
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     nudge.message,
-                    style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp),
+                    style = VTheme.type.body.colored(c.ink2),
                 )
             }
         }
@@ -144,8 +144,8 @@ private fun NudgeCard(nudge: PewsParentNudgeDto, onAction: (String) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(appString(StringKeys.PPEWS_ATTENDANCE), style = VTheme.type.caption.colored(c.ink3).copy(fontSize = 12.sp))
-                Text("$att%", style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 14.sp))
+                Text(appString(StringKeys.PPEWS_ATTENDANCE), style = VTheme.type.caption.colored(c.ink3))
+                Text("$att%", style = VTheme.type.bodyStrong.colored(c.ink))
             }
         }
 
@@ -177,13 +177,13 @@ private fun AllClearCard(childName: String) {
             }
             Column {
                 Text(
-                    "All on track",
-                    style = VTheme.type.bodyStrong.colored(c.ink).copy(fontSize = 15.sp),
+                    appString(StringKeys.PPEWS_ALL_ON_TRACK),
+                    style = VTheme.type.bodyStrong.colored(c.ink),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "$childName is doing well. No specific concerns at this time.",
-                    style = VTheme.type.body.colored(c.ink2).copy(fontSize = 13.sp, lineHeight = 19.sp),
+                    appString(StringKeys.PPEWS_ALL_ON_TRACK_BODY, "name" to childName),
+                    style = VTheme.type.body.colored(c.ink2),
                 )
             }
         }

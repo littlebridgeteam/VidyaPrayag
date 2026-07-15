@@ -60,6 +60,7 @@ import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * PROFILE tab — the teacher's account home, RESTRUCTURED into a premium layout.
@@ -91,6 +92,7 @@ fun TeacherProfileScreenV2(
     teacherName: String = "",
     unreadCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
+    onOpenSalary: () -> Unit = {},
     profileViewModel: TeacherProfileViewModel = koinViewModel(),
     actionsViewModel: TeacherProfileActionsViewModel = koinViewModel(),
 ) {
@@ -201,6 +203,21 @@ fun TeacherProfileScreenV2(
                         actionsViewModel.clearPasswordResult()
                     },
                 )
+            }
+        }
+
+        // ── SALARY & PAYMENTS
+        item {
+            SettingsGroup(label = "Salary & Payments", icon = VIcons.Wallet, tint = VColors.violet) {
+                TCard {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clickable { onOpenSalary() },
+                    ) {
+                        Text("View Salary History", style = VtT.h3.coloredV(c.navyDeep))
+                        Spacer(Modifier.height(4.dp))
+                        Text("See your monthly salary breakdown and payment status", style = VtT.caption.coloredV(c.ink3))
+                    }
+                }
             }
         }
 

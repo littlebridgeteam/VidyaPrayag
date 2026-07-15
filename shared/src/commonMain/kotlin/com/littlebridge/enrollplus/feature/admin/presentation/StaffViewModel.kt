@@ -81,7 +81,14 @@ class StaffViewModel(
         load(q)
     }
 
-    fun addStaff(fullName: String, role: String, department: String, phone: String, email: String) {
+    fun addStaff(
+        fullName: String,
+        role: String,
+        department: String,
+        phone: String,
+        email: String,
+        onAdded: (() -> Unit)? = null,
+    ) {
         if (fullName.isBlank() || role.isBlank()) {
             _state.value = _state.value.copy(addError = "Name and role are required.")
             return
@@ -104,6 +111,7 @@ class StaffViewModel(
                 is NetworkResult.Success -> {
                     AnalyticsTracker.event("vp_staff_created", mapOf("role" to role))
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Staff member added")
+                    onAdded?.invoke()
                     load()
                 }
                 is NetworkResult.Error -> {

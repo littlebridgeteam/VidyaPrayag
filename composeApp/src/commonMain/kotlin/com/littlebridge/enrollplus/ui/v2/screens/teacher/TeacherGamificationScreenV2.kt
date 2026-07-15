@@ -433,7 +433,7 @@ fun TeacherClassGamificationCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Mentor: ${mId.take(8)}...", style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                            Text("Mentor: ${mId.take(8)}...", style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                             Text("Mentee: ${meId.take(8)}...", style = VTypography.caption, color = c.ink3)
                         }
                         Text(
@@ -509,7 +509,7 @@ fun TeacherClassGamificationCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("${s1.take(8)}... & ${s2.take(8)}...", style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                            Text("${s1.take(8)}... & ${s2.take(8)}...", style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                             Text("Study buddies", style = VTypography.caption, color = c.ink3)
                         }
                         Text(
@@ -642,18 +642,18 @@ private fun LeaderboardRow(entry: LeaderboardEntry, rank: Int) {
             modifier = Modifier.size(28.dp).clip(CircleShape).background(rankColor.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) {
-            Text("$rank", style = VTypography.bodySmall, color = rankColor, fontWeight = FontWeight.Bold)
+            Text("$rank", style = VTypography.caption, color = rankColor, fontWeight = FontWeight.Bold)
         }
         Text(
             "Student #${entry.studentId.takeLast(6)}",
-            style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.Medium,
+            style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
             "${entry.totalXp} XP",
-            style = VTypography.bodySmall,
+            style = VTypography.caption,
             color = c.accent,
             fontWeight = FontWeight.Bold,
         )
@@ -681,7 +681,7 @@ private fun ClassGoalRow(
         ) {
             Text(
                 goalType,
-                style = VTypography.bodySmall, color = c.navyDeep, fontWeight = FontWeight.SemiBold,
+                style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold,
             )
             Text(
                 "$current/$target",

@@ -120,6 +120,7 @@ fun SchoolPeopleScreenV2(
     // RA-TAM — overflow "Assign classes" opens the reusable assignment module.
     onAssignClasses: (String) -> Unit = {},
     onOpenStaff: (String) -> Unit = {},
+    onOpenMessages: (String?) -> Unit = {},
     onGraduateStudents: (List<String>, Int) -> Unit = { _, _ -> },
     teachersViewModel: SchoolTeachersViewModel = koinViewModel(),
     studentsViewModel: StudentRosterViewModel = koinViewModel(),
@@ -148,6 +149,7 @@ fun SchoolPeopleScreenV2(
         onAddTeacher = teachersViewModel::addTeacher,
         onLoadMoreTeachers = teachersViewModel::loadMore,
         onDeactivateTeacher = teachersViewModel::removeTeacher,
+        onClearTeacherMessages = teachersViewModel::clearMessages,
         studentsState = studentsState,
         onStudentsRetry = studentsViewModel::load,
         onStudentSearch = { studentsViewModel.load() }, // students VM reloads full list; client-side filter below
@@ -159,11 +161,13 @@ fun SchoolPeopleScreenV2(
         onStaffRetry = staffViewModel::load,
         onStaffSearch = staffViewModel::onQueryChange,
         onAddStaff = staffViewModel::addStaff,
+        onClearStaffMessages = staffViewModel::clearMessages,
         onOpenLinkRequests = onOpenLinkRequests,
         onOpenStudent = onOpenStudent,
         onOpenTeacher = onOpenTeacher,
         onAssignClasses = onAssignClasses,
         onOpenStaff = onOpenStaff,
+        onOpenMessages = onOpenMessages,
         onGraduateStudents = onGraduateStudents,
         modifier = modifier,
     )
@@ -176,6 +180,7 @@ private fun SchoolPeopleContent(
     onAddTeacher: (name: String, identifier: String, initialPassword: String?, onAdded: (() -> Unit)?) -> Unit,
     onLoadMoreTeachers: () -> Unit,
     onDeactivateTeacher: (String) -> Unit,
+    onClearTeacherMessages: () -> Unit,
     studentsState: StudentRosterState,
     onStudentsRetry: () -> Unit,
     onStudentSearch: (String) -> Unit,
@@ -186,12 +191,14 @@ private fun SchoolPeopleContent(
     staffState: StaffRosterState,
     onStaffRetry: () -> Unit,
     onStaffSearch: (String) -> Unit,
-    onAddStaff: (name: String, role: String, department: String, phone: String, email: String) -> Unit,
+    onAddStaff: (name: String, role: String, department: String, phone: String, email: String, onAdded: (() -> Unit)?) -> Unit,
+    onClearStaffMessages: () -> Unit,
     onOpenLinkRequests: () -> Unit,
     onOpenStudent: (String) -> Unit,
     onOpenTeacher: (String) -> Unit,
     onAssignClasses: (String) -> Unit,
     onOpenStaff: (String) -> Unit,
+    onOpenMessages: (String?) -> Unit,
     onGraduateStudents: (List<String>, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -321,6 +328,7 @@ private fun SchoolPeopleContent(
                         onRetry = onStudentsRetry,
                         onOpenStudent = onOpenStudent,
                         onOpenLinkRequests = onOpenLinkRequests,
+                        onOpenMessages = onOpenMessages,
                         onAddClick = { showAddStudent = true },
                         onImportClick = { showImportStudents = true },
                         onGraduateClick = { studentIds, year -> onGraduateStudents(studentIds, year) },
@@ -341,7 +349,8 @@ private fun SchoolPeopleContent(
     if (showAddTeacher) {
         AddTeacherSheet(
             isSubmitting = teachersState.isMutating,
-            onDismiss = { showAddTeacher = false },
+            error = teachersState.errorMessage,
+            onDismiss = { showAddTeacher = false; onClearTeacherMessages() },
             onSubmit = { name, identifier, password ->
                 onAddTeacher(name, identifier, password) { showAddTeacher = false }
             },
@@ -352,10 +361,10 @@ private fun SchoolPeopleContent(
     if (showAddStaff) {
         AddStaffSheet(
             isSubmitting = staffState.isSaving,
-            onDismiss = { showAddStaff = false },
+            error = staffState.addError,
+            onDismiss = { showAddStaff = false; onClearStaffMessages() },
             onSubmit = { name, role, dept, phone, email ->
-                onAddStaff(name, role, dept, phone, email)
-                showAddStaff = false
+                onAddStaff(name, role, dept, phone, email) { showAddStaff = false }
             },
         )
     }
@@ -551,6 +560,7 @@ private fun StudentsSubTab(
     onRetry: () -> Unit,
     onOpenStudent: (String) -> Unit,
     onOpenLinkRequests: () -> Unit,
+    onOpenMessages: (String?) -> Unit,
     onAddClick: () -> Unit,
     onImportClick: () -> Unit,
     onGraduateClick: (List<String>, Int) -> Unit,
@@ -699,8 +709,7 @@ private fun StudentsSubTab(
                             else snackMessage = "No parent phone available for ${s.fullName}"
                         },
                         onMessage = {
-                            if (phone != null) phoneHelper.sendSms(phone)
-                            else snackMessage = "No parent phone available for ${s.fullName}"
+                            onOpenMessages(s.parentUserId)
                         },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
@@ -952,6 +961,7 @@ private fun StaffSubTab(
 @Composable
 private fun AddTeacherSheet(
     isSubmitting: Boolean,
+    error: String?,
     onDismiss: () -> Unit,
     onSubmit: (name: String, identifier: String, initialPassword: String?) -> Unit,
 ) {
@@ -1003,6 +1013,14 @@ private fun AddTeacherSheet(
                 )
             }
             Spacer(Modifier.height(4.dp))
+            if (error != null) {
+                Text(
+                    error,
+                    style = VTypography.caption,
+                    color = VColors.coral,
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             VButton(
                 text = appString(StringKeys.PPL_ADD_TEACHER),
                 onClick = {
@@ -1031,6 +1049,7 @@ private fun AddTeacherSheet(
 @Composable
 private fun AddStaffSheet(
     isSubmitting: Boolean,
+    error: String?,
     onDismiss: () -> Unit,
     onSubmit: (name: String, role: String, department: String, phone: String, email: String) -> Unit,
 ) {
@@ -1086,6 +1105,14 @@ private fun AddStaffSheet(
                 keyboardType = KeyboardType.Email,
             )
             Spacer(Modifier.height(4.dp))
+            if (error != null) {
+                Text(
+                    error,
+                    style = VTypography.caption,
+                    color = VColors.coral,
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             VButton(
                 text = appString(StringKeys.PPL_ADD_STAFF),
                 onClick = { onSubmit(name, role, department, phone, email) },

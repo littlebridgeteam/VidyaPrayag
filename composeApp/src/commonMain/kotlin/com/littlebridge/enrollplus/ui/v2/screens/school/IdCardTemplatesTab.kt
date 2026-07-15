@@ -311,7 +311,7 @@ internal fun TemplatesTab(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(appString(StringKeys.IDCARD_CARD_TYPE), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_CARD_TYPE), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("student" to appString(StringKeys.IDCARD_STUDENT), "teacher" to appString(StringKeys.IDCARD_TEACHER_ROLE), "staff" to appString(StringKeys.IDCARD_STAFF_ROLE)).forEach { (role, label) ->
@@ -325,7 +325,7 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(appString(StringKeys.IDCARD_FIELDS_DISPLAY), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_FIELDS_DISPLAY), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(modifier = Modifier.height(6.dp))
             AVAILABLE_FIELDS.chunked(3).forEach { rowFields ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -344,7 +344,7 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(appString(StringKeys.IDCARD_ACCENT_COLOR), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_ACCENT_COLOR), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(modifier = Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PRESET_COLORS.forEach { (argb, name) ->
@@ -358,7 +358,7 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(appString(StringKeys.IDCARD_LIVE_PREVIEW), style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            Text(appString(StringKeys.IDCARD_LIVE_PREVIEW), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
             Spacer(modifier = Modifier.height(8.dp))
             LiveCardPreview(
                 templateName = templateName.ifBlank { appString(StringKeys.IDCARD_PREVIEW) },
@@ -537,7 +537,7 @@ private fun LiveCardPreview(
                     if ("name" in fields) {
                         Text(
                             text = templateName,
-                            style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
+                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
                             maxLines = 2,
                         )
                     }
@@ -656,7 +656,7 @@ private fun TemplateCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     template.name,
-                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = if (enabled) VColors.ink else VColors.ink3),
+                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = if (enabled) VColors.ink else VColors.ink3),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {

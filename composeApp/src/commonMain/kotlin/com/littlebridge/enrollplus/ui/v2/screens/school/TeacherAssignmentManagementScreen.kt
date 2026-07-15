@@ -242,7 +242,7 @@ private fun KpiCard(data: KpiData) {
         }
         Spacer(Modifier.height(12.dp))
         Text(data.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
-        Text(data.label, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
+        Text(data.label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
         Text(data.support, style = VTypography.label.copy(color = VColors.ink3))
     }
 }
@@ -409,7 +409,7 @@ private fun AddAssignment(
                 StepLabel(appString(StringKeys.SCH_STEP_4_PREVIEW))
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(12.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(draft.subjectName?:"", style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+                        Text(draft.subjectName?:"", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             previewTargets.forEach { t -> VBadge(text = t, tone = VBadgeTone.Arctic) }
                         }
@@ -500,7 +500,7 @@ private fun DistributionVisual(overview: TeacherAssignmentOverviewDto) {
                 dist.forEach { d ->
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(d.subject, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
+                            Text(d.subject, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
                             Text(
                                 appString(StringKeys.SCH_CLS_STU, "classCount" to d.classCount.toString(), "studentCount" to d.studentCount.toString()),
                                 style = VTypography.label.copy(color = VColors.ink3),

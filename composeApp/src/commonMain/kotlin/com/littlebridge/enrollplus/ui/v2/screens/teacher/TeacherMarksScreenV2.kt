@@ -55,6 +55,7 @@ import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * TeacherMarksScreenV2 — the scoped gradebook (Doc 07), rebuilt on the cream token base
@@ -144,7 +145,7 @@ private fun MarksListMode(
             state.isListLoading && state.assessments.isEmpty() -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
             state.listError != null && state.assessments.isEmpty() -> item {
                 VtCard { Column {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_TESTS), style = VTypography.bodySmall, color = VColors.ink)
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_TESTS), style = VTypography.caption, color = VColors.ink)
                     Spacer(Modifier.height(8.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retryList() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                 } }
@@ -167,7 +168,7 @@ private fun CreateAssessmentComposer(viewModel: TeacherGradebookViewModel, onDon
     val state by viewModel.state.collectAsStateV2()
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(appString(StringKeys.TC_NEW_TEST), style = VTypography.bodySmall, color = VColors.ink)
+            Text(appString(StringKeys.TC_NEW_TEST), style = VTypography.caption, color = VColors.ink)
             VInput(value = state.createName, onValueChange = viewModel::setCreateName, label = appString(StringKeys.TC_TEST_NAME), placeholder = appString(StringKeys.TC_TEST_NAME_PH))
             // Type chips
             Text(appString(StringKeys.TC_TYPE), style = VTypography.label, color = VColors.ink2)
@@ -225,7 +226,7 @@ private fun AssessmentRow(a: AssessmentDto, viewModel: TeacherGradebookViewModel
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             VtIconDisc(VIcons.GraduationCap, tint = statusTint, bg = statusTint.copy(alpha = 0.12f), size = 44.dp, glyph = 22.dp)
             Column(Modifier.weight(1f)) {
-                Text(a.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                Text(a.name, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                 Spacer(Modifier.height(4.dp))
                 Text(
                     buildString {
@@ -290,12 +291,12 @@ private fun MarksGridMode(
                         ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink, modifier = Modifier.size(16.dp)) }
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(a?.name ?: appString(StringKeys.TC_MARKS), style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                            Text(a?.name ?: appString(StringKeys.TC_MARKS), style = VTypography.caption, color = VColors.ink, maxLines = 1)
                             Text(appString(StringKeys.TC_MAX_N_ENTERED_N_OF_N, "max" to state.maxMarks.toString(), "entered" to state.enteredCount.toString(), "total" to state.rosterCount.toString()), style = VTypography.caption, color = VColors.ink3)
                         }
                         state.liveAverage?.let { avg ->
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(fmt1(avg), style = VTypography.bodySmall, color = VColors.violet)
+                                Text(fmt1(avg), style = VTypography.caption, color = VColors.violet)
                                 Text(appString(StringKeys.TC_AVG), style = VTypography.caption, color = VColors.ink3)
                             }
                         }
@@ -314,7 +315,7 @@ private fun MarksGridMode(
             state.isMarksLoading && state.students.isEmpty() -> item { Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { TeacherSpinner() } }
             state.marksError != null && state.students.isEmpty() -> item {
                 VtCard { Column {
-                    Text(appString(StringKeys.TC_COULDNT_LOAD_ROSTER), style = VTypography.bodySmall, color = VColors.ink)
+                    Text(appString(StringKeys.TC_COULDNT_LOAD_ROSTER), style = VTypography.caption, color = VColors.ink)
                     Spacer(Modifier.height(8.dp))
                     VButton(appString(StringKeys.COMMON_BUTTON_RETRY), onClick = { viewModel.retryMarks() }, tone = VButtonTone.Lavender, size = VButtonSize.Sm)
                 } }
@@ -386,7 +387,7 @@ private fun MarkRow(s: GradebookStudentMark, maxMarks: Int, readOnly: Boolean, o
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTypography.bodySmall, color = VColors.ink, maxLines = 1)
+                Text(s.name, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                 Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTypography.caption, color = VColors.ink3)
             }
             // AB toggle
@@ -399,7 +400,7 @@ private fun MarkRow(s: GradebookStudentMark, maxMarks: Int, readOnly: Boolean, o
                     .clickable(enabled = !readOnly) { onToggleAbsent() }
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
-                Text("AB", style = VTypography.bodySmall, color = if (abActive) VColors.coral else VColors.ink3)
+                Text("AB", style = VTypography.caption, color = if (abActive) VColors.coral else VColors.ink3)
             }
             // Mark input
             MarkInput(value = s.marks, maxMarks = maxMarks, enabled = !readOnly && !s.isAbsent, onChange = onMark)

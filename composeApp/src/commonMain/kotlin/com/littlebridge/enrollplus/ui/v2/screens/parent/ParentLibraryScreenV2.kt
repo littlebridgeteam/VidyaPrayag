@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,11 +59,12 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.LibraryViewMode
 import com.littlebridge.enrollplus.ui.v2.screens.library.QrShareDialog
 import com.littlebridge.enrollplus.ui.v2.screens.library.ReadingTimeEstimate
 import com.littlebridge.enrollplus.ui.v2.screens.library.ViewModeToggle
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 private enum class ParentLibraryTab {
     Browse, MyBooks, Reservations,
@@ -105,7 +105,7 @@ fun ParentLibraryScreenV2(
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            PremiumOverlayHeader(
+            VBackHeader(
                 title = appString(StringKeys.PL_LIBRARY),
                 onBack = onBack,
             )
@@ -196,7 +196,7 @@ private fun ParentBrowseTab(
             Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(3) {
                     VCard {
-                        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             ShimmerBox(width = 56.dp, height = 84.dp)
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 ShimmerBox(height = 16.dp, modifier = Modifier.fillMaxWidth(0.7f))
@@ -232,7 +232,7 @@ private fun ParentBrowseTab(
             items(state.books, key = { it.id }) { book ->
                 VCard {
                     Row(
-                        Modifier.fillMaxWidth().padding(12.dp),
+                        Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         BookCover(
@@ -317,7 +317,7 @@ private fun ParentMyBooksTab(state: ParentLibraryState) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
             items(state.issuedBooks, key = { it.id }) { issue ->
                 VCard {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(issue.bookTitle, style = VTheme.type.bodyStrong.colored(c.ink))
                         Text(appString(StringKeys.PL_ISSUED, "date" to issue.issueDate), style = VTheme.type.caption.colored(c.ink2))
                         DueDateBadge(dueDate = issue.dueDate)
@@ -357,7 +357,7 @@ private fun ParentReservationsTab(state: ParentLibraryState, viewModel: ParentLi
             items(state.reservations, key = { it.id }) { reservation ->
                 VCard {
                     Row(
-                        Modifier.fillMaxWidth().padding(16.dp),
+                        Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

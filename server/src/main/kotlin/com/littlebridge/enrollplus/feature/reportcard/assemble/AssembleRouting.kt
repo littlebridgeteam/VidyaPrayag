@@ -174,7 +174,7 @@ fun Route.assembleRouting(service: ReportAssemblyService) {
         }
         if (term == null) {
             call.ok(
-                ReportAssemblyService.OversightSummary(ctx.schoolId, emptyList()),
+                ReportAssemblyService.OversightSummary(ctx.schoolId.toString(), emptyList()),
                 "No current term configured"
             )
             return@get

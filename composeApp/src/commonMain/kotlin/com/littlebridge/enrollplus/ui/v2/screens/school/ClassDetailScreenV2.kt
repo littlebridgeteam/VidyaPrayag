@@ -200,7 +200,7 @@ private fun StudentRowCard(
         ) {
             VAvatar(name = student.fullName, src = student.profilePhotoUrl, size = 44.dp)
             Column(Modifier.weight(1f)) {
-                Text(student.fullName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(student.fullName, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (student.section.isNotBlank()) VBadge(text = appString(StringKeys.CD_SEC).replace("{section}", student.section), tone = VBadgeTone.Accent)
                     Text(appString(StringKeys.CD_ROLL).replace("{number}", student.rollNumber), style = VTypography.caption, color = VColors.ink3)
@@ -294,7 +294,7 @@ private fun TeacherRowCard(
         ) {
             VAvatar(name = teacher.name, size = 44.dp)
             Column(Modifier.weight(1f)) {
-                Text(teacher.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
+                Text(teacher.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
                 if (teacher.subject.isNotBlank()) {
                     Text(teacher.subject, style = VTypography.caption, color = VColors.ink2)
                 }
@@ -484,7 +484,7 @@ private fun ClassAnalyticsSubTab(
                     ) {
                         VBadge(text = "★ 1ST", tone = VBadgeTone.Warning)
                         Column(Modifier.weight(1f)) {
-                            Text(state.topPerformerName, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(state.topPerformerName, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (state.topPerformerDetails.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
                                 Text(state.topPerformerDetails, style = VTypography.caption, color = VColors.ink3, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -526,8 +526,8 @@ private fun AnalyticsRiskTile(label: String, value: String, tone: VBadgeTone) {
 private fun AnalyticsGradeRow(g: com.littlebridge.enrollplus.feature.admin.presentation.GradeDistribution) {
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(g.grade, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
-            Text("${g.percentage}%", style = VTypography.bodySmall, color = VColors.ink2)
+            Text(g.grade, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Text("${g.percentage}%", style = VTypography.caption, color = VColors.ink2)
         }
         Spacer(Modifier.height(6.dp))
         VProgressBar(value = (g.value * 100f).coerceIn(0f, 100f))
@@ -546,8 +546,8 @@ private fun AnalyticsSubjectRow(s: com.littlebridge.enrollplus.feature.admin.pre
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(s.name, style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, modifier = Modifier.weight(1f))
-        Text("${s.percentage}%", style = VTypography.bodySmall, color = VColors.ink2)
+        Text(s.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, modifier = Modifier.weight(1f))
+        Text("${s.percentage}%", style = VTypography.caption, color = VColors.ink2)
         VBadge(text = trendText, tone = trendTone)
     }
 }
@@ -572,13 +572,13 @@ private fun AnalyticsProgressRow(p: com.littlebridge.enrollplus.feature.admin.pr
                     .background(VColors.surfaceCard)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                Text(p.initials.take(2).uppercase(), style = VTypography.bodySmall, color = VColors.ink)
+                Text(p.initials.take(2).uppercase(), style = VTypography.caption, color = VColors.ink)
             }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         p.name,
-                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
+                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink,
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     VBadge(text = p.status, tone = statusTone)
@@ -586,7 +586,7 @@ private fun AnalyticsProgressRow(p: com.littlebridge.enrollplus.feature.admin.pr
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "${appString(StringKeys.CD_MATH)} ${p.math} · ${appString(StringKeys.CD_SCI)} ${p.science} · ${appString(StringKeys.CD_LIT)} ${p.literature}",
-                    style = VTypography.bodySmall, color = VColors.ink2,
+                    style = VTypography.caption, color = VColors.ink2,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(appString(StringKeys.CD_ATTENDANCE_LABEL).replace("{percent}", p.attendance), style = VTypography.caption, color = VColors.ink3)

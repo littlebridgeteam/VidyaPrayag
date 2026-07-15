@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.animation.AnimatedVisibility
@@ -330,6 +329,10 @@ fun ParentPortalV2(
     // the tabs, not the portal.
     BackHandler(enabled = overlay != ParentOverlay.None) {
         overlay = ParentOverlay.None
+    }
+    // At root (no overlay), consume back to prevent app exit.
+    BackHandler(enabled = overlay == ParentOverlay.None) {
+        // No-op — prevents the system back gesture from killing the app.
     }
 
     when (overlay) {

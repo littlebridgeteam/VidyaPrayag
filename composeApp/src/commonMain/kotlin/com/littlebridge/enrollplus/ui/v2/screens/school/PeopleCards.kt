@@ -59,6 +59,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
 import kotlin.math.roundToInt
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 
 // ──────────────────────────── Avatar variants ────────────────────────────
 
@@ -114,7 +115,7 @@ private fun GradientAvatar(
         )
         if (!photoUrl.isNullOrBlank()) {
             val painter = rememberAsyncImagePainter(model = photoUrl)
-            val state by painter.state.collectAsState()
+            val state by painter.state.collectAsStateV2()
             if (state is AsyncImagePainter.State.Success) {
                 androidx.compose.foundation.Image(
                     painter = painter,
@@ -263,7 +264,7 @@ private fun FilterChip(
                     text = {
                         Text(
                             option,
-                            style = VTypography.bodySmall,
+                            style = VTypography.caption,
                             color = if (isSelected) VColors.violet else VColors.ink,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         )
@@ -384,6 +385,7 @@ internal fun StudentCard(
     modifier: Modifier = Modifier,
 ) {
     val alerts = remember(student) { studentAlerts(student) }
+    var menuOpen by remember { mutableStateOf(false) }
 
     VCard(
         modifier = modifier.fillMaxWidth(),
@@ -445,12 +447,40 @@ internal fun StudentCard(
                         )
                     }
                 }
-                Icon(
-                    VIcons.More,
-                    contentDescription = null,
-                    tint = VColors.ink3,
-                    modifier = Modifier.size(18.dp),
-                )
+                Box {
+                    Icon(
+                        VIcons.More,
+                        contentDescription = "More options",
+                        tint = VColors.ink3,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(RoundedCornerShape(50))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { menuOpen = true },
+                    )
+                    DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("View Profile", style = VTypography.caption) },
+                            onClick = { menuOpen = false; onOpen() },
+                            leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Call Parent", style = VTypography.caption) },
+                            onClick = { menuOpen = false; onCall() },
+                            leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Message", style = VTypography.caption) },
+                            onClick = { menuOpen = false; onMessage() },
+                            leadingIcon = { Icon(VIcons.Chat, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                    }
+                }
             }
 
             // Parent info
@@ -711,7 +741,7 @@ internal fun TeacherCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 teacher.profile.name.ifBlank { "Unnamed" },
-                                style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                                 color = VColors.ink,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,

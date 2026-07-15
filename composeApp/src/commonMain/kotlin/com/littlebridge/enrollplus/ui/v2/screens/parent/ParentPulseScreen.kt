@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,10 +36,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * ParentPulseScreen — full-screen weekly pulse view.
@@ -78,7 +79,7 @@ fun ParentPulseScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // ── Header with back button + history toggle ───────────────────
-            PremiumOverlayHeader(
+            VBackHeader(
                 title = appString(StringKeys.PPS_PARENT_PULSE),
                 onBack = onBack,
                 action = {
@@ -115,7 +116,7 @@ fun ParentPulseScreen(
                 when {
                     state.isLoading && state.latestPulse == null -> {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = c.accent, modifier = Modifier.size(36.dp))
+                            TeacherSpinner(36.dp)
                         }
                     }
 

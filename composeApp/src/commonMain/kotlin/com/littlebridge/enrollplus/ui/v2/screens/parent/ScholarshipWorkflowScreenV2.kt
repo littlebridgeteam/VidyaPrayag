@@ -55,10 +55,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 @Composable
 fun ScholarshipWorkflowScreenV2(
@@ -90,7 +91,7 @@ fun ScholarshipWorkflowScreenV2(
             .imePadding()
             .navigationBarsPadding()
     ) {
-        PremiumOverlayHeader(title = appString(StringKeys.SW_SCHOLARSHIPS), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.SW_SCHOLARSHIPS), onBack = onBack)
 
         VStateHost(
             loading = state.isLoading,

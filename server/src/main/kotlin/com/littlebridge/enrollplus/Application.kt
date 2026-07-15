@@ -131,6 +131,8 @@ import com.littlebridge.enrollplus.feature.school.schoolProfileRouting
 import com.littlebridge.enrollplus.feature.school.schoolRecordsRouting
 import com.littlebridge.enrollplus.feature.school.schoolStudentsRouting
 import com.littlebridge.enrollplus.feature.school.schoolClassesRouting
+import com.littlebridge.enrollplus.feature.school.feeSalaryRouting
+import com.littlebridge.enrollplus.feature.school.teacherSalaryRouting
 import com.littlebridge.enrollplus.feature.school.schoolTimetableRouting
 import com.littlebridge.enrollplus.feature.school.periodExceptionRouting
 import com.littlebridge.enrollplus.feature.school.timetableChangeRequestRouting
@@ -598,6 +600,8 @@ fun Application.module() {
         schoolRecordsRouting()       // /api/v1/school/{attendance/summary,marks/summary,fees/ledger} — RA-52 admin Records rollups (school-scoped reads)
         exportRouting()              // /api/v1/school/export/{types, POST} — branded PDF/CSV exports for admin + teacher
         schoolClassesRouting()       // /api/v1/school/classes[…] + /api/v1/school/subjects[…] — class + subject CRUD (admin)
+        feeSalaryRouting()          // /api/v1/school/fees/{structures,charges,students,mark-paid,generate,reminder-config} + /api/v1/school/salary[…] — Fee & Salary Management (Phase 1 ledger)
+        teacherSalaryRouting()      // /api/v1/teacher/salary — teacher's own salary history
         schoolTimetableRouting()     // /api/v1/school/timetable[…] — school-wide weekly schedule + admin period CRUD (POST/PUT/DELETE)
         periodExceptionRouting()     // /api/v1/school/timetable/exceptions[…] + /api/v1/teacher/timetable/exceptions[…] — one-off period overrides
         timetableChangeRequestRouting() // /api/v1/school/timetable-requests[…] + /api/v1/teacher/timetable-requests[…] — teacher→admin approval workflow

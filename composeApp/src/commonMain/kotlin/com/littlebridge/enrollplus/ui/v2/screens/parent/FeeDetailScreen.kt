@@ -25,6 +25,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /**
  * FeeDetailScreen — fee detail view reached via deep link `/parent/fees/{id}`.
@@ -48,7 +49,7 @@ fun FeeDetailScreen(
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
-        PremiumOverlayHeader(title = "Fee Detail", onBack = onBack)
+        VBackHeader(title = "Fee Detail", onBack = onBack)
 
         Column(
             Modifier

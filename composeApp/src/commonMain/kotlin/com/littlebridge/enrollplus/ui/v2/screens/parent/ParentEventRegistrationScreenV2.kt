@@ -60,8 +60,9 @@ import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 @Composable
 fun ParentEventRegistrationScreenV2(
@@ -79,8 +80,8 @@ fun ParentEventRegistrationScreenV2(
             .background(VColors.cream)
             .statusBarsPadding(),
     ) {
-        PremiumOverlayHeader(
-            title = if (selectedEventId != null) "Event Detail" else "Events",
+        VBackHeader(
+            title = if (selectedEventId != null) appString(StringKeys.PE_EVENT_DETAIL) else appString(StringKeys.PE_EVENTS),
             onBack = {
                 if (selectedEventId != null) {
                     selectedEventId = null
@@ -144,7 +145,7 @@ fun ParentEventRegistrationScreenV2(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 SegmentChip(
-                    text = "Upcoming Events",
+                    text = appString(StringKeys.PE_UPCOMING),
                     isSelected = !showMyRegistrations,
                     onClick = {
                         showMyRegistrations = false
@@ -153,7 +154,7 @@ fun ParentEventRegistrationScreenV2(
                     modifier = Modifier.weight(1f),
                 )
                 SegmentChip(
-                    text = "My Registrations",
+                    text = appString(StringKeys.PE_MY_REGS),
                     isSelected = showMyRegistrations,
                     onClick = {
                         showMyRegistrations = true
@@ -167,7 +168,7 @@ fun ParentEventRegistrationScreenV2(
                 loading = state.isLoading,
                 error = state.errorMessage,
                 isEmpty = state.events.isEmpty() && !state.isLoading,
-                emptyTitle = "No upcoming events with registration",
+                emptyTitle = appString(StringKeys.PE_NO_EVENTS),
                 onRetry = { viewModel.loadEvents() },
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -233,7 +234,7 @@ private fun EventDetailContent(
                 Spacer(Modifier.height(4.dp))
                 Text(event.startDate, style = VTypography.caption, color = VColors.ink2)
                 if (event.venue != null) {
-                    Text("Venue: ${event.venue}", style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.PE_VENUE, "venue" to (event.venue ?: "")), style = VTypography.caption, color = VColors.ink3)
                 }
                 if (event.description.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
@@ -241,18 +242,18 @@ private fun EventDetailContent(
                 }
                 Spacer(Modifier.height(10.dp))
                 if (event.registrationDeadline != null) {
-                    Text("Register by: ${event.registrationDeadline}", style = VTypography.caption, color = VColors.ink3)
+                    Text(appString(StringKeys.PE_REGISTER_BY, "date" to (event.registrationDeadline ?: "")), style = VTypography.caption, color = VColors.ink3)
                 }
                 Spacer(Modifier.height(6.dp))
                 if (event.myRegistrationStatus != null) {
-                    PremiumBadge(text = "Registered: ${event.myRegistrationStatus}", bg = VColors.successSoft, fg = VColors.success)
+                    PremiumBadge(text = appString(StringKeys.PE_REGISTERED_STATUS, "status" to (event.myRegistrationStatus ?: "")), bg = VColors.successSoft, fg = VColors.success)
                 } else if (event.registrationEnabled || event.type == "PTM") {
-                    PremiumBadge(text = "Registration open", bg = VColors.violetSoft, fg = VColors.violet)
+                    PremiumBadge(text = appString(StringKeys.PE_REG_OPEN), bg = VColors.violetSoft, fg = VColors.violet)
                 }
                 if (event.conflictingEventTitle != null) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "⚠ Conflicts with: ${event.conflictingEventTitle}",
+                        text = appString(StringKeys.PE_CONFLICTS, "title" to (event.conflictingEventTitle ?: "")),
                         style = VTypography.caption,
                         color = VColors.gold,
                     )
@@ -263,7 +264,7 @@ private fun EventDetailContent(
         if (eventDetail.slots.isNotEmpty()) {
             item {
                 Text(
-                    text = "Select a time slot",
+                    text = appString(StringKeys.PE_SELECT_SLOT),
                     style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                     color = VColors.ink,
                     modifier = Modifier.padding(vertical = 4.dp),
@@ -283,7 +284,7 @@ private fun EventDetailContent(
             if (event.myRegistrationStatus != null) {
                 if (eventDetail.slots.isNotEmpty()) {
                     PremiumButton(
-                        text = "Reschedule",
+                        text = appString(StringKeys.PE_RESCHEDULE),
                         onClick = { selectedSlotId?.let { onReschedule(it) } },
                         enabled = selectedSlotId != null && !isLoading,
                         isLoading = isLoading,
@@ -292,7 +293,7 @@ private fun EventDetailContent(
                 }
                 Spacer(Modifier.height(8.dp))
                 PremiumButton(
-                    text = "Cancel Registration",
+                    text = appString(StringKeys.PE_CANCEL_REGISTRATION),
                     onClick = { showCancelDialog = true },
                     enabled = !isLoading,
                     isLoading = isLoading,
@@ -304,7 +305,7 @@ private fun EventDetailContent(
                     PremiumInput(
                         value = attendeeCount,
                         onValueChange = { attendeeCount = it },
-                        label = "Number of attendees",
+                        label = appString(StringKeys.PE_NUM_ATTENDEES),
                         placeholder = "1",
                         keyboardType = KeyboardType.Number,
                     )
@@ -316,7 +317,7 @@ private fun EventDetailContent(
                     !isLoading
                 }
                 PremiumButton(
-                    text = "Register",
+                    text = appString(StringKeys.PE_REGISTER),
                     onClick = { onRegister(selectedSlotId, attendeeCount.toIntOrNull()?.coerceAtLeast(1) ?: 1) },
                     enabled = canRegister,
                     isLoading = isLoading,
@@ -352,17 +353,17 @@ private fun SlotCard(
                 color = VColors.ink,
             )
             Text(
-                text = "${slot.bookedCount}/${slot.capacity} booked",
+                text = appString(StringKeys.PE_BOOKED, "booked" to slot.bookedCount.toString(), "capacity" to slot.capacity.toString()),
                 style = VTypography.caption,
                 color = VColors.ink3,
             )
         }
         if (slot.isFull) {
-            PremiumBadge(text = "Full", bg = VColors.errorSoft, fg = VColors.error)
+            PremiumBadge(text = appString(StringKeys.PE_FULL), bg = VColors.errorSoft, fg = VColors.error)
         } else if (slot.myRegistration) {
-            PremiumBadge(text = "Your slot", bg = VColors.successSoft, fg = VColors.success)
+            PremiumBadge(text = appString(StringKeys.PE_YOUR_SLOT), bg = VColors.successSoft, fg = VColors.success)
         } else if (isSelected) {
-            PremiumBadge(text = "Selected", bg = VColors.violetSoft, fg = VColors.violet)
+            PremiumBadge(text = appString(StringKeys.PE_SELECTED), bg = VColors.violetSoft, fg = VColors.violet)
         }
     }
 }
@@ -377,7 +378,7 @@ private fun MyRegistrationsContent(
         loading = isLoading,
         error = null,
         isEmpty = registrations.isEmpty() && !isLoading,
-        emptyTitle = "No registrations yet",
+        emptyTitle = appString(StringKeys.PE_NO_REGS),
         onRetry = onBackToList,
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -399,7 +400,7 @@ private fun MyRegistrationsContent(
                     Text(reg.eventDate, style = VTypography.caption, color = VColors.ink2)
                     if (reg.slotStartTime != null) {
                         Text(
-                            text = "Slot: ${reg.slotStartTime} - ${reg.slotEndTime}",
+                            text = appString(StringKeys.PE_SLOT_LABEL, "start" to (reg.slotStartTime ?: ""), "end" to (reg.slotEndTime ?: "")),
                             style = VTypography.caption,
                             color = VColors.ink3,
                         )
@@ -453,14 +454,14 @@ private fun EventCard(
             Spacer(Modifier.height(2.dp))
             Text(event.startDate, style = VTypography.caption, color = VColors.ink2)
             if (event.venue != null) {
-                Text("Venue: ${event.venue}", style = VTypography.caption, color = VColors.ink3)
+                Text(appString(StringKeys.PE_VENUE, "venue" to (event.venue ?: "")), style = VTypography.caption, color = VColors.ink3)
             }
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (event.myRegistrationStatus != null) {
                     PremiumBadge(text = event.myRegistrationStatus ?: "", bg = VColors.successSoft, fg = VColors.success)
                 } else if (event.registrationEnabled || event.type == "PTM") {
-                    PremiumBadge(text = "Registration open", bg = VColors.violetSoft, fg = VColors.violet)
+                    PremiumBadge(text = appString(StringKeys.PE_REG_OPEN), bg = VColors.violetSoft, fg = VColors.violet)
                 }
             }
         }
@@ -470,18 +471,7 @@ private fun EventCard(
 
 @Composable
 private fun PremiumBadge(text: String, bg: Color, fg: Color) {
-    Box(
-        Modifier
-            .clip(VShapes.full)
-            .background(bg)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        Text(
-            text,
-            style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-            color = fg,
-        )
-    }
+    VBadge(text = text, tone = VBadgeTone.Neutral)
 }
 
 @Composable
@@ -491,22 +481,11 @@ private fun SegmentChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier
-            .clip(VShapes.lg)
-            .background(if (isSelected) VColors.violet else VColors.surfaceCard)
-            .border(1.dp, if (isSelected) VColors.violet else VColors.line, VShapes.lg)
-            .clickable { onClick() }
-            .padding(vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-            color = if (isSelected) VColors.white else VColors.ink2,
-            textAlign = TextAlign.Center,
-        )
-    }
+    PortalTabChip(
+        label = text,
+        selected = isSelected,
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -518,33 +497,14 @@ private fun PremiumButton(
     isPrimary: Boolean = true,
     isDanger: Boolean = false,
 ) {
-    val bg = when {
-        isDanger -> VColors.error
-        isPrimary -> VColors.violet
-        else -> VColors.surfaceCard
-    }
-    val fg = if (isPrimary || isDanger) VColors.white else VColors.ink
-    val border = if (!isPrimary && !isDanger) VColors.line else null
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(if (enabled) bg else bg.copy(alpha = 0.5f))
-            .let { m -> border?.let { m.border(1.dp, it, VShapes.lg) } ?: m }
-            .clickable(enabled = enabled && !isLoading) { onClick() }
-            .padding(vertical = 14.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (isLoading) {
-            androidx.compose.material3.CircularProgressIndicator(
-                color = fg,
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
-            )
-        } else {
-            Text(text, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = fg)
-        }
-    }
+    VButton(
+        text = text,
+        onClick = onClick,
+        full = true,
+        enabled = enabled && !isLoading,
+        loading = isLoading,
+        variant = if (isDanger) VButtonVariant.Destructive else if (isPrimary) VButtonVariant.Primary else VButtonVariant.Secondary,
+    )
 }
 
 @Composable
@@ -555,21 +515,11 @@ private fun PremiumInput(
     placeholder: String? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
 ) {
-    Column {
-        Text(
-            label,
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-            color = VColors.ink2,
-            modifier = Modifier.padding(bottom = 6.dp),
-        )
-        androidx.compose.material3.OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text(placeholder ?: "", style = VTypography.caption, color = VColors.ink3) },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
-            modifier = Modifier.fillMaxWidth().clip(VShapes.lg),
-            shape = VShapes.lg,
-            singleLine = true,
-        )
-    }
+    VInput(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        placeholder = placeholder,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }

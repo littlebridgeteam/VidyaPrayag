@@ -36,7 +36,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VThemePicker
 import com.littlebridge.enrollplus.ui.v2.components.VLanguagePicker
@@ -50,6 +50,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 
 /**
  * ParentProfileScreenV2 — the parent's own profile, wired to the real
@@ -139,7 +140,7 @@ private fun ParentProfileContent(
             .imePadding()
             .navigationBarsPadding()
     ) {
-        PremiumOverlayHeader(title = "Profile", onBack = onBack)
+        VBackHeader(title = "Profile", onBack = onBack)
         Column(
             Modifier
                 .fillMaxSize()

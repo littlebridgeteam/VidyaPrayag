@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -58,6 +57,8 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SkillTestCard — shown in the Academics Overview tab.
@@ -78,7 +79,7 @@ fun SkillTestCard(
     childId: String?,
     viewModel: SkillTestViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateV2()
 
     // Load eligibility when childId changes
     LaunchedEffect(childId) {
@@ -142,7 +143,7 @@ private fun SkillTestCardContent(
             state.isStartingTest -> {
                 Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                        TeacherSpinner(28.dp, 2.dp)
                         Spacer(Modifier.height(12.dp))
                         Text("Generating your test...", style = VTypography.caption, color = VColors.ink3)
                     }
@@ -168,7 +169,7 @@ private fun SkillTestCardContent(
             // Loading eligibility
             state.isLoadingEligibility -> {
                 Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                    TeacherSpinner(28.dp, 2.dp)
                 }
             }
 
@@ -431,7 +432,7 @@ private fun SkillTestInProgress(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CircularProgressIndicator(color = VColors.violet, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+            TeacherSpinner(16.dp, 2.dp)
             Spacer(Modifier.size(8.dp))
             Text("Evaluating...", style = VTypography.caption, color = VColors.ink3)
         }
