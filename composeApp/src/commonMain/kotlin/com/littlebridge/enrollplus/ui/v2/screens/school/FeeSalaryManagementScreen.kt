@@ -36,6 +36,8 @@ import com.littlebridge.enrollplus.feature.admin.presentation.FeeSalaryTab
 import com.littlebridge.enrollplus.feature.admin.presentation.FeeSalaryViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.FeeSubTab
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
+import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
@@ -129,36 +131,38 @@ private fun FeeStructureSubTab(
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteId by remember { mutableStateOf<String?>(null) }
 
-    VStateHost(
-        loading = state.isLoading,
-        error = state.errorMessage,
-        isEmpty = state.structures.isEmpty() && !state.isLoading,
-        emptyTitle = "No Fee Structures",
-        emptyBody = "Add a fee structure to start collecting fees from students.",
-        emptyIcon = VIcons.Wallet,
-        onRetry = { viewModel.loadFeeStructures() },
-        skeleton = { SkeletonList(rows = 4) },
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp, bottom = 100.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            VButton(
-                text = "Add Fee Structure",
-                onClick = { showAddDialog = true },
-                leading = { Icon(VIcons.Plus, contentDescription = null) },
-                full = true,
-            )
+        VButton(
+            text = "Add Fee Structure",
+            onClick = { showAddDialog = true },
+            leading = { Icon(VIcons.Plus, contentDescription = null) },
+            full = true,
+        )
 
-            state.structures.forEach { struct ->
-                FeeStructureCard(
-                    struct = struct,
-                    onDelete = { showDeleteId = struct.id },
-                )
+        VStateHost(
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = state.structures.isEmpty() && !state.isLoading,
+            emptyTitle = "No Fee Structures",
+            emptyBody = "Add a fee structure to start collecting fees from students.",
+            emptyIcon = VIcons.Wallet,
+            onRetry = { viewModel.loadFeeStructures() },
+            skeleton = { SkeletonList(rows = 4) },
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                state.structures.forEach { struct ->
+                    FeeStructureCard(
+                        struct = struct,
+                        onDelete = { showDeleteId = struct.id },
+                    )
+                }
             }
         }
     }
@@ -199,9 +203,9 @@ private fun FeeStructureCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(struct.title, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                Text(struct.title, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 struct.description?.let {
-                    Text(it, style = VTypography.caption, color = VColors.ink2)
+                    Text(it, style = VTypography.caption, color = VColors.ink2, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -224,7 +228,9 @@ private fun FeeStructureCard(
                 VIcons.Close,
                 contentDescription = "Delete",
                 tint = VColors.error,
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .clickable { onDelete() },
             )
         }
     }
@@ -242,13 +248,9 @@ private fun AddFeeStructureSheet(
     var selectedClassId by remember { mutableStateOf<String?>(null) }
     var classDropdownOpen by remember { mutableStateOf(false) }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Add Fee Structure", style = VTypography.h3, fontWeight = FontWeight.Bold)
+    VBottomSheet(visible = true, onDismiss = onDismiss) {
+        VBottomSheetHeader(title = "Add Fee Structure")
+        Spacer(Modifier.height(16.dp))
         VInput(
             value = title,
             onValueChange = { title = it },
@@ -268,7 +270,6 @@ private fun AddFeeStructureSheet(
             label = "Description (optional)",
             placeholder = "e.g. Monthly tuition for all classes",
         )
-        // Class dropdown
         Text("Class (optional)", style = VTypography.caption, color = VColors.ink2)
         VCard {
             Column {
@@ -338,8 +339,16 @@ private fun AddFeeStructureSheet(
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            VButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                variant = VButtonVariant.Ghost,
+                modifier = Modifier.weight(1f),
+            )
             VButton(
                 text = "Create",
                 onClick = {
@@ -349,6 +358,7 @@ private fun AddFeeStructureSheet(
                     }
                 },
                 enabled = title.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) > 0,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -364,51 +374,53 @@ private fun PaymentTrackingSubTab(
     var showGenerateDialog by remember { mutableStateOf(false) }
     var showMarkPaidId by remember { mutableStateOf<String?>(null) }
 
-    VStateHost(
-        loading = state.isLoading,
-        error = state.errorMessage,
-        isEmpty = state.feeStudents.isEmpty() && !state.isLoading,
-        emptyTitle = "No Fee Records",
-        emptyBody = "Generate monthly fees for students to see payment tracking here.",
-        emptyIcon = VIcons.Wallet,
-        onRetry = { viewModel.loadFeeStudents() },
-        skeleton = { SkeletonList(rows = 4) },
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp, bottom = 100.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text("Total Due", style = VTypography.caption, color = VColors.ink2)
-                    Text("₹${"%,.0f".format(state.totalDue)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.error)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("Total Paid", style = VTypography.caption, color = VColors.ink2)
-                    Text("₹${"%,.0f".format(state.totalPaid)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.success)
-                }
+            Column {
+                Text("Total Due", style = VTypography.caption, color = VColors.ink2)
+                Text("₹${"%,.0f".format(state.totalDue)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.error)
             }
+            Column(horizontalAlignment = Alignment.End) {
+                Text("Total Paid", style = VTypography.caption, color = VColors.ink2)
+                Text("₹${"%,.0f".format(state.totalPaid)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.success)
+            }
+        }
 
-            VButton(
-                text = "Generate Monthly Fees",
-                onClick = { showGenerateDialog = true },
-                leading = { Icon(VIcons.Plus, contentDescription = null) },
-                full = true,
-            )
+        VButton(
+            text = "Generate Monthly Fees",
+            onClick = { showGenerateDialog = true },
+            leading = { Icon(VIcons.Plus, contentDescription = null) },
+            full = true,
+        )
 
-            state.feeStudents.forEach { student ->
-                FeeStudentCard(
-                    student = student,
-                    onMarkPaid = { showMarkPaidId = student.childId },
-                )
+        VStateHost(
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = state.feeStudents.isEmpty() && !state.isLoading,
+            emptyTitle = "No Fee Records",
+            emptyBody = "Generate monthly fees for students to see payment tracking here.",
+            emptyIcon = VIcons.Wallet,
+            onRetry = { viewModel.loadFeeStudents() },
+            skeleton = { SkeletonList(rows = 4) },
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                state.feeStudents.forEach { student ->
+                    FeeStudentCard(
+                        student = student,
+                        onMarkPaid = { showMarkPaidId = student.childId },
+                    )
+                }
             }
         }
     }
@@ -453,18 +465,26 @@ private fun FeeStudentCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(student.childName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                    Text(student.childName, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     student.className?.let {
-                        Text(it, style = VTypography.caption, color = VColors.ink2)
+                        Text(it, style = VTypography.caption, color = VColors.ink2, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
+                val statusDisplay = when (student.status) {
+                    "PAID" -> "Paid"
+                    "DUE" -> "Due"
+                    "OVERDUE" -> "Overdue"
+                    "PARTIAL" -> "Partial"
+                    "NO_FEES" -> "No Fees"
+                    else -> student.status.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
+                }
                 VBadge(
-                    text = student.status,
+                    text = statusDisplay,
                     tone = when (student.status) {
                         "PAID" -> VBadgeTone.Success
                         "DUE" -> VBadgeTone.Warning
                         "OVERDUE" -> VBadgeTone.Danger
-                        "PARTIAL" -> VBadgeTone.Neutral
+                        "PARTIAL", "NO_FEES" -> VBadgeTone.Neutral
                         else -> VBadgeTone.Neutral
                     },
                 )
@@ -499,13 +519,9 @@ private fun GenerateFeesSheet(
 ) {
     var month by remember { mutableStateOf(currentMonth) }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Generate Monthly Fees", style = VTypography.h3, fontWeight = FontWeight.Bold)
+    VBottomSheet(visible = true, onDismiss = onDismiss) {
+        VBottomSheetHeader(title = "Generate Monthly Fees")
+        Spacer(Modifier.height(16.dp))
         Text(
             "This will create fee records for all active students based on your fee structures.",
             style = VTypography.caption,
@@ -517,12 +533,21 @@ private fun GenerateFeesSheet(
             label = "Month (YYYY-MM)",
             placeholder = "2026-07",
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            VButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                variant = VButtonVariant.Ghost,
+                modifier = Modifier.weight(1f),
+            )
             VButton(
                 text = "Generate",
                 onClick = { if (month.isNotBlank()) onGenerate(month) },
                 enabled = month.isNotBlank(),
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -538,6 +563,8 @@ private fun ReminderSettingsSubTab(
     val config = state.reminderConfig
     var reminderDay by remember(config) { mutableStateOf(config?.reminderDay?.toString() ?: "5") }
     var isActive by remember(config) { mutableStateOf(config?.isActive ?: true) }
+    val dayValid = reminderDay.toIntOrNull()?.let { it in 1..28 } ?: false
+    val showError = reminderDay.isNotBlank() && !dayValid
 
     Column(
         Modifier
@@ -562,6 +589,8 @@ private fun ReminderSettingsSubTab(
                     label = "Reminder Day (1-28)",
                     placeholder = "5",
                     keyboardType = KeyboardType.Number,
+                    isError = showError,
+                    errorText = if (showError) "Reminder day must be between 1 and 28" else null,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -577,13 +606,13 @@ private fun ReminderSettingsSubTab(
                 VButton(
                     text = "Save",
                     onClick = {
-                        val day = reminderDay.toIntOrNull() ?: 5
-                        if (day in 1..28) {
+                        val day = reminderDay.toIntOrNull()
+                        if (day != null && day in 1..28) {
                             viewModel.updateReminderConfig(day, isActive)
                         }
                     },
                     full = true,
-                    enabled = reminderDay.toIntOrNull()?.let { it in 1..28 } ?: false,
+                    enabled = dayValid,
                 )
             }
         }
@@ -604,36 +633,38 @@ private fun SalaryTab(
     var showAddDialog by remember { mutableStateOf(false) }
     var showMarkPaidId by remember { mutableStateOf<String?>(null) }
 
-    VStateHost(
-        loading = state.isLoading,
-        error = state.errorMessage,
-        isEmpty = state.salaryRecords.isEmpty() && !state.isLoading,
-        emptyTitle = "No Salary Records",
-        emptyBody = "Add a salary record for a teacher to get started.",
-        emptyIcon = VIcons.Wallet,
-        onRetry = { viewModel.loadSalaryRecords() },
-        skeleton = { SkeletonList(rows = 4) },
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp, bottom = 100.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            VButton(
-                text = "Add Salary Record",
-                onClick = { showAddDialog = true },
-                leading = { Icon(VIcons.Plus, contentDescription = null) },
-                full = true,
-            )
+        VButton(
+            text = "Add Salary Record",
+            onClick = { showAddDialog = true },
+            leading = { Icon(VIcons.Plus, contentDescription = null) },
+            full = true,
+        )
 
-            state.salaryRecords.forEach { record ->
-                SalaryRecordCard(
-                    record = record,
-                    onMarkPaid = { showMarkPaidId = record.id },
-                )
+        VStateHost(
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = state.salaryRecords.isEmpty() && !state.isLoading,
+            emptyTitle = "No Salary Records",
+            emptyBody = "Add a salary record for a teacher to get started.",
+            emptyIcon = VIcons.Wallet,
+            onRetry = { viewModel.loadSalaryRecords() },
+            skeleton = { SkeletonList(rows = 4) },
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                state.salaryRecords.forEach { record ->
+                    SalaryRecordCard(
+                        record = record,
+                        onMarkPaid = { showMarkPaidId = record.id },
+                    )
+                }
             }
         }
     }
@@ -683,11 +714,17 @@ private fun SalaryRecordCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(record.teacherName.ifBlank { "Teacher" }, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink)
+                    Text(record.teacherName.ifBlank { "Teacher" }, style = VTypography.body, fontWeight = FontWeight.SemiBold, color = VColors.ink, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     Text(record.month, style = VTypography.caption, color = VColors.ink2)
                 }
+                val salaryStatusDisplay = when (record.status) {
+                    "PAID" -> "Paid"
+                    "UNPAID" -> "Unpaid"
+                    "PENDING" -> "Pending"
+                    else -> record.status.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
+                }
                 VBadge(
-                    text = record.status,
+                    text = salaryStatusDisplay,
                     tone = if (record.status == "PAID") VBadgeTone.Success else VBadgeTone.Warning,
                 )
             }
@@ -733,13 +770,9 @@ private fun AddSalarySheet(
     var allowances by remember { mutableStateOf("") }
     var deductions by remember { mutableStateOf("") }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Add Salary Record", style = VTypography.h3, fontWeight = FontWeight.Bold)
+    VBottomSheet(visible = true, onDismiss = onDismiss) {
+        VBottomSheetHeader(title = "Add Salary Record")
+        Spacer(Modifier.height(16.dp))
         Text("Teacher", style = VTypography.caption, color = VColors.ink2)
         VCard {
             Column {
@@ -816,8 +849,16 @@ private fun AddSalarySheet(
             placeholder = "0",
             keyboardType = KeyboardType.Decimal,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            VButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                variant = VButtonVariant.Ghost,
+                modifier = Modifier.weight(1f),
+            )
             VButton(
                 text = "Save",
                 onClick = {
@@ -829,6 +870,7 @@ private fun AddSalarySheet(
                     }
                 },
                 enabled = selectedTeacherId != null && month.isNotBlank() && (base.toDoubleOrNull() ?: 0.0) > 0,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -871,7 +913,7 @@ private fun LateFeeTiersSubTab(
         }
 
         if (state.isLoading && state.lateFeeTiers.isEmpty()) {
-            SkeletonList(count = 3)
+            SkeletonList(rows = 3)
             return@Column
         }
 
@@ -983,13 +1025,9 @@ private fun AddLateFeeTierSheet(
     var days by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Add Late Fee Tier", style = VTypography.h3, fontWeight = FontWeight.Bold)
+    VBottomSheet(visible = true, onDismiss = onDismiss) {
+        VBottomSheetHeader(title = "Add Late Fee Tier")
+        Spacer(Modifier.height(16.dp))
         VInput(
             value = days,
             onValueChange = { days = it.filter { c -> c.isDigit() } },
@@ -1004,8 +1042,16 @@ private fun AddLateFeeTierSheet(
             placeholder = "e.g. 100",
             keyboardType = KeyboardType.Decimal,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VButton(text = "Cancel", onClick = onDismiss, variant = VButtonVariant.Ghost)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            VButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                variant = VButtonVariant.Ghost,
+                modifier = Modifier.weight(1f),
+            )
             VButton(
                 text = "Create",
                 onClick = {
@@ -1016,6 +1062,7 @@ private fun AddLateFeeTierSheet(
                     }
                 },
                 enabled = (days.toIntOrNull() ?: 0) > 0 && (amount.toDoubleOrNull() ?: 0.0) > 0,
+                modifier = Modifier.weight(1f),
             )
         }
     }

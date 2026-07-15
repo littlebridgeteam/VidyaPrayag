@@ -420,13 +420,13 @@ class TeacherRepositoryImpl(
 
 
 
-    override suspend fun submitTimetableChangeRequest(token: String, request: CreateChangeRequestRequest): NetworkResult<ApiResponse<TimetableChangeRequestDto>> =
-
+    override suspend fun submitTimetableChangeRequest(token: String, request: CreateChangeRequestRequest): NetworkResult<ApiResponse<TimetableChangeRequestDto>> = run {
         val result = api.submitTimetableChangeRequest(token, request)
         if (result is NetworkResult.Success) {
             cache.delete("teacher_timetable_change_requests")
         }
         result
+    }
 
 
 
