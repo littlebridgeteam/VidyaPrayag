@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -543,6 +544,7 @@ private fun LeaveComposer(
             placeholder = appString(StringKeys.TC_WHY_APPLYING),
             singleLine = false,
             enabled = !inFlight,
+            modifier = Modifier.heightIn(min = 120.dp),
         )
         if (applyResult is ActionResult.Failure) {
             Text(applyResult.message, style = VtT.caption.coloredV(c.dangerInk))
@@ -661,6 +663,7 @@ private fun PasswordForm(
             value = old, onValueChange = { old = it }, label = appString(StringKeys.TC_CURRENT_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
+            modifier = Modifier.heightIn(min = 56.dp),
         )
         VInput(
             value = new0, onValueChange = { new0 = it }, label = appString(StringKeys.TC_NEW_PASSWORD),
@@ -669,6 +672,7 @@ private fun PasswordForm(
             keyboardType = KeyboardType.Password,
             isError = newError != null,
             errorText = newError,
+            modifier = Modifier.heightIn(min = 56.dp),
         )
         VInput(
             value = confirm, onValueChange = { confirm = it }, label = appString(StringKeys.TC_CONFIRM_NEW_PASSWORD),
@@ -676,6 +680,7 @@ private fun PasswordForm(
             keyboardType = KeyboardType.Password,
             isError = confirmError != null,
             errorText = confirmError,
+            modifier = Modifier.heightIn(min = 56.dp),
             trailing = {
                 val ix = remember { MutableInteractionSource() }
                 Icon(

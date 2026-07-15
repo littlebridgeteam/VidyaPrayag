@@ -72,7 +72,13 @@ fun TeacherReportReviewQueueScreen(
 
         // Context line
         Text(
-            "$className $section • $term",
+            buildString {
+                append(className.trim())
+                val sec = section.trim()
+                if (sec.isNotBlank()) append(" $sec")
+                append(" • ")
+                append(term.trim())
+            },
             style = VtT.caption.coloredV(c.ink2),
             modifier = Modifier.padding(horizontal = 20.dp),
         )

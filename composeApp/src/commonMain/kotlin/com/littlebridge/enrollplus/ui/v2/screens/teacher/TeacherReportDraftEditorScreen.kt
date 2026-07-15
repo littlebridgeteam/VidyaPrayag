@@ -81,7 +81,13 @@ fun TeacherReportDraftEditorScreen(
                     // Draft metadata
                     VCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${draft.className} ${draft.section} • ${draft.term}",
+                            Text(buildString {
+                                append(draft.className.trim())
+                                val sec = draft.section.trim()
+                                if (sec.isNotBlank()) append(" $sec")
+                                append(" • ")
+                                append(draft.term.trim())
+                            },
                                 style = VtT.body.coloredV(c.ink).copy(fontWeight = FontWeight.Medium))
                             Text(appString(StringKeys.TC_STATUS_COLON, "status" to draft.status), style = VtT.caption.coloredV(c.ink2))
                             Text(appString(StringKeys.TC_LANGUAGE_COLON, "lang" to draft.language), style = VtT.caption.coloredV(c.ink3))

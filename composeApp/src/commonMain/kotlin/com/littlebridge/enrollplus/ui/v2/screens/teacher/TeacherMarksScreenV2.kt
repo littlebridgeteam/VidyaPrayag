@@ -398,8 +398,10 @@ private fun MarkRow(s: GradebookStudentMark, maxMarks: Int, readOnly: Boolean, o
                 Text(s.name, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                 Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTypography.caption, color = VColors.ink3)
             }
-            // AB toggle
-            val abActive = s.isAbsent
+            // AB toggle — visually inactive when marks are present (defensive: isAbsent
+            // is cleared in the ViewModel, but we also guard here so the badge never
+            // shows as active once a mark has been entered).
+            val abActive = s.isAbsent && s.marks == null
             Box(
                 Modifier
                     .clip(VShapes.sm)
@@ -433,7 +435,8 @@ private fun MarkInput(value: Float?, maxMarks: Int, enabled: Boolean, onChange: 
                 value = display,
                 onValueChange = { raw ->
                     val cleaned = raw.filter { it.isDigit() || it == '.' }
-                    onChange(cleaned.toFloatOrNull())
+                    val parsed = cleaned.toFloatOrNull()
+                    onChange(parsed)
                 },
                 singleLine = true,
                 enabled = enabled,

@@ -124,7 +124,7 @@ class TeacherGamificationViewModel(
     private val _state = MutableStateFlow(TeacherGamificationState())
     val state: StateFlow<TeacherGamificationState> = _state.asStateFlow()
 
-    fun load() {
+    fun load(className: String? = null) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             val token = preferenceRepository.getUserToken().first()
@@ -134,7 +134,7 @@ class TeacherGamificationViewModel(
             }
 
             val overview = safeCall { repository.getGamificationOverview(token) }
-            val leaderboard = safeCall { repository.getClassLeaderboard(token) }
+            val leaderboard = safeCall { repository.getClassLeaderboard(token, className = className) }
             val classGoals = safeCall { repository.getClassGoals(token) }
             val quests = safeCall { repository.getTeacherQuests(token) }
             val badges = safeCall { repository.getBadgeDefinitions(token) }

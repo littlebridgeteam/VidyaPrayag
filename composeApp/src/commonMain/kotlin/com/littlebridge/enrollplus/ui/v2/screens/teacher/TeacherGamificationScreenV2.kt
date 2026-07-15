@@ -278,7 +278,7 @@ fun TeacherClassGamificationCard(
     gamificationViewModel: TeacherGamificationViewModel = koinViewModel(),
 ) {
     val state by gamificationViewModel.state.collectAsStateV2()
-    LaunchedEffect(className) { gamificationViewModel.load() }
+    LaunchedEffect(className) { gamificationViewModel.load(className) }
 
     val c = VtC
     var showPepTalkConfirm by remember { mutableStateOf(false) }

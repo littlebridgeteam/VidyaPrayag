@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -794,12 +795,17 @@ private fun ActiveHomeworkCard(items: List<ClassHomeworkDto>) {
                     Column(Modifier.weight(1f)) {
                         Text(h.title, style = VtT.bodyStrong.coloredV(c.navyDeep))
                         Spacer(Modifier.height(2.dp))
+                        val turnedInText = appString(StringKeys.TC_N_TURNED_IN)
+                            .replace("{count}", h.submittedCount.toString())
+                            .replace("{total}", total.toString())
+                        val dueSuffix = if (!h.dueDate.isNullOrBlank()) {
+                            " · ${appString(StringKeys.TC_DUE_LABEL).replace("{date}", prettyDateShort(h.dueDate))}"
+                        } else ""
                         Text(
-                            buildString {
-                                append(appString(StringKeys.TC_N_TURNED_IN, "count" to h.submittedCount.toString(), "total" to total.toString()))
-                                if (!h.dueDate.isNullOrBlank()) append(" · ${appString(StringKeys.TC_DUE_LABEL, "date" to prettyDateShort(h.dueDate))}")
-                            },
+                            "$turnedInText$dueSuffix",
                             style = VtT.caption.coloredV(c.ink3),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
