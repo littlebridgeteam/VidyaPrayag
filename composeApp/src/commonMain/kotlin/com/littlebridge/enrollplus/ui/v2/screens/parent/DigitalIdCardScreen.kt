@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -34,13 +36,13 @@ import com.littlebridge.enrollplus.feature.idcard.presentation.IdCardViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.QrCodeImage
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.PremiumOverlayHeader
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -67,15 +69,17 @@ fun DigitalIdCardScreen(
         modifier = modifier
             .fillMaxSize()
             .background(VColors.cream)
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PremiumOverlayHeader(title = appString(StringKeys.DID_DIGITAL_ID_CARD), onBack = onBack)
+        VBackHeader(title = appString(StringKeys.DID_DIGITAL_ID_CARD), onBack = onBack)
 
             Spacer(modifier = Modifier.height(24.dp))
 
         state.error?.let { err ->
-            VCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            VCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                 Text(text = err, color = VColors.error, style = VTypography.body)
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -112,7 +116,7 @@ fun DigitalIdCardScreen(
                 Text(
                     text = appString(StringKeys.DID_SCAN_QR_BACK),
                     style = VTypography.caption,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp),
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -122,15 +126,18 @@ fun DigitalIdCardScreen(
                     style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                 )
             } else if (state.isLoading) {
+                TeacherSpinner()
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = appString(StringKeys.DID_LOADING),
-                    style = VTypography.body,
+                    style = VTypography.caption,
+                    color = VColors.ink2,
                 )
             } else if (state.error == null) {
                 Text(
                     text = appString(StringKeys.DID_NO_ID_CARD),
                     style = VTypography.body,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp),
                 )
             }
 

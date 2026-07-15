@@ -9,17 +9,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,8 +37,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 
 /**
  * TeacherReportReviewQueueScreen — shows AI-generated report card drafts
@@ -53,7 +55,7 @@ fun TeacherReportReviewQueueScreen(
     onEditDraft: (String) -> Unit,
     viewModel: TeacherReportReviewViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateV2()
     val c = VtC
 
     LaunchedEffect(className, section, term) {
@@ -61,26 +63,23 @@ fun TeacherReportReviewQueueScreen(
     }
 
     Column(
-        Modifier.fillMaxSize().background(c.background),
+        Modifier.fillMaxSize().background(c.background)
+            .statusBarsPadding().navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Header
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            VButton(text = appString(StringKeys.COMMON_BUTTON_BACK), onClick = onBack, variant = VButtonVariant.Secondary, size = VButtonSize.Sm)
-            Column {
-                Text(appString(StringKeys.TC_REPORT_CARD_REVIEW), style = VtT.h3.coloredV(c.ink))
-                Text("$className $section • $term", style = VtT.caption.coloredV(c.ink2))
-            }
-        }
+        VBackHeader(title = appString(StringKeys.TC_REPORT_CARD_REVIEW), onBack = onBack)
+
+        // Context line
+        Text(
+            "$className $section • $term",
+            style = VtT.caption.coloredV(c.ink2),
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
 
         // Summary bar
         if (state.drafts.isNotEmpty()) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 SummaryChip(appString(StringKeys.TC_TOTAL), state.drafts.size, c.accent)
@@ -91,9 +90,9 @@ fun TeacherReportReviewQueueScreen(
         }
 
         state.message?.let { msg ->
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                 VCard(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(VIcons.Check, contentDescription = null, tint = c.success, modifier = Modifier.size(16.dp))
                         Text(msg, style = VtT.body.coloredV(c.ink))
                     }
@@ -105,7 +104,7 @@ fun TeacherReportReviewQueueScreen(
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = c.accent)
+                    TeacherSpinner()
                 }
             }
             state.error != null -> {
@@ -124,7 +123,7 @@ fun TeacherReportReviewQueueScreen(
             }
             else -> {
                 LazyColumn(
-                    Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    Modifier.fillMaxSize().padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(state.drafts) { draft ->
@@ -181,7 +180,7 @@ private fun DraftReviewCard(
     }
 
     VCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

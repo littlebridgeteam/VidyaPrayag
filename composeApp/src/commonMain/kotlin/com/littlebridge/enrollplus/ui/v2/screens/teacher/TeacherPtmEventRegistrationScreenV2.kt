@@ -140,7 +140,7 @@ private fun PtmDetailContent(
     ) {
         item {
             VCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column {
                     Text(text = eventDetail.title, style = VtT.h3.coloredV(c.ink))
                     Spacer(Modifier.height(4.dp))
                     Text(text = eventDetail.date, style = VtT.body.coloredV(c.ink2))
@@ -184,7 +184,7 @@ private fun SlotWithBookingsCard(
 ) {
     val c = VtC
     VCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -274,7 +274,7 @@ private fun PtmEventCard(
             .fillMaxWidth()
             .clickable { onClick() },
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             Text(
                 text = event.title,
                 style = VtT.h3.coloredV(c.ink),
