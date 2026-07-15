@@ -52,7 +52,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * TeacherLessonPlanScreenV2 — the scoped lesson plan surface (LESSON_PLANNING_SPEC P1-20).

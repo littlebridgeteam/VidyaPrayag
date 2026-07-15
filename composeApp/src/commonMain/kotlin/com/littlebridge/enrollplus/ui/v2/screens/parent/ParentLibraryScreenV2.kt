@@ -59,7 +59,7 @@ import com.littlebridge.enrollplus.ui.v2.screens.library.LibraryViewMode
 import com.littlebridge.enrollplus.ui.v2.screens.library.QrShareDialog
 import com.littlebridge.enrollplus.ui.v2.screens.library.ReadingTimeEstimate
 import com.littlebridge.enrollplus.ui.v2.screens.library.ViewModeToggle
-import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.util.formatDecimal

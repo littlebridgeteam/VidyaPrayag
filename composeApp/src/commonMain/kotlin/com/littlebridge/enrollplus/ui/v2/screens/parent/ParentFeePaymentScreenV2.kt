@@ -30,11 +30,11 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.screens.parent.VBackHeader
+import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 

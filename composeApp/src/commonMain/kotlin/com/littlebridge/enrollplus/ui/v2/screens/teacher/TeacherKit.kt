@@ -51,7 +51,7 @@ import com.littlebridge.enrollplus.ui.v2.theme.VColors
 import com.littlebridge.enrollplus.ui.tokens.VColors as VTok
 import com.littlebridge.enrollplus.ui.tokens.VTypography as VTypo
 import com.littlebridge.enrollplus.util.nowMinutesOfDay
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * TeacherKit — the shared visual vocabulary for the rebuilt Teacher Portal.

@@ -300,6 +300,7 @@ class FeeSalaryViewModel(
                 is NetworkResult.ConnectionError -> {
                     AppLogger.e("FeeSalaryVM", "Connection error loading charges")
                 }
+            }
         }
     }
 
@@ -356,6 +357,7 @@ class FeeSalaryViewModel(
                 is NetworkResult.ConnectionError -> {
                     AppLogger.e("FeeSalaryVM", "Connection error loading reminder config")
                 }
+            }
         }
     }
 

@@ -58,7 +58,7 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import androidx.compose.ui.text.TextStyle
 import com.littlebridge.enrollplus.util.formatDecimal
 import org.koin.compose.viewmodel.koinViewModel
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 
 /**

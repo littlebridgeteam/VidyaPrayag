@@ -77,7 +77,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * RA-51: parent Messages inbox + conversation detail. Mirror of the admin

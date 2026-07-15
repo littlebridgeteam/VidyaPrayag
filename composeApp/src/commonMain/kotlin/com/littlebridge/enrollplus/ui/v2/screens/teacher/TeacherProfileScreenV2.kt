@@ -60,7 +60,7 @@ import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 /**
  * PROFILE tab — the teacher's account home, RESTRUCTURED into a premium layout.

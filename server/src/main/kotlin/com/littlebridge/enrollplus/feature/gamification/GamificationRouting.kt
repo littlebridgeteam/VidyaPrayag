@@ -1285,7 +1285,7 @@ fun Route.gamificationRouting() {
                     averageXp = if (totalStudents > 0) totalXp / totalStudents else 0,
                     levelDistribution = levelDistribution.mapKeys { it.key.toString() },
                     categoryXp = categoryXp,
-                    pendingRedemptions = pendingRedemptions
+                    pendingRedemptions = pendingRedemptions.toInt()
                 ), "Gamification analytics")
             }
         }

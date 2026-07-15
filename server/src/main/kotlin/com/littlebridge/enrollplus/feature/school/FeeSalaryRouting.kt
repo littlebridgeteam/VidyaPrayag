@@ -280,8 +280,10 @@ fun Route.feeSalaryRouting() {
                 val classIdFilter = call.request.queryParameters["classId"]?.let { parseUuid(it) }
                 val list = dbQuery {
                     FeeStructuresTable.selectAll()
-                        .where { FeeStructuresTable.schoolId eq ctx.schoolId }
-                        .let { q -> if (classIdFilter != null) q.and { FeeStructuresTable.classId eq classIdFilter } else q }
+                        .where {
+                            val base: org.jetbrains.exposed.sql.Op<Boolean> = FeeStructuresTable.schoolId eq ctx.schoolId
+                            if (classIdFilter != null) base and (FeeStructuresTable.classId eq classIdFilter) else base
+                        }
                         .orderBy(FeeStructuresTable.title)
                         .map { row ->
                             FeeStructureDto(
@@ -424,9 +426,12 @@ fun Route.feeSalaryRouting() {
                 val monthFilter = call.request.queryParameters["month"]
                 val list = dbQuery {
                     FeeAdditionalChargesTable.selectAll()
-                        .where { FeeAdditionalChargesTable.schoolId eq ctx.schoolId }
-                        .let { q -> if (childIdFilter != null) q.and { FeeAdditionalChargesTable.childId eq childIdFilter } else q }
-                        .let { q -> if (monthFilter != null) q.and { FeeAdditionalChargesTable.month eq monthFilter } else q }
+                        .where {
+                            var cond: org.jetbrains.exposed.sql.Op<Boolean> = FeeAdditionalChargesTable.schoolId eq ctx.schoolId
+                            if (childIdFilter != null) cond = cond and (FeeAdditionalChargesTable.childId eq childIdFilter)
+                            if (monthFilter != null) cond = cond and (FeeAdditionalChargesTable.month eq monthFilter)
+                            cond
+                        }
                         .orderBy(FeeAdditionalChargesTable.createdAt, org.jetbrains.exposed.sql.SortOrder.DESC)
                         .map { row ->
                             val childName = ChildrenTable.selectAll()
@@ -526,8 +531,10 @@ fun Route.feeSalaryRouting() {
 
                 val students = dbQuery {
                     val children = ChildrenTable.selectAll()
-                        .where { (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true) }
-                        .let { q -> if (classIdFilter != null) q.and { ChildrenTable.id eq classIdFilter } else q }
+                        .where {
+                            val base: org.jetbrains.exposed.sql.Op<Boolean> = (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true)
+                            if (classIdFilter != null) base and (ChildrenTable.id eq classIdFilter) else base
+                        }
                         .toList()
 
                     children.mapNotNull { child ->
@@ -659,16 +666,18 @@ fun Route.feeSalaryRouting() {
                 val result = dbQuery {
                     val structures = FeeStructuresTable.selectAll()
                         .where {
-                            (FeeStructuresTable.schoolId eq ctx.schoolId) and
-                            (FeeStructuresTable.isActive eq true)
-                        }.let { q -> if (classIdFilter != null) q.and { FeeStructuresTable.classId eq classIdFilter } else q }
+                            val base: org.jetbrains.exposed.sql.Op<Boolean> = (FeeStructuresTable.schoolId eq ctx.schoolId) and (FeeStructuresTable.isActive eq true)
+                            if (classIdFilter != null) base and (FeeStructuresTable.classId eq classIdFilter) else base
+                        }
                         .toList()
 
                     if (structures.isEmpty()) return@dbQuery GenerateFeesResponse(0, 0)
 
                     val children = ChildrenTable.selectAll()
-                        .where { (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true) }
-                        .let { q -> if (classIdFilter != null) q.and { ChildrenTable.id eq classIdFilter } else q }
+                        .where {
+                            val base: org.jetbrains.exposed.sql.Op<Boolean> = (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true)
+                            if (classIdFilter != null) base and (ChildrenTable.id eq classIdFilter) else base
+                        }
                         .toList()
 
                     var generated = 0
@@ -821,9 +830,12 @@ fun Route.feeSalaryRouting() {
                 val monthFilter = call.request.queryParameters["month"]
                 val records = dbQuery {
                     SalaryRecordsTable.selectAll()
-                        .where { SalaryRecordsTable.schoolId eq ctx.schoolId }
-                        .let { q -> if (teacherIdFilter != null) q.and { SalaryRecordsTable.teacherId eq teacherIdFilter } else q }
-                        .let { q -> if (monthFilter != null) q.and { SalaryRecordsTable.month eq monthFilter } else q }
+                        .where {
+                            var cond: org.jetbrains.exposed.sql.Op<Boolean> = SalaryRecordsTable.schoolId eq ctx.schoolId
+                            if (teacherIdFilter != null) cond = cond and (SalaryRecordsTable.teacherId eq teacherIdFilter)
+                            if (monthFilter != null) cond = cond and (SalaryRecordsTable.month eq monthFilter)
+                            cond
+                        }
                         .orderBy(SalaryRecordsTable.month, org.jetbrains.exposed.sql.SortOrder.DESC)
                         .map { row ->
                             val teacherName = AppUsersTable.selectAll()

@@ -74,7 +74,7 @@ import com.littlebridge.enrollplus.util.formatDecimal
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
-import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherKit.TeacherSpinner
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherSpinner
 
 private enum class StudentLibraryTab {
     Browse, MyBooks, History, Wishlist, Reservations, Acquisition, Profile, Badges, Discussions;
