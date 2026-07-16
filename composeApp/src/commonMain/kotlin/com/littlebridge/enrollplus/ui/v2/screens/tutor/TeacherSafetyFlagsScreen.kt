@@ -33,8 +33,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.VErrorState
 import com.littlebridge.enrollplus.ui.v2.screens.VLoadingState
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtC
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.VtT
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.coloredV
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -44,7 +45,7 @@ fun TeacherSafetyFlagsScreen(
     viewModel: TeacherSafetyFlagsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    val c = VTheme.colors
+    val c = VtC
 
     LaunchedEffect(Unit) {
         viewModel.loadFlags()
@@ -82,7 +83,7 @@ fun TeacherSafetyFlagsScreen(
 
 @Composable
 private fun FlagsContent(flags: List<SafetyFlagDto>) {
-    val c = VTheme.colors
+    val c = VtC
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
@@ -91,7 +92,7 @@ private fun FlagsContent(flags: List<SafetyFlagDto>) {
         item {
             Text(
                 "Flagged Sessions (${flags.size})",
-                style = VTheme.type.h3.colored(c.ink),
+                style = VtT.h3.coloredV(c.ink),
                 modifier = Modifier.padding(bottom = 4.dp),
             )
         }
@@ -103,7 +104,7 @@ private fun FlagsContent(flags: List<SafetyFlagDto>) {
 
 @Composable
 private fun FlagCard(flag: SafetyFlagDto) {
-    val c = VTheme.colors
+    val c = VtC
     VCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
@@ -124,16 +125,16 @@ private fun FlagCard(flag: SafetyFlagDto) {
             ) {
                 Text(
                     flag.childName,
-                    style = VTheme.type.body.colored(c.ink),
+                    style = VtT.body.coloredV(c.ink),
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     "Flag: ${flag.safetyFlag ?: "unknown"}",
-                    style = VTheme.type.caption.colored(VColors.coral),
+                    style = VtT.caption.coloredV(VColors.coral),
                 )
                 Text(
                     "Date: ${flag.createdAt.take(16)}",
-                    style = VTheme.type.caption.colored(c.ink3),
+                    style = VtT.caption.coloredV(c.ink3),
                 )
             }
         }

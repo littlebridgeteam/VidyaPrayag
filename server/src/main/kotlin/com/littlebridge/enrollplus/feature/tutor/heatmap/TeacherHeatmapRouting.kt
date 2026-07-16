@@ -15,7 +15,6 @@ import io.ktor.server.routing.get
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.limit
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
