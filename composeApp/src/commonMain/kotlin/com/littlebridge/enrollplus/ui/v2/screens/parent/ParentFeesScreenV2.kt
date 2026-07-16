@@ -31,13 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import com.littlebridge.enrollplus.feature.parent.domain.model.DashboardChildSummary
+import com.littlebridge.enrollplus.feature.parent.domain.model.MonthlyFeeSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentFeeItemDto
-import com.littlebridge.enrollplus.feature.parent.presentation.FeeAnnouncement
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeState
 import com.littlebridge.enrollplus.feature.parent.presentation.FeeViewModel
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -109,7 +110,7 @@ private fun ParentFeesContent(
     onFeeHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isEmpty = state.announcements.isEmpty() &&
+    val isEmpty = state.monthlySummary.isEmpty() &&
         state.outstandingFees.isBlank() &&
         state.totalCollected.isBlank()
 
@@ -260,7 +261,7 @@ private fun ParentFeesContent(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "Collected this term",
+                                "Total Paid",
                                 style = VTypography.caption,
                                 color = VColors.ink3,
                             )
@@ -274,28 +275,16 @@ private fun ParentFeesContent(
                         CollectionProgressBar(state.collectionProgress)
                     }
 
-                    // ── Fee announcements ────────────────────────────────────────────
-                    if (state.announcements.isNotEmpty()) {
-                        Text(
-                            "Fee notices",
-                            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                            color = VColors.ink,
-                        )
-                        state.announcements.forEach { a ->
-                            FeeAnnouncementCard(a)
-                        }
-                    }
-
-                    // ── Fee items breakdown ───────────────────────────────────────
-                    if (state.feeItems.isNotEmpty()) {
+                    // ── Monthly fee cards (one per month with breakdown) ────────────
+                    if (state.monthlySummary.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Fee breakdown",
+                            "Monthly Fees",
                             style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
                             color = VColors.ink,
                         )
-                        state.feeItems.forEach { item ->
-                            FeeItemCard(item)
+                        state.monthlySummary.forEach { ms ->
+                            MonthlyFeeCard(ms)
                         }
                     }
                 } // end content Column
@@ -324,99 +313,131 @@ private fun CollectionProgressBar(progress: Float) {
 }
 
 @Composable
-private fun FeeAnnouncementCard(a: FeeAnnouncement) {
-    val badgeColor = when (a.type) {
-        "Emergency" -> VColors.error to VColors.errorSoft
-        "Payment" -> VColors.gold to VColors.goldSoft
-        else -> VColors.ink3 to VColors.creamDeep
+private fun MonthlyFeeCard(ms: MonthlyFeeSummary) {
+    var expanded by remember { mutableStateOf(false) }
+    val statusColor = when (ms.status) {
+        "PAID" -> VColors.success to VColors.successSoft
+        "OVERDUE" -> VColors.error to VColors.errorSoft
+        else -> VColors.gold to VColors.goldSoft
     }
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(VShapes.lg)
             .background(VColors.surfaceCard)
             .border(1.dp, VColors.line, VShapes.lg)
+            .clickable { expanded = !expanded }
             .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                a.title,
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
-            )
-            Text(
-                "${a.description} • ${a.time}",
-                style = VTypography.caption,
-                color = VColors.ink2,
-            )
-        }
-        Box(
-            Modifier
-                .clip(VShapes.full)
-                .background(badgeColor.second)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                a.type,
-                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                color = badgeColor.first,
-            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    ms.month,
+                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                    color = VColors.ink,
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Total: ${"%,.0f".format(ms.totalAmount)}",
+                        style = VTypography.caption,
+                        color = VColors.ink2,
+                    )
+                    if (ms.paidAmount > 0) {
+                        Text(
+                            "Paid: ${"%,.0f".format(ms.paidAmount)}",
+                            style = VTypography.caption,
+                            color = VColors.success,
+                        )
+                    }
+                    if (ms.dueAmount > 0) {
+                        Text(
+                            "Due: ${"%,.0f".format(ms.dueAmount)}",
+                            style = VTypography.caption,
+                            color = VColors.error,
+                        )
+                    }
+                }
+            }
+            Box(
+                Modifier
+                    .clip(VShapes.full)
+                    .background(statusColor.second)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    ms.status,
+                    style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                    color = statusColor.first,
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ms.items.forEach { item ->
+                    MonthlyFeeBreakdownRow(item)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun FeeItemCard(item: ParentFeeItemDto) {
-    val statusColor = when (item.status) {
+private fun MonthlyFeeBreakdownRow(item: ParentFeeItemDto) {
+    val itemStatusColor = when (item.status) {
         "PAID" -> VColors.success to VColors.successSoft
         "OVERDUE" -> VColors.error to VColors.errorSoft
         else -> VColors.gold to VColors.goldSoft
     }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
             Text(
                 item.title,
-                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
                 color = VColors.ink,
             )
-            item.description?.let {
-                Text(it, style = VTypography.caption, color = VColors.ink2)
-            }
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    "${item.currency} ${"%,.0f".format(item.amount)}",
-                    style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.violet,
-                )
-                item.month?.let {
-                    Text("• $it", style = VTypography.caption, color = VColors.ink3)
-                }
-            }
+            Text(
+                item.category,
+                style = VTypography.caption.copy(fontSize = 10.sp),
+                color = VColors.ink3,
+            )
         }
-        Box(
-            Modifier
-                .clip(VShapes.full)
-                .background(statusColor.second)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                item.status,
-                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                color = statusColor.first,
+                "${"%,.0f".format(item.amount)}",
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
             )
+            Box(
+                Modifier
+                    .clip(VShapes.full)
+                    .background(itemStatusColor.second)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    item.status,
+                    style = VTypography.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
+                    color = itemStatusColor.first,
+                )
+            }
         }
     }
 }

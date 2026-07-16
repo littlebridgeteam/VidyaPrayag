@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewFeeAnalytics
+import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewFeePoint
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewKpi
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewParentEngagement
 import com.littlebridge.enrollplus.feature.admin.domain.model.OverviewSchoolPulse

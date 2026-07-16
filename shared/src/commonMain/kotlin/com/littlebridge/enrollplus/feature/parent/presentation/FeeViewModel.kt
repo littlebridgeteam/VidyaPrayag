@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.core.state.SelectedChildHolder
+import com.littlebridge.enrollplus.feature.parent.domain.model.MonthlyFeeSummary
 import com.littlebridge.enrollplus.feature.parent.domain.model.ParentFeeItemDto
 import com.littlebridge.enrollplus.feature.parent.domain.repository.ParentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ data class FeeState(
     val overdueCount: Int = 0,
     val announcements: List<FeeAnnouncement> = emptyList(),
     val feeItems: List<ParentFeeItemDto> = emptyList(),
+    val monthlySummary: List<MonthlyFeeSummary> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val isStale: Boolean = false,
@@ -86,6 +88,7 @@ class FeeViewModel(
                                 FeeAnnouncement(a.id, a.title, a.time, a.description, a.openRate, a.engagement, a.type)
                             },
                             feeItems = data.feeItems,
+                            monthlySummary = data.monthlySummary,
                             isStale = result.isStale,
                             isOffline = result.isOffline,
                             refreshEpoch = it.refreshEpoch + 1,
