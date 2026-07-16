@@ -69,7 +69,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.orderBy
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
@@ -648,7 +647,7 @@ fun Route.feeSalaryRouting() {
                                     .count() > 0
 
                                 if (!alreadyApplied) {
-                                    val feeMonth = dueDateStr.substring(0, 7)
+                                    val feeMonth = dueDateStr?.substring(0, 7) ?: return@forEach
                                     FeeAdditionalChargesTable.insert {
                                         it[FeeAdditionalChargesTable.id] = UUID.randomUUID()
                                         it[FeeAdditionalChargesTable.schoolId] = ctx.schoolId
