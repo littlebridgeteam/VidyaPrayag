@@ -4,18 +4,24 @@ import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.FeeSalaryApi
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeStructureRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeAdditionalChargeListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeClassListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLateFeeTierDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLateFeeTierListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeReminderConfigDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStructureDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStructureListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStudentListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeTeacherListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.GenerateFeesRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.GenerateFeesResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.MarkPaidRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.SalaryListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.SalaryRecordDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.SetSalaryRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeReminderConfigRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeStructureRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.FeeSalaryRepository
@@ -68,4 +74,22 @@ class FeeSalaryRepositoryImpl(
 
     override suspend fun markSalaryPaid(token: String, id: String): NetworkResult<ApiResponse<Unit>> =
         api.markSalaryPaid(token, id)
+
+    override suspend fun getFeeClasses(token: String): NetworkResult<ApiResponse<FeeClassListResponse>> =
+        api.getFeeClasses(token)
+
+    override suspend fun getFeeTeachers(token: String): NetworkResult<ApiResponse<FeeTeacherListResponse>> =
+        api.getFeeTeachers(token)
+
+    override suspend fun getLateFeeTiers(token: String): NetworkResult<ApiResponse<FeeLateFeeTierListResponse>> =
+        api.getLateFeeTiers(token)
+
+    override suspend fun createLateFeeTier(token: String, request: CreateFeeLateFeeTierRequest): NetworkResult<ApiResponse<FeeLateFeeTierDto>> =
+        api.createLateFeeTier(token, request)
+
+    override suspend fun updateLateFeeTier(token: String, id: String, request: UpdateFeeLateFeeTierRequest): NetworkResult<ApiResponse<Unit>> =
+        api.updateLateFeeTier(token, id, request)
+
+    override suspend fun deleteLateFeeTier(token: String, id: String): NetworkResult<ApiResponse<Unit>> =
+        api.deleteLateFeeTier(token, id)
 }

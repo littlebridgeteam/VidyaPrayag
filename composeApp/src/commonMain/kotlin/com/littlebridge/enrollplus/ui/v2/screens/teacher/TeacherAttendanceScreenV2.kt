@@ -54,6 +54,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.v2.theme.pressScale
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -184,6 +185,14 @@ private fun AttendanceBody(
                         VtCompactMetric(state.leaveCount.toString(), appString(StringKeys.TEACHER_LEAVE), VColors.sky, Modifier.weight(1f))
                     }
 
+                    if (state.unmarkedCount > 0) {
+                        Text(
+                            "${state.unmarkedCount} unmarked",
+                            style = VTypography.caption,
+                            color = VColors.ink3,
+                        )
+                    }
+
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         VButton(
                             text = appString(StringKeys.TC_MARK_ALL_PRESENT),
@@ -192,6 +201,8 @@ private fun AttendanceBody(
                             variant = VButtonVariant.Secondary,
                             tone = VButtonTone.Mint,
                             size = VButtonSize.Md,
+                            stateful = true,
+                            enabled = state.unmarkedCount > 0,
                             leading = { Icon(VIcons.Check, contentDescription = null, modifier = Modifier.size(15.dp)) },
                         )
                         VButton(
@@ -291,6 +302,7 @@ private fun StatusChip(
     Box(
         modifier
             .fillMaxWidth()
+            .pressScale(interaction)
             .clip(VShapes.md)
             .background(if (active) tint.copy(alpha = 0.16f) else VColors.creamDeep)
             .border(1.dp, if (active) tint.copy(alpha = 0.5f) else VColors.line, VShapes.md)

@@ -237,6 +237,11 @@ private fun resolveIcon(name: String): ImageVector = when (name.lowercase()) {
     "scholarships" -> VIcons.Sparkles
     "alumni" -> VIcons.GraduationCap
     "dailyattendance" -> VIcons.Check
+    "pews" -> VIcons.AlertTriangle
+    "health" -> VIcons.Heart
+    "delivery" -> VIcons.Send
+    "admissions" -> VIcons.ClipboardList
+    "gamification" -> VIcons.Sparkles
     else -> VIcons.Star
 }
 
@@ -262,4 +267,12 @@ private val COMMAND_DESTINATIONS = listOf(
     CommandDestination("overlay_scholarships", "Scholarships", "scholarships"),
     CommandDestination("overlay_alumni", "Alumni", "alumni"),
     CommandDestination("overlay_daily_attendance", "Daily Attendance", "dailyattendance"),
+    CommandDestination("overlay_pews_cohort", "PEWS At-Risk", "pews"),
+    CommandDestination("overlay_health_records", "Health Records", "health"),
+    CommandDestination("overlay_delivery_log", "Delivery Log", "delivery"),
+    CommandDestination("overlay_admissions", "Admissions CRM", "admissions"),
+    CommandDestination("overlay_report_publish", "Report Publishing", "reports"),
+    CommandDestination("overlay_scheduled_messages", "Scheduled Messages", "messages"),
+    CommandDestination("overlay_gamification", "Gamification", "gamification"),
+    CommandDestination("overlay_fee_salary", "Fees & Salary", "fees"),
 )

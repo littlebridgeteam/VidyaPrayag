@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -106,15 +107,17 @@ private fun VLanguageRow(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).defaultMinSize(minWidth = 100.dp)) {
             Text(
                 text = lang.nativeName,
                 style = VTheme.type.body.colored(if (isSelected) accentColor else colors.ink),
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                maxLines = 1,
             )
             Text(
                 text = lang.englishName,
                 style = VTheme.type.caption.colored(colors.ink3),
+                maxLines = 1,
             )
         }
 

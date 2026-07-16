@@ -28,6 +28,8 @@ import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.db.AppConfigTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.FeeAdditionalChargesTable
+import com.littlebridge.enrollplus.db.FeeLateFeeTiersTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -39,6 +41,8 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.orderBy
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
@@ -121,6 +125,100 @@ fun Route.parentFeesRouting() {
                 // that would need an index) and to keep tenancy on parentId.
                 val childIdFilter = call.request.queryParameters["child_id"]
                     ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+                val today = LocalDate.now().toString()
+                val now = Instant.now()
+
+                // Auto-transition: mark DUE fees as OVERDUE when dueDate < today.
+    // Also apply late fee tier charges based on days past due date.
+    // This runs before the query so the returned stats reflect reality.
+    dbQuery {
+        // Fetch late fee tiers for the parent's school (active only)
+        val schoolId = FeeRecordsTable.selectAll()
+            .where { FeeRecordsTable.parentId eq uid }
+            .firstOrNull()
+            ?.get(FeeRecordsTable.schoolId)
+
+        if (schoolId != null) {
+            val tiers = FeeLateFeeTiersTable.selectAll()
+                .where {
+                    (FeeLateFeeTiersTable.schoolId eq schoolId) and
+                    (FeeLateFeeTiersTable.isActive eq true)
+                }
+                .orderBy(FeeLateFeeTiersTable.daysAfterDue)
+                .toList()
+
+            val overdueFees = FeeRecordsTable.selectAll()
+                .where {
+                    (FeeRecordsTable.parentId eq uid) and
+                    (FeeRecordsTable.status eq "DUE") and
+                    (FeeRecordsTable.dueDate less today)
+                }
+                .toList()
+
+            overdueFees.forEach { fee ->
+                val feeId = fee[FeeRecordsTable.id].value
+                val dueDateStr = fee[FeeRecordsTable.dueDate] ?: return@forEach
+                val daysPast = try {
+                    java.time.temporal.ChronoUnit.DAYS.between(
+                        java.time.LocalDate.parse(dueDateStr),
+                        java.time.LocalDate.now()
+                    ).toInt()
+                } catch (_: Exception) { 0 }
+
+                val applicableTier = tiers.lastOrNull { it[FeeLateFeeTiersTable.daysAfterDue] <= daysPast }
+
+                FeeRecordsTable.update({
+                    FeeRecordsTable.id eq feeId
+                }) {
+                    it[FeeRecordsTable.status] = "OVERDUE"
+                    it[FeeRecordsTable.updatedAt] = now
+                }
+
+                if (applicableTier != null) {
+                    val tierAmount = applicableTier[FeeLateFeeTiersTable.amount]
+                    val tierDays = applicableTier[FeeLateFeeTiersTable.daysAfterDue]
+                    val childId = fee[FeeRecordsTable.childId]
+
+                    if (childId != null) {
+                        val alreadyApplied = FeeAdditionalChargesTable.selectAll()
+                            .where {
+                                (FeeAdditionalChargesTable.childId eq childId) and
+                                (FeeAdditionalChargesTable.title eq "Late fee (${tierDays} days)")
+                            }
+                            .count() > 0
+
+                        if (!alreadyApplied) {
+                            val feeMonth = dueDateStr.substring(0, 7)
+                            FeeAdditionalChargesTable.insert {
+                                it[FeeAdditionalChargesTable.id] = UUID.randomUUID()
+                                it[FeeAdditionalChargesTable.schoolId] = schoolId
+                                it[FeeAdditionalChargesTable.childId] = childId
+                                it[FeeAdditionalChargesTable.classId] = null
+                                it[FeeAdditionalChargesTable.month] = feeMonth
+                                it[FeeAdditionalChargesTable.title] = "Late fee (${tierDays} days)"
+                                it[FeeAdditionalChargesTable.description] = "Auto-applied late fee for payment ${daysPast} days overdue"
+                                it[FeeAdditionalChargesTable.amount] = tierAmount
+                                it[FeeAdditionalChargesTable.currency] = fee[FeeRecordsTable.currency]
+                                it[FeeAdditionalChargesTable.createdAt] = now
+                                it[FeeAdditionalChargesTable.updatedAt] = now
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // No schoolId — just do the simple overdue transition
+            FeeRecordsTable.update({
+                (FeeRecordsTable.parentId eq uid) and
+                (FeeRecordsTable.status eq "DUE") and
+                (FeeRecordsTable.dueDate less today)
+            }) {
+                it[FeeRecordsTable.status] = "OVERDUE"
+                it[FeeRecordsTable.updatedAt] = now
+            }
+        }
+    }
 
                 val response = dbQuery {
                     val rows = FeeRecordsTable.selectAll()

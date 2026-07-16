@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,6 +45,8 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.core.locale.StringKeys
+import com.littlebridge.enrollplus.ui.v2.locale.appString
 import org.koin.compose.viewmodel.koinViewModel
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -73,11 +76,11 @@ fun TeacherStudentGamificationCard(
 
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            VtEyebrow("Gamification Tools", dot = c.accent)
+            VtEyebrow(appString(StringKeys.GAM_TOOLS), dot = c.accent)
 
             // Student badges row
             if (state.studentBadges.isNotEmpty()) {
-                Text("Earned Badges", style = VTypography.label, color = c.ink3)
+                Text(appString(StringKeys.GAM_EARNED_BADGES), style = VTypography.label, color = c.ink3)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(state.studentBadges) { badge ->
                         BadgeChip(badge = badge)
@@ -88,7 +91,7 @@ fun TeacherStudentGamificationCard(
             // Action buttons row — Encourage + Spotlight
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 VButton(
-                    "Encourage",
+                    appString(StringKeys.GAM_ENCOURAGE),
                     onClick = { gamificationViewModel.encourageStudent(studentId) },
                     modifier = Modifier.weight(1f),
                     size = VButtonSize.Md,
@@ -96,7 +99,7 @@ fun TeacherStudentGamificationCard(
                     loading = state.isActionLoading,
                 )
                 VButton(
-                    "Spotlight",
+                    appString(StringKeys.GAM_SPOTLIGHT),
                     onClick = { gamificationViewModel.spotlightStudent(studentId) },
                     modifier = Modifier.weight(1f),
                     size = VButtonSize.Md,
@@ -107,7 +110,7 @@ fun TeacherStudentGamificationCard(
 
             // Shoutout toggle
             VButton(
-                if (showShoutoutField) "Cancel Shoutout" else "Send Shoutout",
+                if (showShoutoutField) appString(StringKeys.GAM_CANCEL_SHOUTOUT) else appString(StringKeys.GAM_SEND_SHOUTOUT),
                 onClick = {
                     if (showShoutoutField && shoutoutMsg.isNotBlank()) {
                         gamificationViewModel.sendShoutout(studentId, shoutoutMsg)
@@ -126,7 +129,7 @@ fun TeacherStudentGamificationCard(
                 OutlinedTextField(
                     value = shoutoutMsg,
                     onValueChange = { shoutoutMsg = it },
-                    placeholder = { Text("Type a shoutout message...", color = c.ink3) },
+                    placeholder = { Text(appString(StringKeys.GAM_SHOUTOUT_PH), color = c.ink3) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 2,
                     textStyle = VTypography.body.copy(color = VColors.ink),
@@ -134,102 +137,7 @@ fun TeacherStudentGamificationCard(
                 )
             }
 
-            // Quest assignment toggle
-            VButton(
-                if (showQuestPicker) "Cancel Quest" else "Assign Quest",
-                onClick = { showQuestPicker = !showQuestPicker },
-                full = true,
-                size = VButtonSize.Md,
-                tone = VButtonTone.Peach,
-                variant = if (showQuestPicker) VButtonVariant.Ghost else VButtonVariant.Secondary,
-                loading = state.isActionLoading,
-            )
-
-            if (showQuestPicker && state.availableQuests.isNotEmpty()) {
-                state.availableQuests.forEach { quest ->
-                    VButton(
-                        "${quest.name} · +${quest.xpReward} XP",
-                        onClick = {
-                            gamificationViewModel.assignQuest(studentId, quest.id)
-                            showQuestPicker = false
-                        },
-                        full = true,
-                        size = VButtonSize.Sm,
-                        tone = VButtonTone.Mint,
-                        variant = VButtonVariant.Secondary,
-                        loading = state.isActionLoading,
-                    )
-                }
-            }
-
-            // Badge award toggle
-            VButton(
-                if (showBadgePicker) "Cancel Badge" else "Award Badge",
-                onClick = { showBadgePicker = !showBadgePicker },
-                full = true,
-                size = VButtonSize.Md,
-                tone = VButtonTone.Sand,
-                variant = if (showBadgePicker) VButtonVariant.Ghost else VButtonVariant.Secondary,
-                loading = state.isActionLoading,
-            )
-
-            if (showBadgePicker && state.availableBadges.isNotEmpty()) {
-                state.availableBadges.forEach { badge ->
-                    VButton(
-                        "${badge.name} · ${badge.category}",
-                        onClick = {
-                            gamificationViewModel.awardBadge(studentId, badge.id)
-                            showBadgePicker = false
-                        },
-                        full = true,
-                        size = VButtonSize.Sm,
-                        tone = VButtonTone.Sand,
-                        variant = VButtonVariant.Secondary,
-                        loading = state.isActionLoading,
-                    )
-                }
-            }
-
-            // Parent alert toggle
-            VButton(
-                if (showParentAlert) "Cancel Alert" else "Parent Alert",
-                onClick = { showParentAlert = !showParentAlert },
-                full = true,
-                size = VButtonSize.Md,
-                tone = VButtonTone.Rose,
-                variant = if (showParentAlert) VButtonVariant.Ghost else VButtonVariant.Secondary,
-                loading = state.isActionLoading,
-            )
-
-            if (showParentAlert) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = parentAlertMsg,
-                        onValueChange = { parentAlertMsg = it },
-                        placeholder = { Text("Type a positive message to the parent...", color = c.ink3) },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 3,
-                        textStyle = VTypography.body.copy(color = VColors.ink),
-                        shape = VShapes.md,
-                    )
-                    VButton(
-                        "Send Alert",
-                        onClick = {
-                            if (parentAlertMsg.isNotBlank()) {
-                                gamificationViewModel.sendParentAlert(studentId, parentAlertMsg)
-                                parentAlertMsg = ""
-                                showParentAlert = false
-                            }
-                        },
-                        full = true,
-                        size = VButtonSize.Md,
-                        tone = VButtonTone.Rose,
-                        loading = state.isActionLoading,
-                    )
-                }
-            }
-
-            // Action feedback message
+            // Action feedback message — placed right after action buttons so it's visible
             state.actionMessage?.let { msg ->
                 val isSuccess = !msg.contains("Failed")
                 Box(
@@ -252,6 +160,107 @@ fun TeacherStudentGamificationCard(
                     gamificationViewModel.clearActionMessage()
                 }
             }
+
+            // Quest assignment toggle
+            VButton(
+                if (showQuestPicker) appString(StringKeys.GAM_CANCEL_QUEST) else appString(StringKeys.GAM_ASSIGN_QUEST),
+                onClick = {
+                    showQuestPicker = !showQuestPicker
+                    if (showQuestPicker) showBadgePicker = false
+                },
+                full = true,
+                size = VButtonSize.Md,
+                tone = VButtonTone.Peach,
+                variant = if (showQuestPicker) VButtonVariant.Ghost else VButtonVariant.Secondary,
+                loading = state.isActionLoading,
+            )
+
+            if (showQuestPicker && state.availableQuests.isNotEmpty()) {
+                state.availableQuests.forEach { quest ->
+                    VButton(
+                        appString(StringKeys.GAM_QUEST_BUTTON, "name" to quest.name, "xp" to quest.xpReward),
+                        onClick = {
+                            gamificationViewModel.assignQuest(studentId, quest.id)
+                            showQuestPicker = false
+                        },
+                        full = true,
+                        size = VButtonSize.Sm,
+                        tone = VButtonTone.Mint,
+                        variant = VButtonVariant.Secondary,
+                        loading = state.isActionLoading,
+                    )
+                }
+            }
+
+            // Badge award toggle
+            VButton(
+                if (showBadgePicker) appString(StringKeys.GAM_CANCEL_BADGE) else appString(StringKeys.GAM_AWARD_BADGE),
+                onClick = {
+                    showBadgePicker = !showBadgePicker
+                    if (showBadgePicker) showQuestPicker = false
+                },
+                full = true,
+                size = VButtonSize.Md,
+                tone = VButtonTone.Sand,
+                variant = if (showBadgePicker) VButtonVariant.Ghost else VButtonVariant.Secondary,
+                loading = state.isActionLoading,
+            )
+
+            if (showBadgePicker && state.availableBadges.isNotEmpty()) {
+                state.availableBadges.forEach { badge ->
+                    VButton(
+                        appString(StringKeys.GAM_BADGE_BUTTON, "name" to badge.name, "category" to badge.category),
+                        onClick = {
+                            gamificationViewModel.awardBadge(studentId, badge.id)
+                            showBadgePicker = false
+                        },
+                        full = true,
+                        size = VButtonSize.Sm,
+                        tone = VButtonTone.Sand,
+                        variant = VButtonVariant.Secondary,
+                        loading = state.isActionLoading,
+                    )
+                }
+            }
+
+            // Parent alert toggle
+            VButton(
+                if (showParentAlert) appString(StringKeys.GAM_CANCEL_ALERT) else appString(StringKeys.GAM_PARENT_ALERT),
+                onClick = { showParentAlert = !showParentAlert },
+                full = true,
+                size = VButtonSize.Md,
+                tone = VButtonTone.Rose,
+                variant = if (showParentAlert) VButtonVariant.Ghost else VButtonVariant.Secondary,
+                loading = state.isActionLoading,
+            )
+
+            if (showParentAlert) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = parentAlertMsg,
+                        onValueChange = { parentAlertMsg = it },
+                        placeholder = { Text(appString(StringKeys.GAM_PARENT_ALERT_PH), color = c.ink3) },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3,
+                        textStyle = VTypography.body.copy(color = VColors.ink),
+                        shape = VShapes.md,
+                    )
+                    VButton(
+                        appString(StringKeys.GAM_SEND_ALERT),
+                        onClick = {
+                            if (parentAlertMsg.isNotBlank()) {
+                                gamificationViewModel.sendParentAlert(studentId, parentAlertMsg)
+                                parentAlertMsg = ""
+                                showParentAlert = false
+                            }
+                        },
+                        full = true,
+                        size = VButtonSize.Md,
+                        tone = VButtonTone.Rose,
+                        loading = state.isActionLoading,
+                    )
+                }
+            }
         }
     }
 }
@@ -269,7 +278,7 @@ fun TeacherClassGamificationCard(
     gamificationViewModel: TeacherGamificationViewModel = koinViewModel(),
 ) {
     val state by gamificationViewModel.state.collectAsStateV2()
-    LaunchedEffect(className) { gamificationViewModel.load() }
+    LaunchedEffect(className) { gamificationViewModel.load(className) }
 
     val c = VtC
     var showPepTalkConfirm by remember { mutableStateOf(false) }
@@ -283,10 +292,11 @@ fun TeacherClassGamificationCard(
     var showBuddyForm by remember { mutableStateOf(false) }
     var buddy1Id by remember { mutableStateOf("") }
     var buddy2Id by remember { mutableStateOf("") }
+    var goalError by remember { mutableStateOf("") }
 
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            VtEyebrow("Class Gamification", dot = c.accent)
+            VtEyebrow(appString(StringKeys.GAM_CLASS_GAMIFICATION), dot = c.accent)
 
             // Overview stats
             state.overview?.let { ov ->
@@ -294,15 +304,15 @@ fun TeacherClassGamificationCard(
                 val totalBadges = ov["totalBadgesAwarded"] as? Int ?: 0
                 val activeQuests = ov["activeQuests"] as? Int ?: 0
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    VtMetricTile("$totalXp", "Total XP", c.accent, Modifier.weight(1f))
-                    VtMetricTile("$totalBadges", "Badges", VColors.gold, Modifier.weight(1f))
-                    VtMetricTile("$activeQuests", "Quests", c.teal, Modifier.weight(1f))
+                    VtMetricTile("$totalXp", appString(StringKeys.GAM_TOTAL_XP), c.accent, Modifier.weight(1f))
+                    VtMetricTile("$totalBadges", appString(StringKeys.GAM_BADGES), VColors.gold, Modifier.weight(1f))
+                    VtMetricTile("$activeQuests", appString(StringKeys.GAM_QUESTS), c.teal, Modifier.weight(1f))
                 }
             }
 
             // Class leaderboard (top 5)
             if (state.classLeaderboard.isNotEmpty()) {
-                Text("Class Leaderboard", style = VTypography.label, color = c.ink3)
+                Text(appString(StringKeys.GAM_CLASS_LEADERBOARD), style = VTypography.label, color = c.ink3)
                 state.classLeaderboard.take(5).forEachIndexed { idx, entry ->
                     LeaderboardRow(entry = entry, rank = idx + 1)
                 }
@@ -310,7 +320,7 @@ fun TeacherClassGamificationCard(
 
             // Class goals
             if (state.classGoals.isNotEmpty()) {
-                Text("Class Goals", style = VTypography.label, color = c.ink3)
+                Text(appString(StringKeys.GAM_CLASS_GOALS), style = VTypography.label, color = c.ink3)
                 state.classGoals.forEach { goal ->
                     ClassGoalRow(
                         goal = goal,
@@ -323,7 +333,7 @@ fun TeacherClassGamificationCard(
 
             // Pep Talk button
             VButton(
-                if (showPepTalkConfirm) "Confirm Pep Talk" else "Send Pep Talk",
+                if (showPepTalkConfirm) appString(StringKeys.GAM_CONFIRM_PEP_TALK) else appString(StringKeys.GAM_SEND_PEP_TALK),
                 onClick = {
                     if (showPepTalkConfirm) {
                         gamificationViewModel.pepTalk(className, section)
@@ -341,14 +351,14 @@ fun TeacherClassGamificationCard(
 
             if (showPepTalkConfirm) {
                 Text(
-                    "Send a motivational pep talk to $className${section?.let { " · $it" } ?: ""}?",
+                    appString(StringKeys.GAM_PEP_TALK_CONFIRM, "className" to className, "section" to (section?.let { " · $it" } ?: "")),
                     style = VTypography.caption, color = c.ink2,
                 )
             }
 
             // Create class goal
             VButton(
-                if (showGoalCreator) "Cancel" else "Create Class Goal",
+                if (showGoalCreator) appString(StringKeys.COMMON_BUTTON_CANCEL) else appString(StringKeys.GAM_CREATE_CLASS_GOAL),
                 onClick = { showGoalCreator = !showGoalCreator },
                 full = true,
                 size = VButtonSize.Md,
@@ -362,7 +372,7 @@ fun TeacherClassGamificationCard(
                     OutlinedTextField(
                         value = goalType,
                         onValueChange = { goalType = it },
-                        placeholder = { Text("Goal type (e.g. attendance)") },
+                        placeholder = { Text(appString(StringKeys.GAM_GOAL_TYPE_PH)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         textStyle = VTypography.body.copy(color = VColors.ink),
@@ -371,7 +381,7 @@ fun TeacherClassGamificationCard(
                     OutlinedTextField(
                         value = goalTarget,
                         onValueChange = { goalTarget = it },
-                        placeholder = { Text("Target (e.g. 90)") },
+                        placeholder = { Text(appString(StringKeys.GAM_GOAL_TARGET_NUM_PH)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -381,17 +391,27 @@ fun TeacherClassGamificationCard(
                     OutlinedTextField(
                         value = goalReward,
                         onValueChange = { goalReward = it },
-                        placeholder = { Text("Reward (e.g. 500 XP)") },
+                        placeholder = { Text(appString(StringKeys.GAM_GOAL_REWARD_PH)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         textStyle = VTypography.body.copy(color = VColors.ink),
                         shape = VShapes.md,
                     )
+                    if (goalError.isNotBlank()) {
+                        Text(
+                            goalError,
+                            style = VTypography.caption,
+                            color = VColors.error,
+                        )
+                    }
                     VButton(
-                        "Create Goal",
+                        appString(StringKeys.GAM_CREATE_GOAL),
                         onClick = {
                             val target = goalTarget.toIntOrNull() ?: 0
-                            if (goalType.isNotBlank() && target > 0) {
+                            if (goalType.isBlank() || target <= 0) {
+                                goalError = "Please enter a goal type and a valid target number"
+                            } else {
+                                goalError = ""
                                 gamificationViewModel.createClassGoal(goalType, target, goalReward, className)
                                 goalType = ""
                                 goalTarget = ""
@@ -407,7 +427,7 @@ fun TeacherClassGamificationCard(
 
             // Shoutout moderation
             if (state.shoutouts.isNotEmpty()) {
-                Text("Recent Shoutouts", style = VTypography.label, color = c.ink3)
+                Text(appString(StringKeys.GAM_RECENT_SHOUTOUTS), style = VTypography.label, color = c.ink3)
                 state.shoutouts.take(5).forEach { shoutout ->
                     ShoutoutRow(
                         shoutout = shoutout,
@@ -418,7 +438,7 @@ fun TeacherClassGamificationCard(
 
             // Mentor assignments
             if (state.mentorAssignments.isNotEmpty()) {
-                Text("Mentor Assignments", style = VTypography.label, color = c.ink3)
+                Text(appString(StringKeys.GAM_MENTOR_ASSIGNMENTS), style = VTypography.label, color = c.ink3)
                 state.mentorAssignments.take(5).forEach { assignment ->
                     val aId = assignment["id"]?.toString() ?: ""
                     val mId = assignment["mentorId"]?.toString() ?: ""
@@ -433,11 +453,11 @@ fun TeacherClassGamificationCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Mentor: ${mId.take(8)}...", style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
-                            Text("Mentee: ${meId.take(8)}...", style = VTypography.caption, color = c.ink3)
+                            Text(appString(StringKeys.GAM_MENTOR_PREFIX, "id" to mId.take(8)), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                            Text(appString(StringKeys.GAM_MENTEE_PREFIX, "id" to meId.take(8)), style = VTypography.caption, color = c.ink3)
                         }
                         Text(
-                            "Remove",
+                            appString(StringKeys.GAM_REMOVE),
                             style = VTypography.caption, color = VColors.error, fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable { gamificationViewModel.unassignMentor(aId) },
                         )
@@ -447,7 +467,7 @@ fun TeacherClassGamificationCard(
 
             // Mentor assignment form
             VButton(
-                if (showMentorForm) "Cancel" else "Assign Mentor",
+                if (showMentorForm) appString(StringKeys.COMMON_BUTTON_CANCEL) else appString(StringKeys.GAM_ASSIGN_MENTOR),
                 onClick = { showMentorForm = !showMentorForm },
                 full = true,
                 size = VButtonSize.Md,
@@ -461,7 +481,7 @@ fun TeacherClassGamificationCard(
                     OutlinedTextField(
                         value = mentorId,
                         onValueChange = { mentorId = it },
-                        placeholder = { Text("Mentor student ID") },
+                        placeholder = { Text(appString(StringKeys.GAM_MENTOR_ID_PH)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         textStyle = VTypography.body.copy(color = VColors.ink),
@@ -470,14 +490,14 @@ fun TeacherClassGamificationCard(
                     OutlinedTextField(
                         value = menteeId,
                         onValueChange = { menteeId = it },
-                        placeholder = { Text("Mentee student ID") },
+                        placeholder = { Text(appString(StringKeys.GAM_MENTEE_ID_PH)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         textStyle = VTypography.body.copy(color = VColors.ink),
                         shape = VShapes.md,
                     )
                     VButton(
-                        "Assign",
+                        appString(StringKeys.GAM_ASSIGN),
                         onClick = {
                             if (mentorId.isNotBlank() && menteeId.isNotBlank()) {
                                 gamificationViewModel.assignMentor(mentorId, menteeId)
@@ -494,7 +514,7 @@ fun TeacherClassGamificationCard(
 
             // Study buddy pairs
             if (state.studyBuddyPairs.isNotEmpty()) {
-                Text("Study Buddy Pairs", style = VTypography.label, color = c.ink3)
+                Text(appString(StringKeys.GAM_STUDY_BUDDY_PAIRS), style = VTypography.label, color = c.ink3)
                 state.studyBuddyPairs.take(5).forEach { pair ->
                     val pId = pair["id"]?.toString() ?: ""
                     val s1 = pair["student1Id"]?.toString() ?: ""
@@ -509,11 +529,11 @@ fun TeacherClassGamificationCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("${s1.take(8)}... & ${s2.take(8)}...", style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
-                            Text("Study buddies", style = VTypography.caption, color = c.ink3)
+                            Text(appString(StringKeys.GAM_BUDDY_PAIR, "id1" to s1.take(8), "id2" to s2.take(8)), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                            Text(appString(StringKeys.GAM_STUDY_BUDDIES), style = VTypography.caption, color = c.ink3)
                         }
                         Text(
-                            "Remove",
+                            appString(StringKeys.GAM_REMOVE),
                             style = VTypography.caption, color = VColors.error, fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable { gamificationViewModel.unassignStudyBuddy(pId) },
                         )
@@ -523,7 +543,7 @@ fun TeacherClassGamificationCard(
 
             // Study buddy form
             VButton(
-                if (showBuddyForm) "Cancel" else "Pair Study Buddies",
+                if (showBuddyForm) appString(StringKeys.COMMON_BUTTON_CANCEL) else appString(StringKeys.GAM_PAIR_STUDY_BUDDIES),
                 onClick = { showBuddyForm = !showBuddyForm },
                 full = true,
                 size = VButtonSize.Md,
@@ -537,8 +557,8 @@ fun TeacherClassGamificationCard(
                     OutlinedTextField(
                         value = buddy1Id,
                         onValueChange = { buddy1Id = it },
-                        placeholder = { Text("Student 1 ID") },
-                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(appString(StringKeys.GAM_STUDENT1_ID_PH)) },
+                        modifier = Modifier.fillMaxWidth().defaultMinSize(minWidth = 120.dp),
                         singleLine = true,
                         textStyle = VTypography.body.copy(color = VColors.ink),
                         shape = VShapes.md,
@@ -546,14 +566,14 @@ fun TeacherClassGamificationCard(
                     OutlinedTextField(
                         value = buddy2Id,
                         onValueChange = { buddy2Id = it },
-                        placeholder = { Text("Student 2 ID") },
+                        placeholder = { Text(appString(StringKeys.GAM_STUDENT2_ID_PH)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         textStyle = VTypography.body.copy(color = VColors.ink),
                         shape = VShapes.md,
                     )
                     VButton(
-                        "Pair Them",
+                        appString(StringKeys.GAM_PAIR_THEM),
                         onClick = {
                             if (buddy1Id.isNotBlank() && buddy2Id.isNotBlank()) {
                                 gamificationViewModel.assignStudyBuddy(buddy1Id, buddy2Id)
@@ -645,14 +665,14 @@ private fun LeaderboardRow(entry: LeaderboardEntry, rank: Int) {
             Text("$rank", style = VTypography.caption, color = rankColor, fontWeight = FontWeight.Bold)
         }
         Text(
-            "Student #${entry.studentId.takeLast(6)}",
+            entry.studentName,
             style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            "${entry.totalXp} XP",
+            appString(StringKeys.GAM_XP_VALUE, "xp" to entry.totalXp),
             style = VTypography.caption,
             color = c.accent,
             fontWeight = FontWeight.Bold,
@@ -667,7 +687,7 @@ private fun ClassGoalRow(
 ) {
     val c = VtC
     val goalId = goal["id"]?.toString() ?: ""
-    val goalType = goal["goalType"]?.toString() ?: "Goal"
+    val goalType = goal["goalType"]?.toString() ?: appString(StringKeys.GAM_GOAL)
     val target = goal["target"] as? Int ?: 0
     val current = goal["currentProgress"] as? Int ?: 0
     val reward = goal["reward"]?.toString() ?: ""
@@ -684,7 +704,7 @@ private fun ClassGoalRow(
                 style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold,
             )
             Text(
-                "$current/$target",
+                appString(StringKeys.GAM_PROGRESS_FRACTION, "current" to current, "target" to target),
                 style = VTypography.caption, color = c.accent, fontWeight = FontWeight.Bold,
             )
         }
@@ -705,7 +725,7 @@ private fun ClassGoalRow(
         }
         if (reward.isNotBlank()) {
             Text(
-                "Reward: $reward",
+                appString(StringKeys.GAM_REWARD_PREFIX, "reward" to reward),
                 style = VTypography.caption, color = c.ink3,
             )
         }
@@ -719,8 +739,8 @@ private fun ShoutoutRow(
 ) {
     val c = VtC
     val id = shoutout["id"]?.toString() ?: ""
-    val senderName = shoutout["senderName"]?.toString() ?: "Unknown"
-    val receiverName = shoutout["receiverName"]?.toString() ?: "Unknown"
+    val senderName = shoutout["senderName"]?.toString() ?: appString(StringKeys.GAM_UNKNOWN)
+    val receiverName = shoutout["receiverName"]?.toString() ?: appString(StringKeys.GAM_UNKNOWN)
     val message = shoutout["message"]?.toString() ?: ""
     val ix = remember { MutableInteractionSource() }
 
@@ -734,7 +754,7 @@ private fun ShoutoutRow(
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                "$senderName → $receiverName",
+                appString(StringKeys.GAM_SHOUTOUT_FROM_TO, "sender" to senderName, "receiver" to receiverName),
                 style = VTypography.caption, color = c.ink2, fontWeight = FontWeight.Bold,
             )
             Text(
@@ -746,7 +766,7 @@ private fun ShoutoutRow(
         }
         Icon(
             VIcons.Close,
-            contentDescription = "Delete shoutout",
+            contentDescription = appString(StringKeys.GAM_DELETE_SHOUTOUT),
             tint = c.danger,
             modifier = Modifier
                 .size(20.dp)

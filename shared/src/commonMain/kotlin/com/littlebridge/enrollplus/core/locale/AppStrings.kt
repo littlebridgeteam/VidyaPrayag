@@ -3153,6 +3153,447 @@ object StringKeys {
     const val PHW_SUBMIT            = "phw.submit"
     const val PHW_ATTACHMENT        = "phw.attachment"
 
+    // ── SchoolLibraryScreen (admin) ─────────────────────────────────────
+    const val LIB_TAB_DASHBOARD         = "lib_tab.dashboard"
+    const val LIB_TAB_BOOKS             = "lib_tab.books"
+    const val LIB_TAB_COPIES            = "lib_tab.copies"
+    const val LIB_TAB_ISSUES            = "lib_tab.issues"
+    const val LIB_TAB_QUICK_ISSUE       = "lib_tab.quick_issue"
+    const val LIB_TAB_BULK_RETURN       = "lib_tab.bulk_return"
+    const val LIB_TAB_CATEGORIES        = "lib_tab.categories"
+    const val LIB_TAB_AUDIT             = "lib_tab.audit"
+    const val LIB_TAB_ANNOUNCEMENTS     = "lib_tab.announcements"
+    const val LIB_TAB_ACQUISITION       = "lib_tab.acquisition"
+    const val LIB_TAB_RESERVATIONS      = "lib_tab.reservations"
+    const val LIB_TAB_HISTORY           = "lib_tab.history"
+    const val LIB_TAB_MORE              = "lib_tab.more"
+    const val LIB_TAB_SETTINGS          = "lib_tab.settings"
+    const val LIB_TITLE                 = "lib.title"
+    const val LIB_OFFLINE_CACHED        = "lib.offline_cached"
+    const val LIB_OFFLINE_CHECK         = "lib.offline_check"
+    const val LIB_DASHBOARD             = "lib.dashboard"
+    const val LIB_WELCOME               = "lib.welcome"
+    const val LIB_WELCOME_DESC          = "lib.welcome_desc"
+    const val LIB_RUN_ONBOARDING        = "lib.run_onboarding"
+    const val LIB_TOTAL_BOOKS           = "lib.total_books"
+    const val LIB_TOTAL_COPIES          = "lib.total_copies"
+    const val LIB_AVAILABLE             = "lib.available"
+    const val LIB_ISSUED                = "lib.issued"
+    const val LIB_OVERDUE               = "lib.overdue"
+    const val LIB_LOST                  = "lib.lost"
+    const val LIB_RESERVATIONS          = "lib.reservations"
+    const val LIB_DAMAGED               = "lib.damaged"
+    const val LIB_OUTSTANDING_FINES     = "lib.outstanding_fines"
+    const val LIB_COLLECTED_MONTH       = "lib.collected_month"
+    const val LIB_BOOKS                 = "lib.books"
+    const val LIB_SEARCH_BOOKS          = "lib.search_books"
+    const val LIB_ADD_BOOK              = "lib.add_book"
+    const val LIB_CATEGORY_LABEL        = "lib.category_label"
+    const val LIB_AVAILABLE_LABEL       = "lib.available_label"
+    const val LIB_AVAILABLE_ONLY        = "lib.available_only"
+    const val LIB_SORT_LABEL            = "lib.sort_label"
+    const val LIB_SORT_NEWEST           = "lib.sort_newest"
+    const val LIB_SORT_TITLE            = "lib.sort_title"
+    const val LIB_SORT_AUTHOR           = "lib.sort_author"
+    const val LIB_SORT_POPULAR          = "lib.sort_popular"
+    const val LIB_SEARCH_BTN            = "lib.search_btn"
+    const val LIB_NO_BOOKS              = "lib.no_books"
+    const val LIB_NO_BOOKS_DESC         = "lib.no_books_desc"
+    const val LIB_ARCHIVED              = "lib.archived"
+    const val LIB_UNARCHIVE             = "lib.unarchive"
+    const val LIB_ARCHIVE               = "lib.archive"
+    const val LIB_SET_COVER             = "lib.set_cover"
+    const val LIB_ISSUE                 = "lib.issue"
+    const val LIB_SET_COVER_URL         = "lib.set_cover_url"
+    const val LIB_COVER_URL             = "lib.cover_url"
+    const val LIB_ADD_NEW_BOOK          = "lib.add_new_book"
+    const val LIB_TITLE_LABEL           = "lib.title_label"
+    const val LIB_AUTHOR_LABEL          = "lib.author_label"
+    const val LIB_ISBN_LABEL            = "lib.isbn_label"
+    const val LIB_PUBLISHER_LABEL       = "lib.publisher_label"
+    const val LIB_TOTAL_COPIES_LABEL    = "lib.total_copies_label"
+    const val LIB_SHELF_LOCATION        = "lib.shelf_location"
+    const val LIB_REPLACEMENT_COST      = "lib.replacement_cost"
+    const val LIB_LANGUAGE              = "lib.language"
+    const val LIB_SYNOPSIS              = "lib.synopsis"
+    const val LIB_CATEGORY              = "lib.category"
+    const val LIB_CREATE                = "lib.create"
+    const val LIB_ISSUE_BOOK            = "lib.issue_book"
+    const val LIB_BORROWER_ID           = "lib.borrower_id"
+    const val LIB_BORROWER_NAME         = "lib.borrower_name"
+    const val LIB_COPY_ID               = "lib.copy_id"
+    const val LIB_BORROWER_TYPE         = "lib.borrower_type"
+    const val LIB_STUDENT               = "lib.student"
+    const val LIB_TEACHER               = "lib.teacher"
+    const val LIB_ISSUES                = "lib.issues"
+    const val LIB_NO_ISSUES             = "lib.no_issues"
+    const val LIB_NO_ISSUES_DESC        = "lib.no_issues_desc"
+    const val LIB_RETURN                = "lib.return"
+    const val LIB_RENEW                 = "lib.renew"
+    const val LIB_MARK_LOST             = "lib.mark_lost"
+    const val LIB_PAY_FINE              = "lib.pay_fine"
+    const val LIB_WAIVE_FINE            = "lib.waive_fine"
+    const val LIB_RETURN_BOOK           = "lib.return_book"
+    const val LIB_SELECT_CONDITION      = "lib.select_condition"
+    const val LIB_CONDITION_GOOD        = "lib.condition_good"
+    const val LIB_CONDITION_FAIR        = "lib.condition_fair"
+    const val LIB_CONDITION_DAMAGED     = "lib.condition_damaged"
+    const val LIB_DAMAGE_NOTES          = "lib.damage_notes"
+    const val LIB_CONFIRM_RETURN        = "lib.confirm_return"
+    const val LIB_MARK_LOST_TITLE       = "lib.mark_lost_title"
+    const val LIB_WAIVE_FINE_TITLE      = "lib.waive_fine_title"
+    const val LIB_WAIVER_REASON         = "lib.waiver_reason"
+    const val LIB_SETTINGS              = "lib.settings"
+    const val LIB_LOADING_SETTINGS      = "lib.loading_settings"
+    const val LIB_DEFAULT_LOAN_DAYS     = "lib.default_loan_days"
+    const val LIB_FINE_PER_DAY          = "lib.fine_per_day"
+    const val LIB_MAX_BOOKS             = "lib.max_books"
+    const val LIB_MAX_RENEWALS          = "lib.max_renewals"
+    const val LIB_RESERVATION_TIMEOUT   = "lib.reservation_timeout"
+    const val LIB_DUE_REMINDER          = "lib.due_reminder"
+    const val LIB_FINE_CAP              = "lib.fine_cap"
+    const val LIB_QUICK_ISSUE_ENABLED   = "lib.quick_issue_enabled"
+    const val LIB_BULK_RETURN_ENABLED   = "lib.bulk_return_enabled"
+    const val LIB_LEADERBOARD_ENABLED   = "lib.leaderboard_enabled"
+    const val LIB_SAVE_SETTINGS         = "lib.save_settings"
+    const val LIB_RESET_DEFAULTS        = "lib.reset_defaults"
+    const val LIB_BOOK_ID               = "lib.book_id"
+    const val LIB_LOAD_RESERVATIONS     = "lib.load_reservations"
+    const val LIB_NO_RESERVATIONS       = "lib.no_reservations"
+    const val LIB_NO_RESERVATIONS_DESC  = "lib.no_reservations_desc"
+    const val LIB_FULFILL               = "lib.fulfill"
+    const val LIB_QUICK_ISSUE_TAB       = "lib.quick_issue_tab"
+    const val LIB_QUICK_ISSUE_DESC      = "lib.quick_issue_desc"
+    const val LIB_BARCODE               = "lib.barcode"
+    const val LIB_BORROWER_ID_LABEL     = "lib.borrower_id_label"
+    const val LIB_BORROWER_NAME_LABEL   = "lib.borrower_name_label"
+    const val LIB_BULK_RETURN_TAB       = "lib.bulk_return_tab"
+    const val LIB_BULK_RETURN_DESC      = "lib.bulk_return_desc"
+    const val LIB_SCAN_BARCODE          = "lib.scan_barcode"
+    const val LIB_ADD                   = "lib.add"
+    const val LIB_END_SESSION           = "lib.end_session"
+    const val LIB_NO_BARCODES           = "lib.no_barcodes"
+    const val LIB_NO_BARCODES_DESC      = "lib.no_barcodes_desc"
+    const val LIB_CONFIRM_BULK_RETURN   = "lib.confirm_bulk_return"
+    const val LIB_RETURN_ALL            = "lib.return_all"
+    const val LIB_CATEGORIES_TAB        = "lib.categories_tab"
+    const val LIB_ADD_CATEGORY          = "lib.add_category"
+    const val LIB_NO_CATEGORIES         = "lib.no_categories"
+    const val LIB_NO_CATEGORIES_DESC    = "lib.no_categories_desc"
+    const val LIB_NEW_CATEGORY          = "lib.new_category"
+    const val LIB_NAME                  = "lib.name"
+    const val LIB_COLOR                 = "lib.color"
+    const val LIB_ICON_NAME             = "lib.icon_name"
+    const val LIB_DELETE_CATEGORY_TITLE = "lib.delete_category_title"
+    const val LIB_AUDIT_TRAIL           = "lib.audit_trail"
+    const val LIB_NO_AUDIT              = "lib.no_audit"
+    const val LIB_NO_AUDIT_DESC         = "lib.no_audit_desc"
+    const val LIB_ANNOUNCEMENTS_TAB     = "lib.announcements_tab"
+    const val LIB_NEW_ANNOUNCEMENT      = "lib.new_announcement"
+    const val LIB_NO_ANNOUNCEMENTS      = "lib.no_announcements"
+    const val LIB_NO_ANNOUNCEMENTS_DESC = "lib.no_announcements_desc"
+    const val LIB_INACTIVE              = "lib.inactive"
+    const val LIB_DEACTIVATE            = "lib.deactivate"
+    const val LIB_ACTIVATE              = "lib.activate"
+    const val LIB_NEW_ANNOUNCEMENT_TITLE= "lib.new_announcement_title"
+    const val LIB_ANN_TITLE             = "lib.ann_title"
+    const val LIB_ANN_BODY              = "lib.ann_body"
+    const val LIB_POST                  = "lib.post"
+    const val LIB_DELETE_ANN_TITLE      = "lib.delete_ann_title"
+    const val LIB_ACQUISITION_REQUESTS  = "lib.acquisition_requests"
+    const val LIB_NO_REQUESTS           = "lib.no_requests"
+    const val LIB_NO_REQUESTS_DESC      = "lib.no_requests_desc"
+    const val LIB_APPROVE               = "lib.approve"
+    const val LIB_ORDER                 = "lib.order"
+    const val LIB_RECEIVE               = "lib.receive"
+    const val LIB_CONVERT_TO_BOOK       = "lib.convert_to_book"
+    const val LIB_MORE_TAB              = "lib.more_tab"
+    const val LIB_QUICK_ACTIONS         = "lib.quick_actions"
+    const val LIB_EXPORT_CATALOG        = "lib.export_catalog"
+    const val LIB_IMPORT_BOOKS          = "lib.import_books"
+    const val LIB_TRENDING_BOOKS        = "lib.trending_books"
+    const val LIB_REPAIR_QUEUE          = "lib.repair_queue"
+    const val LIB_NO_REPAIR             = "lib.no_repair"
+    const val LIB_NO_REPAIR_DESC        = "lib.no_repair_desc"
+    const val LIB_MARK_REPAIRED         = "lib.mark_repaired"
+    const val LIB_IMPORT_BOOKS_TITLE    = "lib.import_books_title"
+    const val LIB_PASTE_JSON            = "lib.paste_json"
+    const val LIB_JSON_LABEL            = "lib.json_label"
+    const val LIB_IMPORT                = "lib.import"
+    const val LIB_BOOK_COPIES           = "lib.book_copies"
+    const val LIB_COPIES_DESC           = "lib.copies_desc"
+    const val LIB_LOAD_COPIES           = "lib.load_copies"
+    const val LIB_NO_COPIES             = "lib.no_copies"
+    const val LIB_NO_COPIES_DESC        = "lib.no_copies_desc"
+    const val LIB_ADD_COPY              = "lib.add_copy"
+    const val LIB_ADD_COPY_TITLE        = "lib.add_copy_title"
+    const val LIB_CONDITION_LABEL       = "lib.condition_label"
+    const val LIB_CONDITION_NEW         = "lib.condition_new"
+    const val LIB_CONDITION_POOR        = "lib.condition_poor"
+    const val LIB_BOOK_HISTORY          = "lib.book_history"
+    const val LIB_HISTORY_DESC          = "lib.history_desc"
+    const val LIB_LOAD_HISTORY          = "lib.load_history"
+    const val LIB_NO_HISTORY            = "lib.no_history"
+    const val LIB_NO_HISTORY_DESC       = "lib.no_history_desc"
+    const val LIB_MARK_LOST_MSG        = "lib.mark_lost_msg"
+    const val LIB_BULK_RETURN_MSG      = "lib.bulk_return_msg"
+    const val LIB_DELETE_CATEGORY_MSG  = "lib.delete_category_msg"
+    const val LIB_DELETE_ANN_MSG       = "lib.delete_ann_msg"
+    const val LIB_ISBN_PREFIX          = "lib.isbn_prefix"
+    const val LIB_DUE_PREFIX           = "lib.due_prefix"
+    const val LIB_FINE_PREFIX          = "lib.fine_prefix"
+    const val LIB_WAITLIST_PREFIX      = "lib.waitlist_prefix"
+    const val LIB_RESERVED_PREFIX      = "lib.reserved_prefix"
+    const val LIB_BY_PREFIX            = "lib.by_prefix"
+    const val LIB_EXPIRES_PREFIX       = "lib.expires_prefix"
+    const val LIB_NEVER               = "lib.never"
+    const val LIB_AUTHOR_PREFIX       = "lib.author_prefix"
+    const val LIB_PUBLISHER_PREFIX    = "lib.publisher_prefix"
+    const val LIB_REASON_PREFIX       = "lib.reason_prefix"
+    const val LIB_COPY_PREFIX         = "lib.copy_prefix"
+    const val LIB_BARCODE_PREFIX      = "lib.barcode_prefix"
+    const val LIB_ISSUED_PREFIX       = "lib.issued_prefix"
+    const val LIB_RETURNED_PREFIX     = "lib.returned_prefix"
+    const val LIB_PENDING_LABEL       = "lib.pending_label"
+    const val LIB_BARCODES_SCANNED    = "lib.barcodes_scanned"
+    const val LIB_COPIES_COUNT        = "lib.copies_count"
+    const val LIB_RECORDS_COUNT       = "lib.records_count"
+    const val LIB_ISSUES_COUNT        = "lib.issues_count"
+
+    // ── Gamification (teacher + admin) ──────────────────────────────────
+    const val GAM_EARNED_BADGES         = "gam.earned_badges"
+    const val GAM_SHOUTOUT_PH           = "gam.shoutout_ph"
+    const val GAM_PARENT_ALERT_PH       = "gam.parent_alert_ph"
+    const val GAM_CLASS_LEADERBOARD     = "gam.class_leaderboard"
+    const val GAM_CLASS_GOALS           = "gam.class_goals"
+    const val GAM_GOAL_TYPE_PH          = "gam.goal_type_ph"
+    const val GAM_GOAL_TARGET_PH        = "gam.goal_target_ph"
+    const val GAM_GOAL_REWARD_PH        = "gam.goal_reward_ph"
+    const val GAM_RECENT_SHOUTOUTS      = "gam.recent_shoutouts"
+    const val GAM_MENTOR_ASSIGNMENTS    = "gam.mentor_assignments"
+    const val GAM_MENTOR_ID_PH          = "gam.mentor_id_ph"
+    const val GAM_MENTEE_ID_PH          = "gam.mentee_id_ph"
+    const val GAM_STUDY_BUDDY_PAIRS     = "gam.study_buddy_pairs"
+    const val GAM_STUDY_BUDDIES         = "gam.study_buddies"
+    const val GAM_REMOVE                = "gam.remove"
+    const val GAM_BUDDY1_ID_PH          = "gam.buddy1_id_ph"
+    const val GAM_BUDDY2_ID_PH          = "gam.buddy2_id_ph"
+    const val GAM_NO_DATA               = "gam.no_data"
+    const val GAM_NO_DATA_DESC          = "gam.no_data_desc"
+    const val GAM_MANAGEMENT_CONSOLE    = "gam.management_console"
+    const val GAM_FEATURE_FLAGS         = "gam.feature_flags"
+    const val GAM_UNABLE_FLAGS          = "gam.unable_flags"
+    const val GAM_GRANULAR_TOGGLES      = "gam.granular_toggles"
+    const val GAM_LEADERBOARDS          = "gam.leaderboards"
+    const val GAM_LEADERBOARDS_DESC     = "gam.leaderboards_desc"
+    const val GAM_REWARDS_SHOP          = "gam.rewards_shop"
+    const val GAM_REWARDS_SHOP_DESC     = "gam.rewards_shop_desc"
+    const val GAM_HOUSE_SYSTEM          = "gam.house_system"
+    const val GAM_HOUSE_SYSTEM_DESC     = "gam.house_system_desc"
+    const val GAM_BOOST_TYPE            = "gam.boost_type"
+    const val GAM_MULTIPLIER            = "gam.multiplier"
+    const val GAM_TARGET_SCOPE          = "gam.target_scope"
+    const val GAM_DURATION_HOURS        = "gam.duration_hours"
+    const val GAM_CREATE_BOOST          = "gam.create_boost"
+    const val GAM_MENTOR_PREFIX         = "gam.mentor_prefix"
+    const val GAM_MENTEE_PREFIX         = "gam.mentee_prefix"
+    const val GAM_STUDENT_PREFIX        = "gam.student_prefix"
+    const val GAM_DELETE_SHOUTOUT       = "gam.delete_shoutout"
+    const val GAM_STUDENT1_ID_PH        = "gam.student1_id_ph"
+    const val GAM_STUDENT2_ID_PH        = "gam.student2_id_ph"
+    const val GAM_GOAL_TARGET_NUM_PH    = "gam.goal_target_num_ph"
+    const val GAM_TOOLS                 = "gam.tools"
+    const val GAM_CLASS_GAMIFICATION    = "gam.class_gamification"
+    const val GAM_ENCOURAGE             = "gam.encourage"
+    const val GAM_SPOTLIGHT             = "gam.spotlight"
+    const val GAM_CANCEL_SHOUTOUT       = "gam.cancel_shoutout"
+    const val GAM_SEND_SHOUTOUT         = "gam.send_shoutout"
+    const val GAM_CANCEL_QUEST          = "gam.cancel_quest"
+    const val GAM_ASSIGN_QUEST          = "gam.assign_quest"
+    const val GAM_CANCEL_BADGE          = "gam.cancel_badge"
+    const val GAM_AWARD_BADGE           = "gam.award_badge"
+    const val GAM_CANCEL_ALERT          = "gam.cancel_alert"
+    const val GAM_PARENT_ALERT          = "gam.parent_alert"
+    const val GAM_SEND_ALERT            = "gam.send_alert"
+    const val GAM_CONFIRM_PEP_TALK      = "gam.confirm_pep_talk"
+    const val GAM_SEND_PEP_TALK         = "gam.send_pep_talk"
+    const val GAM_CREATE_CLASS_GOAL     = "gam.create_class_goal"
+    const val GAM_CREATE_GOAL           = "gam.create_goal"
+    const val GAM_ASSIGN_MENTOR         = "gam.assign_mentor"
+    const val GAM_ASSIGN                = "gam.assign"
+    const val GAM_PAIR_STUDY_BUDDIES    = "gam.pair_study_buddies"
+    const val GAM_PAIR_THEM             = "gam.pair_them"
+    const val GAM_TOTAL_XP              = "gam.total_xp"
+    const val GAM_BADGES                = "gam.badges"
+    const val GAM_QUESTS                = "gam.quests"
+    const val GAM_BUDDY_PAIR            = "gam.buddy_pair"
+    const val GAM_PEP_TALK_CONFIRM      = "gam.pep_talk_confirm"
+    const val GAM_REWARD_PREFIX         = "gam.reward_prefix"
+    const val GAM_UNKNOWN               = "gam.unknown"
+    const val GAM_GOAL                  = "gam.goal"
+    const val GAM_QUEST_BUTTON          = "gam.quest_button"
+    const val GAM_BADGE_BUTTON          = "gam.badge_button"
+    const val GAM_SHOUTOUT_FROM_TO      = "gam.shoutout_from_to"
+    const val GAM_PROGRESS_FRACTION     = "gam.progress_fraction"
+    const val GAM_XP_VALUE              = "gam.xp_value"
+
+    // ── AdminGamificationScreen ─────────────────────────────────────────
+    const val AGAM_NO_DATA              = "agam.no_data"
+    const val AGAM_NO_DATA_DESC         = "agam.no_data_desc"
+    const val AGAM_GAMIFICATION         = "agam.gamification"
+    const val AGAM_MANAGEMENT_CONSOLE   = "agam.management_console"
+    const val AGAM_FEATURE_FLAGS        = "agam.feature_flags"
+    const val AGAM_UNABLE_LOAD_FLAGS    = "agam.unable_load_flags"
+    const val AGAM_ENABLE_GAM           = "agam.enable_gam"
+    const val AGAM_ENABLE_GAM_DESC      = "agam.enable_gam_desc"
+    const val AGAM_GRANULAR_TOGGLES     = "agam.granular_toggles"
+    const val AGAM_LEADERBOARDS         = "agam.leaderboards"
+    const val AGAM_LEADERBOARDS_DESC    = "agam.leaderboards_desc"
+    const val AGAM_REWARDS_SHOP         = "agam.rewards_shop"
+    const val AGAM_REWARDS_SHOP_DESC    = "agam.rewards_shop_desc"
+    const val AGAM_HOUSE_SYSTEM         = "agam.house_system"
+    const val AGAM_HOUSE_SYSTEM_DESC    = "agam.house_system_desc"
+    const val AGAM_QUESTS_LABEL         = "agam.quests_label"
+    const val AGAM_QUESTS_DESC          = "agam.quests_desc"
+    const val AGAM_MENTOR_SYSTEM        = "agam.mentor_system"
+    const val AGAM_MENTOR_SYSTEM_DESC   = "agam.mentor_system_desc"
+    const val AGAM_SHOUT_OUTS           = "agam.shout_outs"
+    const val AGAM_SHOUT_OUTS_DESC      = "agam.shout_outs_desc"
+    const val AGAM_SEASONAL_EVENTS      = "agam.seasonal_events"
+    const val AGAM_SEASONAL_EVENTS_DESC = "agam.seasonal_events_desc"
+    const val AGAM_CLASS_GOALS          = "agam.class_goals"
+    const val AGAM_CLASS_GOALS_DESC     = "agam.class_goals_desc"
+    const val AGAM_COMBOS               = "agam.combos"
+    const val AGAM_COMBOS_DESC          = "agam.combos_desc"
+    const val AGAM_XP_BOOSTS            = "agam.xp_boosts"
+    const val AGAM_XP_BOOSTS_DESC       = "agam.xp_boosts_desc"
+    const val AGAM_ANALYTICS_OVERVIEW   = "agam.analytics_overview"
+    const val AGAM_REDEMPTIONS          = "agam.redemptions"
+    const val AGAM_BADGE_CATALOG        = "agam.badge_catalog"
+    const val AGAM_BADGE_DETAIL         = "agam.badge_detail"
+    const val AGAM_SEASONAL             = "agam.seasonal"
+    const val AGAM_LEVEL_DEFINITIONS    = "agam.level_definitions"
+    const val AGAM_LEVEL_XP             = "agam.level_xp"
+    const val AGAM_HOUSES               = "agam.houses"
+    const val AGAM_HOUSE_DETAIL         = "agam.house_detail"
+    const val AGAM_REWARDS_CATALOG      = "agam.rewards_catalog"
+    const val AGAM_REWARD_XP            = "agam.reward_xp"
+    const val AGAM_ACTIVE               = "agam.active"
+    const val AGAM_INACTIVE             = "agam.inactive"
+    const val AGAM_QUEST_POOL           = "agam.quest_pool"
+    const val AGAM_QUEST_DETAIL         = "agam.quest_detail"
+    const val AGAM_EVENTS_TITLE         = "agam.events_title"
+    const val AGAM_EVENT_DATES          = "agam.event_dates"
+    const val AGAM_ENDED                = "agam.ended"
+    const val AGAM_SCHOOL_LEADERBOARD   = "agam.school_leaderboard"
+    const val AGAM_LV                   = "agam.lv"
+    const val AGAM_REDEMPTION_APPROVALS = "agam.redemption_approvals"
+    const val AGAM_REDEMPTION_DETAIL    = "agam.redemption_detail"
+    const val AGAM_APPROVE              = "agam.approve"
+    const val AGAM_REJECT               = "agam.reject"
+    const val AGAM_BOOSTS_TITLE         = "agam.boosts_title"
+    const val AGAM_BOOST_MULT           = "agam.boost_mult"
+    const val AGAM_EXPIRED              = "agam.expired"
+    const val AGAM_CREATE_NEW_BOOST     = "agam.create_new_boost"
+    const val AGAM_BOOST_TYPE           = "agam.boost_type"
+    const val AGAM_MULTIPLIER_LABEL     = "agam.multiplier_label"
+    const val AGAM_TARGET_SCOPE         = "agam.target_scope"
+    const val AGAM_DURATION_HOURS       = "agam.duration_hours"
+    const val AGAM_CREATE_BOOST         = "agam.create_boost"
+
+    // ── ParentAcademicsScreen ───────────────────────────────────────────
+    const val PAC_ACADEMIC_OVERVIEW     = "pac.academic_overview"
+    const val PAC_EMOTIONAL_INTEL       = "pac.emotional_intel"
+    const val PAC_THIS_TERM             = "pac.this_term"
+    const val PAC_ATTENDANCE_RATE       = "pac.attendance_rate"
+    const val PAC_NO_ATTENDANCE         = "pac.no_attendance"
+    const val PAC_NO_ATTENDANCE_DESC    = "pac.no_attendance_desc"
+    const val PAC_TYPE_ANSWER           = "pac.type_answer"
+    const val PAC_LOADING_LEADERBOARD   = "pac.loading_leaderboard"
+    const val PAC_CLASS_SCHEDULE        = "pac.class_schedule"
+    const val PAC_SOMETHING_WRONG       = "pac.something_wrong"
+    const val PAC_REPORT_CARD           = "pac.report_card"
+    const val PAC_APPLY_LEAVE           = "pac.apply_leave"
+    const val PAC_HEALTH_RECORDS        = "pac.health_records"
+    const val PAC_SYLLABUS              = "pac.syllabus"
+    const val PAC_LEVEL                 = "pac.level"
+    const val PAC_ATTENDANCE            = "pac.attendance"
+    const val PAC_AVG_SCORE             = "pac.avg_score"
+    const val PAC_COVERED               = "pac.covered"
+    const val PAC_PENDING               = "pac.pending"
+    const val PAC_START                 = "pac.start"
+    const val PAC_RESULT                = "pac.result"
+    const val PAC_QUIZ                  = "pac.quiz"
+    const val PAC_SCORE                 = "pac.score"
+    const val PAC_YOUR_ANSWER           = "pac.your_answer"
+    const val PAC_CORRECT_ANSWER        = "pac.correct_answer"
+    const val PAC_SUBMIT_HOMEWORK       = "pac.submit_homework"
+    const val PAC_EST                   = "pac.est"
+    const val PAC_LEADERBOARD           = "pac.leaderboard"
+    const val PAC_PARTICIPANTS          = "pac.participants"
+    const val PAC_YOU                   = "pac.you"
+    const val PAC_ROOM                  = "pac.room"
+    const val PAC_LIVE                  = "pac.live"
+    const val PAC_COLLAPSE              = "pac.collapse"
+    const val PAC_EXPAND                = "pac.expand"
+    const val PAC_MATCH                 = "pac.match"
+    const val PAC_NO_LOG                = "pac.no_log"
+    const val PAC_NO_LOG_DESC           = "pac.no_log_desc"
+    const val PAC_QUICK_ACTIONS         = "pac.quick_actions"
+    const val PAC_ACHIEVEMENTS          = "pac.achievements"
+    const val PAC_FREE_PERIOD           = "pac.free_period"
+    const val PAC_TRUE_FALSE            = "pac.true_false"
+    const val PAC_FILL_BLANK            = "pac.fill_blank"
+    const val PAC_ESTIMATED_NOTE        = "pac.estimated_note"
+    const val PAC_AI                    = "pac.ai"
+
+    // ── Exam screens ────────────────────────────────────────────────────
+    const val EXAM_IMPORT_METHOD        = "exam.import_method"
+    const val EXAM_PASTE_MARKS          = "exam.paste_marks"
+    const val EXAM_EXTRACTING_MARKS     = "exam.extracting_marks"
+    const val EXAM_MAY_TAKE_SECONDS     = "exam.may_take_seconds"
+    const val EXAM_IMPORT_FAILED        = "exam.import_failed"
+    const val EXAM_TRY_AGAIN            = "exam.try_again"
+    const val EXAM_IMAGE_UNAVAILABLE    = "exam.image_unavailable"
+    const val EXAM_PASTE_TEXT_INSTEAD   = "exam.paste_text_instead"
+    const val EXAM_EXTRACTION_RESULTS   = "exam.extraction_results"
+    const val EXAM_TIMETABLE_NAME       = "exam.timetable_name"
+    const val EXAM_TERM_OPTIONAL        = "exam.term_optional"
+    const val EXAM_PASTE_TIMETABLE      = "exam.paste_timetable"
+    const val EXAM_EXTRACTING_ENTRIES   = "exam.extracting_entries"
+    const val EXAM_EXTRACTED_ENTRIES    = "exam.extracted_entries"
+    const val EXAM_ALL_CLASSES          = "exam.all_classes"
+    const val EXAM_NO_ASSESSMENTS       = "exam.no_assessments"
+
+    // ── SkillTestCard ───────────────────────────────────────────────────
+    const val SKILL_GENERATING          = "skill.generating"
+    const val SKILL_EVALUATING          = "skill.evaluating"
+
+    // ── Misc screens ────────────────────────────────────────────────────
+    const val MISC_PROFILE_PICTURE      = "misc.profile_picture"
+    const val MISC_SCHOOL_LOGO          = "misc.school_logo"
+    const val MISC_RECOMMENDED_RATIO    = "misc.recommended_ratio"
+    const val MISC_ADD_PHOTO            = "misc.add_photo"
+    const val MISC_PROFILE_COMPLETION   = "misc.profile_completion"
+    const val MISC_PROFILE_DESC         = "misc.profile_desc"
+    const val MISC_ENTER_UUID           = "misc.enter_uuid"
+    const val MISC_SELECT_CONFIGURED    = "misc.select_configured"
+    const val MISC_SAVED_SUCCESS        = "misc.saved_success"
+    const val MISC_SAVE_CHANGES         = "misc.save_changes"
+    const val MISC_ATTENDANCE_SAVED     = "misc.attendance_saved"
+    const val MISC_SAVE_ATTENDANCE      = "misc.save_attendance"
+    const val MISC_PASTE_CSV            = "misc.paste_csv"
+    const val MISC_CONVERSION_RATE      = "misc.conversion_rate"
+    const val MISC_TUTOR_THINKING       = "misc.tutor_thinking"
+    const val MISC_PAID_ON              = "misc.paid_on"
+    const val MISC_VIEW_SALARY          = "misc.view_salary"
+    const val MISC_SALARY_DESC          = "misc.salary_desc"
+    const val MISC_ANSWER_NOTES         = "misc.answer_notes"
+    const val MISC_NO_AT_RISK           = "misc.no_at_risk"
+    const val MISC_ALL_ON_TRACK         = "misc.all_on_track"
+    const val MISC_MARK_ATTENDANCE      = "misc.mark_attendance"
+    const val MISC_OR_PASTE_CSV         = "misc.or_paste_csv"
+
 }
 
 object AppStrings {
@@ -4928,7 +5369,7 @@ object AppStrings {
         StringKeys.TC_N_STUDENTS_ABSENT                     to "{count} absent today",
         StringKeys.TC_N_SUBTOPICS                           to "{count} subtopics",
         StringKeys.TC_N_TOPICS_SELECTED                     to "{count} topics selected",
-        StringKeys.TC_N_TURNED_IN                           to "{count} turned in",
+        StringKeys.TC_N_TURNED_IN                           to "{count} of {total} turned in",
         StringKeys.TC_OBJECTIVES                            to "Objectives",
         StringKeys.TC_OPTIONS_ONE_PER_LINE                  to "Options (one per line):",
         StringKeys.TC_OPTIONS_PH                            to "A) ...\nB) ...\nC) ...\nD) ...",
@@ -5005,7 +5446,7 @@ object AppStrings {
         StringKeys.TC_RISK_WATCH                            to "Watch",
         StringKeys.TC_ROLL_LABEL                            to "Roll",
         StringKeys.TC_ROLL_N                                to "Roll {n}",
-        StringKeys.TC_ROLL_NO                               to "Roll No",
+        StringKeys.TC_ROLL_NO                               to "Roll No {no}",
         StringKeys.TC_ROLL_ON_LEAVE                         to "On leave",
         StringKeys.TC_ROOM                                  to "Room",
         StringKeys.TC_ROOM_HINT                             to "e.g. 101",
@@ -6199,6 +6640,447 @@ object AppStrings {
         StringKeys.CS_WEEKDAY_FRI               to "Fri",
         StringKeys.CS_WEEKDAY_SAT               to "Sat",
         StringKeys.CS_WEEKDAY_SUN               to "Sun",
+
+        // SchoolLibraryScreen (admin)
+        StringKeys.LIB_TAB_DASHBOARD            to "Dashboard",
+        StringKeys.LIB_TAB_BOOKS                to "Books",
+        StringKeys.LIB_TAB_COPIES               to "Copies",
+        StringKeys.LIB_TAB_ISSUES               to "Issues",
+        StringKeys.LIB_TAB_QUICK_ISSUE          to "Quick Issue",
+        StringKeys.LIB_TAB_BULK_RETURN          to "Bulk Return",
+        StringKeys.LIB_TAB_CATEGORIES           to "Categories",
+        StringKeys.LIB_TAB_AUDIT                to "Audit",
+        StringKeys.LIB_TAB_ANNOUNCEMENTS        to "Announcements",
+        StringKeys.LIB_TAB_ACQUISITION          to "Acquisition",
+        StringKeys.LIB_TAB_RESERVATIONS         to "Reservations",
+        StringKeys.LIB_TAB_HISTORY              to "History",
+        StringKeys.LIB_TAB_MORE                 to "More",
+        StringKeys.LIB_TAB_SETTINGS             to "Settings",
+        StringKeys.LIB_TITLE                    to "Library",
+        StringKeys.LIB_OFFLINE_CACHED           to "Offline — showing cached data",
+        StringKeys.LIB_OFFLINE_CHECK            to "Offline — check your connection",
+        StringKeys.LIB_DASHBOARD                to "Dashboard",
+        StringKeys.LIB_WELCOME                  to "Welcome to Library Management!",
+        StringKeys.LIB_WELCOME_DESC             to "Your library is empty. Run the onboarding wizard to set up categories and add your first books.",
+        StringKeys.LIB_RUN_ONBOARDING           to "Run Onboarding Wizard",
+        StringKeys.LIB_TOTAL_BOOKS              to "Total Books",
+        StringKeys.LIB_TOTAL_COPIES             to "Total Copies",
+        StringKeys.LIB_AVAILABLE                to "Available",
+        StringKeys.LIB_ISSUED                   to "Issued",
+        StringKeys.LIB_OVERDUE                  to "Overdue",
+        StringKeys.LIB_LOST                     to "Lost",
+        StringKeys.LIB_RESERVATIONS             to "Reservations",
+        StringKeys.LIB_DAMAGED                  to "Damaged",
+        StringKeys.LIB_OUTSTANDING_FINES        to "Outstanding Fines",
+        StringKeys.LIB_COLLECTED_MONTH          to "Collected this month",
+        StringKeys.LIB_BOOKS                    to "Books",
+        StringKeys.LIB_SEARCH_BOOKS             to "Search books",
+        StringKeys.LIB_ADD_BOOK                 to "+ Add Book",
+        StringKeys.LIB_CATEGORY_LABEL           to "Category:",
+        StringKeys.LIB_AVAILABLE_LABEL          to "Available:",
+        StringKeys.LIB_AVAILABLE_ONLY           to "Available Only",
+        StringKeys.LIB_SORT_LABEL               to "Sort:",
+        StringKeys.LIB_SORT_NEWEST              to "Newest",
+        StringKeys.LIB_SORT_TITLE               to "Title A-Z",
+        StringKeys.LIB_SORT_AUTHOR              to "Author",
+        StringKeys.LIB_SORT_POPULAR             to "Popular",
+        StringKeys.LIB_SEARCH_BTN               to "Search",
+        StringKeys.LIB_NO_BOOKS                 to "No books found",
+        StringKeys.LIB_NO_BOOKS_DESC            to "Try a different search query or add a new book.",
+        StringKeys.LIB_ARCHIVED                 to "Archived",
+        StringKeys.LIB_UNARCHIVE                to "Unarchive",
+        StringKeys.LIB_ARCHIVE                  to "Archive",
+        StringKeys.LIB_SET_COVER                to "Set Cover",
+        StringKeys.LIB_ISSUE                    to "Issue",
+        StringKeys.LIB_SET_COVER_URL            to "Set Cover URL",
+        StringKeys.LIB_COVER_URL                to "Cover image URL",
+        StringKeys.LIB_ADD_NEW_BOOK             to "Add New Book",
+        StringKeys.LIB_TITLE_LABEL              to "Title *",
+        StringKeys.LIB_AUTHOR_LABEL             to "Author",
+        StringKeys.LIB_ISBN_LABEL               to "ISBN",
+        StringKeys.LIB_PUBLISHER_LABEL          to "Publisher",
+        StringKeys.LIB_TOTAL_COPIES_LABEL       to "Total Copies",
+        StringKeys.LIB_SHELF_LOCATION           to "Shelf Location",
+        StringKeys.LIB_REPLACEMENT_COST         to "Replacement Cost (₹)",
+        StringKeys.LIB_LANGUAGE                 to "Language",
+        StringKeys.LIB_SYNOPSIS                 to "Synopsis",
+        StringKeys.LIB_CATEGORY                 to "Category",
+        StringKeys.LIB_CREATE                   to "Create",
+        StringKeys.LIB_ISSUE_BOOK               to "Issue Book",
+        StringKeys.LIB_BORROWER_ID              to "Borrower ID *",
+        StringKeys.LIB_BORROWER_NAME            to "Borrower Name *",
+        StringKeys.LIB_COPY_ID                  to "Copy ID (optional)",
+        StringKeys.LIB_BORROWER_TYPE            to "Borrower Type",
+        StringKeys.LIB_STUDENT                  to "Student",
+        StringKeys.LIB_TEACHER                  to "Teacher",
+        StringKeys.LIB_ISSUES                   to "Issues",
+        StringKeys.LIB_NO_ISSUES                to "No issues found",
+        StringKeys.LIB_NO_ISSUES_DESC           to "Issues will appear here once books are issued.",
+        StringKeys.LIB_RETURN                   to "Return",
+        StringKeys.LIB_RENEW                    to "Renew",
+        StringKeys.LIB_MARK_LOST                to "Mark Lost",
+        StringKeys.LIB_PAY_FINE                 to "Pay Fine",
+        StringKeys.LIB_WAIVE_FINE               to "Waive Fine",
+        StringKeys.LIB_RETURN_BOOK              to "Return Book",
+        StringKeys.LIB_SELECT_CONDITION         to "Select condition:",
+        StringKeys.LIB_CONDITION_GOOD           to "Good",
+        StringKeys.LIB_CONDITION_FAIR           to "Fair",
+        StringKeys.LIB_CONDITION_DAMAGED        to "Damaged",
+        StringKeys.LIB_DAMAGE_NOTES             to "Damage notes",
+        StringKeys.LIB_CONFIRM_RETURN           to "Confirm Return",
+        StringKeys.LIB_MARK_LOST_TITLE          to "Mark as Lost?",
+        StringKeys.LIB_WAIVE_FINE_TITLE         to "Waive Fine?",
+        StringKeys.LIB_WAIVER_REASON            to "Reason for waiver *",
+        StringKeys.LIB_SETTINGS                 to "Library Settings",
+        StringKeys.LIB_LOADING_SETTINGS         to "Loading settings...",
+        StringKeys.LIB_DEFAULT_LOAN_DAYS        to "Default Loan Days",
+        StringKeys.LIB_FINE_PER_DAY             to "Fine Per Day (₹)",
+        StringKeys.LIB_MAX_BOOKS                to "Max Books Per Student",
+        StringKeys.LIB_MAX_RENEWALS             to "Max Renewals",
+        StringKeys.LIB_RESERVATION_TIMEOUT      to "Reservation Timeout (days)",
+        StringKeys.LIB_DUE_REMINDER             to "Due Reminder (days before)",
+        StringKeys.LIB_FINE_CAP                 to "Fine Cap Enabled",
+        StringKeys.LIB_QUICK_ISSUE_ENABLED      to "Quick Issue Enabled",
+        StringKeys.LIB_BULK_RETURN_ENABLED      to "Bulk Return Enabled",
+        StringKeys.LIB_LEADERBOARD_ENABLED      to "Leaderboard Enabled",
+        StringKeys.LIB_SAVE_SETTINGS            to "Save Settings",
+        StringKeys.LIB_RESET_DEFAULTS           to "Reset to Defaults",
+        StringKeys.LIB_BOOK_ID                  to "Book ID",
+        StringKeys.LIB_LOAD_RESERVATIONS        to "Load Reservations",
+        StringKeys.LIB_NO_RESERVATIONS          to "No reservations",
+        StringKeys.LIB_NO_RESERVATIONS_DESC     to "Enter a book ID to view its reservation queue.",
+        StringKeys.LIB_FULFILL                  to "Fulfill",
+        StringKeys.LIB_QUICK_ISSUE_TAB          to "Quick Issue",
+        StringKeys.LIB_QUICK_ISSUE_DESC         to "Scan or enter a barcode to instantly issue a book.",
+        StringKeys.LIB_BARCODE                  to "Barcode",
+        StringKeys.LIB_BORROWER_ID_LABEL        to "Borrower ID",
+        StringKeys.LIB_BORROWER_NAME_LABEL      to "Borrower Name",
+        StringKeys.LIB_BULK_RETURN_TAB          to "Bulk Return",
+        StringKeys.LIB_BULK_RETURN_DESC         to "Scan barcodes sequentially, then end the session.",
+        StringKeys.LIB_SCAN_BARCODE             to "Scan barcode",
+        StringKeys.LIB_ADD                      to "Add",
+        StringKeys.LIB_END_SESSION              to "End Session & Return All",
+        StringKeys.LIB_NO_BARCODES              to "No barcodes scanned",
+        StringKeys.LIB_NO_BARCODES_DESC         to "Scan barcodes above to start a bulk return session.",
+        StringKeys.LIB_CONFIRM_BULK_RETURN      to "Confirm Bulk Return",
+        StringKeys.LIB_RETURN_ALL               to "Return All",
+        StringKeys.LIB_CATEGORIES_TAB           to "Categories",
+        StringKeys.LIB_ADD_CATEGORY             to "+ Add",
+        StringKeys.LIB_NO_CATEGORIES            to "No categories",
+        StringKeys.LIB_NO_CATEGORIES_DESC       to "Create categories to organize your library.",
+        StringKeys.LIB_NEW_CATEGORY             to "New Category",
+        StringKeys.LIB_NAME                     to "Name",
+        StringKeys.LIB_COLOR                    to "Color (hex)",
+        StringKeys.LIB_ICON_NAME                to "Icon name",
+        StringKeys.LIB_DELETE_CATEGORY_TITLE    to "Delete Category?",
+        StringKeys.LIB_AUDIT_TRAIL              to "Audit Trail",
+        StringKeys.LIB_NO_AUDIT                 to "No audit logs",
+        StringKeys.LIB_NO_AUDIT_DESC            to "Audit entries will appear here as actions are performed.",
+        StringKeys.LIB_ANNOUNCEMENTS_TAB        to "Announcements",
+        StringKeys.LIB_NEW_ANNOUNCEMENT         to "+ New",
+        StringKeys.LIB_NO_ANNOUNCEMENTS         to "No announcements",
+        StringKeys.LIB_NO_ANNOUNCEMENTS_DESC    to "Post library announcements and notices here.",
+        StringKeys.LIB_INACTIVE                 to "Inactive",
+        StringKeys.LIB_DEACTIVATE               to "Deactivate",
+        StringKeys.LIB_ACTIVATE                 to "Activate",
+        StringKeys.LIB_NEW_ANNOUNCEMENT_TITLE   to "New Announcement",
+        StringKeys.LIB_ANN_TITLE                to "Title",
+        StringKeys.LIB_ANN_BODY                 to "Body",
+        StringKeys.LIB_POST                     to "Post",
+        StringKeys.LIB_DELETE_ANN_TITLE         to "Delete Announcement?",
+        StringKeys.LIB_ACQUISITION_REQUESTS     to "Acquisition Requests",
+        StringKeys.LIB_NO_REQUESTS              to "No requests",
+        StringKeys.LIB_NO_REQUESTS_DESC         to "Acquisition requests from teachers will appear here.",
+        StringKeys.LIB_APPROVE                  to "Approve",
+        StringKeys.LIB_ORDER                    to "Order",
+        StringKeys.LIB_RECEIVE                  to "Receive",
+        StringKeys.LIB_CONVERT_TO_BOOK          to "Convert to Book",
+        StringKeys.LIB_MORE_TAB                 to "More",
+        StringKeys.LIB_QUICK_ACTIONS            to "Quick Actions",
+        StringKeys.LIB_EXPORT_CATALOG           to "Export Catalog (CSV)",
+        StringKeys.LIB_IMPORT_BOOKS             to "Import Books (JSON)",
+        StringKeys.LIB_TRENDING_BOOKS           to "Trending Books",
+        StringKeys.LIB_REPAIR_QUEUE             to "Repair Queue",
+        StringKeys.LIB_NO_REPAIR                to "No books in repair",
+        StringKeys.LIB_NO_REPAIR_DESC           to "Damaged copies will appear here.",
+        StringKeys.LIB_MARK_REPAIRED            to "Mark Repaired",
+        StringKeys.LIB_IMPORT_BOOKS_TITLE       to "Import Books (JSON)",
+        StringKeys.LIB_PASTE_JSON               to "Paste JSON array of book objects:",
+        StringKeys.LIB_JSON_LABEL               to "JSON",
+        StringKeys.LIB_IMPORT                   to "Import",
+        StringKeys.LIB_BOOK_COPIES              to "Book Copies",
+        StringKeys.LIB_COPIES_DESC              to "View and manage individual copy records for a book.",
+        StringKeys.LIB_LOAD_COPIES              to "Load Copies",
+        StringKeys.LIB_NO_COPIES                to "No copies loaded",
+        StringKeys.LIB_NO_COPIES_DESC           to "Enter a book ID above to view its copies.",
+        StringKeys.LIB_ADD_COPY                 to "+ Add Copy",
+        StringKeys.LIB_ADD_COPY_TITLE           to "Add Copy",
+        StringKeys.LIB_CONDITION_LABEL          to "Condition:",
+        StringKeys.LIB_CONDITION_NEW            to "New",
+        StringKeys.LIB_CONDITION_POOR           to "Poor",
+        StringKeys.LIB_BOOK_HISTORY             to "Book History",
+        StringKeys.LIB_HISTORY_DESC             to "View the full issue history for a specific book.",
+        StringKeys.LIB_LOAD_HISTORY             to "Load History",
+        StringKeys.LIB_NO_HISTORY               to "No history loaded",
+        StringKeys.LIB_NO_HISTORY_DESC          to "Enter a book ID above to view its issue history.",
+        StringKeys.LIB_MARK_LOST_MSG            to "This will mark \"{title}\" as lost and may incur a fine for the borrower.",
+        StringKeys.LIB_BULK_RETURN_MSG          to "Return {count} book(s)?",
+        StringKeys.LIB_DELETE_CATEGORY_MSG      to "Are you sure you want to delete \"{name}\"? Books in this category will remain but lose their category label.",
+        StringKeys.LIB_DELETE_ANN_MSG           to "Are you sure you want to delete \"{title}\"? This cannot be undone.",
+        StringKeys.LIB_ISBN_PREFIX              to "ISBN: {value}",
+        StringKeys.LIB_DUE_PREFIX               to "Due: {date}",
+        StringKeys.LIB_FINE_PREFIX              to "Fine: ₹{amount} for \"{title}\"",
+        StringKeys.LIB_WAITLIST_PREFIX          to "Waitlist #{position}",
+        StringKeys.LIB_RESERVED_PREFIX          to "Reserved: {date}",
+        StringKeys.LIB_BY_PREFIX                to "By: {name}",
+        StringKeys.LIB_EXPIRES_PREFIX           to "Expires: {date}",
+        StringKeys.LIB_NEVER                    to "Never",
+        StringKeys.LIB_AUTHOR_PREFIX            to "Author: {name}",
+        StringKeys.LIB_PUBLISHER_PREFIX         to "Publisher: {name}",
+        StringKeys.LIB_REASON_PREFIX            to "Reason: {reason}",
+        StringKeys.LIB_COPY_PREFIX              to "Copy #{id}",
+        StringKeys.LIB_BARCODE_PREFIX           to "Barcode: {code}",
+        StringKeys.LIB_ISSUED_PREFIX            to "Issued: {date}",
+        StringKeys.LIB_RETURNED_PREFIX          to "Returned: {date}",
+        StringKeys.LIB_PENDING_LABEL            to "pending",
+        StringKeys.LIB_BARCODES_SCANNED         to "{count} barcode(s) scanned",
+        StringKeys.LIB_COPIES_COUNT             to "{count} copies",
+        StringKeys.LIB_RECORDS_COUNT            to "{count} records",
+        StringKeys.LIB_ISSUES_COUNT             to "{count} issues",
+
+        // Gamification
+        StringKeys.GAM_EARNED_BADGES            to "Earned Badges",
+        StringKeys.GAM_SHOUTOUT_PH              to "Type a shoutout message...",
+        StringKeys.GAM_PARENT_ALERT_PH          to "Type a parent alert...",
+        StringKeys.GAM_CLASS_LEADERBOARD        to "Class Leaderboard",
+        StringKeys.GAM_CLASS_GOALS              to "Class Goals",
+        StringKeys.GAM_GOAL_TYPE_PH             to "Goal type (e.g. attendance, marks)",
+        StringKeys.GAM_GOAL_TARGET_PH           to "Target value",
+        StringKeys.GAM_GOAL_REWARD_PH           to "Reward (e.g. 50 XP)",
+        StringKeys.GAM_RECENT_SHOUTOUTS         to "Recent Shoutouts",
+        StringKeys.GAM_MENTOR_ASSIGNMENTS       to "Mentor Assignments",
+        StringKeys.GAM_MENTOR_ID_PH             to "Mentor student ID",
+        StringKeys.GAM_MENTEE_ID_PH             to "Mentee student ID",
+        StringKeys.GAM_STUDY_BUDDY_PAIRS        to "Study Buddy Pairs",
+        StringKeys.GAM_STUDY_BUDDIES            to "Study Buddies",
+        StringKeys.GAM_REMOVE                   to "Remove",
+        StringKeys.GAM_BUDDY1_ID_PH             to "Buddy 1 student ID",
+        StringKeys.GAM_BUDDY2_ID_PH             to "Buddy 2 student ID",
+        StringKeys.GAM_NO_DATA                  to "No gamification data yet",
+        StringKeys.GAM_NO_DATA_DESC             to "Configure feature flags and create badges, levels, and rewards to get started.",
+        StringKeys.GAM_MANAGEMENT_CONSOLE       to "Management Console",
+        StringKeys.GAM_FEATURE_FLAGS            to "Feature Flags",
+        StringKeys.GAM_UNABLE_FLAGS             to "Unable to load feature flags",
+        StringKeys.GAM_GRANULAR_TOGGLES         to "Granular Toggles",
+        StringKeys.GAM_LEADERBOARDS             to "Leaderboards",
+        StringKeys.GAM_LEADERBOARDS_DESC        to "Configure leaderboard visibility and scoring",
+        StringKeys.GAM_REWARDS_SHOP             to "Rewards Shop",
+        StringKeys.GAM_REWARDS_SHOP_DESC        to "Manage redeemable rewards and inventory",
+        StringKeys.GAM_HOUSE_SYSTEM             to "House System",
+        StringKeys.GAM_HOUSE_SYSTEM_DESC        to "Configure houses and point allocation",
+        StringKeys.GAM_BOOST_TYPE               to "Boost type",
+        StringKeys.GAM_MULTIPLIER               to "Multiplier (e.g. 2x)",
+        StringKeys.GAM_TARGET_SCOPE             to "Target scope",
+        StringKeys.GAM_DURATION_HOURS           to "Duration (hours)",
+        StringKeys.GAM_CREATE_BOOST             to "Create Boost",
+        StringKeys.GAM_MENTOR_PREFIX            to "Mentor: {id}...",
+        StringKeys.GAM_MENTEE_PREFIX            to "Mentee: {id}...",
+        StringKeys.GAM_STUDENT_PREFIX           to "Student #{id}",
+        StringKeys.GAM_DELETE_SHOUTOUT          to "Delete shoutout",
+        StringKeys.GAM_STUDENT1_ID_PH           to "Student 1 ID",
+        StringKeys.GAM_STUDENT2_ID_PH           to "Student 2 ID",
+        StringKeys.GAM_GOAL_TARGET_NUM_PH       to "Target (e.g. 90)",
+        StringKeys.GAM_TOOLS                    to "Gamification Tools",
+        StringKeys.GAM_CLASS_GAMIFICATION       to "Class Gamification",
+        StringKeys.GAM_ENCOURAGE                to "Encourage",
+        StringKeys.GAM_SPOTLIGHT                to "Spotlight",
+        StringKeys.GAM_CANCEL_SHOUTOUT          to "Cancel Shoutout",
+        StringKeys.GAM_SEND_SHOUTOUT            to "Send Shoutout",
+        StringKeys.GAM_CANCEL_QUEST             to "Cancel Quest",
+        StringKeys.GAM_ASSIGN_QUEST             to "Assign Quest",
+        StringKeys.GAM_CANCEL_BADGE             to "Cancel Badge",
+        StringKeys.GAM_AWARD_BADGE              to "Award Badge",
+        StringKeys.GAM_CANCEL_ALERT             to "Cancel Alert",
+        StringKeys.GAM_PARENT_ALERT             to "Parent Alert",
+        StringKeys.GAM_SEND_ALERT               to "Send Alert",
+        StringKeys.GAM_CONFIRM_PEP_TALK         to "Confirm Pep Talk",
+        StringKeys.GAM_SEND_PEP_TALK            to "Send Pep Talk",
+        StringKeys.GAM_CREATE_CLASS_GOAL        to "Create Class Goal",
+        StringKeys.GAM_CREATE_GOAL              to "Create Goal",
+        StringKeys.GAM_ASSIGN_MENTOR            to "Assign Mentor",
+        StringKeys.GAM_ASSIGN                   to "Assign",
+        StringKeys.GAM_PAIR_STUDY_BUDDIES       to "Pair Study Buddies",
+        StringKeys.GAM_PAIR_THEM                to "Pair Them",
+        StringKeys.GAM_TOTAL_XP                 to "Total XP",
+        StringKeys.GAM_BADGES                   to "Badges",
+        StringKeys.GAM_QUESTS                   to "Quests",
+        StringKeys.GAM_BUDDY_PAIR               to "{id1}... & {id2}...",
+        StringKeys.GAM_PEP_TALK_CONFIRM         to "Send a motivational pep talk to {className}{section}?",
+        StringKeys.GAM_REWARD_PREFIX            to "Reward: {reward}",
+        StringKeys.GAM_UNKNOWN                  to "Unknown",
+        StringKeys.GAM_GOAL                     to "Goal",
+        StringKeys.GAM_QUEST_BUTTON             to "{name} · +{xp} XP",
+        StringKeys.GAM_BADGE_BUTTON             to "{name} · {category}",
+        StringKeys.GAM_SHOUTOUT_FROM_TO         to "{sender} → {receiver}",
+        StringKeys.GAM_PROGRESS_FRACTION        to "{current}/{target}",
+        StringKeys.GAM_XP_VALUE                 to "{xp} XP",
+
+        // AdminGamification
+        StringKeys.AGAM_NO_DATA                 to "No gamification data yet",
+        StringKeys.AGAM_NO_DATA_DESC            to "Configure feature flags and create badges, levels, and rewards to get started.",
+        StringKeys.AGAM_GAMIFICATION            to "Gamification",
+        StringKeys.AGAM_MANAGEMENT_CONSOLE      to "Management Console",
+        StringKeys.AGAM_FEATURE_FLAGS           to "Feature Flags",
+        StringKeys.AGAM_UNABLE_LOAD_FLAGS       to "Unable to load flags",
+        StringKeys.AGAM_ENABLE_GAM              to "Enable Gamification",
+        StringKeys.AGAM_ENABLE_GAM_DESC         to "Master kill switch — turns entire system on/off",
+        StringKeys.AGAM_GRANULAR_TOGGLES        to "Granular Toggles",
+        StringKeys.AGAM_LEADERBOARDS            to "Leaderboards",
+        StringKeys.AGAM_LEADERBOARDS_DESC       to "Class & school rankings",
+        StringKeys.AGAM_REWARDS_SHOP            to "Rewards Shop",
+        StringKeys.AGAM_REWARDS_SHOP_DESC       to "Spend XP on real rewards",
+        StringKeys.AGAM_HOUSE_SYSTEM            to "House System",
+        StringKeys.AGAM_HOUSE_SYSTEM_DESC       to "Guilds & collective competition",
+        StringKeys.AGAM_QUESTS_LABEL            to "Quests",
+        StringKeys.AGAM_QUESTS_DESC             to "Daily, weekly & seasonal quests",
+        StringKeys.AGAM_MENTOR_SYSTEM           to "Mentor System",
+        StringKeys.AGAM_MENTOR_SYSTEM_DESC      to "Peer mentor & study buddy",
+        StringKeys.AGAM_SHOUT_OUTS              to "Shout-Outs",
+        StringKeys.AGAM_SHOUT_OUTS_DESC         to "Peer encouragement",
+        StringKeys.AGAM_SEASONAL_EVENTS         to "Seasonal Events",
+        StringKeys.AGAM_SEASONAL_EVENTS_DESC    to "Limited-edition badges",
+        StringKeys.AGAM_CLASS_GOALS             to "Class Goals",
+        StringKeys.AGAM_CLASS_GOALS_DESC        to "Collective rewards",
+        StringKeys.AGAM_COMBOS                  to "Combos",
+        StringKeys.AGAM_COMBOS_DESC             to "Consecutive activity multipliers",
+        StringKeys.AGAM_XP_BOOSTS               to "XP Boosts",
+        StringKeys.AGAM_XP_BOOSTS_DESC          to "Time-limited multipliers",
+        StringKeys.AGAM_ANALYTICS_OVERVIEW      to "Analytics Overview",
+        StringKeys.AGAM_REDEMPTIONS             to "Redemptions",
+        StringKeys.AGAM_BADGE_CATALOG           to "Badge Catalog ({count})",
+        StringKeys.AGAM_BADGE_DETAIL            to "{category} · {rarity} · {xp} XP",
+        StringKeys.AGAM_SEASONAL                to "Seasonal",
+        StringKeys.AGAM_LEVEL_DEFINITIONS       to "Level Definitions ({count})",
+        StringKeys.AGAM_LEVEL_XP                to "{xp} XP",
+        StringKeys.AGAM_HOUSES                  to "Houses ({count})",
+        StringKeys.AGAM_HOUSE_DETAIL            to "{members} members · {points} pts",
+        StringKeys.AGAM_REWARDS_CATALOG         to "Rewards Catalog ({count})",
+        StringKeys.AGAM_REWARD_XP               to "{xp} XP",
+        StringKeys.AGAM_ACTIVE                  to "Active",
+        StringKeys.AGAM_INACTIVE                to "Inactive",
+        StringKeys.AGAM_QUEST_POOL              to "Quest Pool ({count})",
+        StringKeys.AGAM_QUEST_DETAIL            to "{type} · {xp} XP",
+        StringKeys.AGAM_EVENTS_TITLE            to "Seasonal Events ({count})",
+        StringKeys.AGAM_EVENT_DATES             to "{start} → {end}",
+        StringKeys.AGAM_ENDED                   to "Ended",
+        StringKeys.AGAM_SCHOOL_LEADERBOARD      to "School Leaderboard (Top {count})",
+        StringKeys.AGAM_LV                      to "Lv {level}",
+        StringKeys.AGAM_REDEMPTION_APPROVALS    to "Redemption Approvals ({count})",
+        StringKeys.AGAM_REDEMPTION_DETAIL       to "{xp} XP · {status}",
+        StringKeys.AGAM_APPROVE                 to "Approve",
+        StringKeys.AGAM_REJECT                  to "Reject",
+        StringKeys.AGAM_BOOSTS_TITLE            to "XP Boosts ({count})",
+        StringKeys.AGAM_BOOST_MULT              to "{mult}x",
+        StringKeys.AGAM_EXPIRED                 to "Expired",
+        StringKeys.AGAM_CREATE_NEW_BOOST        to "+ Create New Boost",
+        StringKeys.AGAM_BOOST_TYPE              to "Boost Type",
+        StringKeys.AGAM_MULTIPLIER_LABEL        to "Multiplier (e.g. 2.0)",
+        StringKeys.AGAM_TARGET_SCOPE            to "Target Scope (ALL / CLASS / STUDENT)",
+        StringKeys.AGAM_DURATION_HOURS          to "Duration (hours)",
+        StringKeys.AGAM_CREATE_BOOST            to "Create Boost",
+
+        // ParentAcademics
+        StringKeys.PAC_ACADEMIC_OVERVIEW        to "Academic Overview",
+        StringKeys.PAC_EMOTIONAL_INTEL          to "Emotional Intelligence",
+        StringKeys.PAC_THIS_TERM                to "This Term",
+        StringKeys.PAC_ATTENDANCE_RATE          to "Attendance Rate",
+        StringKeys.PAC_NO_ATTENDANCE            to "No attendance data yet",
+        StringKeys.PAC_NO_ATTENDANCE_DESC       to "Attendance will appear here once records are available.",
+        StringKeys.PAC_TYPE_ANSWER              to "Type your answer...",
+        StringKeys.PAC_LOADING_LEADERBOARD      to "Loading leaderboard...",
+        StringKeys.PAC_CLASS_SCHEDULE           to "Class Schedule",
+        StringKeys.PAC_SOMETHING_WRONG          to "Something went wrong",
+        StringKeys.PAC_REPORT_CARD              to "Report Card",
+        StringKeys.PAC_APPLY_LEAVE              to "Apply Leave",
+        StringKeys.PAC_HEALTH_RECORDS           to "Health Records",
+        StringKeys.PAC_SYLLABUS                 to "Syllabus",
+        StringKeys.PAC_LEVEL                    to "Level {level}",
+        StringKeys.PAC_ATTENDANCE               to "Attendance",
+        StringKeys.PAC_AVG_SCORE                to "Avg Score",
+        StringKeys.PAC_COVERED                  to "Covered",
+        StringKeys.PAC_PENDING                  to "Pending",
+        StringKeys.PAC_START                    to "Start",
+        StringKeys.PAC_RESULT                   to "Result",
+        StringKeys.PAC_QUIZ                     to "Quiz",
+        StringKeys.PAC_SCORE                    to "Score: {score} / {total}",
+        StringKeys.PAC_YOUR_ANSWER              to "Your answer: {answer}",
+        StringKeys.PAC_CORRECT_ANSWER           to "Correct: {answer}",
+        StringKeys.PAC_SUBMIT_HOMEWORK          to "Submit Homework",
+        StringKeys.PAC_EST                      to "EST",
+        StringKeys.PAC_LEADERBOARD              to "Leaderboard",
+        StringKeys.PAC_PARTICIPANTS             to "{count} participants",
+        StringKeys.PAC_YOU                      to "(You)",
+        StringKeys.PAC_ROOM                     to "Room {room}",
+        StringKeys.PAC_LIVE                     to "LIVE",
+        StringKeys.PAC_COLLAPSE                 to "Collapse",
+        StringKeys.PAC_EXPAND                   to "Expand",
+        StringKeys.PAC_MATCH                    to "(Match)",
+        StringKeys.PAC_NO_LOG                   to "No log updated by the teacher",
+        StringKeys.PAC_NO_LOG_DESC              to "Daily homework summaries will appear here once the teacher updates them.",
+        StringKeys.PAC_QUICK_ACTIONS            to "Quick Actions",
+        StringKeys.PAC_ACHIEVEMENTS             to "Achievements",
+        StringKeys.PAC_FREE_PERIOD              to "Free Period",
+        StringKeys.PAC_TRUE_FALSE               to "(True/False)",
+        StringKeys.PAC_FILL_BLANK               to "(Fill in the blank)",
+        StringKeys.PAC_ESTIMATED_NOTE           to "Teacher hasn't updated progress. Estimated based on scheduled classes.",
+        StringKeys.PAC_AI                       to "AI",
+
+        // Exam screens
+        StringKeys.EXAM_IMPORT_METHOD           to "Import Method",
+        StringKeys.EXAM_PASTE_MARKS             to "Paste marks sheet text",
+        StringKeys.EXAM_EXTRACTING_MARKS        to "Extracting marks...",
+        StringKeys.EXAM_MAY_TAKE_SECONDS        to "This may take a few seconds.",
+        StringKeys.EXAM_IMPORT_FAILED           to "Import Failed",
+        StringKeys.EXAM_TRY_AGAIN               to "Try Again",
+        StringKeys.EXAM_IMAGE_UNAVAILABLE       to "Image Picker Unavailable",
+        StringKeys.EXAM_PASTE_TEXT_INSTEAD      to "Paste Text Instead",
+        StringKeys.EXAM_EXTRACTION_RESULTS      to "Extraction Results",
+        StringKeys.EXAM_TIMETABLE_NAME          to "Timetable name (e.g. Mid Term 2026)",
+        StringKeys.EXAM_TERM_OPTIONAL           to "Term (optional)",
+        StringKeys.EXAM_PASTE_TIMETABLE         to "Paste exam timetable text",
+        StringKeys.EXAM_EXTRACTING_ENTRIES      to "Extracting entries...",
+        StringKeys.EXAM_EXTRACTED_ENTRIES       to "Extracted Entries",
+        StringKeys.EXAM_ALL_CLASSES             to "All Classes",
+        StringKeys.EXAM_NO_ASSESSMENTS          to "No assessments found",
+
+        // SkillTestCard
+        StringKeys.SKILL_GENERATING             to "Generating questions...",
+        StringKeys.SKILL_EVALUATING             to "Evaluating answers...",
+
+        // Misc screens
+        StringKeys.MISC_PROFILE_PICTURE         to "Profile picture",
+        StringKeys.MISC_SCHOOL_LOGO             to "School logo",
+        StringKeys.MISC_RECOMMENDED_RATIO       to "Recommended: 1:1 ratio",
+        StringKeys.MISC_ADD_PHOTO               to "Add photo",
+        StringKeys.MISC_PROFILE_COMPLETION      to "Profile completion",
+        StringKeys.MISC_PROFILE_DESC            to "School details, visibility, gallery and tour media.",
+        StringKeys.MISC_ENTER_UUID              to "Enter student UUID or student code",
+        StringKeys.MISC_SELECT_CONFIGURED       to "Please select a configured class",
+        StringKeys.MISC_SAVED_SUCCESS           to "Saved successfully",
+        StringKeys.MISC_SAVE_CHANGES            to "Save Changes",
+        StringKeys.MISC_ATTENDANCE_SAVED        to "Attendance saved",
+        StringKeys.MISC_SAVE_ATTENDANCE         to "Save Attendance",
+        StringKeys.MISC_PASTE_CSV               to "or paste CSV content manually",
+        StringKeys.MISC_CONVERSION_RATE         to "Conversion rate",
+        StringKeys.MISC_TUTOR_THINKING          to "Tutor is thinking",
+        StringKeys.MISC_PAID_ON                 to "Paid on: {date}",
+        StringKeys.MISC_VIEW_SALARY             to "View Salary History",
+        StringKeys.MISC_SALARY_DESC             to "See your monthly salary breakdown and payment status",
+        StringKeys.MISC_ANSWER_NOTES            to "Answer / Notes",
+        StringKeys.MISC_NO_AT_RISK              to "No at-risk students",
+        StringKeys.MISC_ALL_ON_TRACK            to "All students are on track for this class",
+        StringKeys.MISC_MARK_ATTENDANCE         to "Mark Attendance",
+        StringKeys.MISC_OR_PASTE_CSV            to "or paste CSV content manually",
     )
 
     private val en: Map<String, String> = enPart1() + enPart2()
@@ -7974,7 +8856,7 @@ object AppStrings {
         StringKeys.TC_N_STUDENTS_ABSENT                     to "{count} absent today",
         StringKeys.TC_N_SUBTOPICS                           to "{count} subtopics",
         StringKeys.TC_N_TOPICS_SELECTED                     to "{count} topics selected",
-        StringKeys.TC_N_TURNED_IN                           to "{count} turned in",
+        StringKeys.TC_N_TURNED_IN                           to "{count} of {total} turned in",
         StringKeys.TC_OBJECTIVES                            to "Objectives",
         StringKeys.TC_OPTIONS_ONE_PER_LINE                  to "Options (one per line):",
         StringKeys.TC_OPTIONS_PH                            to "TC_OPTIONS_PH",
@@ -8051,7 +8933,7 @@ object AppStrings {
         StringKeys.TC_RISK_WATCH                            to "Watch",
         StringKeys.TC_ROLL_LABEL                            to "Roll",
         StringKeys.TC_ROLL_N                                to "Roll {n}",
-        StringKeys.TC_ROLL_NO                               to "Roll No",
+        StringKeys.TC_ROLL_NO                               to "Roll No {no}",
         StringKeys.TC_ROLL_ON_LEAVE                         to "On leave",
         StringKeys.TC_ROOM                                  to "कक्ष",
         StringKeys.TC_ROOM_HINT                             to "e.g. 101",

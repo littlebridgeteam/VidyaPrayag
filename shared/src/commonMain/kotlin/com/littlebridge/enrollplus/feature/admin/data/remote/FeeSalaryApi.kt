@@ -4,18 +4,24 @@ import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.safeApiCall
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeStructureRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeAdditionalChargeListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeClassListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLateFeeTierDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLateFeeTierListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeReminderConfigDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStructureDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStructureListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStudentListResponse
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeTeacherListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.GenerateFeesRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.GenerateFeesResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.MarkPaidRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.SalaryListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.SalaryRecordDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.SetSalaryRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeReminderConfigRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeStructureRequest
 import io.ktor.client.HttpClient
@@ -190,5 +196,55 @@ class FeeSalaryApi(
         id: String,
     ): NetworkResult<ApiResponse<Unit>> = safeApiCall {
         client.put(getUrl("api/v1/school/salary/$id/mark-paid"))
+    }
+
+    // ── Class & Teacher Lookups ─────────────────────────────────────────────
+
+    suspend fun getFeeClasses(
+        token: String,
+    ): NetworkResult<ApiResponse<FeeClassListResponse>> = safeApiCall {
+        client.get(getUrl("api/v1/school/fees/classes"))
+    }
+
+    suspend fun getFeeTeachers(
+        token: String,
+    ): NetworkResult<ApiResponse<FeeTeacherListResponse>> = safeApiCall {
+        client.get(getUrl("api/v1/school/fees/teachers"))
+    }
+
+    // ── Late Fee Tiers ──────────────────────────────────────────────────────
+
+    suspend fun getLateFeeTiers(
+        token: String,
+    ): NetworkResult<ApiResponse<FeeLateFeeTierListResponse>> = safeApiCall {
+        client.get(getUrl("api/v1/school/fees/late-fee-tiers"))
+    }
+
+    suspend fun createLateFeeTier(
+        token: String,
+        request: CreateFeeLateFeeTierRequest,
+    ): NetworkResult<ApiResponse<FeeLateFeeTierDto>> = safeApiCall {
+        client.post(getUrl("api/v1/school/fees/late-fee-tiers")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    suspend fun updateLateFeeTier(
+        token: String,
+        id: String,
+        request: UpdateFeeLateFeeTierRequest,
+    ): NetworkResult<ApiResponse<Unit>> = safeApiCall {
+        client.put(getUrl("api/v1/school/fees/late-fee-tiers/$id")) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    suspend fun deleteLateFeeTier(
+        token: String,
+        id: String,
+    ): NetworkResult<ApiResponse<Unit>> = safeApiCall {
+        client.delete(getUrl("api/v1/school/fees/late-fee-tiers/$id"))
     }
 }

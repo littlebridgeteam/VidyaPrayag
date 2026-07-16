@@ -35,6 +35,7 @@ data class TeacherReportReviewState(
     val term: String = "",
     val approvingId: String? = null,
     val regeneratingId: String? = null,
+    val isGenerating: Boolean = false,
     val message: String? = null,
 ) {
     val isEmpty: Boolean get() = !isLoading && error == null && drafts.isEmpty()
@@ -112,6 +113,32 @@ class TeacherReportReviewViewModel(
                     _state.value = _state.value.copy(error = r.message)
                 is NetworkResult.ConnectionError ->
                     _state.value = _state.value.copy(error = "Connection error")
+            }
+        }
+    }
+
+    fun generateDrafts(className: String, section: String, term: String) {
+        _state.value = _state.value.copy(isGenerating = true, error = null, message = null)
+        viewModelScope.launch {
+            val t = token() ?: run {
+                _state.value = _state.value.copy(isGenerating = false, error = "Not signed in")
+                return@launch
+            }
+            when (val r = repository.generateBatch(
+                t,
+                ReportCardModels.GenerateRequest(className = className, section = section, term = term)
+            )) {
+                is NetworkResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isGenerating = false,
+                        message = "Draft generation started. Refresh in a moment.",
+                    )
+                    loadReviewQueue(className, section, term)
+                }
+                is NetworkResult.Error ->
+                    _state.value = _state.value.copy(isGenerating = false, error = r.message)
+                is NetworkResult.ConnectionError ->
+                    _state.value = _state.value.copy(isGenerating = false, error = "Connection error")
             }
         }
     }

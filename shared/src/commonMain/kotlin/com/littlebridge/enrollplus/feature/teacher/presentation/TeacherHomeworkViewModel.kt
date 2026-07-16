@@ -230,8 +230,17 @@ class TeacherHomeworkViewModel(
             when (val result = repository.assignHomework(t, request)) {
                 is NetworkResult.Success -> {
                     AnalyticsTracker.event("vp_homework_assigned", mapOf("assignment_id" to s0.assignmentId))
-                    _state.update { it.copy(isAssigning = false, isComposerOpen = false) }
-                    load(s0.assignmentId)
+                    _state.update { it.copy(isAssigning = false, isComposerOpen = false, isLoading = true, error = null) }
+                    val t2 = token() ?: run {
+                        _state.update { it.copy(isLoading = false, error = "Not authenticated") }
+                        return@launch
+                    }
+                    when (val listResult = repository.listHomework(t2, s0.assignmentId)) {
+                        is NetworkResult.Success ->
+                            _state.update { it.copy(isLoading = false, items = listResult.data.data.items.map { d -> d.toUi() }, isStale = listResult.isStale, isOffline = listResult.isOffline) }
+                        is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = listResult.message) }
+                        is NetworkResult.ConnectionError -> _state.update { it.copy(isLoading = false, error = "Connection error") }
+                    }
                 }
                 is NetworkResult.Error -> {
                     AnalyticsTracker.event("vp_homework_assign_failed", mapOf("error_reason" to (result.message ?: "unknown")))

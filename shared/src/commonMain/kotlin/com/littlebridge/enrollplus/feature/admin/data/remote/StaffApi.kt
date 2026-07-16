@@ -22,6 +22,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.StaffDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StaffListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateStaffRequest
 import io.ktor.client.HttpClient
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -48,6 +49,7 @@ class StaffApi(
         department: String? = null
     ): NetworkResult<ApiResponse<StaffListResponse>> = safeApiCall {
         client.get(getUrl("api/v1/school/staff")) {
+            bearerAuth(token)
             if (!query.isNullOrBlank()) parameter("q", query)
             if (!department.isNullOrBlank()) parameter("department", department)
         }
@@ -58,6 +60,7 @@ class StaffApi(
         request: CreateStaffRequest
     ): NetworkResult<ApiResponse<StaffDto>> = safeApiCall {
         client.post(getUrl("api/v1/school/staff")) {
+            bearerAuth(token)
             contentType(ContentType.Application.Json)
             setBody(request)
         }
@@ -67,7 +70,9 @@ class StaffApi(
         token: String,
         staffId: String
     ): NetworkResult<ApiResponse<StaffDto>> = safeApiCall {
-        client.get(getUrl("api/v1/school/staff/$staffId"))
+        client.get(getUrl("api/v1/school/staff/$staffId")) {
+            bearerAuth(token)
+        }
     }
 
     suspend fun updateStaff(
@@ -76,6 +81,7 @@ class StaffApi(
         request: UpdateStaffRequest
     ): NetworkResult<ApiResponse<StaffDto>> = safeApiCall {
         client.patch(getUrl("api/v1/school/staff/$staffId")) {
+            bearerAuth(token)
             contentType(ContentType.Application.Json)
             setBody(request)
         }
@@ -85,6 +91,8 @@ class StaffApi(
         token: String,
         staffId: String
     ): NetworkResult<ApiResponse<Unit>> = safeApiCall {
-        client.delete(getUrl("api/v1/school/staff/$staffId"))
+        client.delete(getUrl("api/v1/school/staff/$staffId")) {
+            bearerAuth(token)
+        }
     }
 }

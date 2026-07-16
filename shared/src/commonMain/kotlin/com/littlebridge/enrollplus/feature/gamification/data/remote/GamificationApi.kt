@@ -119,10 +119,11 @@ class GamificationApi(
     }
 
     // ── Teacher Tools: Class leaderboard ──────────────────────────────
-    suspend fun getClassLeaderboard(token: String, limit: Int = 50): NetworkResult<ApiResponse<List<LeaderboardEntry>>> = safeApiCall {
+    suspend fun getClassLeaderboard(token: String, limit: Int = 50, className: String? = null): NetworkResult<ApiResponse<List<LeaderboardEntry>>> = safeApiCall {
         client.get(getUrl("api/v1/teacher/gamification/class/leaderboard")) {
             bearerAuth(token)
             parameter("limit", limit)
+            if (!className.isNullOrBlank()) parameter("className", className)
         }
     }
 

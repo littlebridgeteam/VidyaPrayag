@@ -180,3 +180,60 @@ data class SetSalaryRequest(
 data class TeacherSalaryResponse(
     val records: List<SalaryRecordDto>,
 )
+
+// ── Class & Teacher Lookup Options ────────────────────────────────────────────
+
+@Serializable
+data class FeeClassOptionDto(
+    val id: String,
+    val name: String,
+    val code: String,
+)
+
+@Serializable
+data class FeeClassListResponse(
+    val classes: List<FeeClassOptionDto>,
+)
+
+@Serializable
+data class FeeTeacherOptionDto(
+    val id: String,
+    val name: String,
+)
+
+@Serializable
+data class FeeTeacherListResponse(
+    val teachers: List<FeeTeacherOptionDto>,
+)
+
+// ── Late Fee Tiers ─────────────────────────────────────────────────────────────
+
+@Serializable
+data class FeeLateFeeTierDto(
+    val id: String,
+    @SerialName("school_id") val schoolId: String,
+    @SerialName("days_after_due") val daysAfterDue: Int,
+    val amount: Double,
+    val currency: String = "INR",
+    @SerialName("is_active") val isActive: Boolean = true,
+)
+
+@Serializable
+data class FeeLateFeeTierListResponse(
+    val tiers: List<FeeLateFeeTierDto>,
+)
+
+@Serializable
+data class CreateFeeLateFeeTierRequest(
+    @SerialName("days_after_due") val daysAfterDue: Int,
+    val amount: Double,
+    val currency: String = "INR",
+)
+
+@Serializable
+data class UpdateFeeLateFeeTierRequest(
+    @SerialName("days_after_due") val daysAfterDue: Int,
+    val amount: Double,
+    val currency: String = "INR",
+    @SerialName("is_active") val isActive: Boolean = true,
+)

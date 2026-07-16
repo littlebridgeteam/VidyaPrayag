@@ -132,6 +132,7 @@ data class RewardRedemption(
 data class LeaderboardEntry(
     val rank: Int,
     val studentId: String,
+    val studentName: String = "Unknown",
     val totalXp: Int,
     val currentLevel: Int,
     val levelTitle: String,
@@ -158,7 +159,8 @@ data class SeasonalEvent(
 data class EncourageRequest(
     val studentId: String,
     val amount: Int = 10,
-    val reason: String = "Keep up the great work!"
+    val reason: String = "Keep up the great work!",
+    val encouragementType: String = "ENCOURAGE"
 )
 
 @Serializable

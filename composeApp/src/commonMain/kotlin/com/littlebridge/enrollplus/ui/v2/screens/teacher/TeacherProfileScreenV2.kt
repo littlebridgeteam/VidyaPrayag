@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -543,6 +544,7 @@ private fun LeaveComposer(
             placeholder = appString(StringKeys.TC_WHY_APPLYING),
             singleLine = false,
             enabled = !inFlight,
+            modifier = Modifier.heightIn(min = 120.dp),
         )
         if (applyResult is ActionResult.Failure) {
             Text(applyResult.message, style = VtT.caption.coloredV(c.dangerInk))
@@ -646,24 +648,39 @@ private fun PasswordForm(
     var new0 by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var reveal by remember { mutableStateOf(false) }
+    var submitted by remember { mutableStateOf(false) }
     val inFlight = result is ActionResult.InFlight
+
+    val newError = if (submitted && new0.isBlank()) "New password is required"
+        else if (submitted && new0.length < 8) "New password must be at least 8 characters"
+        else null
+    val confirmError = if (submitted && confirm.isBlank()) "Please confirm your new password"
+        else if (submitted && new0.isNotBlank() && new0 != confirm) "Passwords don't match"
+        else null
 
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VInput(
             value = old, onValueChange = { old = it }, label = appString(StringKeys.TC_CURRENT_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
+            modifier = Modifier.heightIn(min = 56.dp),
         )
         VInput(
             value = new0, onValueChange = { new0 = it }, label = appString(StringKeys.TC_NEW_PASSWORD),
             hint = appString(StringKeys.TC_AT_LEAST_),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
+            isError = newError != null,
+            errorText = newError,
+            modifier = Modifier.heightIn(min = 56.dp),
         )
         VInput(
             value = confirm, onValueChange = { confirm = it }, label = appString(StringKeys.TC_CONFIRM_NEW_PASSWORD),
             isPassword = true, passwordVisible = reveal, enabled = !inFlight,
             keyboardType = KeyboardType.Password,
+            isError = confirmError != null,
+            errorText = confirmError,
+            modifier = Modifier.heightIn(min = 56.dp),
             trailing = {
                 val ix = remember { MutableInteractionSource() }
                 Icon(
@@ -679,12 +696,15 @@ private fun PasswordForm(
         }
         VButton(
             text = appString(StringKeys.TC_UPDATE_PASSWORD),
-            onClick = { onSubmit(old, new0, confirm) },
+            onClick = {
+                submitted = true
+                onSubmit(old, new0, confirm)
+            },
             full = true,
             tone = VButtonTone.Navy,
             stateful = true,
             loading = inFlight,
-            enabled = new0.isNotBlank() && confirm.isNotBlank() && !inFlight,
+            enabled = !inFlight,
         )
     }
 }

@@ -382,6 +382,7 @@ object DatabaseFactory {
         FeeAdditionalChargesTable,
         FeeReminderConfigTable,
         SalaryRecordsTable,
+        FeeLateFeeTiersTable,
         // Gamification System (GAMIFICATION_SYSTEM_SPEC.md §26)
         // Provisioned via docs/db/migration_100_gamification.sql in Postgres;
         // auto-created on SQLite via SchemaUtils.

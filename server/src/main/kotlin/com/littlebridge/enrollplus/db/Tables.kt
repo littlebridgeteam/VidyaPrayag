@@ -4713,4 +4713,22 @@ object SalaryRecordsTable : UUIDTable("salary_records", "id") {
     }
 }
 
+/**
+ * Late fee tier configuration per school. Each tier specifies how many days
+ * after the due date the tier activates, and the fee amount to add.
+ * Admin configures these in Settings → Fee & Salary → Late Fee Tiers.
+ */
+object FeeLateFeeTiersTable : UUIDTable("fee_late_fee_tiers", "id") {
+    val schoolId    = uuid("school_id")
+    val daysAfterDue = integer("days_after_due")
+    val amount      = double("amount")
+    val currency    = varchar("currency", 8).default("INR")
+    val isActive    = bool("is_active").default(true)
+    val createdAt   = timestamp("created_at")
+    val updatedAt   = timestamp("updated_at")
+    init {
+        uniqueIndex("ux_fee_late_tiers_school_days", schoolId, daysAfterDue)
+    }
+}
+
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)

@@ -608,7 +608,12 @@ fun Route.gamificationRouting() {
             get("/class/leaderboard") {
                 val ctx = call.requireSchoolOrTeacherContext() ?: return@get
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 50
-                val leaderboard = LeaderboardService.getSchoolLeaderboard(ctx.schoolId, limit)
+                val className = call.request.queryParameters["className"]
+                val leaderboard = if (!className.isNullOrBlank()) {
+                    LeaderboardService.getClassLeaderboard(ctx.schoolId, className, limit)
+                } else {
+                    LeaderboardService.getSchoolLeaderboard(ctx.schoolId, limit)
+                }
                 call.ok(leaderboard, "Class leaderboard (${leaderboard.size})")
             }
 

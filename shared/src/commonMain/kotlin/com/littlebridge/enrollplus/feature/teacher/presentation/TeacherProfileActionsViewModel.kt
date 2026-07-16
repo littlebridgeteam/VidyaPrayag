@@ -153,6 +153,12 @@ class TeacherProfileActionsViewModel(
      */
     fun changePassword(oldPassword: String?, newPassword: String, confirmPassword: String) {
         viewModelScope.launch {
+            if (newPassword.isBlank()) {
+                _password.value = ActionResult.Failure("New password is required"); return@launch
+            }
+            if (confirmPassword.isBlank()) {
+                _password.value = ActionResult.Failure("Please confirm your new password"); return@launch
+            }
             if (newPassword.length < 8) {
                 _password.value = ActionResult.Failure("New password must be at least 8 characters"); return@launch
             }

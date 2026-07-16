@@ -63,7 +63,7 @@ fun VDatePicker(
     val c = VTheme.colors
     var open by remember { mutableStateOf(false) }
 
-    Column(modifier) {
+    Column(modifier.fillMaxWidth()) {
         if (label != null) {
             Text(
                 text = label,

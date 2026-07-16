@@ -52,6 +52,8 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 
+import com.littlebridge.enrollplus.db.StudentsTable
+
 import io.ktor.server.auth.*
 
 import io.ktor.server.routing.*
@@ -59,6 +61,8 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 
 import kotlinx.serialization.Serializable
+
+import org.jetbrains.exposed.sql.JoinType
 
 import org.jetbrains.exposed.sql.SortOrder
 
@@ -234,27 +238,39 @@ fun Route.schoolRecordsRouting() {
 
                 } else {
 
-                    val rows = AttendanceRecordsTable.selectAll().where {
+                    val rows = AttendanceRecordsTable
 
-                        (AttendanceRecordsTable.schoolId eq ctx.schoolId) and
+                        .join(StudentsTable, JoinType.LEFT, AttendanceRecordsTable.studentId, StudentsTable.id)
 
-                            (AttendanceRecordsTable.type eq "student") and
+                        .selectAll()
 
-                            (AttendanceRecordsTable.date eq latest)
+                        .where {
 
-                    }.map {
+                            (AttendanceRecordsTable.schoolId eq ctx.schoolId) and
 
-                        Triple(
+                                (AttendanceRecordsTable.type eq "student") and
 
-                            it[AttendanceRecordsTable.grade] ?: "—",
+                                (AttendanceRecordsTable.date eq latest)
 
-                            it[AttendanceRecordsTable.status].lowercase(),
+                        }.map {
 
-                            1
+                            val className = it.getOrNull(StudentsTable.className) ?: it[AttendanceRecordsTable.grade] ?: "—"
 
-                        )
+                            val section = it.getOrNull(StudentsTable.section) ?: ""
 
-                    }
+                            val label = if (section.isNotBlank()) "$className-$section" else className
+
+                            Triple(
+
+                                label,
+
+                                it[AttendanceRecordsTable.status].lowercase(),
+
+                                1
+
+                            )
+
+                        }
 
                     val present = rows.count { it.second == "present" }
 

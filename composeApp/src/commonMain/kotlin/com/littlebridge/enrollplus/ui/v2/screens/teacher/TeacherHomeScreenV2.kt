@@ -103,6 +103,7 @@ fun TeacherHomeScreenV2(
     onOpenMessages: () -> Unit,
     onOpenExamTimetable: () -> Unit = {},
     onOpenExport: () -> Unit = {},
+    onOpenAnnouncements: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     unreadCount: Int = 0,
     modifier: Modifier = Modifier,
@@ -234,6 +235,12 @@ fun TeacherHomeScreenV2(
                 onExams = onOpenExamTimetable,
                 onReports = onOpenReportReview,
                 onExport = onOpenExport,
+                onHealthAlerts = onOpenHealthAlerts,
+                onTransportAttendance = onOpenTransportAttendance,
+                onHeatmap = onOpenHeatmap,
+                onIdCard = onOpenIdCard,
+                onScheduledMessages = onOpenScheduledMessages,
+                onAnnouncements = onOpenAnnouncements,
             )
         }
 
@@ -680,6 +687,12 @@ private fun QuickActionsGrid(
     onExams: () -> Unit = {},
     onReports: () -> Unit = {},
     onExport: () -> Unit = {},
+    onHealthAlerts: () -> Unit = {},
+    onTransportAttendance: () -> Unit = {},
+    onHeatmap: () -> Unit = {},
+    onIdCard: () -> Unit = {},
+    onScheduledMessages: () -> Unit = {},
+    onAnnouncements: () -> Unit = {},
 ) {
     val actions = listOf(
         QuickAction(appString(StringKeys.TEACHER_ATTENDANCE), VColors.violetSoft, VColors.violet, VIcons.ListChecks, onAttendance),
@@ -689,6 +702,12 @@ private fun QuickActionsGrid(
         QuickAction("Exams", VColors.skySoft, VColors.sky, VIcons.Calendar, onExams),
         QuickAction("Reports", VColors.violetSoft, VColors.violetInk, VIcons.ClipboardList, onReports),
         QuickAction("Export", VColors.mintSoft, VColors.mint, VIcons.FileText, onExport),
+        QuickAction("Health alerts", VColors.coralSoft, VColors.coral, VIcons.Heart, onHealthAlerts),
+        QuickAction("Transport", VColors.skySoft, VColors.sky, VIcons.MapPin, onTransportAttendance),
+        QuickAction("Heatmap", VColors.goldSoft, VColors.gold, VIcons.Sparkles, onHeatmap),
+        QuickAction("ID card", VColors.violetSoft, VColors.violetInk, VIcons.IdCard, onIdCard),
+        QuickAction("Scheduled msgs", VColors.mintSoft, VColors.mint, VIcons.Clock, onScheduledMessages),
+        QuickAction("Announcements", VColors.coralSoft, VColors.coral, VIcons.Megaphone, onAnnouncements),
     )
 
     SurfaceCard {

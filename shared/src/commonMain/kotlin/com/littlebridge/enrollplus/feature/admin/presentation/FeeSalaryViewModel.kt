@@ -5,16 +5,21 @@ import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeStructureRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeAdditionalChargeDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeClassOptionDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeLateFeeTierDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeReminderConfigDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStructureDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeStudentDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.FeeTeacherOptionDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.GenerateFeesRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.GenerateFeesResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.MarkPaidRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.SalaryRecordDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.SetSalaryRequest
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeReminderConfigRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateFeeStructureRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.FeeSalaryRepository
@@ -28,7 +33,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class FeeSalaryTab { FEES, SALARY }
-enum class FeeSubTab { STRUCTURE, PAYMENT_TRACKING, REMINDER_SETTINGS }
+enum class FeeSubTab { STRUCTURE, PAYMENT_TRACKING, REMINDER_SETTINGS, LATE_FEE_TIERS }
 
 data class FeeSalaryState(
     val isLoading: Boolean = true,
@@ -58,6 +63,13 @@ data class FeeSalaryState(
     // Salary
     val salaryRecords: List<SalaryRecordDto> = emptyList(),
     val selectedTeacherId: String? = null,
+
+    // Class & Teacher dropdowns
+    val classes: List<FeeClassOptionDto> = emptyList(),
+    val teachers: List<FeeTeacherOptionDto> = emptyList(),
+
+    // Late Fee Tiers
+    val lateFeeTiers: List<FeeLateFeeTierDto> = emptyList(),
 
     // Action feedback
     val actionMessage: String? = null,
@@ -94,7 +106,10 @@ class FeeSalaryViewModel(
             FeeSubTab.STRUCTURE -> if (_state.value.structures.isEmpty()) loadFeeStructures()
             FeeSubTab.PAYMENT_TRACKING -> if (_state.value.feeStudents.isEmpty()) loadFeeStudents()
             FeeSubTab.REMINDER_SETTINGS -> if (_state.value.reminderConfig == null) loadReminderConfig()
+            FeeSubTab.LATE_FEE_TIERS -> if (_state.value.lateFeeTiers.isEmpty()) loadLateFeeTiers()
         }
+        if (_state.value.classes.isEmpty()) loadClasses()
+        if (_state.value.teachers.isEmpty()) loadTeachers()
     }
 
     private suspend fun getToken(): String? = prefs.getUserToken().first()
@@ -454,5 +469,97 @@ class FeeSalaryViewModel(
 
     fun clearActionMessage() {
         _state.update { it.copy(actionMessage = null, errorMessage = null) }
+    }
+
+    // ── Class & Teacher Lookups ──────────────────────────────────────────────
+
+    fun loadClasses() {
+        viewModelScope.launch {
+            val token = getToken() ?: return@launch
+            when (val result = repository.getFeeClasses(token)) {
+                is NetworkResult.Success -> {
+                    _state.update { it.copy(classes = result.data.data?.classes ?: emptyList()) }
+                }
+                is NetworkResult.Error -> AppLogger.e("FeeSalaryVM", "Failed to load classes: ${result.message}")
+                is NetworkResult.ConnectionError -> AppLogger.e("FeeSalaryVM", "Connection error loading classes")
+            }
+        }
+    }
+
+    fun loadTeachers() {
+        viewModelScope.launch {
+            val token = getToken() ?: return@launch
+            when (val result = repository.getFeeTeachers(token)) {
+                is NetworkResult.Success -> {
+                    _state.update { it.copy(teachers = result.data.data?.teachers ?: emptyList()) }
+                }
+                is NetworkResult.Error -> AppLogger.e("FeeSalaryVM", "Failed to load teachers: ${result.message}")
+                is NetworkResult.ConnectionError -> AppLogger.e("FeeSalaryVM", "Connection error loading teachers")
+            }
+        }
+    }
+
+    // ── Late Fee Tiers ────────────────────────────────────────────────────────
+
+    fun loadLateFeeTiers() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            val token = getToken() ?: return@launch
+            when (val result = repository.getLateFeeTiers(token)) {
+                is NetworkResult.Success -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            lateFeeTiers = result.data.data?.tiers ?: emptyList(),
+                        )
+                    }
+                }
+                is NetworkResult.Error -> {
+                    _state.update { it.copy(isLoading = false, errorMessage = result.message) }
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.update { it.copy(isLoading = false, errorMessage = "Connection error") }
+                }
+            }
+        }
+    }
+
+    fun createLateFeeTier(daysAfterDue: Int, amount: Double) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = getToken() ?: return@launch
+            val req = CreateFeeLateFeeTierRequest(daysAfterDue = daysAfterDue, amount = amount)
+            when (val result = repository.createLateFeeTier(token, req)) {
+                is NetworkResult.Success -> {
+                    _state.update { it.copy(isActionLoading = false, actionMessage = "Late fee tier created") }
+                    loadLateFeeTiers()
+                }
+                is NetworkResult.Error -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = result.message) }
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = "Connection error") }
+                }
+            }
+        }
+    }
+
+    fun deleteLateFeeTier(id: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = getToken() ?: return@launch
+            when (val result = repository.deleteLateFeeTier(token, id)) {
+                is NetworkResult.Success -> {
+                    _state.update { it.copy(isActionLoading = false, actionMessage = "Late fee tier deleted") }
+                    loadLateFeeTiers()
+                }
+                is NetworkResult.Error -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = result.message) }
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = "Connection error") }
+                }
+            }
+        }
     }
 }

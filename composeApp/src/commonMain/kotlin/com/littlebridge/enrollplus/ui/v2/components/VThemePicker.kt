@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.VThemeDef
@@ -131,8 +132,17 @@ private fun ThemePickerRow(
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(label, style = VTheme.type.bodyStrong.colored(if (active) c.accentDeep else c.navyDeep))
-            Text(caption, style = VTheme.type.caption.colored(c.ink3))
+            Text(
+                label,
+                style = VTheme.type.bodyStrong.colored(if (active) c.accentDeep else c.navyDeep),
+                maxLines = 1,
+            )
+            Text(
+                caption,
+                style = VTheme.type.caption.colored(c.ink3),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
         if (active) {
             Box(

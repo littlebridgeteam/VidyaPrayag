@@ -245,7 +245,21 @@ private fun TeacherStudentCard(
         }
 
         // my open interventions for this student
-        interventions.filter { it.status == "open" || it.status == "in_progress" }.forEach { iv ->
+        val openInterventions = interventions.filter { it.status == "open" || it.status == "in_progress" }
+        if (openInterventions.isEmpty() && interventions.isNotEmpty()) {
+            // No open/in-progress interventions — show a fallback action row so the
+            // teacher can still act (e.g. start a new intervention or view details).
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    appString(StringKeys.TC_START),
+                    { onStart(interventions.first().id) },
+                    variant = VButtonVariant.Primary,
+                    size = VButtonSize.Sm,
+                )
+            }
+        }
+        openInterventions.forEach { iv ->
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(c.cream).padding(10.dp)) {
                 val notes = iv.notes

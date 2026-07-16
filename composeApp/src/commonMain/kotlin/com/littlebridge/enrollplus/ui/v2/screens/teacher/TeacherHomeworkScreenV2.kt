@@ -300,8 +300,8 @@ private fun BoardStudentRow(row: HomeworkBoardRow, updating: Boolean, onReview: 
         else -> VColors.coral to appString(StringKeys.TC_NOT_SUBMITTED)
     }
     VtCard {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text(row.name, style = VTypography.caption, color = VColors.ink, maxLines = 1)
                     Text(
