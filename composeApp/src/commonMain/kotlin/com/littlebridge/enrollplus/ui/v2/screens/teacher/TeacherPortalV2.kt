@@ -48,7 +48,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, NotificationPreferences, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementList, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export, SalaryHistory }
+private enum class TeacherOverlay { None, Notifications, NotificationPreferences, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementList, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export, SalaryHistory, FeeEscalation }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -140,6 +140,7 @@ fun TeacherPortalV2(
                     }
                     "export" -> overlay = TeacherOverlay.Export
                     "salary" -> overlay = TeacherOverlay.SalaryHistory
+                    "fee-escalation", "fee_escalation", "fees" -> overlay = TeacherOverlay.FeeEscalation
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"
@@ -413,6 +414,13 @@ fun TeacherPortalV2(
             )
             return
         }
+        TeacherOverlay.FeeEscalation -> {
+            TeacherFeeEscalationScreen(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
         TeacherOverlay.None -> Unit
     }
 
@@ -554,6 +562,7 @@ fun TeacherPortalV2(
                     unreadCount = notifications.unreadCount,
                     onOpenNotifications = { overlay = TeacherOverlay.Notifications },
                     onOpenSalary = { overlay = TeacherOverlay.SalaryHistory },
+                    onOpenFeeEscalation = { overlay = TeacherOverlay.FeeEscalation },
                 )
             }
 

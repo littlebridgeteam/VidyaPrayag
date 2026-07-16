@@ -1340,7 +1340,7 @@ val viewModelModule = module {
 
     factory { DailyAttendanceViewModel(get(), get(), get()) }
 
-    factory { AnalyticsDashboardViewModel(get(), get()) }
+    factory { AnalyticsDashboardViewModel(get(), get(), get()) }
 
     factory { StudentAnalyticsViewModel(get(), get()) }
 

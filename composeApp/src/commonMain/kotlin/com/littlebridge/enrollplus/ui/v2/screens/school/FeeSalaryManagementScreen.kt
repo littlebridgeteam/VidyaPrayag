@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.littlebridge.enrollplus.feature.admin.domain.model.BulkCreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeAdditionalChargeDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.FeeClassOptionDto
@@ -44,6 +45,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
@@ -640,11 +642,26 @@ private fun AdditionalChargesSubTab(
 
     if (showAddSheet) {
         AddAdditionalChargeSheet(
+            classes = state.classes,
+            feeStudents = state.feeStudents,
             onDismiss = { showAddSheet = false },
-            onCreate = { childId, month, title, amount, description ->
+            onSingleCreate = { childId, month, title, amount, description ->
                 viewModel.createAdditionalCharge(
                     CreateFeeAdditionalChargeRequest(
                         childId = childId,
+                        month = month,
+                        title = title,
+                        amount = amount,
+                        description = description,
+                    ),
+                )
+                showAddSheet = false
+            },
+            onBulkCreate = { classId, childIds, month, title, amount, description ->
+                viewModel.bulkCreateAdditionalCharge(
+                    BulkCreateFeeAdditionalChargeRequest(
+                        classId = classId,
+                        childIds = childIds,
                         month = month,
                         title = title,
                         amount = amount,
@@ -702,26 +719,183 @@ private fun AdditionalChargeCard(
     }
 }
 
+private enum class ChargeTargetMode { FULL_CLASS, SPECIFIC_STUDENTS, SINGLE_STUDENT }
+
 @Composable
 private fun AddAdditionalChargeSheet(
+    classes: List<FeeClassOptionDto>,
+    feeStudents: List<FeeStudentDto>,
     onDismiss: () -> Unit,
-    onCreate: (childId: String, month: String, title: String, amount: Double, description: String?) -> Unit,
+    onSingleCreate: (childId: String, month: String, title: String, amount: Double, description: String?) -> Unit,
+    onBulkCreate: (classId: String, childIds: List<String>, month: String, title: String, amount: Double, description: String?) -> Unit,
 ) {
-    var childId by remember { mutableStateOf("") }
+    var targetMode by remember { mutableStateOf(ChargeTargetMode.FULL_CLASS) }
+    var selectedClassId by remember { mutableStateOf<String?>(null) }
+    var classDropdownOpen by remember { mutableStateOf(false) }
+    var selectedStudentIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var singleStudentId by remember { mutableStateOf<String?>(null) }
     var month by remember { mutableStateOf(todayIso().substring(0, 7)) }
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
+    val studentsInClass = feeStudents.filter { student ->
+        val cls = classes.firstOrNull { it.id == selectedClassId }
+        cls != null && student.className == cls.name
+    }
+
+    val canSubmit = selectedClassId != null &&
+        title.isNotBlank() &&
+        (amount.toDoubleOrNull() ?: 0.0) > 0 &&
+        when (targetMode) {
+            ChargeTargetMode.FULL_CLASS -> true
+            ChargeTargetMode.SPECIFIC_STUDENTS -> selectedStudentIds.isNotEmpty()
+            ChargeTargetMode.SINGLE_STUDENT -> singleStudentId != null
+        }
+
     VBottomSheet(visible = true, onDismiss = onDismiss) {
         VBottomSheetHeader(title = "Add Additional Charge")
         Spacer(Modifier.height(16.dp))
-        VInput(
-            value = childId,
-            onValueChange = { childId = it },
-            label = "Student ID",
-            placeholder = "Enter student UUID",
-        )
+
+        // ── Target Mode Selector ──
+        Text("Apply to", style = VTypography.caption, color = VColors.ink2)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf(
+                ChargeTargetMode.FULL_CLASS to "Full Class",
+                ChargeTargetMode.SPECIFIC_STUDENTS to "Select Students",
+                ChargeTargetMode.SINGLE_STUDENT to "Single Student",
+            ).forEach { (mode, label) ->
+                VButton(
+                    text = label,
+                    onClick = {
+                        targetMode = mode
+                        selectedStudentIds = emptySet()
+                        singleStudentId = null
+                    },
+                    variant = if (targetMode == mode) VButtonVariant.Primary else VButtonVariant.Ghost,
+                    size = VButtonSize.Sm,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // ── Class Dropdown ──
+        Text("Class", style = VTypography.caption, color = VColors.ink2)
+        Box {
+            VCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { classDropdownOpen = !classDropdownOpen },
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = classes.firstOrNull { it.id == selectedClassId }?.name ?: "Select a class",
+                        style = VTypography.body,
+                        color = if (selectedClassId != null) VColors.ink else VColors.ink3,
+                    )
+                    Icon(
+                        if (classDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
+                        contentDescription = null,
+                        tint = VColors.ink2,
+                    )
+                }
+            }
+            androidx.compose.material3.DropdownMenu(
+                expanded = classDropdownOpen,
+                onDismissRequest = { classDropdownOpen = false },
+            ) {
+                classes.forEach { cls ->
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(cls.name) },
+                        onClick = {
+                            selectedClassId = cls.id
+                            selectedStudentIds = emptySet()
+                            singleStudentId = null
+                            classDropdownOpen = false
+                        },
+                    )
+                }
+            }
+        }
+
+        // ── Student Selection (only for SPECIFIC_STUDENTS and SINGLE_STUDENT) ──
+        if (targetMode == ChargeTargetMode.SPECIFIC_STUDENTS && selectedClassId != null) {
+            Spacer(Modifier.height(12.dp))
+            Text("Select Students (${selectedStudentIds.size} selected)", style = VTypography.caption, color = VColors.ink2)
+            if (studentsInClass.isEmpty()) {
+                Text("No students found for this class. Generate fees first or load payment tracking.", style = VTypography.caption, color = VColors.ink3)
+            } else {
+                studentsInClass.forEach { student ->
+                    val isSelected = student.childId in selectedStudentIds
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedStudentIds = if (isSelected) {
+                                    selectedStudentIds - student.childId
+                                } else {
+                                    selectedStudentIds + student.childId
+                                }
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            if (isSelected) VIcons.Check else VIcons.Close,
+                            contentDescription = null,
+                            tint = if (isSelected) VColors.violet else VColors.ink3,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(student.childName, style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f))
+                        student.className?.let {
+                            Text(it, style = VTypography.caption, color = VColors.ink3)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (targetMode == ChargeTargetMode.SINGLE_STUDENT && selectedClassId != null) {
+            Spacer(Modifier.height(12.dp))
+            Text("Select Student", style = VTypography.caption, color = VColors.ink2)
+            if (studentsInClass.isEmpty()) {
+                Text("No students found for this class. Generate fees first or load payment tracking.", style = VTypography.caption, color = VColors.ink3)
+            } else {
+                studentsInClass.forEach { student ->
+                    val isSelected = student.childId == singleStudentId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                singleStudentId = if (isSelected) null else student.childId
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            if (isSelected) VIcons.Check else VIcons.Close,
+                            contentDescription = null,
+                            tint = if (isSelected) VColors.violet else VColors.ink3,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(student.childName, style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // ── Common Fields ──
         VInput(
             value = month,
             onValueChange = { month = it },
@@ -761,11 +935,20 @@ private fun AddAdditionalChargeSheet(
                 text = "Add",
                 onClick = {
                     val amt = amount.toDoubleOrNull() ?: 0.0
-                    if (childId.isNotBlank() && title.isNotBlank() && amt > 0) {
-                        onCreate(childId.trim(), month.trim(), title.trim(), amt, description.ifBlank { null })
+                    val desc = description.ifBlank { null }
+                    when (targetMode) {
+                        ChargeTargetMode.SINGLE_STUDENT -> {
+                            singleStudentId?.let { onSingleCreate(it, month.trim(), title.trim(), amt, desc) }
+                        }
+                        ChargeTargetMode.FULL_CLASS -> {
+                            selectedClassId?.let { onBulkCreate(it, emptyList(), month.trim(), title.trim(), amt, desc) }
+                        }
+                        ChargeTargetMode.SPECIFIC_STUDENTS -> {
+                            selectedClassId?.let { onBulkCreate(it, selectedStudentIds.toList(), month.trim(), title.trim(), amt, desc) }
+                        }
                     }
                 },
-                enabled = childId.isNotBlank() && title.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) > 0,
+                enabled = canSubmit,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -781,6 +964,22 @@ private fun PaymentTrackingSubTab(
 ) {
     var showGenerateDialog by remember { mutableStateOf(false) }
     var showMarkPaidId by remember { mutableStateOf<String?>(null) }
+    var classDropdownOpen by remember { mutableStateOf(false) }
+    var monthDropdownOpen by remember { mutableStateOf(false) }
+
+    val currentMonth = remember { todayIso().substring(0, 7) }
+    val monthOptions = remember {
+        val parts = currentMonth.split("-")
+        var year = parts[0].toInt()
+        var month = parts[1].toInt()
+        (0 until 12).map {
+            val mm = month.toString().padStart(2, '0')
+            val label = "$year-$mm"
+            month--
+            if (month == 0) { month = 12; year-- }
+            label
+        }
+    }
 
     Column(
         Modifier
@@ -790,6 +989,106 @@ private fun PaymentTrackingSubTab(
             .padding(top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // ── Filter Row: Class + Month ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Class filter dropdown
+            Box(
+                Modifier.weight(1f),
+            ) {
+                VCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { classDropdownOpen = !classDropdownOpen },
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = state.classes.firstOrNull { it.id == state.selectedClassFilter }?.name
+                                ?: "All Classes",
+                            style = VTypography.body,
+                            color = VColors.ink,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Icon(
+                            if (classDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
+                            contentDescription = null,
+                            tint = VColors.ink2,
+                        )
+                    }
+                }
+                androidx.compose.material3.DropdownMenu(
+                    expanded = classDropdownOpen,
+                    onDismissRequest = { classDropdownOpen = false },
+                ) {
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text("All Classes") },
+                        onClick = {
+                            viewModel.setClassFilter(null)
+                            classDropdownOpen = false
+                        },
+                    )
+                    state.classes.forEach { cls ->
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(cls.name) },
+                            onClick = {
+                                viewModel.setClassFilter(cls.id)
+                                classDropdownOpen = false
+                            },
+                        )
+                    }
+                }
+            }
+            // Month selector dropdown
+            Box(
+                Modifier.weight(1f),
+            ) {
+                VCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { monthDropdownOpen = !monthDropdownOpen },
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = state.selectedMonth.ifBlank { currentMonth },
+                            style = VTypography.body,
+                            color = VColors.ink,
+                        )
+                        Icon(
+                            if (monthDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
+                            contentDescription = null,
+                            tint = VColors.ink2,
+                        )
+                    }
+                }
+                androidx.compose.material3.DropdownMenu(
+                    expanded = monthDropdownOpen,
+                    onDismissRequest = { monthDropdownOpen = false },
+                ) {
+                    monthOptions.forEach { m ->
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(m) },
+                            onClick = {
+                                viewModel.setMonth(m)
+                                monthDropdownOpen = false
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Summary Row ──
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -804,6 +1103,11 @@ private fun PaymentTrackingSubTab(
                 Text("₹${"%,.0f".format(state.totalPaid)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.success)
             }
         }
+        Text(
+            "${state.feeStudents.size} students",
+            style = VTypography.caption,
+            color = VColors.ink3,
+        )
 
         VButton(
             text = "Generate Monthly Fees",

@@ -473,6 +473,14 @@ fun parseDeepLink(path: String, currentRole: EntryRole): DeepLinkTarget {
                     DeepLinkTarget.Generic(currentRole, path)
             }
         }
+        "fee-escalation", "fee_escalation" -> {
+            when (currentRole) {
+                EntryRole.Teacher ->
+                    DeepLinkTarget.TeacherScreen(currentRole, "fee-escalation")
+                else ->
+                    DeepLinkTarget.Generic(currentRole, path)
+            }
+        }
         "student" -> {
             // Students access the app through the parent portal.
             // /student/library → parent library overlay

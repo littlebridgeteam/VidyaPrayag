@@ -102,6 +102,8 @@ class TutorAgentService(
                     toolCallsMade = agentResult.toolCallsMade,
                     stepsTaken = agentResult.stepsTaken,
                     grounded = wasGrounded,
+                    safetyFlag = finalTurn.teacherFlag?.reason
+                        ?: if (finalTurn.mode == "ESCALATE") "repeated_answer_request" else null,
                 )
             } else {
                 log.warn("TutorAgent: model output failed TutorTurn parse — falling back to deterministic")

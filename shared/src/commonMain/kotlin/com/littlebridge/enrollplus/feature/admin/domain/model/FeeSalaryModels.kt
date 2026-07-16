@@ -74,6 +74,17 @@ data class CreateFeeAdditionalChargeRequest(
     val currency: String = "INR",
 )
 
+@Serializable
+data class BulkCreateFeeAdditionalChargeRequest(
+    @SerialName("class_id") val classId: String,
+    @SerialName("child_ids") val childIds: List<String> = emptyList(),
+    val month: String,
+    val title: String,
+    val description: String? = null,
+    val amount: Double,
+    val currency: String = "INR",
+)
+
 // ── Fee Student List (Payment Tracking) ───────────────────────────────────────
 
 @Serializable

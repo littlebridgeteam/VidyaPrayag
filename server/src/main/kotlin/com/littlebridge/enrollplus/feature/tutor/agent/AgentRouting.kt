@@ -7,6 +7,7 @@ import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.feature.notifications.Notify
+import com.littlebridge.enrollplus.feature.notifications.NotifyRecipients
 import com.littlebridge.enrollplus.feature.tutor.data.TutorSessionRepository
 import com.littlebridge.enrollplus.feature.tutor.triage.TutorTriageService
 import io.ktor.http.HttpStatusCode
@@ -162,9 +163,9 @@ fun Route.agentRouting() {
             if (result.modelUsed) "Doubt resolved" else "Doubt resolved (deterministic fallback)"
         )
 
-        // Notify parent if the tutor session was escalated (safety flag).
-        // This happens when the child repeatedly asks for answers or shows
-        // distress — the parent should be aware.
+        // Notify parent, teachers, and admins if the tutor session was flagged.
+        // This happens when the child asks for inappropriate content, repeatedly
+        // asks for answers, or shows distress.
         if (result.safetyFlag != null) {
             runCatching {
                 Notify.toUser(
@@ -178,6 +179,42 @@ fun Route.agentRouting() {
                     refType = "tutor_session",
                     refId = result.sessionId?.toString(),
                 )
+            }.onFailure { /* best-effort */ }
+
+            // Notify all teachers in the school
+            runCatching {
+                val teacherIds = NotifyRecipients.teachersInSchool(schoolId)
+                if (teacherIds.isNotEmpty()) {
+                    Notify.toUsers(
+                        userIds = teacherIds,
+                        category = "tutor_escalation",
+                        title = "Student Safety Flag",
+                        body = "A student's AI tutor session was flagged: ${result.safetyFlag}. " +
+                            "Please review and follow up as needed.",
+                        schoolId = schoolId,
+                        deepLink = "/teacher/academics/tutor",
+                        refType = "tutor_session",
+                        refId = result.sessionId?.toString(),
+                    )
+                }
+            }.onFailure { /* best-effort */ }
+
+            // Notify all admins in the school
+            runCatching {
+                val adminIds = NotifyRecipients.adminsInSchool(schoolId)
+                if (adminIds.isNotEmpty()) {
+                    Notify.toUsers(
+                        userIds = adminIds,
+                        category = "tutor_escalation",
+                        title = "Student Safety Flag",
+                        body = "A student's AI tutor session was flagged: ${result.safetyFlag}. " +
+                            "Please review and take appropriate action.",
+                        schoolId = schoolId,
+                        deepLink = "/admin/academics/tutor",
+                        refType = "tutor_session",
+                        refId = result.sessionId?.toString(),
+                    )
+                }
             }.onFailure { /* best-effort */ }
         }
     }

@@ -85,6 +85,12 @@ object TutorTurnCodec {
         encodeDefaults = true
     }
 
+    // Regex to fix "teacherFlag": "some string" → "teacherFlag": {"reason": "some string"}
+    // LLMs sometimes return a plain string instead of the expected object.
+    private val teacherFlagStringRegex = Regex(
+        """"teacherFlag"\s*:\s*"((?:[^"\\]|\\.)*)""""
+    )
+
     /** Parse a model's JSON output into a TutorTurn. Returns null on failure. */
     fun parse(raw: String): TutorTurn? = try {
         var cleaned = raw.trim()
@@ -97,6 +103,11 @@ object TutorTurnCodec {
             if (firstBrace >= 0 && lastBrace > firstBrace) {
                 cleaned = cleaned.substring(firstBrace, lastBrace + 1)
             }
+        }
+        // Fix teacherFlag if the LLM returned a string instead of an object
+        cleaned = teacherFlagStringRegex.replace(cleaned) { m ->
+            val reason = m.groupValues[1]
+            """"teacherFlag": {"reason": "$reason", "severity": "high"}"""
         }
         json.decodeFromString(TutorTurn.serializer(), cleaned)
             // If the model omitted studentFacing, provide a minimal default

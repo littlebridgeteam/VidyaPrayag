@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.feature.admin.data.remote
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.safeApiCall
+import com.littlebridge.enrollplus.feature.admin.domain.model.BulkCreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeStructureRequest
@@ -108,6 +109,17 @@ class FeeSalaryApi(
         request: CreateFeeAdditionalChargeRequest,
     ): NetworkResult<ApiResponse<Unit>> = safeApiCall {
         client.post(getUrl("api/v1/school/fees/charges")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    suspend fun bulkCreateAdditionalCharge(
+        token: String,
+        request: BulkCreateFeeAdditionalChargeRequest,
+    ): NetworkResult<ApiResponse<Map<String, Int>>> = safeApiCall {
+        client.post(getUrl("api/v1/school/fees/charges/bulk")) {
             bearerAuth(token)
             contentType(ContentType.Application.Json)
             setBody(request)
