@@ -73,9 +73,11 @@ import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.core.requireSchoolContext
 import com.littlebridge.enrollplus.core.requireSchoolOrTeacherContext
+import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.GameClassGoalsTable
+import com.littlebridge.enrollplus.db.GameRewardCatalogTable
 import com.littlebridge.enrollplus.db.GameRewardRedemptionsTable
 import com.littlebridge.enrollplus.db.GameShoutoutsTable
 import com.littlebridge.enrollplus.db.GameStudentStatsTable
@@ -195,6 +197,8 @@ data class AdminRedemptionDto(
     val id: String,
     val studentId: String,
     val rewardId: String,
+    val rewardName: String = "",
+    val studentName: String = "",
     val xpSpent: Int,
     val status: String,
     val createdAt: String
@@ -241,6 +245,8 @@ data class ShoutoutDto(
     val id: String,
     val senderId: String,
     val receiverId: String,
+    val senderName: String = "",
+    val receiverName: String = "",
     val message: String,
     val templateId: Int,
     val isPublic: Boolean,
@@ -252,6 +258,20 @@ fun Route.gamificationRouting() {
 
         // ── Parent: View child gamification ──────────────────────────────
         route("/api/v1/parent/gamification") {
+
+            // Helper: resolve childId (ChildrenTable.id) → studentId (StudentsTable.id)
+            // via ChildrenTable.studentCode → StudentsTable.studentCode join.
+            // GAM-001: parent routes were passing childId directly to functions
+            // expecting studentId, causing XP data mismatch.
+            suspend fun resolveStudentId(childId: UUID): UUID? = dbQuery {
+                val childRow = ChildrenTable.selectAll()
+                    .where { ChildrenTable.id eq childId }
+                    .firstOrNull() ?: return@dbQuery null
+                val studentCode = childRow[ChildrenTable.studentCode] ?: return@dbQuery null
+                StudentsTable.selectAll()
+                    .where { StudentsTable.studentCode eq studentCode }
+                    .firstOrNull()?.get(StudentsTable.id)?.value
+            }
 
             get("/{childId}/stats") {
                 val uid = call.principalUserUuid() ?: run {
@@ -270,9 +290,14 @@ fun Route.gamificationRouting() {
                     call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get
                 }
 
-                val stats = GamificationService.getStudentStats(childId)
+                val studentId = resolveStudentId(childId)
+                if (studentId == null) {
+                    call.ok(StudentStatsDto(childId.toString(), 0, 0, 1, "Beginner", 0), "Student gamification stats (no student link)")
+                    return@get
+                }
+                val stats = GamificationService.getStudentStats(studentId)
                 if (stats != null) call.ok(stats, "Student gamification stats")
-                else call.ok(StudentStatsDto(childId.toString(), 0, 0, 1, "Beginner", 0), "Student gamification stats (new)")
+                else call.ok(StudentStatsDto(studentId.toString(), 0, 0, 1, "Beginner", 0), "Student gamification stats (new)")
             }
 
             get("/{childId}/badges") {
@@ -291,7 +316,9 @@ fun Route.gamificationRouting() {
                     call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get
                 }
 
-                val badges = BadgeCriteriaEvaluator.getStudentBadges(childId)
+                val studentId = resolveStudentId(childId)
+                if (studentId == null) { call.ok(emptyList<StudentBadgeDto>(), "Student badges (0 — no student link)"); return@get }
+                val badges = BadgeCriteriaEvaluator.getStudentBadges(studentId)
                 call.ok(badges, "Student badges (${badges.size})")
             }
 
@@ -315,9 +342,11 @@ fun Route.gamificationRouting() {
                 }
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
 
+                val studentId = resolveStudentId(childId)
+                if (studentId == null) { call.ok(emptyList<XpHistoryEntryDto>(), "XP history (0 — no student link)"); return@get }
                 val history = dbQuery {
                     GameXpLedgerTable.selectAll()
-                        .where { GameXpLedgerTable.studentId eq childId }
+                        .where { GameXpLedgerTable.studentId eq studentId }
                         .orderBy(GameXpLedgerTable.createdAt, SortOrder.DESC)
                         .limit(10)
                         .map {
@@ -430,7 +459,9 @@ fun Route.gamificationRouting() {
                 }
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
 
-                val quests = QuestService.getStudentQuests(childId)
+                val studentId = resolveStudentId(childId)
+                if (studentId == null) { call.ok(emptyList<StudentQuestDto>(), "Student quests (0 — no student link)"); return@get }
+                val quests = QuestService.getStudentQuests(studentId)
                 call.ok(quests, "Student quests (${quests.size})")
             }
 
@@ -449,7 +480,9 @@ fun Route.gamificationRouting() {
                 }
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
 
-                val house = HouseService.getStudentHouse(childId)
+                val studentId = resolveStudentId(childId)
+                if (studentId == null) { call.okMessage("No house assigned (no student link)"); return@get }
+                val house = HouseService.getStudentHouse(studentId)
                 if (house != null) call.ok(house, "Student house")
                 else call.okMessage("No house assigned")
             }
@@ -495,7 +528,9 @@ fun Route.gamificationRouting() {
                     call.fail("Child school not found", HttpStatusCode.NotFound, "SCHOOL_NOT_FOUND"); return@post
                 }
 
-                val redemption = RewardService.redeemReward(childId, rewardId, sid)
+                val studentId = resolveStudentId(childId)
+                if (studentId == null) { call.fail("Student not linked to this child", HttpStatusCode.BadRequest, "NO_STUDENT_LINK"); return@post }
+                val redemption = RewardService.redeemReward(studentId, rewardId, sid)
                 if (redemption != null) call.ok(redemption, "Reward redeemed")
                 else call.fail("Insufficient XP or reward unavailable", HttpStatusCode.BadRequest, "REDEMPTION_FAILED")
             }
@@ -515,7 +550,9 @@ fun Route.gamificationRouting() {
                 }
                 if (owns == null) { call.fail("Child not found", HttpStatusCode.NotFound, "CHILD_NOT_FOUND"); return@get }
 
-                val redemptions = RewardService.getStudentRedemptions(childId)
+                val studentId = resolveStudentId(childId)
+                if (studentId == null) { call.ok(emptyList<RewardRedemptionDto>(), "Redemptions (0 — no student link)"); return@get }
+                val redemptions = RewardService.getStudentRedemptions(studentId)
                 call.ok(redemptions, "Redemptions (${redemptions.size})")
             }
 
@@ -539,8 +576,9 @@ fun Route.gamificationRouting() {
                     return@get
                 }
 
+                val studentId = resolveStudentId(childId)
                 val leaderboard = LeaderboardService.getSchoolLeaderboard(sid)
-                val rank = LeaderboardService.getStudentRank(sid, childId)
+                val rank = if (studentId != null) LeaderboardService.getStudentRank(sid, studentId) else 0
                 call.ok(LeaderboardResponseDto(leaderboard, rank), "Leaderboard")
             }
         }
@@ -768,7 +806,12 @@ fun Route.gamificationRouting() {
             get("/shoutouts") {
                 val ctx = call.requireSchoolOrTeacherContext() ?: return@get
                 val shoutouts = dbQuery {
-                    GameShoutoutsTable.selectAll()
+                    GameShoutoutsTable
+                        .join(AppUsersTable, JoinType.LEFT,
+                            GameShoutoutsTable.senderId, AppUsersTable.id)
+                        .join(StudentsTable, JoinType.LEFT,
+                            GameShoutoutsTable.receiverId, StudentsTable.id)
+                        .selectAll()
                         .where {
                             (GameShoutoutsTable.schoolId eq ctx.schoolId) and
                             (GameShoutoutsTable.isDeleted eq false)
@@ -779,6 +822,8 @@ fun Route.gamificationRouting() {
                                 id = it[GameShoutoutsTable.id].value.toString(),
                                 senderId = it[GameShoutoutsTable.senderId].toString(),
                                 receiverId = it[GameShoutoutsTable.receiverId].toString(),
+                                senderName = it[AppUsersTable.fullName] ?: "",
+                                receiverName = it[StudentsTable.fullName] ?: "",
                                 message = it[GameShoutoutsTable.message],
                                 templateId = it[GameShoutoutsTable.templateId],
                                 isPublic = it[GameShoutoutsTable.isPublic],
@@ -967,8 +1012,15 @@ fun Route.gamificationRouting() {
 
             get("/mentors") {
                 val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val mentorAlias = StudentsTable.alias("mentor_s")
+                val menteeAlias = StudentsTable.alias("mentee_s")
                 val assignments = dbQuery {
-                    GameMentorAssignmentsTable.selectAll()
+                    GameMentorAssignmentsTable
+                        .join(mentorAlias, JoinType.LEFT,
+                            GameMentorAssignmentsTable.mentorId, mentorAlias[StudentsTable.id])
+                        .join(menteeAlias, JoinType.LEFT,
+                            GameMentorAssignmentsTable.menteeId, menteeAlias[StudentsTable.id])
+                        .selectAll()
                         .where {
                             (GameMentorAssignmentsTable.schoolId eq ctx.schoolId) and
                             (GameMentorAssignmentsTable.isActive eq true)
@@ -979,6 +1031,8 @@ fun Route.gamificationRouting() {
                                 "id" to it[GameMentorAssignmentsTable.id].value.toString(),
                                 "mentorId" to it[GameMentorAssignmentsTable.mentorId].toString(),
                                 "menteeId" to it[GameMentorAssignmentsTable.menteeId].toString(),
+                                "mentorName" to (it.getOrNull(mentorAlias[StudentsTable.fullName]) ?: ""),
+                                "menteeName" to (it.getOrNull(menteeAlias[StudentsTable.fullName]) ?: ""),
                                 "assignedBy" to it[GameMentorAssignmentsTable.assignedBy].toString(),
                                 "createdAt" to it[GameMentorAssignmentsTable.createdAt].toString()
                             )
@@ -1052,8 +1106,15 @@ fun Route.gamificationRouting() {
 
             get("/study-buddies") {
                 val ctx = call.requireSchoolOrTeacherContext() ?: return@get
+                val s1Alias = StudentsTable.alias("s1_s")
+                val s2Alias = StudentsTable.alias("s2_s")
                 val pairs = dbQuery {
-                    GameStudyBuddyPairsTable.selectAll()
+                    GameStudyBuddyPairsTable
+                        .join(s1Alias, JoinType.LEFT,
+                            GameStudyBuddyPairsTable.student1Id, s1Alias[StudentsTable.id])
+                        .join(s2Alias, JoinType.LEFT,
+                            GameStudyBuddyPairsTable.student2Id, s2Alias[StudentsTable.id])
+                        .selectAll()
                         .where {
                             (GameStudyBuddyPairsTable.schoolId eq ctx.schoolId) and
                             (GameStudyBuddyPairsTable.isActive eq true)
@@ -1064,6 +1125,8 @@ fun Route.gamificationRouting() {
                                 "id" to it[GameStudyBuddyPairsTable.id].value.toString(),
                                 "student1Id" to it[GameStudyBuddyPairsTable.student1Id].toString(),
                                 "student2Id" to it[GameStudyBuddyPairsTable.student2Id].toString(),
+                                "student1Name" to (it.getOrNull(s1Alias[StudentsTable.fullName]) ?: ""),
+                                "student2Name" to (it.getOrNull(s2Alias[StudentsTable.fullName]) ?: ""),
                                 "assignedBy" to it[GameStudyBuddyPairsTable.assignedBy].toString(),
                                 "expiresAt" to it[GameStudyBuddyPairsTable.expiresAt].toString(),
                                 "createdAt" to it[GameStudyBuddyPairsTable.createdAt].toString()
@@ -1160,7 +1223,12 @@ fun Route.gamificationRouting() {
             get("/redemptions") {
                 val ctx = call.requireSchoolAdmin() ?: return@get
                 val redemptions = dbQuery {
-                    GameRewardRedemptionsTable.selectAll()
+                    GameRewardRedemptionsTable
+                        .join(GameRewardCatalogTable, JoinType.LEFT,
+                            GameRewardRedemptionsTable.rewardId, GameRewardCatalogTable.id)
+                        .join(StudentsTable, JoinType.LEFT,
+                            GameRewardRedemptionsTable.studentId, StudentsTable.id)
+                        .selectAll()
                         .where { GameRewardRedemptionsTable.schoolId eq ctx.schoolId }
                         .orderBy(GameRewardRedemptionsTable.createdAt, SortOrder.DESC)
                         .map {
@@ -1168,6 +1236,8 @@ fun Route.gamificationRouting() {
                                 id = it[GameRewardRedemptionsTable.id].value.toString(),
                                 studentId = it[GameRewardRedemptionsTable.studentId].toString(),
                                 rewardId = it[GameRewardRedemptionsTable.rewardId].toString(),
+                                rewardName = it[GameRewardCatalogTable.name] ?: "",
+                                studentName = it[StudentsTable.fullName] ?: "",
                                 xpSpent = it[GameRewardRedemptionsTable.xpSpent],
                                 status = it[GameRewardRedemptionsTable.status],
                                 createdAt = it[GameRewardRedemptionsTable.createdAt].toString()

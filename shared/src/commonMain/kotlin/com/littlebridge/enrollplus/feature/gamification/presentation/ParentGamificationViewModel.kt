@@ -111,6 +111,7 @@ data class TeacherGamificationState(
     val mentorAssignments: List<Map<String, *>> = emptyList(),
     val studyBuddyPairs: List<Map<String, *>> = emptyList(),
     val studentBadges: List<StudentBadge> = emptyList(),
+    val studentStats: StudentStats? = null,
     val isLoading: Boolean = false,
     val isActionLoading: Boolean = false,
     val error: String? = null,
@@ -163,6 +164,14 @@ class TeacherGamificationViewModel(
             val token = preferenceRepository.getUserToken().first() ?: return@launch
             val badges = safeCall { repository.getStudentBadges(token, studentId) }
             _state.update { it.copy(studentBadges = badges ?: emptyList()) }
+        }
+    }
+
+    fun loadStudentStats(studentId: String) {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first() ?: return@launch
+            val stats = safeCall { repository.getTeacherStudentStats(token, studentId) }
+            _state.update { it.copy(studentStats = stats) }
         }
     }
 

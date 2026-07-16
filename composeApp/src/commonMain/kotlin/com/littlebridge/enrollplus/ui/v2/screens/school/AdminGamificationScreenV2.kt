@@ -292,7 +292,22 @@ private fun FlagToggleRow(
 
 @Composable
 private fun AnalyticsCard(state: AdminGamificationState) {
-    val analytics = state.analytics ?: return
+    val analytics = state.analytics
+    if (analytics == null) {
+        AdminCard(title = appString(StringKeys.AGAM_ANALYTICS_OVERVIEW)) {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "No analytics data available yet.",
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                )
+            }
+        }
+        return
+    }
     val totalXp = analytics["totalXpAwarded"]?.toString() ?: "—"
     val totalBadges = analytics["totalBadgesEarned"]?.toString() ?: "—"
     val activeQuests = analytics["activeQuests"]?.toString() ?: "—"
@@ -541,6 +556,7 @@ private fun BoostsCard(
     var boostType by remember { mutableStateOf("WEEKEND_DOUBLE") }
     var multiplier by remember { mutableStateOf("2.0") }
     var targetScope by remember { mutableStateOf("ALL") }
+    var targetId by remember { mutableStateOf("") }
     var durationHours by remember { mutableStateOf("24") }
 
     AdminCard(title = "XP Boosts (${state.boosts.size})") {
@@ -598,13 +614,24 @@ private fun BoostsCard(
             )
             OutlinedTextField(
                 value = targetScope,
-                onValueChange = { targetScope = it },
+                onValueChange = { targetScope = it.uppercase() },
                 label = { Text("Target Scope (ALL / CLASS / STUDENT)") },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
                 singleLine = true,
             )
+            if (targetScope == "STUDENT" || targetScope == "CLASS") {
+                OutlinedTextField(
+                    value = targetId,
+                    onValueChange = { targetId = it },
+                    label = { Text(if (targetScope == "STUDENT") "Student ID" else "Class Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = VTypography.body.copy(color = VColors.ink),
+                    shape = VShapes.md,
+                    singleLine = true,
+                )
+            }
             OutlinedTextField(
                 value = durationHours,
                 onValueChange = { durationHours = it },
@@ -623,7 +650,8 @@ private fun BoostsCard(
                     .clickable {
                         val mult = multiplier.toFloatOrNull() ?: 1.0f
                         val hrs = durationHours.toIntOrNull() ?: 24
-                        onCreateBoost(boostType, mult, targetScope, null, hrs)
+                        val tid = if (targetScope == "STUDENT" || targetScope == "CLASS") targetId.ifBlank { null } else null
+                        onCreateBoost(boostType, mult, targetScope, tid, hrs)
                         showForm = false
                     }
                     .padding(vertical = 12.dp),

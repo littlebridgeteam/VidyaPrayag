@@ -118,6 +118,13 @@ class GamificationApi(
         }
     }
 
+    // ── Teacher: Student stats ───────────────────────────────────────
+    suspend fun getTeacherStudentStats(token: String, studentId: String): NetworkResult<ApiResponse<StudentStats>> = safeApiCall {
+        client.get(getUrl("api/v1/teacher/gamification/student/$studentId/stats")) {
+            bearerAuth(token)
+        }
+    }
+
     // ── Teacher Tools: Class leaderboard ──────────────────────────────
     suspend fun getClassLeaderboard(token: String, limit: Int = 50, className: String? = null): NetworkResult<ApiResponse<List<LeaderboardEntry>>> = safeApiCall {
         client.get(getUrl("api/v1/teacher/gamification/class/leaderboard")) {

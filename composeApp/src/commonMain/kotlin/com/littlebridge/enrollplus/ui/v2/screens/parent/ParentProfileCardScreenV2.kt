@@ -68,6 +68,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
@@ -316,7 +317,7 @@ private fun ProfileLoaded(
 
     val gameStats = gamification.stats
     val gameLevel = gameStats?.currentLevel ?: track.currentLevel
-    val gameXp = gameStats?.totalXp ?: (track.overallProgress * 5000).roundToInt()
+    val gameXp = gameStats?.totalXp ?: 0
     val gameLevelTitle = gameStats?.levelTitle ?: "Scholar"
     val gameStreak = gameStats?.streakDays ?: 0
 
@@ -331,6 +332,7 @@ private fun ProfileLoaded(
             level = gameLevel,
             levelTitle = gameLevelTitle,
             totalXp = gameXp,
+            currentXp = gameStats?.currentXp ?: 0,
             streakDays = gameStreak,
         )
 
@@ -391,10 +393,11 @@ private fun ProfileHeroCard(
     level: Int,
     levelTitle: String,
     totalXp: Int,
+    currentXp: Int,
     streakDays: Int,
 ) {
-    val xpMax = 5000
-    val xpProgress = (totalXp.toFloat() / xpMax.toFloat()).coerceIn(0f, 1f)
+    val xpMax = (level + 1) * 1000
+    val xpProgress = (currentXp.toFloat() / xpMax.toFloat()).coerceIn(0f, 1f)
 
     Column(
         modifier = Modifier
@@ -475,7 +478,7 @@ private fun ProfileHeroCard(
                 color = VColors.white,
             )
             Text(
-                text = "$totalXp / $xpMax XP",
+                text = "$currentXp / $xpMax XP",
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 color = VColors.white.copy(alpha = 0.8f),
             )
@@ -1319,7 +1322,8 @@ private fun GamificationCollapsibleSection(
     classGoals: List<ClassGoal>,
     onRedeemReward: (String) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(true) }
+    var pendingRedeemRewardId by remember { mutableStateOf<String?>(null) }
 
     val activeCount = badges.size + quests.size + activeBoosts.size + events.size +
         rewards.size + redemptions.size + xpHistory.size + classGoals.size
@@ -1509,7 +1513,7 @@ private fun GamificationCollapsibleSection(
                         RewardsRow(
                             rewards = rewards,
                             currentXp = currentXp,
-                            onRedeem = onRedeemReward,
+                            onRedeem = { rewardId -> pendingRedeemRewardId = rewardId },
                         )
                     } else {
                         GamificationEmptyState(text = "No rewards available in the shop yet.")
@@ -1544,6 +1548,21 @@ private fun GamificationCollapsibleSection(
                 }
             }
         }
+    }
+
+    pendingRedeemRewardId?.let { rewardId ->
+        val reward = rewards.find { it.id == rewardId }
+        VConfirmDialog(
+            visible = true,
+            title = "Redeem Reward?",
+            message = "Spend ${reward?.xpCost ?: 0} XP on \"${reward?.name ?: "this reward"}\"? This cannot be undone.",
+            confirmLabel = "Redeem",
+            onConfirm = {
+                onRedeemReward(rewardId)
+                pendingRedeemRewardId = null
+            },
+            onDismiss = { pendingRedeemRewardId = null },
+        )
     }
 }
 

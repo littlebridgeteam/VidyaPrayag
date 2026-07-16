@@ -3424,6 +3424,8 @@ object StringKeys {
     const val GAM_PAIR_STUDY_BUDDIES    = "gam.pair_study_buddies"
     const val GAM_PAIR_THEM             = "gam.pair_them"
     const val GAM_TOTAL_XP              = "gam.total_xp"
+    const val GAM_LEVEL                 = "gam.level"
+    const val GAM_STREAK                = "gam.streak"
     const val GAM_BADGES                = "gam.badges"
     const val GAM_QUESTS                = "gam.quests"
     const val GAM_BUDDY_PAIR            = "gam.buddy_pair"
@@ -6912,6 +6914,8 @@ object AppStrings {
         StringKeys.GAM_PAIR_STUDY_BUDDIES       to "Pair Study Buddies",
         StringKeys.GAM_PAIR_THEM                to "Pair Them",
         StringKeys.GAM_TOTAL_XP                 to "Total XP",
+        StringKeys.GAM_LEVEL                    to "Level",
+        StringKeys.GAM_STREAK                   to "Streak",
         StringKeys.GAM_BADGES                   to "Badges",
         StringKeys.GAM_QUESTS                   to "Quests",
         StringKeys.GAM_BUDDY_PAIR               to "{id1}... & {id2}...",

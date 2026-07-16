@@ -64,6 +64,7 @@ fun TeacherStudentGamificationCard(
     val state by gamificationViewModel.state.collectAsStateV2()
     LaunchedEffect(studentId) {
         gamificationViewModel.loadStudentBadges(studentId)
+        gamificationViewModel.loadStudentStats(studentId)
     }
 
     val c = VtC
@@ -77,6 +78,15 @@ fun TeacherStudentGamificationCard(
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VtEyebrow(appString(StringKeys.GAM_TOOLS), dot = c.accent)
+
+            // Student gamification stats (XP, Level, Streak)
+            state.studentStats?.let { stats ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    VtMetricTile("${stats.totalXp}", appString(StringKeys.GAM_TOTAL_XP), c.accent, Modifier.weight(1f))
+                    VtMetricTile("${stats.currentLevel}", appString(StringKeys.GAM_LEVEL), VColors.gold, Modifier.weight(1f))
+                    VtMetricTile("${stats.streakDays}", appString(StringKeys.GAM_STREAK), c.teal, Modifier.weight(1f))
+                }
+            }
 
             // Student badges row
             if (state.studentBadges.isNotEmpty()) {
@@ -317,7 +327,11 @@ fun TeacherClassGamificationCard(
                     LeaderboardRow(entry = entry, rank = idx + 1)
                 }
             }
+        }
+    }
 
+    VtCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Class goals
             if (state.classGoals.isNotEmpty()) {
                 Text(appString(StringKeys.GAM_CLASS_GOALS), style = VTypography.label, color = c.ink3)
@@ -424,7 +438,11 @@ fun TeacherClassGamificationCard(
                     )
                 }
             }
+        }
+    }
 
+    VtCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Shoutout moderation
             if (state.shoutouts.isNotEmpty()) {
                 Text(appString(StringKeys.GAM_RECENT_SHOUTOUTS), style = VTypography.label, color = c.ink3)
@@ -435,14 +453,17 @@ fun TeacherClassGamificationCard(
                     )
                 }
             }
+        }
+    }
 
-            // Mentor assignments
+    VtCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (state.mentorAssignments.isNotEmpty()) {
                 Text(appString(StringKeys.GAM_MENTOR_ASSIGNMENTS), style = VTypography.label, color = c.ink3)
                 state.mentorAssignments.take(5).forEach { assignment ->
                     val aId = assignment["id"]?.toString() ?: ""
-                    val mId = assignment["mentorId"]?.toString() ?: ""
-                    val meId = assignment["menteeId"]?.toString() ?: ""
+                    val mName = assignment["mentorName"]?.toString()?.takeIf { it.isNotBlank() } ?: assignment["mentorId"]?.toString()?.take(8) ?: ""
+                    val meName = assignment["menteeName"]?.toString()?.takeIf { it.isNotBlank() } ?: assignment["menteeId"]?.toString()?.take(8) ?: ""
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -453,8 +474,8 @@ fun TeacherClassGamificationCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(appString(StringKeys.GAM_MENTOR_PREFIX, "id" to mId.take(8)), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
-                            Text(appString(StringKeys.GAM_MENTEE_PREFIX, "id" to meId.take(8)), style = VTypography.caption, color = c.ink3)
+                            Text(appString(StringKeys.GAM_MENTOR_PREFIX, "id" to mName), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                            Text(appString(StringKeys.GAM_MENTEE_PREFIX, "id" to meName), style = VTypography.caption, color = c.ink3)
                         }
                         Text(
                             appString(StringKeys.GAM_REMOVE),
@@ -517,8 +538,8 @@ fun TeacherClassGamificationCard(
                 Text(appString(StringKeys.GAM_STUDY_BUDDY_PAIRS), style = VTypography.label, color = c.ink3)
                 state.studyBuddyPairs.take(5).forEach { pair ->
                     val pId = pair["id"]?.toString() ?: ""
-                    val s1 = pair["student1Id"]?.toString() ?: ""
-                    val s2 = pair["student2Id"]?.toString() ?: ""
+                    val s1Name = pair["student1Name"]?.toString()?.takeIf { it.isNotBlank() } ?: pair["student1Id"]?.toString()?.take(8) ?: ""
+                    val s2Name = pair["student2Name"]?.toString()?.takeIf { it.isNotBlank() } ?: pair["student2Id"]?.toString()?.take(8) ?: ""
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -529,7 +550,7 @@ fun TeacherClassGamificationCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(appString(StringKeys.GAM_BUDDY_PAIR, "id1" to s1.take(8), "id2" to s2.take(8)), style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
+                            Text("$s1Name & $s2Name", style = VTypography.caption, color = c.navyDeep, fontWeight = FontWeight.SemiBold)
                             Text(appString(StringKeys.GAM_STUDY_BUDDIES), style = VTypography.caption, color = c.ink3)
                         }
                         Text(
