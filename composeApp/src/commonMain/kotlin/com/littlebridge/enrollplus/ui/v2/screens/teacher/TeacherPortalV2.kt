@@ -139,6 +139,7 @@ fun TeacherPortalV2(
                         overlay = TeacherOverlay.ExamSyllabusMapping
                     }
                     "export" -> overlay = TeacherOverlay.Export
+                    "salary" -> overlay = TeacherOverlay.SalaryHistory
                     // Valid bottom-nav tabs
                     "home", "update", "classes", "timetable", "profile" -> tab = target.screen
                     else -> tab = "home"

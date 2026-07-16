@@ -668,10 +668,16 @@ fun Route.feeSalaryRouting() {
                 }
 
                 val students = dbQuery {
+                    val classNameFilter = classIdFilter?.let { cid ->
+                        SchoolClassesTable.selectAll()
+                            .where { SchoolClassesTable.id eq cid }
+                            .firstOrNull()?.get(SchoolClassesTable.name)
+                    }
+
                     val children = ChildrenTable.selectAll()
                         .where {
                             val base: org.jetbrains.exposed.sql.Op<Boolean> = (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true)
-                            if (classIdFilter != null) base and (ChildrenTable.id eq classIdFilter) else base
+                            if (classNameFilter != null) base and (ChildrenTable.currentGrade eq classNameFilter) else base
                         }
                         .toList()
 
@@ -811,10 +817,16 @@ fun Route.feeSalaryRouting() {
 
                     if (structures.isEmpty()) return@dbQuery GenerateFeesResponse(0, 0)
 
+                    val classNameFilter = classIdFilter?.let { cid ->
+                        SchoolClassesTable.selectAll()
+                            .where { SchoolClassesTable.id eq cid }
+                            .firstOrNull()?.get(SchoolClassesTable.name)
+                    }
+
                     val children = ChildrenTable.selectAll()
                         .where {
                             val base: org.jetbrains.exposed.sql.Op<Boolean> = (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true)
-                            if (classIdFilter != null) base and (ChildrenTable.id eq classIdFilter) else base
+                            if (classNameFilter != null) base and (ChildrenTable.currentGrade eq classNameFilter) else base
                         }
                         .toList()
 

@@ -5,6 +5,7 @@ import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.network.safeApiCall
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherSalaryResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 
 class TeacherSalaryApi(
@@ -20,6 +21,8 @@ class TeacherSalaryApi(
     suspend fun getMySalary(
         token: String,
     ): NetworkResult<ApiResponse<TeacherSalaryResponse>> = safeApiCall {
-        client.get(getUrl("api/v1/teacher/salary"))
+        client.get(getUrl("api/v1/teacher/salary")) {
+            bearerAuth(token)
+        }
     }
 }
