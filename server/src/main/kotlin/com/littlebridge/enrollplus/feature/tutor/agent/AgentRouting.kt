@@ -145,7 +145,7 @@ fun Route.agentRouting() {
                 "Doubt resolved (triage shortcut: ${triage.skipReason})"
             )
 
-            // Notify parent, teachers, and admins if triage flagged inappropriate content
+            // Notify parent + subject teacher if triage flagged inappropriate content
             if (triageSafetyFlag != null) {
                 runCatching {
                     Notify.toUser(
@@ -162,33 +162,16 @@ fun Route.agentRouting() {
                 }.onFailure { /* best-effort */ }
 
                 runCatching {
-                    val teacherIds = NotifyRecipients.teachersInSchool(schoolId)
+                    val teacherIds = NotifyRecipients.subjectTeachersOfChild(schoolId, childId, subjectId)
                     if (teacherIds.isNotEmpty()) {
                         Notify.toUsers(
                             userIds = teacherIds,
                             category = "tutor_escalation",
                             title = "Student Safety Flag",
-                            body = "A student's AI tutor session was flagged: $triageSafetyFlag. " +
+                            body = "A student in your class had an AI tutor session flagged: $triageSafetyFlag. " +
                                 "Please review and follow up as needed.",
                             schoolId = schoolId,
-                            deepLink = "/teacher/academics/tutor",
-                            refType = "tutor_session",
-                            refId = sessionId?.toString(),
-                        )
-                    }
-                }.onFailure { /* best-effort */ }
-
-                runCatching {
-                    val adminIds = NotifyRecipients.adminsInSchool(schoolId)
-                    if (adminIds.isNotEmpty()) {
-                        Notify.toUsers(
-                            userIds = adminIds,
-                            category = "tutor_escalation",
-                            title = "Student Safety Flag",
-                            body = "A student's AI tutor session was flagged: $triageSafetyFlag. " +
-                                "Please review and take appropriate action.",
-                            schoolId = schoolId,
-                            deepLink = "/admin/academics/tutor",
+                            deepLink = "/teacher/academics/tutor/safety-flags",
                             refType = "tutor_session",
                             refId = sessionId?.toString(),
                         )
@@ -230,7 +213,7 @@ fun Route.agentRouting() {
             if (result.modelUsed) "Doubt resolved" else "Doubt resolved (deterministic fallback)"
         )
 
-        // Notify parent, teachers, and admins if the tutor session was flagged.
+        // Notify parent + subject teacher if the tutor session was flagged.
         // This happens when the child asks for inappropriate content, repeatedly
         // asks for answers, or shows distress.
         if (result.safetyFlag != null) {
@@ -248,36 +231,18 @@ fun Route.agentRouting() {
                 )
             }.onFailure { /* best-effort */ }
 
-            // Notify all teachers in the school
+            // Notify only the subject teacher(s) for this child's class
             runCatching {
-                val teacherIds = NotifyRecipients.teachersInSchool(schoolId)
+                val teacherIds = NotifyRecipients.subjectTeachersOfChild(schoolId, childId, subjectId)
                 if (teacherIds.isNotEmpty()) {
                     Notify.toUsers(
                         userIds = teacherIds,
                         category = "tutor_escalation",
                         title = "Student Safety Flag",
-                        body = "A student's AI tutor session was flagged: ${result.safetyFlag}. " +
+                        body = "A student in your class had an AI tutor session flagged: ${result.safetyFlag}. " +
                             "Please review and follow up as needed.",
                         schoolId = schoolId,
                         deepLink = "/teacher/academics/tutor",
-                        refType = "tutor_session",
-                        refId = result.sessionId?.toString(),
-                    )
-                }
-            }.onFailure { /* best-effort */ }
-
-            // Notify all admins in the school
-            runCatching {
-                val adminIds = NotifyRecipients.adminsInSchool(schoolId)
-                if (adminIds.isNotEmpty()) {
-                    Notify.toUsers(
-                        userIds = adminIds,
-                        category = "tutor_escalation",
-                        title = "Student Safety Flag",
-                        body = "A student's AI tutor session was flagged: ${result.safetyFlag}. " +
-                            "Please review and take appropriate action.",
-                        schoolId = schoolId,
-                        deepLink = "/admin/academics/tutor",
                         refType = "tutor_session",
                         refId = result.sessionId?.toString(),
                     )

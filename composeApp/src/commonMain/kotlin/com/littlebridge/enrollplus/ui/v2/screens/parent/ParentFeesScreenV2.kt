@@ -92,6 +92,7 @@ fun ParentFeesScreenV2(
             unreadNotificationsCount = unreadNotificationsCount,
             onPayNow = onPayNow,
             onFeeHistory = onFeeHistory,
+            onPayMonth = { month -> viewModel.payAllForMonth(month) },
         )
     }
 }
@@ -108,6 +109,7 @@ private fun ParentFeesContent(
     unreadNotificationsCount: Int,
     onPayNow: () -> Unit,
     onFeeHistory: () -> Unit,
+    onPayMonth: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isEmpty = state.monthlySummary.isEmpty() &&
@@ -284,7 +286,7 @@ private fun ParentFeesContent(
                             color = VColors.ink,
                         )
                         state.monthlySummary.forEach { ms ->
-                            MonthlyFeeCard(ms)
+                            MonthlyFeeCard(ms, onPayMonth = onPayMonth)
                         }
                     }
                 } // end content Column
@@ -313,7 +315,7 @@ private fun CollectionProgressBar(progress: Float) {
 }
 
 @Composable
-private fun MonthlyFeeCard(ms: MonthlyFeeSummary) {
+private fun MonthlyFeeCard(ms: MonthlyFeeSummary, onPayMonth: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val statusColor = when (ms.status) {
         "PAID" -> VColors.success to VColors.successSoft
@@ -387,6 +389,23 @@ private fun MonthlyFeeCard(ms: MonthlyFeeSummary) {
             ) {
                 ms.items.forEach { item ->
                     MonthlyFeeBreakdownRow(item)
+                }
+                if (ms.dueAmount > 0.0) {
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier
+                            .clip(VShapes.full)
+                            .background(VColors.violet)
+                            .clickable { onPayMonth(ms.month) }
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "Pay ${"%,.0f".format(ms.dueAmount)}",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = VColors.white,
+                        )
+                    }
                 }
             }
         }

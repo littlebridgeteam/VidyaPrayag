@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.feature.parent.domain.repository
 
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.notification.NotificationFeedRepository
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
@@ -10,6 +11,7 @@ interface ParentRepository : NotificationFeedRepository {
     suspend fun getDashboard(token: String): NetworkResult<ParentDashboardResponse>
     suspend fun getTrackProgress(token: String): NetworkResult<TrackProgressResponse>
     suspend fun getFees(token: String, childId: String? = null): NetworkResult<FeeResponse>
+    suspend fun payFee(token: String, feeId: String): NetworkResult<ApiResponse<PayFeeResponse>>
     suspend fun getScholarships(token: String): NetworkResult<ScholarshipsResponse>
     suspend fun getAnnouncements(token: String): NetworkResult<ParentAnnouncementsResponse>
     override suspend fun getNotifications(token: String): NetworkResult<ParentNotificationsResponse>

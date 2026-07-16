@@ -48,7 +48,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.util.AnalyticsTracker
 
 /** Full-screen overlays the teacher portal can push above its tab content. */
-private enum class TeacherOverlay { None, Notifications, NotificationPreferences, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementList, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export, SalaryHistory, FeeEscalation }
+private enum class TeacherOverlay { None, Notifications, NotificationPreferences, HealthAlerts, TransportAttendance, Pews, ReportReview, ReportDraftEditor, Heatmap, TutorSafetyFlags, DigitalIdCard, ScheduledMessages, EventRegistration, Messages, Calendar, AnnouncementList, AnnouncementDetail, LeaveRequests, ExamTimetableList, ExamTimetableUpload, ExamTimetableDetail, ExamSyllabusMapping, ExamMarksImport, Export, SalaryHistory, FeeEscalation }
 
 /**
  * TeacherPortalV2 — the teacher shell, rebuilt FROM SCRATCH on the Parents-Portal
@@ -161,6 +161,7 @@ fun TeacherPortalV2(
                     }
                     pathOnly.startsWith("leave") -> overlay = TeacherOverlay.LeaveRequests
                     pathOnly.startsWith("transport") -> overlay = TeacherOverlay.TransportAttendance
+                    pathOnly.startsWith("tutor/safety") -> overlay = TeacherOverlay.TutorSafetyFlags
                     pathOnly.startsWith("tutor") -> overlay = TeacherOverlay.Heatmap
                     pathOnly.startsWith("events") -> overlay = TeacherOverlay.EventRegistration
                     pathOnly.startsWith("calendar") -> overlay = TeacherOverlay.Calendar
@@ -288,6 +289,13 @@ fun TeacherPortalV2(
         }
         TeacherOverlay.Heatmap -> {
             com.littlebridge.enrollplus.ui.v2.screens.tutor.TeacherHeatmapScreen(
+                onBack = { overlay = TeacherOverlay.None },
+                modifier = modifier,
+            )
+            return
+        }
+        TeacherOverlay.TutorSafetyFlags -> {
+            com.littlebridge.enrollplus.ui.v2.screens.tutor.TeacherSafetyFlagsScreen(
                 onBack = { overlay = TeacherOverlay.None },
                 modifier = modifier,
             )
@@ -519,6 +527,7 @@ fun TeacherPortalV2(
                         overlay = TeacherOverlay.ReportReview
                     },
                     onOpenHeatmap = { overlay = TeacherOverlay.Heatmap },
+                    onOpenSafetyFlags = { overlay = TeacherOverlay.TutorSafetyFlags },
                     onOpenIdCard = { overlay = TeacherOverlay.DigitalIdCard },
                     onOpenScheduledMessages = { overlay = TeacherOverlay.ScheduledMessages },
                     onOpenEvents = { overlay = TeacherOverlay.EventRegistration },

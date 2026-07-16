@@ -112,4 +112,41 @@ class FeeViewModel(
             }
         }
     }
+
+    private var payingFeeIds = mutableSetOf<String>()
+
+    fun payFee(feeId: String) {
+        if (feeId in payingFeeIds) return
+        payingFeeIds.add(feeId)
+        _state.update { it.copy(isLoading = true, error = null) }
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first()
+            if (token == null) {
+                payingFeeIds.remove(feeId)
+                _state.update { it.copy(isLoading = false, error = "Not signed in") }
+                return@launch
+            }
+            when (val result = repository.payFee(token, feeId)) {
+                is NetworkResult.Success -> {
+                    payingFeeIds.remove(feeId)
+                    loadFees(selectedChildHolder.selectedChildId.value, isRefresh = true)
+                }
+                is NetworkResult.Error -> {
+                    payingFeeIds.remove(feeId)
+                    _state.update { it.copy(isLoading = false, error = result.message) }
+                }
+                is NetworkResult.ConnectionError -> {
+                    payingFeeIds.remove(feeId)
+                    _state.update { it.copy(isLoading = false, error = "Connection error") }
+                }
+            }
+        }
+    }
+
+    fun payAllForMonth(month: String) {
+        val monthItems = _state.value.monthlySummary.find { it.month == month }?.items ?: return
+        val unpaidIds = monthItems.filter { it.status in setOf("DUE", "OVERDUE") }.map { it.id }
+        if (unpaidIds.isEmpty()) return
+        unpaidIds.forEach { payFee(it) }
+    }
 }

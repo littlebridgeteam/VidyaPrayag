@@ -154,7 +154,11 @@ fun ParentFeePaymentScreenV2(
             // Pay button
             VButton(
                 text = if (hasOutstanding) appString(StringKeys.PFP_PAY_AMOUNT, "amount" to outstanding) else appString(StringKeys.PFP_NO_FEES_DUE),
-                onClick = onPay,
+                onClick = {
+                    state.feeItems.filter { it.status in setOf("DUE", "OVERDUE") }.forEach { item ->
+                        viewModel.payFee(item.id)
+                    }
+                },
                 full = true,
                 enabled = hasOutstanding,
                 loading = state.isLoading,

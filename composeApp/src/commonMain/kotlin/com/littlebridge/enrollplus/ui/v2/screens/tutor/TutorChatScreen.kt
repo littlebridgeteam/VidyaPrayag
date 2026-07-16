@@ -273,6 +273,35 @@ private fun ChatRow(
                     )
                 }
 
+                // Safety flag warning banner
+                if (!isStreaming && msg.safetyFlag != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(VColors.coral.copy(alpha = 0.08f))
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            VIcons.AlertTriangle,
+                            contentDescription = null,
+                            tint = VColors.coral,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            "Safety flag: ${msg.safetyFlag}. Teacher has been notified.",
+                            style = VTypography.caption.copy(
+                                color = VColors.coral,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
+                            ),
+                        )
+                    }
+                }
+
                 if (!isStreaming && msg.nextPrompt != null) {
                     Spacer(Modifier.height(2.dp))
                     Row(

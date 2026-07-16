@@ -104,6 +104,18 @@ data class FeeAnnouncementDto(
     val type: String
 )
 
+@Serializable
+data class PayFeeRequest(
+    @SerialName("fee_id") val feeId: String,
+)
+
+@Serializable
+data class PayFeeResponse(
+    @SerialName("fee_id") val feeId: String,
+    val status: String,
+    @SerialName("paid_at") val paidAt: String,
+)
+
 // --- Scholarships ---
 @Serializable
 data class ScholarshipsResponse(

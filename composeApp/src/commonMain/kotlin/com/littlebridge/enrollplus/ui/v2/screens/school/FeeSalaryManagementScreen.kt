@@ -1344,6 +1344,14 @@ private fun SalaryTab(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showMarkPaidId by remember { mutableStateOf<String?>(null) }
+    var selectedMonth by remember { mutableStateOf<String?>(null) }
+
+    val allRecords = state.salaryRecords
+    val availableMonths = allRecords.map { it.month }.distinct().sortedByDescending { it }
+    val filteredRecords = selectedMonth?.let { m -> allRecords.filter { it.month == m } } ?: allRecords
+
+    val totalPaid = filteredRecords.filter { it.status == "PAID" }.sumOf { it.netAmount }
+    val totalUnpaid = filteredRecords.filter { it.status != "PAID" }.sumOf { it.netAmount }
 
     Column(
         Modifier
@@ -1360,10 +1368,68 @@ private fun SalaryTab(
             full = true,
         )
 
+        if (availableMonths.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                VCard(modifier = Modifier.weight(1f)) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("Total Paid", style = VTypography.caption, color = VColors.ink3)
+                        Text(
+                            "₹${"%,.0f".format(totalPaid)}",
+                            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                            color = VColors.success,
+                        )
+                    }
+                }
+                VCard(modifier = Modifier.weight(1f)) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("Total Unpaid", style = VTypography.caption, color = VColors.ink3)
+                        Text(
+                            "₹${"%,.0f".format(totalUnpaid)}",
+                            style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                            color = VColors.error,
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Filter:", style = VTypography.caption, color = VColors.ink2)
+                VCard(modifier = Modifier.clickable { selectedMonth = null }) {
+                    Text(
+                        "All",
+                        style = VTypography.caption.copy(
+                            fontWeight = if (selectedMonth == null) FontWeight.SemiBold else FontWeight.Normal,
+                        ),
+                        color = if (selectedMonth == null) VColors.violet else VColors.ink2,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+                availableMonths.take(6).forEach { m ->
+                    VCard(modifier = Modifier.clickable { selectedMonth = m }) {
+                        Text(
+                            m,
+                            style = VTypography.caption.copy(
+                                fontWeight = if (selectedMonth == m) FontWeight.SemiBold else FontWeight.Normal,
+                            ),
+                            color = if (selectedMonth == m) VColors.violet else VColors.ink2,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+            }
+        }
+
         VStateHost(
             loading = state.isLoading,
             error = state.errorMessage,
-            isEmpty = state.salaryRecords.isEmpty() && !state.isLoading,
+            isEmpty = filteredRecords.isEmpty() && !state.isLoading,
             emptyTitle = "No Salary Records",
             emptyBody = "Add a salary record for a teacher to get started.",
             emptyIcon = VIcons.Wallet,
@@ -1371,7 +1437,7 @@ private fun SalaryTab(
             skeleton = { SkeletonList(rows = 4) },
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.salaryRecords.forEach { record ->
+                filteredRecords.forEach { record ->
                     SalaryRecordCard(
                         record = record,
                         onMarkPaid = { showMarkPaidId = record.id },

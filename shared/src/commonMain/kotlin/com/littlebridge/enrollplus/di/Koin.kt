@@ -1491,6 +1491,8 @@ val viewModelModule = module {
 
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherHeatmapViewModel(get(), get()) }
 
+    factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherSafetyFlagsViewModel(get(), get()) }
+
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.ParentProgressViewModel(get(), get(), get()) }
 
     // Scholarship Workflow (SCHOLARSHIP_WORKFLOW_SPEC.md)

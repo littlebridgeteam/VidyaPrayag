@@ -36,6 +36,9 @@ import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -84,6 +87,35 @@ fun TeacherSalaryOverlayScreen(
                         .padding(bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    if (state.records.isNotEmpty()) {
+                        val totalEarned = state.records.sumOf { it.netAmount }
+                        val totalReceived = state.records.filter { it.status == "PAID" }.sumOf { it.netAmount }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            VCard(modifier = Modifier.weight(1f)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Total Earned", style = VTypography.caption, color = VColors.ink3)
+                                    Text(
+                                        "₹${"%,.0f".format(totalEarned)}",
+                                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                                        color = VColors.violet,
+                                    )
+                                }
+                            }
+                            VCard(modifier = Modifier.weight(1f)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Total Received", style = VTypography.caption, color = VColors.ink3)
+                                    Text(
+                                        "₹${"%,.0f".format(totalReceived)}",
+                                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                                        color = VColors.success,
+                                    )
+                                }
+                            }
+                        }
+                    }
                     state.records.forEach { record ->
                         SalaryRecordCard(record = record)
                     }
