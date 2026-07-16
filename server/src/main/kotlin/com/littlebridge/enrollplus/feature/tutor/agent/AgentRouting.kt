@@ -81,9 +81,11 @@ fun Route.agentRouting() {
             detail = triage.intent))
         trace.add(ThinkingStep("Syllabus check", "done", detail = triage.syllabusStatus))
 
-        // If triage says skip (known misconception) → return deterministic response
+        // If triage says skip (known misconception or inappropriate) → return deterministic response
         if (triage.skipAgent) {
             trace.add(ThinkingStep("Agent reasoning", "skipped", detail = triage.skipReason))
+
+            val triageSafetyFlag = triage.safetyFlag
 
             val detTurn = when (triage.skipReason) {
                 "known_misconception" -> TutorTurn(
@@ -96,6 +98,19 @@ fun Route.agentRouting() {
                     misconception = MisconceptionLog(
                         type = triage.misconceptionType ?: "unknown",
                         evidence = "Known misconception from triage",
+                    ),
+                )
+                "inappropriate_content" -> TutorTurn(
+                    mode = "ESCALATE",
+                    studentFacing = StudentFacing(
+                        text = "I can't help with that request. I'm here to help you with your " +
+                            "school subjects. If you have a question about your homework or need " +
+                            "help understanding a topic, I'm happy to assist!",
+                        nextPrompt = "Is there a school topic you'd like help with today?",
+                    ),
+                    teacherFlag = TeacherFlag(
+                        reason = "inappropriate_content",
+                        severity = "high",
                     ),
                 )
                 else -> TutorTurnCodec.deterministic(body.question)
@@ -111,7 +126,7 @@ fun Route.agentRouting() {
                     providerUsed = null,
                     tokensUsed = 0,
                     cacheHit = false,
-                    safetyFlag = null,
+                    safetyFlag = triageSafetyFlag,
                 )
             }.getOrNull()
 
@@ -122,13 +137,65 @@ fun Route.agentRouting() {
                     modelUsed = false,
                     providerUsed = triage.providerUsed,
                     grounded = true,
-                    safetyFlag = null,
+                    safetyFlag = triageSafetyFlag,
                     thinkingTrace = trace,
                     intent = triage.intent,
                     syllabusStatus = triage.syllabusStatus,
                 ),
                 "Doubt resolved (triage shortcut: ${triage.skipReason})"
             )
+
+            // Notify parent, teachers, and admins if triage flagged inappropriate content
+            if (triageSafetyFlag != null) {
+                runCatching {
+                    Notify.toUser(
+                        userId = uid,
+                        category = "tutor_escalation",
+                        title = "Tutor Session Update",
+                        body = "Your child's tutor session flagged a safety concern: $triageSafetyFlag. " +
+                            "A teacher may reach out to discuss next steps.",
+                        schoolId = schoolId,
+                        deepLink = "/parent/academics/tutor",
+                        refType = "tutor_session",
+                        refId = sessionId?.toString(),
+                    )
+                }.onFailure { /* best-effort */ }
+
+                runCatching {
+                    val teacherIds = NotifyRecipients.teachersInSchool(schoolId)
+                    if (teacherIds.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = teacherIds,
+                            category = "tutor_escalation",
+                            title = "Student Safety Flag",
+                            body = "A student's AI tutor session was flagged: $triageSafetyFlag. " +
+                                "Please review and follow up as needed.",
+                            schoolId = schoolId,
+                            deepLink = "/teacher/academics/tutor",
+                            refType = "tutor_session",
+                            refId = sessionId?.toString(),
+                        )
+                    }
+                }.onFailure { /* best-effort */ }
+
+                runCatching {
+                    val adminIds = NotifyRecipients.adminsInSchool(schoolId)
+                    if (adminIds.isNotEmpty()) {
+                        Notify.toUsers(
+                            userIds = adminIds,
+                            category = "tutor_escalation",
+                            title = "Student Safety Flag",
+                            body = "A student's AI tutor session was flagged: $triageSafetyFlag. " +
+                                "Please review and take appropriate action.",
+                            schoolId = schoolId,
+                            deepLink = "/admin/academics/tutor",
+                            refType = "tutor_session",
+                            refId = sessionId?.toString(),
+                        )
+                    }
+                }.onFailure { /* best-effort */ }
+            }
+
             return@post
         }
 
