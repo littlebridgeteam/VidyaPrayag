@@ -181,7 +181,8 @@ fun Route.trackProgressRouting() {
                     // completed a test, these override the CMS template progress values.
                     val metricsRow = childId?.let {
                         ChildHolisticMetricsTable.selectAll()
-                            .firstOrNull { it[ChildHolisticMetricsTable.childId] == childId }
+                            .where { ChildHolisticMetricsTable.childId eq it }
+                            .firstOrNull()
                     }
 
                     val competenciesRaw = AppConfigTable.selectAll()

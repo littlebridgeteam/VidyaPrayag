@@ -986,9 +986,9 @@ fun Route.parentAcademicsRouting() {
             }
 
             // ── Quiz detail — questions without correct answers ──────────────
-            get("/quiz/{id}") {
+            get("/quiz/{quizId}") {
                 val child = call.requireOwnedChild() ?: return@get
-                val quizIdStr = call.parameters["id"]
+                val quizIdStr = call.parameters["quizId"]
                 if (quizIdStr.isNullOrBlank()) {
                     call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
                 }
@@ -1183,9 +1183,9 @@ fun Route.parentAcademicsRouting() {
             }
 
             // ── Quiz leaderboard — per-quiz ranking ─────────────────────────
-            get("/quiz/{id}/leaderboard") {
+            get("/quiz/{quizId}/leaderboard") {
                 val child = call.requireOwnedChild() ?: return@get
-                val quizIdStr = call.parameters["id"]
+                val quizIdStr = call.parameters["quizId"]
                 if (quizIdStr.isNullOrBlank()) {
                     call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
                 }
@@ -1267,9 +1267,9 @@ fun Route.parentAcademicsRouting() {
             }
 
             // ── Quiz result — view past results for a submitted quiz ─────────
-            get("/quiz/{id}/result") {
+            get("/quiz/{quizId}/result") {
                 val child = call.requireOwnedChild() ?: return@get
-                val quizIdStr = call.parameters["id"]
+                val quizIdStr = call.parameters["quizId"]
                 if (quizIdStr.isNullOrBlank()) {
                     call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
                 }

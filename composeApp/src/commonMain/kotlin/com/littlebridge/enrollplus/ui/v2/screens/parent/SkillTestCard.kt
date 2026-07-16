@@ -400,8 +400,8 @@ private fun SkillTestInProgress(
             val showFeedback = isAnswered && lastResult != null && lastResult.questionId == question.id
             val selectedAnswer = state.lastSelectedAnswer
 
-            question.options.forEach { option ->
-                val letter = option.substringBefore(")").trim()
+            question.options.forEachIndexed { index, option ->
+                val letter = ('A' + index).toString()
                 val isCorrectOption = showFeedback && lastResult?.correctAnswer?.equals(letter, ignoreCase = true) == true
                 val isUserWrongChoice = showFeedback && lastResult?.isCorrect == false &&
                     selectedAnswer?.equals(letter, ignoreCase = true) == true
