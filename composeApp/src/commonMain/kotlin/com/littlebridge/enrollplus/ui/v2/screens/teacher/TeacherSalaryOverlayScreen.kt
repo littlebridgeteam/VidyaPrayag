@@ -34,11 +34,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.vFormatCurrency
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -98,7 +96,7 @@ fun TeacherSalaryOverlayScreen(
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Total Earned", style = VTypography.caption, color = VColors.ink3)
                                     Text(
-                                        "₹${"%,.0f".format(totalEarned)}",
+                                        "₹${vFormatCurrency(totalEarned)}",
                                         style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                                         color = VColors.violet,
                                     )
@@ -108,7 +106,7 @@ fun TeacherSalaryOverlayScreen(
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Total Received", style = VTypography.caption, color = VColors.ink3)
                                     Text(
-                                        "₹${"%,.0f".format(totalReceived)}",
+                                        "₹${vFormatCurrency(totalReceived)}",
                                         style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                                         color = VColors.success,
                                     )
@@ -146,12 +144,12 @@ private fun SalaryRecordCard(record: SalaryRecordDto) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column {
-                    Text("Base: ₹${"%,.0f".format(record.baseSalary)}", style = VTypography.caption, color = VColors.ink2)
-                    Text("Allowances: ₹${"%,.0f".format(record.allowances)}", style = VTypography.caption, color = VColors.ink2)
-                    Text("Deductions: ₹${"%,.0f".format(record.deductions)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Base: ₹${vFormatCurrency(record.baseSalary)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Allowances: ₹${vFormatCurrency(record.allowances)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Deductions: ₹${vFormatCurrency(record.deductions)}", style = VTypography.caption, color = VColors.ink2)
                 }
                 Text(
-                    "Net: ₹${"%,.0f".format(record.netAmount)}",
+                    "Net: ₹${vFormatCurrency(record.netAmount)}",
                     style = VTypography.body,
                     fontWeight = FontWeight.Bold,
                     color = VColors.violet,

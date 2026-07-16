@@ -48,6 +48,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonFee
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.vFormatCurrency
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -346,20 +347,20 @@ private fun MonthlyFeeCard(ms: MonthlyFeeSummary, onPayMonth: (String) -> Unit) 
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Total: ${"%,.0f".format(ms.totalAmount)}",
+                        "Total: ${vFormatCurrency(ms.totalAmount)}",
                         style = VTypography.caption,
                         color = VColors.ink2,
                     )
                     if (ms.paidAmount > 0) {
                         Text(
-                            "Paid: ${"%,.0f".format(ms.paidAmount)}",
+                            "Paid: ${vFormatCurrency(ms.paidAmount)}",
                             style = VTypography.caption,
                             color = VColors.success,
                         )
                     }
                     if (ms.dueAmount > 0) {
                         Text(
-                            "Due: ${"%,.0f".format(ms.dueAmount)}",
+                            "Due: ${vFormatCurrency(ms.dueAmount)}",
                             style = VTypography.caption,
                             color = VColors.error,
                         )
@@ -401,7 +402,7 @@ private fun MonthlyFeeCard(ms: MonthlyFeeSummary, onPayMonth: (String) -> Unit) 
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "Pay ${"%,.0f".format(ms.dueAmount)}",
+                            "Pay ${vFormatCurrency(ms.dueAmount)}",
                             style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
                             color = VColors.white,
                         )
@@ -441,7 +442,7 @@ private fun MonthlyFeeBreakdownRow(item: ParentFeeItemDto) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "${"%,.0f".format(item.amount)}",
+                vFormatCurrency(item.amount),
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
                 color = VColors.ink,
             )

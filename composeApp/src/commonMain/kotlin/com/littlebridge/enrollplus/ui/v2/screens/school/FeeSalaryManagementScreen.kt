@@ -1,17 +1,7 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -55,6 +45,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.vFormatCurrency
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.util.todayIso
@@ -243,7 +234,7 @@ private fun FeeStructureCard(
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "₹${"%,.0f".format(struct.amount)}",
+                        "₹${vFormatCurrency(struct.amount)}",
                         style = VTypography.body,
                         fontWeight = FontWeight.Bold,
                         color = VColors.violet,
@@ -703,7 +694,7 @@ private fun AdditionalChargeCard(
                 }
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("₹${"%,.0f".format(charge.amount)}", style = VTypography.body, fontWeight = FontWeight.Bold, color = VColors.violet)
+                    Text("₹${vFormatCurrency(charge.amount)}", style = VTypography.body, fontWeight = FontWeight.Bold, color = VColors.violet)
                     VBadge(text = charge.month, tone = VBadgeTone.Neutral)
                 }
                 Spacer(Modifier.height(2.dp))
@@ -1096,11 +1087,11 @@ private fun PaymentTrackingSubTab(
         ) {
             Column {
                 Text("Total Due", style = VTypography.caption, color = VColors.ink2)
-                Text("₹${"%,.0f".format(state.totalDue)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.error)
+                Text("₹${vFormatCurrency(state.totalDue)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.error)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text("Total Paid", style = VTypography.caption, color = VColors.ink2)
-                Text("₹${"%,.0f".format(state.totalPaid)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.success)
+                Text("₹${vFormatCurrency(state.totalPaid)}", style = VTypography.h3, fontWeight = FontWeight.Bold, color = VColors.success)
             }
         }
         Text(
@@ -1206,9 +1197,9 @@ private fun FeeStudentCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Total: ₹${"%,.0f".format(student.totalAmount)}", style = VTypography.caption, color = VColors.ink2)
-                Text("Paid: ₹${"%,.0f".format(student.paidAmount)}", style = VTypography.caption, color = VColors.success)
-                Text("Due: ₹${"%,.0f".format(student.dueAmount)}", style = VTypography.caption, color = VColors.error)
+                Text("Total: ₹${vFormatCurrency(student.totalAmount)}", style = VTypography.caption, color = VColors.ink2)
+                Text("Paid: ₹${vFormatCurrency(student.paidAmount)}", style = VTypography.caption, color = VColors.success)
+                Text("Due: ₹${vFormatCurrency(student.dueAmount)}", style = VTypography.caption, color = VColors.error)
             }
             if (student.dueAmount > 0) {
                 Spacer(Modifier.height(8.dp))
@@ -1377,7 +1368,7 @@ private fun SalaryTab(
                     Column(Modifier.padding(12.dp)) {
                         Text("Total Paid", style = VTypography.caption, color = VColors.ink3)
                         Text(
-                            "₹${"%,.0f".format(totalPaid)}",
+                            "₹${vFormatCurrency(totalPaid)}",
                             style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                             color = VColors.success,
                         )
@@ -1387,7 +1378,7 @@ private fun SalaryTab(
                     Column(Modifier.padding(12.dp)) {
                         Text("Total Unpaid", style = VTypography.caption, color = VColors.ink3)
                         Text(
-                            "₹${"%,.0f".format(totalUnpaid)}",
+                            "₹${vFormatCurrency(totalUnpaid)}",
                             style = VTypography.body.copy(fontWeight = FontWeight.Bold),
                             color = VColors.error,
                         )
@@ -1512,12 +1503,12 @@ private fun SalaryRecordCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column {
-                    Text("Base: ₹${"%,.0f".format(record.baseSalary)}", style = VTypography.caption, color = VColors.ink2)
-                    Text("Allowances: ₹${"%,.0f".format(record.allowances)}", style = VTypography.caption, color = VColors.ink2)
-                    Text("Deductions: ₹${"%,.0f".format(record.deductions)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Base: ₹${vFormatCurrency(record.baseSalary)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Allowances: ₹${vFormatCurrency(record.allowances)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Deductions: ₹${vFormatCurrency(record.deductions)}", style = VTypography.caption, color = VColors.ink2)
                 }
                 Text(
-                    "Net: ₹${"%,.0f".format(record.netAmount)}",
+                    "Net: ₹${vFormatCurrency(record.netAmount)}",
                     style = VTypography.body,
                     fontWeight = FontWeight.Bold,
                     color = VColors.violet,

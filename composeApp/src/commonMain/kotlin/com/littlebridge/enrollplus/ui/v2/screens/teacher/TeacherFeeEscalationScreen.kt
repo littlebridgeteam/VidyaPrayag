@@ -39,9 +39,10 @@ import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
-import com.littlebridge.enrollplus.ui.v2.components.VStateHost
+import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.vFormatCurrency
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -95,7 +96,7 @@ fun TeacherFeeEscalationScreen(
                     Column {
                         Text("Total Unpaid", style = VTypography.caption, color = VColors.ink2)
                         Text(
-                            "₹${"%,.0f".format(state.totalDue)}",
+                            "₹${vFormatCurrency(state.totalDue)}",
                             style = VTypography.h3,
                             fontWeight = FontWeight.Bold,
                             color = VColors.error,
@@ -229,7 +230,7 @@ private fun FeeEscalationCard(
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "₹${"%,.0f".format(student.dueAmount)} due",
+                        "₹${vFormatCurrency(student.dueAmount)} due",
                         style = VTypography.body,
                         fontWeight = FontWeight.Bold,
                         color = VColors.error,
