@@ -22,6 +22,7 @@ import com.littlebridge.enrollplus.db.GameSeasonalEventsTable
 import com.littlebridge.enrollplus.db.GameStudentHouseAssignmentsTable
 import com.littlebridge.enrollplus.db.GameStudentQuestsTable
 import com.littlebridge.enrollplus.db.GameStudentStatsTable
+import com.littlebridge.enrollplus.db.StudentsTable
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.slf4j.LoggerFactory
@@ -95,6 +96,7 @@ data class RewardRedemptionDto(
 data class LeaderboardEntryDto(
     val rank: Int,
     val studentId: String,
+    val studentName: String = "Unknown",
     val totalXp: Int,
     val currentLevel: Int,
     val levelTitle: String,
@@ -408,7 +410,9 @@ object RewardService {
 object LeaderboardService {
 
     suspend fun getSchoolLeaderboard(schoolId: UUID, limit: Int = 50): List<LeaderboardEntryDto> = dbQuery {
-        GameStudentStatsTable.selectAll()
+        GameStudentStatsTable
+            .join(StudentsTable, JoinType.LEFT, GameStudentStatsTable.studentId, StudentsTable.id)
+            .selectAll()
             .where { GameStudentStatsTable.schoolId eq schoolId }
             .orderBy(GameStudentStatsTable.totalXp, SortOrder.DESC)
             .limit(limit)
@@ -417,6 +421,7 @@ object LeaderboardService {
                 LeaderboardEntryDto(
                     rank = index + 1,
                     studentId = row[GameStudentStatsTable.studentId].toString(),
+                    studentName = row[StudentsTable.fullName] ?: "Unknown",
                     totalXp = row[GameStudentStatsTable.totalXp],
                     currentLevel = row[GameStudentStatsTable.currentLevel],
                     levelTitle = levelTitle,
@@ -426,16 +431,17 @@ object LeaderboardService {
     }
 
     suspend fun getClassLeaderboard(schoolId: UUID, className: String, limit: Int = 50): List<LeaderboardEntryDto> = dbQuery {
-        // Class leaderboard would need a join with students table for class info
-        // For now, return school-level leaderboard filtered by class if available
-        GameStudentStatsTable.selectAll()
-            .where { GameStudentStatsTable.schoolId eq schoolId }
+        GameStudentStatsTable
+            .join(StudentsTable, JoinType.LEFT, GameStudentStatsTable.studentId, StudentsTable.id)
+            .selectAll()
+            .where { (GameStudentStatsTable.schoolId eq schoolId) and (StudentsTable.className eq className) }
             .orderBy(GameStudentStatsTable.totalXp, SortOrder.DESC)
             .limit(limit)
             .mapIndexed { index, row ->
                 LeaderboardEntryDto(
                     rank = index + 1,
                     studentId = row[GameStudentStatsTable.studentId].toString(),
+                    studentName = row[StudentsTable.fullName] ?: "Unknown",
                     totalXp = row[GameStudentStatsTable.totalXp],
                     currentLevel = row[GameStudentStatsTable.currentLevel],
                     levelTitle = GameLevelDefinitionsTableFromStats(row[GameStudentStatsTable.currentLevel]),

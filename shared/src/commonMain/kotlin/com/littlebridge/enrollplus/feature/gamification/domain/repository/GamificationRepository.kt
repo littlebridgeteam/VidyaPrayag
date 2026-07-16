@@ -23,7 +23,7 @@ interface GamificationRepository {
     // Teacher
     suspend fun encourageStudent(token: String, request: EncourageRequest): NetworkResult<ApiResponse<Map<String, *>>>
     suspend fun awardBadge(token: String, studentId: String, badgeId: String): NetworkResult<ApiResponse<StudentBadge>>
-    suspend fun getClassLeaderboard(token: String, limit: Int = 50): NetworkResult<ApiResponse<List<LeaderboardEntry>>>
+    suspend fun getClassLeaderboard(token: String, limit: Int = 50, className: String? = null): NetworkResult<ApiResponse<List<LeaderboardEntry>>>
     suspend fun getStudentBadges(token: String, studentId: String): NetworkResult<ApiResponse<List<StudentBadge>>>
     suspend fun sendShoutout(token: String, receiverId: String, message: String, templateId: Int = 0, isPublic: Boolean = true): NetworkResult<ApiResponse<Map<String, *>>>
     suspend fun getClassGoals(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>>

@@ -190,7 +190,7 @@ fun TeacherTimetableScreenV2(
                         )
                     }
                 } else {
-                    items(periods) { period ->
+                    items(periods, key = { p -> "${selectedDay}-${p.periodId ?: p.startTime}-${p.subject}" }) { period ->
                         PeriodTimelineCard(
                             period = period,
                             onEdit = {
@@ -232,6 +232,14 @@ fun TeacherTimetableScreenV2(
             }
         } else {
             // Requests feed.
+            state.infoMessage?.let {
+                InfoLine(it, VColors.success)
+                Spacer(Modifier.height(8.dp))
+            }
+            state.errorMessage?.let {
+                InfoLine(it, VColors.error)
+                Spacer(Modifier.height(8.dp))
+            }
             LazyColumn(
                 Modifier.fillMaxWidth().weight(1f),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(

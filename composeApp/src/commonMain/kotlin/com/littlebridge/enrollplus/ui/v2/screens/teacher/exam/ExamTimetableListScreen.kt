@@ -33,6 +33,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.teacher.TeacherDockClearance
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -61,34 +62,38 @@ fun ExamTimetableListScreen(
             isRefreshing = listState.isLoading && listState.timetables.isNotEmpty(),
             onRefresh = { viewModel.loadTimetables() },
         ) {
-            VStateHost(
-                loading = listState.isLoading,
-                error = listState.error,
-                isEmpty = listState.timetables.isEmpty(),
-                emptyTitle = "No exam timetables yet",
-                emptyBody = "Upload a timetable image or paste text to get started",
-                emptyIcon = VIcons.Calendar,
-                onRetry = { viewModel.loadTimetables() },
-                modifier = Modifier.fillMaxSize(),
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = TeacherDockClearance),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    VButton(
-                        text = "New Exam Timetable",
-                        onClick = onNew,
-                        variant = VButtonVariant.Primary,
-                        size = VButtonSize.Md,
-                        full = true,
-                    )
+                VButton(
+                    text = "New Exam Timetable",
+                    onClick = onNew,
+                    variant = VButtonVariant.Primary,
+                    size = VButtonSize.Md,
+                    full = true,
+                )
 
-                    listState.timetables.forEach { tt ->
-                        ExamTimetableCard(
-                            timetable = tt,
-                            onClick = { onOpenTimetable(tt.id) },
-                        )
+                VStateHost(
+                    loading = listState.isLoading,
+                    error = listState.error,
+                    isEmpty = listState.timetables.isEmpty(),
+                    emptyTitle = "No exam timetables yet",
+                    emptyBody = "Upload a timetable image or paste text to get started",
+                    emptyIcon = VIcons.Calendar,
+                    emptyActionLabel = "New Exam Timetable",
+                    onEmptyAction = onNew,
+                    onRetry = { viewModel.loadTimetables() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        listState.timetables.forEach { tt ->
+                            ExamTimetableCard(
+                                timetable = tt,
+                                onClick = { onOpenTimetable(tt.id) },
+                            )
+                        }
                     }
                 }
             }

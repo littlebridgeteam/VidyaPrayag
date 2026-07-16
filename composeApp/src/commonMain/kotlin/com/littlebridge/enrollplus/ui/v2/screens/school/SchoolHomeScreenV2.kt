@@ -381,6 +381,7 @@ private fun CommandDesk(
             onDigestTask = { routeId ->
                 routeId?.let(onOpenPinnedScreen)
             },
+            onExit = onExit,
         )
 
         PinnedShortcutsRow(
@@ -461,6 +462,7 @@ private fun HomeHero(
     onNotifications: () -> Unit,
     onOpenCommandPalette: () -> Unit,
     onDigestTask: (String?) -> Unit,
+    onExit: () -> Unit,
 ) {
     val header = overview.header
     val name = header.adminName.takeIf { it.isNotBlank() } ?: fallbackName
@@ -533,16 +535,16 @@ private fun HomeHero(
                 )
             }
 
-            // Notification bell overlaid on the admin avatar (if configured).
+            // Avatar - opens settings (where logout lives). Separate touch target from bell.
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(VTheme.colors.card)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onNotifications,
+                        onClick = onExit,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -553,27 +555,35 @@ private fun HomeHero(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(VTheme.colors.ink.copy(alpha = 0.25f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = VIcons.Bell,
-                            contentDescription = "Notifications",
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
                 } else {
                     Icon(
-                        imageVector = VIcons.Bell,
-                        contentDescription = "Notifications",
-                        tint = VTheme.colors.ink,
+                        imageVector = VIcons.User,
+                        contentDescription = "Admin profile",
+                        tint = VTheme.colors.ink3,
                         modifier = Modifier.size(22.dp),
                     )
                 }
+            }
+
+            // Notification bell - separate touch target, no overlap with avatar.
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(VTheme.colors.card)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onNotifications,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = VIcons.Bell,
+                    contentDescription = "Notifications",
+                    tint = VTheme.colors.ink,
+                    modifier = Modifier.size(22.dp),
+                )
                 if (unreadCount > 0) {
                     VBadge(
                         text = unreadCount.coerceAtMost(99).toString(),

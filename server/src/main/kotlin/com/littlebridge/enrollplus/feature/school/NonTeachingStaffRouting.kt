@@ -243,13 +243,15 @@ fun Route.nonTeachingStaffRouting() {
                             }
                             .orderBy(NonTeachingStaffTable.fullName to SortOrder.ASC)
                             .map(::staffRowToDto)
-                    }.filter { s ->
-                        (dept == null || s.department.equals(dept, ignoreCase = true)) &&
-                            (q == null ||
-                                s.fullName.lowercase().contains(q) ||
-                                s.role.lowercase().contains(q) ||
-                                (s.department?.lowercase()?.contains(q) == true))
-                    }.map { enrichStaffForList(ctx.schoolId, it) }
+                            .filter { s ->
+                                (dept == null || s.department.equals(dept, ignoreCase = true)) &&
+                                    (q == null ||
+                                        s.fullName.lowercase().contains(q) ||
+                                        s.role.lowercase().contains(q) ||
+                                        (s.department?.lowercase()?.contains(q) == true))
+                            }
+                            .map { enrichStaffForList(ctx.schoolId, it) }
+                    }
                     call.ok(StaffListResponse(staff), message = "Staff fetched")
                 }
             }

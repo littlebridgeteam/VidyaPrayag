@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -125,6 +126,8 @@ fun VStateHost(
     emptyTitle: String = appString(StringKeys.COMMON_EMPTY),
     emptyBody: String? = null,
     emptyIcon: androidx.compose.ui.graphics.vector.ImageVector? = VIcons.FileText,
+    emptyActionLabel: String? = null,
+    onEmptyAction: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
     skeleton: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -135,12 +138,16 @@ fun VStateHost(
         }
     }
 
+    val emptyAction: (@Composable () -> Unit)? = if (emptyActionLabel != null && onEmptyAction != null) {
+        { VButton(text = emptyActionLabel, onClick = onEmptyAction, variant = VButtonVariant.Primary, size = VButtonSize.Md) }
+    } else null
+
     // No skeleton supplied → preserve the original behaviour exactly (spinner loading leg).
     if (skeleton == null) {
         when {
             loading -> VLoadingState(modifier)
             error != null -> VErrorState(message = error, onRetry = onRetry, modifier = modifier)
-            isEmpty -> VEmptyState(modifier = modifier, icon = emptyIcon, title = emptyTitle, body = emptyBody)
+            isEmpty -> VEmptyState(modifier = modifier, icon = emptyIcon, title = emptyTitle, body = emptyBody, action = emptyAction)
             else -> content()
         }
         return
@@ -162,8 +169,18 @@ fun VStateHost(
     ) { p ->
         when (p) {
             VStatePhase.Loading -> skeleton()
-            VStatePhase.Error -> VErrorState(message = error ?: "", onRetry = onRetry)
-            VStatePhase.Empty -> VEmptyState(icon = emptyIcon, title = emptyTitle, body = emptyBody)
+            VStatePhase.Error -> Box(
+                Modifier.fillMaxSize().background(VColors.surface),
+                contentAlignment = Alignment.Center,
+            ) {
+                VErrorState(message = error ?: "", onRetry = onRetry)
+            }
+            VStatePhase.Empty -> Box(
+                Modifier.fillMaxSize().background(VColors.surface),
+                contentAlignment = Alignment.Center,
+            ) {
+                VEmptyState(icon = emptyIcon, title = emptyTitle, body = emptyBody, action = emptyAction)
+            }
             VStatePhase.Content -> content()
         }
     }

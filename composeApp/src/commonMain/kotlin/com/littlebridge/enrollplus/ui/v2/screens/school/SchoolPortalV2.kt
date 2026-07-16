@@ -687,6 +687,10 @@ fun SchoolPortalV2(
                 routeId == "overlay_class_performance" -> overlay = SchoolOverlay.ClassPerformance
                 routeId == "overlay_teacher_performance" -> overlay = SchoolOverlay.TeacherPerformance
                 routeId == "overlay_pews_cohort" -> overlay = SchoolOverlay.PewsCohort
+                routeId == "overlay_health_records" -> overlay = SchoolOverlay.HealthRecords
+                routeId == "overlay_report_publish" -> overlay = SchoolOverlay.ReportPublish
+                routeId == "overlay_gamification" -> overlay = SchoolOverlay.GamificationManagement
+                routeId == "overlay_fee_salary" -> overlay = SchoolOverlay.FeeSalaryManagement
                 else -> tab = "home"
             }
         }

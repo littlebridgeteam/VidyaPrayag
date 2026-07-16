@@ -35,6 +35,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
@@ -54,6 +55,7 @@ fun TeacherReportReviewQueueScreen(
     term: String,
     onBack: () -> Unit,
     onEditDraft: (String) -> Unit,
+    onGenerateDrafts: (() -> Unit)? = null,
     viewModel: TeacherReportReviewViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -63,16 +65,41 @@ fun TeacherReportReviewQueueScreen(
         viewModel.loadReviewQueue(className, section, term)
     }
 
+    val generateAction: () -> Unit = onGenerateDrafts ?: {
+        if (className.isNotBlank()) viewModel.generateDrafts(className, section, term)
+    }
+
     Column(
         Modifier.fillMaxSize().background(c.background)
             .statusBarsPadding().navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        VBackHeader(title = appString(StringKeys.TC_REPORT_CARD_REVIEW), onBack = onBack)
+        VBackHeader(
+            title = appString(StringKeys.TC_REPORT_CARD_REVIEW),
+            onBack = onBack,
+            action = {
+                if (className.isNotBlank()) {
+                    VButton(
+                        text = "Generate",
+                        onClick = generateAction,
+                        size = VButtonSize.Sm,
+                        variant = VButtonVariant.Secondary,
+                        tone = VButtonTone.Lavender,
+                        loading = state.isGenerating,
+                    )
+                }
+            },
+        )
 
         // Context line
         Text(
-            "$className $section • $term",
+            buildString {
+                append(className.trim())
+                val sec = section.trim()
+                if (sec.isNotBlank()) append(" $sec")
+                append(" • ")
+                append(term.trim())
+            },
             style = VtT.caption.coloredV(c.ink2),
             modifier = Modifier.padding(horizontal = 20.dp),
         )
@@ -119,7 +146,27 @@ fun TeacherReportReviewQueueScreen(
             }
             state.isEmpty -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(appString(StringKeys.TC_NO_DRAFTS_FOUND), style = VtT.body.coloredV(c.ink2))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(VIcons.ClipboardList, contentDescription = null, tint = c.ink2, modifier = Modifier.size(40.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text(appString(StringKeys.TC_NO_DRAFTS_FOUND), style = VtT.body.coloredV(c.ink2))
+                        if (className.isBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text("Select a class to view report card drafts", style = VtT.caption.coloredV(c.ink3))
+                        } else {
+                            Spacer(Modifier.height(4.dp))
+                            Text("Generate AI drafts for $className $section · $term", style = VtT.caption.coloredV(c.ink3))
+                            Spacer(Modifier.height(16.dp))
+                            VButton(
+                                text = "Generate drafts",
+                                onClick = generateAction,
+                                size = VButtonSize.Md,
+                                variant = VButtonVariant.Primary,
+                                tone = VButtonTone.Lavender,
+                                loading = state.isGenerating,
+                            )
+                        }
+                    }
                 }
             }
             else -> {

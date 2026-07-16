@@ -350,10 +350,10 @@ private fun computeAnalyticsCards(schoolId: UUID, template: JsonArray): List<Jso
 
     // Patch the template cards with live values, or "—" when no data.
     val liveValues = listOf(
-        attPct?.let { "$it%" } ?: "—",
-        syllabusPct?.let { "$it%" } ?: "—",
-        teacherPct?.let { "$it%" } ?: "—",
-        classPct?.let { "$it%" } ?: "—",
+        attPct?.let { "$it%" } ?: "No data yet",
+        syllabusPct?.let { "$it%" } ?: "0%",
+        teacherPct?.let { "$it%" } ?: "N/A",
+        classPct?.let { "$it%" } ?: "0%",
     )
     val liveSubValues = listOf(
         "Avg Attendance",
@@ -404,7 +404,7 @@ private fun computeAnalyticsInsights(schoolId: UUID): List<JsonElement> {
             val (topClass, topPct) = classRates.first()
             insights.add(buildJsonObject {
                 put("title", "Attendance Peak")
-                put("description", "Class $topClass reached $topPct% attendance")
+                put("description", "$topClass reached $topPct% attendance")
                 put("icon_name", "trending_up")
                 put("icon_color", "#10B981")
             })

@@ -330,10 +330,14 @@ fun Route.teacherProvisioningRouting() {
                     .coerceIn(1, 100)
                 val offset = (page - 1).toLong() * pageSize
 
-                val response = dbQuery {
-                    // RECONCILE: ensure every active teacher app_user has a
-                    // mirrored faculty row. Old teachers created before the
-                    // ensureFacultyRow fix would otherwise be invisible.
+                // RECONCILE: ensure every active teacher app_user has a
+                // mirrored faculty row. Old teachers created before the
+                // ensureFacultyRow fix would otherwise be invisible.
+                // Run in a SEPARATE transaction so that any
+                // UniqueConstraintViolationException from the insert doesn't
+                // poison the main query transaction (PostgreSQL aborts the
+                // entire transaction on any statement error).
+                dbQuery {
                     val activeTeachers = AppUsersTable.selectAll()
                         .where {
                             (AppUsersTable.schoolId eq ctx.schoolId) and
@@ -364,7 +368,9 @@ fun Route.teacherProvisioningRouting() {
                             }
                         }
                     }
+                }
 
+                val response = dbQuery {
                     // BUG-041: Use FacultyTable as the primary source (matching
                     // the Home KPI which counts active faculty). This ensures
                     // faculty rows without app_users entries (e.g. demo seed)
