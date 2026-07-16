@@ -1315,40 +1315,40 @@ fun Route.parentAcademicsRouting() {
                     }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
                 }
 
+                val answerByQuestionId = answers.associateBy { it[SyllabusQuizAnswersTable.questionId] }
+
                 val questionResults = mutableListOf<QuizQuestionResultDto>()
                 var correctCount = 0
-                answers.forEach { ansRow ->
-                    val qId = ansRow[SyllabusQuizAnswersTable.questionId]
-                    val qRow = questions.find { it[SyllabusQuizQuestionsTable.id].value == qId }
-                    if (qRow != null) {
-                        val opts = runCatching {
-                            Json.decodeFromString(
-                                ListSerializer(serializer<String>()),
-                                qRow[SyllabusQuizQuestionsTable.optionsJson]
-                            )
-                        }.getOrDefault(emptyList())
-                        val qType = qRow[SyllabusQuizQuestionsTable.questionType]
-                        val correctAnswer = qRow[SyllabusQuizQuestionsTable.correctAnswer]
-                        val selectedAnswer = ansRow[SyllabusQuizAnswersTable.answerText]
-                        val isCorrect = ansRow[SyllabusQuizAnswersTable.isCorrect]
-                        if (isCorrect) correctCount++
-                        val correctIdx = opts.indexOfFirst { it.startsWith(correctAnswer) }.takeIf { it >= 0 } ?: 0
-                        val selectedIdx = opts.indexOfFirst { it == selectedAnswer }.takeIf { it >= 0 } ?: -1
-
-                        questionResults.add(
-                            QuizQuestionResultDto(
-                                questionId = qId.toString(),
-                                question = qRow[SyllabusQuizQuestionsTable.questionText],
-                                selectedIndex = selectedIdx,
-                                correctIndex = correctIdx,
-                                correct = isCorrect,
-                                explanation = qRow[SyllabusQuizQuestionsTable.explanation],
-                                selectedAnswer = selectedAnswer,
-                                correctAnswer = correctAnswer,
-                                questionType = qType,
-                            )
+                questions.forEach { qRow ->
+                    val qId = qRow[SyllabusQuizQuestionsTable.id].value
+                    val opts = runCatching {
+                        Json.decodeFromString(
+                            ListSerializer(serializer<String>()),
+                            qRow[SyllabusQuizQuestionsTable.optionsJson]
                         )
-                    }
+                    }.getOrDefault(emptyList())
+                    val qType = qRow[SyllabusQuizQuestionsTable.questionType]
+                    val correctAnswer = qRow[SyllabusQuizQuestionsTable.correctAnswer]
+                    val ansRow = answerByQuestionId[qId]
+                    val selectedAnswer = ansRow?.get(SyllabusQuizAnswersTable.answerText) ?: ""
+                    val isCorrect = ansRow?.get(SyllabusQuizAnswersTable.isCorrect) ?: false
+                    if (isCorrect) correctCount++
+                    val correctIdx = opts.indexOfFirst { it.startsWith(correctAnswer) }.takeIf { it >= 0 } ?: 0
+                    val selectedIdx = opts.indexOfFirst { it == selectedAnswer }.takeIf { it >= 0 } ?: -1
+
+                    questionResults.add(
+                        QuizQuestionResultDto(
+                            questionId = qId.toString(),
+                            question = qRow[SyllabusQuizQuestionsTable.questionText],
+                            selectedIndex = selectedIdx,
+                            correctIndex = correctIdx,
+                            correct = isCorrect,
+                            explanation = qRow[SyllabusQuizQuestionsTable.explanation],
+                            selectedAnswer = selectedAnswer,
+                            correctAnswer = correctAnswer,
+                            questionType = qType,
+                        )
+                    )
                 }
 
                 val totalMarks = questions.size
