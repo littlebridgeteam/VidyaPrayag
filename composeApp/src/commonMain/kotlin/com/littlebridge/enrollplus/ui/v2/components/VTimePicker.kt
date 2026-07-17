@@ -9,11 +9,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,15 +29,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.littlebridge.enrollplus.ui.v2.theme.VTheme
-import com.littlebridge.enrollplus.ui.v2.theme.colored
-import com.littlebridge.enrollplus.ui.v2.theme.shapeInput
+import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VShapes
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 
-private val HOURS = (0..23).map { it.toString().padStart(2, '0') }
-private val MINUTES = listOf("00", "15", "30", "45")
+private val TIME_SLOTS: List<Pair<Int, String>> by lazy {
+    (0..23).flatMap { h ->
+        listOf("00", "15", "30", "45").map { m -> h to m }
+    }
+}
 
-private fun formatClock12h(hour: Int, minute: String): String {
+private fun format12h(hour: Int, minute: String): String {
     val period = if (hour < 12) "AM" else "PM"
     val h12 = when {
         hour == 0 -> 12
@@ -42,6 +52,19 @@ private fun formatClock12h(hour: Int, minute: String): String {
     return "$h12:$minute $period"
 }
 
+private fun format24h(hour: Int, minute: String): String {
+    return "${hour.toString().padStart(2, '0')}:$minute"
+}
+
+/**
+ * VTimePicker — premium single-field time selector.
+ *
+ * One tappable field opens a scrollable popup listing all 96 quarter-hour
+ * slots (00:00 through 23:45) in 12-hour format with AM/PM indicators.
+ * The user picks a single time in one tap — no separate hour/minute dropdowns.
+ *
+ * API: [hour] (0..23) + [minute] ("00"|"15"|"30"|"45") in, callbacks out.
+ */
 @Composable
 fun VTimePicker(
     hour: Int,
@@ -52,85 +75,146 @@ fun VTimePicker(
     label: String? = null,
     enabled: Boolean = true,
 ) {
-    val c = VTheme.colors
+    var expanded by remember { mutableStateOf(false) }
 
-    Column(modifier) {
+    Column(modifier.fillMaxWidth()) {
         if (label != null) {
             Text(
                 text = label,
-                style = VTheme.type.inputLabel.colored(c.ink2),
-                modifier = Modifier.padding(bottom = 8.dp),
+                style = VTypography.caption.copy(
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = VColors.ink2,
+                modifier = Modifier.padding(bottom = 6.dp),
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                VIcons.Clock,
-                contentDescription = null,
-                tint = if (enabled) c.tealDeep else c.ink3,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.size(4.dp))
-            DropdownField(
-                value = hour.toString().padStart(2, '0'),
-                options = HOURS,
-                onSelect = { onHourChange(it.toInt()) },
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-            )
-            Text(":", style = VTheme.type.h3.colored(c.ink2))
-            DropdownField(
-                value = minute,
-                options = MINUTES,
-                onSelect = onMinuteChange,
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                formatClock12h(hour, minute),
-                style = VTheme.type.body.colored(c.ink3),
-            )
+        Box {
+            // Field
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(VShapes.md)
+                    .background(VColors.white)
+                    .border(1.5.dp, VColors.lineSoft, VShapes.md)
+                    .clickable(enabled = enabled) { expanded = true }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = format12h(hour, minute),
+                    style = VTypography.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                    color = if (enabled) VColors.ink else VColors.ink3,
+                )
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = VColors.ink2,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            // Popup
+            if (expanded) {
+                TimePickerPopup(
+                    currentHour = hour,
+                    currentMinute = minute,
+                    onSelect = { h, m ->
+                        onHourChange(h)
+                        onMinuteChange(m)
+                        expanded = false
+                    },
+                    onDismiss = { expanded = false },
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun DropdownField(
-    value: String,
-    options: List<String>,
-    onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
+private fun TimePickerPopup(
+    currentHour: Int,
+    currentMinute: String,
+    onSelect: (Int, String) -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    val c = VTheme.colors
-    var expanded by remember { mutableStateOf(false) }
+    // Scrim
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(9999.dp)
+            .background(VColors.ink.copy(alpha = 0.3f))
+            .clickable { onDismiss() },
+    )
 
-    Box(modifier) {
-        Box(
-            Modifier
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VColors.white, RoundedCornerShape(16.dp))
+            .padding(8.dp),
+    ) {
+        // Header
+        Row(
+            modifier = Modifier
                 .fillMaxWidth()
-                .clip(VTheme.dimens.shapeInput)
-                .background(c.cream)
-                .border(1.dp, c.hairline, VTheme.dimens.shapeInput)
-                .clickable(enabled = enabled) { expanded = true }
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            contentAlignment = Alignment.Center,
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = value,
-                style = VTheme.type.body.colored(if (enabled) c.ink else c.ink3),
+                text = "Select time",
+                style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                color = VColors.ink,
             )
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { opt ->
-                DropdownMenuItem(
-                    text = { Text(opt, style = VTheme.type.body.colored(c.ink)) },
-                    onClick = { onSelect(opt); expanded = false },
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(VShapes.md)
+                    .background(VColors.surfaceTint)
+                    .clickable { onDismiss() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "✕",
+                    style = VTypography.body.copy(fontSize = 12.sp),
+                    color = VColors.ink2,
                 )
+            }
+        }
+
+        // Scrollable time slot list
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 280.dp),
+        ) {
+            items(TIME_SLOTS) { (h, m) ->
+                val isSelected = h == currentHour && m == currentMinute
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(VShapes.md)
+                        .background(if (isSelected) VColors.violet.copy(alpha = 0.08f) else VColors.white)
+                        .clickable { onSelect(h, m) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = format12h(h, m),
+                        style = VTypography.body.copy(
+                            fontSize = 15.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        ),
+                        color = if (isSelected) VColors.violet else VColors.ink,
+                    )
+                    Text(
+                        text = format24h(h, m),
+                        style = VTypography.caption.copy(fontSize = 12.sp),
+                        color = VColors.ink3,
+                    )
+                }
             }
         }
     }
