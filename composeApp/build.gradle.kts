@@ -1,4 +1,3 @@
-import com.google.firebase.crashlytics.buildtools.gradle.FirebaseCrashlyticsMappingType
 import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -204,11 +203,6 @@ android {
         }
     }
 
-    // Firebase Crashlytics — process all build types (debug + release) so
-    // crash reports are collected in every mode, not just release.
-    firebaseCrashlytics {
-        mappingTypes = FirebaseCrashlyticsMappingType.FULL
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
