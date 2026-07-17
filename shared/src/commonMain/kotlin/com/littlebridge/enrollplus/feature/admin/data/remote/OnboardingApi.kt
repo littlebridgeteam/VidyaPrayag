@@ -11,6 +11,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.OnboardingSubmitRe
 import com.littlebridge.enrollplus.feature.admin.domain.model.OnboardingSubmitResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -65,6 +66,7 @@ class OnboardingApi(
     ): NetworkResult<ApiResponse<OnboardingSubmitResponse>> {
         return safeApiCall {
             client.post(getUrl("api/v1/onboarding/submit")) {
+                headers { append("Authorization", "Bearer $token") }
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }
@@ -112,7 +114,9 @@ class OnboardingApi(
         token: String
     ): NetworkResult<ApiResponse<OnboardingCompletionResponse>> {
         return safeApiCall {
-            client.post(getUrl("api/v1/onboarding/complete"))
+            client.post(getUrl("api/v1/onboarding/complete")) {
+                headers { append("Authorization", "Bearer $token") }
+            }
         }
     }
 }

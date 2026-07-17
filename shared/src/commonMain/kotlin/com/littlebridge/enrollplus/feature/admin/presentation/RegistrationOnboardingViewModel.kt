@@ -8,6 +8,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.ObPayloadKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.ObStepType
 import com.littlebridge.enrollplus.feature.admin.domain.model.OnboardingSubmitRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.OnboardingRepository
+import com.littlebridge.enrollplus.feature.auth.domain.model.AuthResponse
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +46,10 @@ class RegistrationOnboardingViewModel(
         val isLoading: Boolean = false,
         val error: String? = null,
         val isAccountCreated: Boolean = false,
+        // Held in-memory after createAccount — NOT persisted to preferences until
+        // completeOnboarding, so the app-level auth observer doesn't rip the user
+        // out of this flow mid-registration.
+        val pendingAuth: AuthResponse? = null,
         // Step 1 fields
         val adminName: String = "",
         val adminRole: String = "",
@@ -124,7 +129,7 @@ class RegistrationOnboardingViewModel(
         _state.value = s.copy(isLoading = true, error = null)
 
         viewModelScope.launch {
-            val result = authRepository.registerSchool(
+            val result = authRepository.registerSchoolWithoutSession(
                 com.littlebridge.enrollplus.feature.auth.domain.model.SchoolRegisterRequest(
                     name = s.adminName.trim(),
                     identifier = s.email.trim().lowercase(),
@@ -141,6 +146,7 @@ class RegistrationOnboardingViewModel(
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isAccountCreated = true,
+                        pendingAuth = result.data,
                         step = FlowStep.Three,
                         error = null,
                     )
@@ -174,7 +180,7 @@ class RegistrationOnboardingViewModel(
         _state.value = s.copy(isLoading = true, error = null)
 
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first()
+            val token = _state.value.pendingAuth?.token
             if (token.isNullOrBlank()) {
                 _state.value = _state.value.copy(
                     isLoading = false,
@@ -274,7 +280,7 @@ class RegistrationOnboardingViewModel(
         _state.value = s.copy(isLoading = true, error = null)
 
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first()
+            val token = _state.value.pendingAuth?.token
             if (token.isNullOrBlank()) {
                 _state.value = _state.value.copy(
                     isLoading = false,
@@ -355,8 +361,8 @@ class RegistrationOnboardingViewModel(
         _state.value = s.copy(isLoading = true, error = null)
 
         viewModelScope.launch {
-            val token = preferenceRepository.getUserToken().first()
-            if (token.isNullOrBlank()) {
+            val auth = s.pendingAuth
+            if (auth == null || auth.token.isBlank()) {
                 _state.value = _state.value.copy(
                     isLoading = false,
                     error = "Session expired. Please log in again.",
@@ -364,9 +370,12 @@ class RegistrationOnboardingViewModel(
                 return@launch
             }
 
-            when (val result = onboardingRepository.completeOnboarding(token)) {
+            when (val result = onboardingRepository.completeOnboarding(auth.token)) {
                 is NetworkResult.Success -> {
                     AppLogger.d("RegOB", "Onboarding completed: ${result.data.schoolId}")
+                    // NOW persist the session — this flips isAuthenticated=true,
+                    // which transitions the app from AuthNavGraph to NavGraphV2.
+                    authRepository.saveSession(auth)
                     _state.value = _state.value.copy(isLoading = false, error = null)
                     onComplete()
                 }
