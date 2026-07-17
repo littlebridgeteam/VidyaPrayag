@@ -769,7 +769,7 @@ private fun ColumnScope.SuccessScreen(
                 modifier = Modifier
                     .size(72.dp)
                     .scale(popScale.value)
-                    .background(VColors.successSoft, CircleShape),
+                    .background(VColors.successSoft, RoundedCornerShape(36.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
