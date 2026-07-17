@@ -34,14 +34,6 @@ import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressView
 
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
-
-import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
-
-import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
-
-import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
-
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.AdmissionCRMViewModel
@@ -1289,22 +1281,8 @@ val viewModelModule = module {
 
     factory { SchoolDashboardViewModel(get(), get(), get()) }
     factory { PinnedScreensViewModel(get(), get()) }
-    factory { InstitutionalBasicOBViewModel(get(), get()) }
-
     // Merged registration + onboarding flow (replaces separate AdminSignup + OnboardingV2)
     factory { com.littlebridge.enrollplus.feature.admin.presentation.RegistrationOnboardingViewModel(get(), get(), get()) }
-
-    factory { BrandingInfoOBViewModel(get(), get(), get()) }
-
-    factory { AcademicInfoOBViewModel(get(), get()) }
-
-    // Onboarding-time teacher provisioning (creates REAL loginable teacher
-
-    // accounts via TeachersRepository → POST /school/teachers).
-
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProvisioningOBViewModel(get(), get()) }
-
-    factory { LaunchInfoOBViewModel(get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
 

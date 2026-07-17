@@ -128,9 +128,13 @@ fun deriveOnboardingStatus(
 ): OnboardingStatus {
     if (!schoolExists) return EMPTY_STATUS
 
-    // ACADEMIC is done if the admin submitted classes OR academic year config
-    // (merged onboarding flow Step 4 collects year config without classes).
-    val academicDone = hasClasses || hasAcademicYearConfig
+    // ACADEMIC is done if the admin submitted the ACADEMIC wizard step (ledger),
+    // OR if substantive academic data exists (classes or year config). The ledger
+    // check is the PRIMARY signal — the merged onboarding flow's Step 4 submits
+    // ACADEMIC with year config but may not create classes, so without checking
+    // the ledger the gate would falsely report ACADEMIC incomplete and redirect
+    // to the old 6-step wizard.
+    val academicDone = "ACADEMIC" in ledger || hasClasses || hasAcademicYearConfig
     // BASIC done only when the admin submitted Step 1 (ledger) OR a legacy row
     // already has substantive wizard data (classes). A registration-seeded name
     // + contact is intentionally NOT sufficient.

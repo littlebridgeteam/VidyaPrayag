@@ -806,12 +806,17 @@ private suspend fun computeOnboardingStatusResponse(uid: UUID): OnboardingStatus
     // self-registered school, so "a named school row exists" no longer falsely
     // marks BASIC complete — THIS is the redirect fix. Derivation + resume logic
     // are shared (and unit-tested) via deriveOnboardingStatus / resumeStep.
+    // Merged onboarding flow: academic year config fields are an alternative
+    // signal for ACADEMIC completion (the new Step 4 may not collect classes).
+    val hasAcademicYearConfig = schoolRow[SchoolsTable.academicYearLabel]?.isNotBlank() == true
+
     val status = deriveOnboardingStatus(
         schoolExists = true,
         ledger = parseOnboardingLedger(schoolRow[SchoolsTable.onboardingStepsDone]),
         hasClasses = hasClasses,
         logoPresent = schoolRow[SchoolsTable.logoUrl]?.isNotBlank() == true,
         stampPresent = schoolRow[SchoolsTable.onboardedAt] != null,
+        hasAcademicYearConfig = hasAcademicYearConfig,
     )
 
     val steps = listOf(

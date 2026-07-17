@@ -51,6 +51,9 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VDatePicker
+import com.littlebridge.enrollplus.ui.v2.components.VDropdown
+import com.littlebridge.enrollplus.ui.v2.components.VTimePicker
 import org.koin.compose.viewmodel.koinViewModel
 
 // ── Chip selector (matches Figma pill chips: active=#5B41D5, inactive=#F8F6EF) ──
@@ -304,11 +307,12 @@ private fun ColumnScope.StepOneBasicDetails(
                 onValueChange = { viewModel.update { s -> s.copy(adminName = it) } },
                 placeholder = "Dr. Rajesh Sharma",
             )
-            VInput(
+            VDropdown(
                 label = "Your Role",
                 value = state.adminRole,
-                onValueChange = { viewModel.update { s -> s.copy(adminRole = it) } },
-                placeholder = "Principal",
+                options = listOf("Principal", "Vice Principal", "Administrator", "Director", "Manager"),
+                onSelect = { viewModel.update { s -> s.copy(adminRole = it) } },
+                placeholder = "Select your role",
             )
             VInput(
                 label = "Email Address",
@@ -513,11 +517,12 @@ private fun ColumnScope.StepThreeSchoolIdentity(
             keyboardType = KeyboardType.Phone,
             prefix = "+91",
         )
-        VInput(
+        VDropdown(
             label = "City",
             value = state.city,
-            onValueChange = { viewModel.update { s -> s.copy(city = it) } },
-            placeholder = "New Delhi",
+            options = listOf("New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Lucknow", "Kanpur", "Varanasi", "Meerut", "Noida", "Ghaziabad", "Gurugram"),
+            onSelect = { viewModel.update { s -> s.copy(city = it) } },
+            placeholder = "Select city",
         )
         if (state.error != null) {
             Text(
@@ -529,8 +534,10 @@ private fun ColumnScope.StepThreeSchoolIdentity(
         Spacer(Modifier.height(8.dp))
     }
 
-    // Fixed bottom bar
+    // Fixed bottom bar with Back + Continue
     VBottomBar(
+        showBack = true,
+        onBack = { viewModel.goBack() },
         continueText = "Continue",
         onContinue = { viewModel.submitSchoolIdentity {} },
         continueEnabled = state.schoolName.isNotBlank() && state.board.isNotBlank(),
@@ -584,18 +591,18 @@ private fun ColumnScope.StepFourAcademicYear(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            VInput(
-                label = "Year Starts",
+            VDatePicker(
                 value = state.yearStartDate,
                 onValueChange = { viewModel.update { s -> s.copy(yearStartDate = it) } },
-                placeholder = "Apr 1, 2025",
+                label = "Year starts",
+                placeholder = "Select date",
                 modifier = Modifier.weight(1f),
             )
-            VInput(
-                label = "Year Ends",
+            VDatePicker(
                 value = state.yearEndDate,
                 onValueChange = { viewModel.update { s -> s.copy(yearEndDate = it) } },
-                placeholder = "Mar 31, 2026",
+                label = "Year ends",
+                placeholder = "Select date",
                 modifier = Modifier.weight(1f),
             )
         }
@@ -609,27 +616,53 @@ private fun ColumnScope.StepFourAcademicYear(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            VInput(
-                label = "Start Time",
-                value = state.schoolStartTime,
-                onValueChange = { viewModel.update { s -> s.copy(schoolStartTime = it) } },
-                placeholder = "08:00",
+            val startHour = state.schoolStartTime.substringBefore(":").toIntOrNull() ?: 8
+            val startMinute = state.schoolStartTime.substringAfter(":").take(2).ifBlank { "00" }
+            VTimePicker(
+                hour = startHour,
+                minute = startMinute,
+                onHourChange = { h ->
+                    viewModel.update { s ->
+                        val m = s.schoolStartTime.substringAfter(":").take(2).ifBlank { "00" }
+                        s.copy(schoolStartTime = "${h.toString().padStart(2, '0')}:$m")
+                    }
+                },
+                onMinuteChange = { m ->
+                    viewModel.update { s ->
+                        val h = s.schoolStartTime.substringBefore(":").padStart(2, '0').ifBlank { "08" }
+                        s.copy(schoolStartTime = "$h:$m")
+                    }
+                },
+                label = "Start time",
                 modifier = Modifier.weight(1f),
             )
-            VInput(
-                label = "End Time",
-                value = state.schoolEndTime,
-                onValueChange = { viewModel.update { s -> s.copy(schoolEndTime = it) } },
-                placeholder = "15:00",
+            val endHour = state.schoolEndTime.substringBefore(":").toIntOrNull() ?: 14
+            val endMinute = state.schoolEndTime.substringAfter(":").take(2).ifBlank { "00" }
+            VTimePicker(
+                hour = endHour,
+                minute = endMinute,
+                onHourChange = { h ->
+                    viewModel.update { s ->
+                        val m = s.schoolEndTime.substringAfter(":").take(2).ifBlank { "00" }
+                        s.copy(schoolEndTime = "${h.toString().padStart(2, '0')}:$m")
+                    }
+                },
+                onMinuteChange = { m ->
+                    viewModel.update { s ->
+                        val h = s.schoolEndTime.substringBefore(":").padStart(2, '0').ifBlank { "14" }
+                        s.copy(schoolEndTime = "$h:$m")
+                    }
+                },
+                label = "End time",
                 modifier = Modifier.weight(1f),
             )
         }
-        VInput(
+        VDropdown(
             label = "Periods per day",
             value = state.periodsPerDay,
-            onValueChange = { if (it.all { c -> c.isDigit() }) viewModel.update { s -> s.copy(periodsPerDay = it) } },
-            placeholder = "8",
-            keyboardType = KeyboardType.Number,
+            options = listOf("4", "5", "6", "7", "8", "9", "10", "11", "12"),
+            onSelect = { viewModel.update { s -> s.copy(periodsPerDay = it) } },
+            placeholder = "Select periods",
         )
         if (state.error != null) {
             Text(
