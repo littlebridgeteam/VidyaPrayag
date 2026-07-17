@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vidya Prayag — Mascot Options</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0D1B2A 0%, #1B2D4A 50%, #0D1B2A 100%);
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, #2DD4BF, #818CF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    text-align: center;
+    color: #94A3B8;
+    margin-bottom: 40px;
+    font-size: 1rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(45,212,191,0.15);
+    border-color: rgba(45,212,191,0.3);
+  }
+  .card svg {
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 16px;
+    display: block;
+  }
+  .card .name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .card .tag {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #2DD4BF;
+    margin-bottom: 8px;
+  }
+  .card .desc {
+    font-size: 0.85rem;
+    color: #94A3B8;
+    line-height: 1.5;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+  .badge-cute { background: rgba(45,212,191,0.15); color: #2DD4BF; }
+  .badge-wise { background: rgba(129,140,248,0.15); color: #818CF8; }
+  .badge-playful { background: rgba(251,146,60,0.15); color: #FB923C; }
+  .badge-unique { background: rgba(244,114,182,0.15); color: #F472B6; }
+</style>
+</head>
+<body>
+<h1>🧡 Vidya Prayag Mascot — 10 Options</h1>
+<p class="subtitle">Pick your favorite character. Each fits the brand colors (teal, navy, lavender) + education theme.</p>
+
+<div class="grid">
+
+  <!-- 1. Vidu — Elephant -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <ellipse cx="100" cy="120" rx="55" ry="50" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3"/>
+      <!-- Head -->
+      <ellipse cx="100" cy="80" rx="45" ry="42" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3"/>
+      <!-- Ears -->
+      <ellipse cx="58" cy="75" rx="22" ry="28" fill="#2DD4BF" opacity="0.3"/>
+      <ellipse cx="142" cy="75" rx="22" ry="28" fill="#2DD4BF" opacity="0.3"/>
+      <ellipse cx="58" cy="75" rx="15" ry="20" fill="#1B2D4A"/>
+      <ellipse cx="142" cy="75" rx="15" ry="20" fill="#1B2D4A"/>
+      <!-- Trunk -->
+      <path d="M100,95 Q95,120 88,135 Q85,142 90,148 Q95,152 100,148" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3" stroke-linecap="round"/>
+      <!-- Trunk lines -->
+      <path d="M95,105 L93,130" stroke="#2DD4BF" stroke-width="1.5" opacity="0.5"/>
+      <path d="M98,110 L96,135" stroke="#2DD4BF" stroke-width="1.5" opacity="0.5"/>
+      <!-- Eyes -->
+      <circle cx="85" cy="72" r="8" fill="#fff"/>
+      <circle cx="115" cy="72" r="8" fill="#fff"/>
+      <circle cx="87" cy="74" r="4" fill="#0D1B2A"/>
+      <circle cx="117" cy="74" r="4" fill="#0D1B2A"/>
+      <circle cx="88" cy="73" r="1.5" fill="#fff"/>
+      <circle cx="118" cy="73" r="1.5" fill="#fff"/>
+      <!-- Smile -->
+      <path d="M88,92 Q100,100 112,92" stroke="#2DD4BF" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Cheeks -->
+      <circle cx="75" cy="85" r="5" fill="#F472B6" opacity="0.3"/>
+      <circle cx="125" cy="85" r="5" fill="#F472B6" opacity="0.3"/>
+      <!-- Feet -->
+      <ellipse cx="75" cy="165" rx="12" ry="8" fill="#2DD4BF" opacity="0.4"/>
+      <ellipse cx="125" cy="165" rx="12" ry="8" fill="#2DD4BF" opacity="0.4"/>
+      <!-- Graduation cap -->
+      <rect x="75" y="42" width="50" height="6" rx="2" fill="#818CF8"/>
+      <polygon points="100,28 130,42 100,50 70,42" fill="#818CF8"/>
+      <line x1="130" y1="42" x2="130" y2="55" stroke="#818CF8" stroke-width="2"/>
+      <circle cx="130" cy="57" r="4" fill="#FBBF24"/>
+    </svg>
+    <div class="name">Vidu</div>
+    <div class="tag">Young Elephant</div>
+    <div class="desc">Wisdom + Ganesha energy. Round, huggable, wears a tiny graduation cap. "Remover of obstacles" for students.</div>
+    <span class="badge badge-cute">Cute + Wise</span>
+  </div>
+
+  <!-- 2. Praj — Peacock -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Tail feathers fan -->
+      <ellipse cx="100" cy="110" rx="75" ry="70" fill="#1B2D4A" opacity="0.5"/>
+      <!-- Feather eyes -->
+      <g opacity="0.8">
+        <ellipse cx="50" cy="80" rx="12" ry="16" fill="#2DD4BF"/>
+        <ellipse cx="50" cy="80" rx="7" ry="10" fill="#818CF8"/>
+        <ellipse cx="50" cy="80" rx="3" ry="5" fill="#FBBF24"/>
+        <ellipse cx="75" cy="60" rx="12" ry="16" fill="#2DD4BF"/>
+        <ellipse cx="75" cy="60" rx="7" ry="10" fill="#818CF8"/>
+        <ellipse cx="75" cy="60" rx="3" ry="5" fill="#FBBF24"/>
+        <ellipse cx="100" cy="52" rx="12" ry="16" fill="#2DD4BF"/>
+        <ellipse cx="100" cy="52" rx="7" ry="10" fill="#818CF8"/>
+        <ellipse cx="100" cy="52" rx="3" ry="5" fill="#FBBF24"/>
+        <ellipse cx="125" cy="60" rx="12" ry="16" fill="#2DD4BF"/>
+        <ellipse cx="125" cy="60" rx="7" ry="10" fill="#818CF8"/>
+        <ellipse cx="125" cy="60" rx="3" ry="5" fill="#FBBF24"/>
+        <ellipse cx="150" cy="80" rx="12" ry="16" fill="#2DD4BF"/>
+        <ellipse cx="150" cy="80" rx="7" ry="10" fill="#818CF8"/>
+        <ellipse cx="150" cy="80" rx="3" ry="5" fill="#FBBF24"/>
+      </g>
+      <!-- Body -->
+      <ellipse cx="100" cy="130" rx="30" ry="35" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3"/>
+      <!-- Head -->
+      <circle cx="100" cy="95" r="20" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3"/>
+      <!-- Crown crest -->
+      <line x1="100" y1="75" x2="95" y2="65" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="100" y1="75" x2="100" y2="63" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="100" y1="75" x2="105" y2="65" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="95" cy="64" r="3" fill="#2DD4BF"/>
+      <circle cx="100" cy="62" r="3" fill="#2DD4BF"/>
+      <circle cx="105" cy="64" r="3" fill="#2DD4BF"/>
+      <!-- Eyes -->
+      <circle cx="92" cy="92" r="6" fill="#fff"/>
+      <circle cx="108" cy="92" r="6" fill="#fff"/>
+      <circle cx="93" cy="93" r="3" fill="#0D1B2A"/>
+      <circle cx="109" cy="93" r="3" fill="#0D1B2A"/>
+      <circle cx="94" cy="92" r="1" fill="#fff"/>
+      <circle cx="110" cy="92" r="1" fill="#fff"/>
+      <!-- Beak -->
+      <polygon points="100,98 95,105 105,105" fill="#FBBF24"/>
+      <!-- Cheeks -->
+      <circle cx="85" cy="100" r="4" fill="#F472B6" opacity="0.3"/>
+      <circle cx="115" cy="100" r="4" fill="#F472B6" opacity="0.3"/>
+    </svg>
+    <div class="name">Praj</div>
+    <div class="tag">Peacock</div>
+    <div class="desc">India's national bird. Tail feathers in brand teal + lavender. Elegant, proud, represents beauty of knowledge.</div>
+    <span class="badge badge-wise">Elegant + Proud</span>
+  </div>
+
+  <!-- 3. Vidyu — Owl -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <ellipse cx="100" cy="115" rx="50" ry="55" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3"/>
+      <!-- Belly -->
+      <ellipse cx="100" cy="125" rx="30" ry="35" fill="#2DD4BF" opacity="0.15"/>
+      <!-- Feather pattern on belly -->
+      <path d="M85,115 Q90,120 85,125" stroke="#2DD4BF" stroke-width="1.5" opacity="0.3" fill="none"/>
+      <path d="M100,115 Q105,120 100,125" stroke="#2DD4BF" stroke-width="1.5" opacity="0.3" fill="none"/>
+      <path d="M115,115 Q120,120 115,125" stroke="#2DD4BF" stroke-width="1.5" opacity="0.3" fill="none"/>
+      <path d="M92,130 Q97,135 92,140" stroke="#2DD4BF" stroke-width="1.5" opacity="0.3" fill="none"/>
+      <path d="M108,130 Q113,135 108,140" stroke="#2DD4BF" stroke-width="1.5" opacity="0.3" fill="none"/>
+      <!-- Head tufts -->
+      <path d="M65,65 L60,48 L72,58" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2.5"/>
+      <path d="M135,65 L140,48 L128,58" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2.5"/>
+      <!-- Big eyes -->
+      <circle cx="80" cy="85" r="18" fill="#FBBF24"/>
+      <circle cx="120" cy="85" r="18" fill="#FBBF24"/>
+      <circle cx="80" cy="85" r="12" fill="#1B2D4A"/>
+      <circle cx="120" cy="85" r="12" fill="#1B2D4A"/>
+      <circle cx="82" cy="82" r="5" fill="#fff"/>
+      <circle cx="122" cy="82" r="5" fill="#fff"/>
+      <circle cx="78" cy="88" r="2" fill="#fff"/>
+      <circle cx="118" cy="88" r="2" fill="#fff"/>
+      <!-- Beak -->
+      <polygon points="100,95 92,108 108,108" fill="#FBBF24" stroke="#F59E0B" stroke-width="1"/>
+      <!-- Wings -->
+      <path d="M55,100 Q45,130 55,155" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2.5"/>
+      <path d="M145,100 Q155,130 145,155" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2.5"/>
+      <!-- Feet -->
+      <path d="M85,168 L82,178 M88,168 L88,178 M91,168 L94,178" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M109,168 L106,178 M112,168 L112,178 M115,168 L118,178" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Glasses (nerdy) -->
+      <circle cx="80" cy="85" r="22" fill="none" stroke="#818CF8" stroke-width="2"/>
+      <circle cx="120" cy="85" r="22" fill="none" stroke="#818CF8" stroke-width="2"/>
+      <line x1="102" y1="85" x2="98" y2="85" stroke="#818CF8" stroke-width="2"/>
+    </svg>
+    <div class="name">Vidyu</div>
+    <div class="tag">Nerdy Owl</div>
+    <div class="desc">Classic wisdom owl with round glasses. Big golden eyes, brand-colored body. Distinct from Duo — rounder, Indian-inspired.</div>
+    <span class="badge badge-wise">Scholarly</span>
+  </div>
+
+  <!-- 4. Boo — Book Sprite -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Book body -->
+      <path d="M60,60 L60,150 Q60,155 65,155 L100,155 L100,55 L65,55 Q60,55 60,60 Z" fill="#2DD4BF" stroke="#1B2D4A" stroke-width="3"/>
+      <path d="M140,60 L140,150 Q140,155 135,155 L100,155 L100,55 L135,55 Q140,55 140,60 Z" fill="#818CF8" stroke="#1B2D4A" stroke-width="3"/>
+      <!-- Pages -->
+      <line x1="100" y1="55" x2="100" y2="155" stroke="#1B2D4A" stroke-width="2"/>
+      <!-- Page lines left -->
+      <line x1="70" y1="75" x2="92" y2="75" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="70" y1="85" x2="92" y2="85" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="70" y1="95" x2="88" y2="95" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="70" y1="105" x2="92" y2="105" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="70" y1="115" x2="85" y2="115" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <!-- Page lines right -->
+      <line x1="108" y1="75" x2="130" y2="75" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="108" y1="85" x2="130" y2="85" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="108" y1="95" x2="127" y2="95" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="108" y1="105" x2="130" y2="105" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <line x1="108" y1="115" x2="123" y2="115" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+      <!-- Eyes -->
+      <circle cx="82" cy="130" r="7" fill="#fff"/>
+      <circle cx="118" cy="130" r="7" fill="#fff"/>
+      <circle cx="83" cy="131" r="4" fill="#1B2D4A"/>
+      <circle cx="119" cy="131" r="4" fill="#1B2D4A"/>
+      <circle cx="84" cy="130" r="1.5" fill="#fff"/>
+      <circle cx="120" cy="130" r="1.5" fill="#fff"/>
+      <!-- Smile -->
+      <path d="M88,142 Q100,148 112,142" stroke="#1B2D4A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Arms -->
+      <path d="M60,90 Q45,85 40,75" stroke="#1B2D4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="38" cy="73" r="5" fill="#FBBF24"/>
+      <path d="M140,90 Q155,85 160,75" stroke="#1B2D4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="162" cy="73" r="5" fill="#FBBF24"/>
+      <!-- Bookmark -->
+      <rect x="120" y="50" width="8" height="20" fill="#F472B6"/>
+      <polygon points="120,70 124,66 128,70" fill="#F472B6"/>
+      <!-- Sparkle -->
+      <text x="45" y="45" font-size="16" fill="#FBBF24">✦</text>
+      <text x="155" y="45" font-size="12" fill="#FBBF24">✦</text>
+    </svg>
+    <div class="name">Boo</div>
+    <div class="tag">Book Sprite</div>
+    <div class="desc">A living book with eyes, arms, and a smile. Half teal, half lavender (brand split). Directly embodies learning.</div>
+    <span class="badge badge-unique">Unique + Playful</span>
+  </div>
+
+  <!-- 5. Guru — Turtle -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Shell -->
+      <ellipse cx="100" cy="110" rx="60" ry="50" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3"/>
+      <!-- Shell pattern -->
+      <polygon points="100,75 120,90 120,115 100,130 80,115 80,90" fill="#2DD4BF" opacity="0.2" stroke="#2DD4BF" stroke-width="1.5"/>
+      <polygon points="75,90 80,85 85,90 85,105 80,110 75,105" fill="#2DD4BF" opacity="0.15" stroke="#2DD4BF" stroke-width="1"/>
+      <polygon points="115,90 120,85 125,90 125,105 120,110 115,105" fill="#2DD4BF" opacity="0.15" stroke="#2DD4BF" stroke-width="1"/>
+      <polygon points="75,115 80,110 85,115 85,130 80,135 75,130" fill="#2DD4BF" opacity="0.15" stroke="#2DD4BF" stroke-width="1"/>
+      <polygon points="115,115 120,110 125,115 125,130 120,135 115,130" fill="#2DD4BF" opacity="0.15" stroke="#2DD4BF" stroke-width="1"/>
+      <!-- Head -->
+      <ellipse cx="100" cy="60" rx="22" ry="20" fill="#2DD4BF" stroke="#1B2D4A" stroke-width="2.5"/>
+      <!-- Eyes -->
+      <circle cx="92" cy="55" r="6" fill="#fff"/>
+      <circle cx="108" cy="55" r="6" fill="#fff"/>
+      <circle cx="93" cy="56" r="3.5" fill="#1B2D4A"/>
+      <circle cx="109" cy="56" r="3.5" fill="#1B2D4A"/>
+      <circle cx="94" cy="55" r="1.5" fill="#fff"/>
+      <circle cx="110" cy="55" r="1.5" fill="#fff"/>
+      <!-- Smile -->
+      <path d="M92,66 Q100,72 108,66" stroke="#1B2D4A" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Cheeks -->
+      <circle cx="85" cy="63" r="4" fill="#F472B6" opacity="0.4"/>
+      <circle cx="115" cy="63" r="4" fill="#F472B6" opacity="0.4"/>
+      <!-- Legs -->
+      <ellipse cx="55" cy="130" rx="12" ry="10" fill="#2DD4BF" stroke="#1B2D4A" stroke-width="2"/>
+      <ellipse cx="145" cy="130" rx="12" ry="10" fill="#2DD4BF" stroke="#1B2D4A" stroke-width="2"/>
+      <ellipse cx="65" cy="155" rx="10" ry="8" fill="#2DD4BF" stroke="#1B2D4A" stroke-width="2"/>
+      <ellipse cx="135" cy="155" rx="10" ry="8" fill="#2DD4BF" stroke="#1B2D4A" stroke-width="2"/>
+      <!-- Glasses -->
+      <circle cx="92" cy="55" r="10" fill="none" stroke="#818CF8" stroke-width="1.5"/>
+      <circle cx="108" cy="55" r="10" fill="none" stroke="#818CF8" stroke-width="1.5"/>
+      <line x1="102" y1="55" x2="98" y2="55" stroke="#818CF8" stroke-width="1.5"/>
+    </svg>
+    <div class="name">Guru</div>
+    <div class="tag">Wise Turtle</div>
+    <div class="desc">Slow and steady wins the race. Shell has a geometric knowledge pattern. Wears round glasses. Represents patience in learning.</div>
+    <span class="badge badge-wise">Patient + Wise</span>
+  </div>
+
+  <!-- 6. Chintu — Pencil -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Pencil body -->
+      <rect x="75" y="50" width="50" height="100" rx="8" fill="#FBBF24" stroke="#1B2D4A" stroke-width="3"/>
+      <!-- Stripes -->
+      <rect x="75" y="70" width="50" height="6" fill="#F59E0B"/>
+      <rect x="75" y="120" width="50" height="6" fill="#F59E0B"/>
+      <!-- Metal band -->
+      <rect x="75" y="140" width="50" height="8" fill="#94A3B8" stroke="#1B2D4A" stroke-width="1.5"/>
+      <!-- Eraser -->
+      <rect x="75" y="148" width="50" height="12" rx="4" fill="#F472B6" stroke="#1B2D4A" stroke-width="2"/>
+      <!-- Pencil tip -->
+      <polygon points="75,50 125,50 100,20" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2.5"/>
+      <polygon points="85,45 115,45 100,28" fill="#FBBF24"/>
+      <polygon points="95,38 105,38 100,30" fill="#1B2D4A"/>
+      <!-- Eyes -->
+      <circle cx="90" cy="90" r="8" fill="#fff"/>
+      <circle cx="110" cy="90" r="8" fill="#fff"/>
+      <circle cx="91" cy="92" r="4.5" fill="#1B2D4A"/>
+      <circle cx="111" cy="92" r="4.5" fill="#1B2D4A"/>
+      <circle cx="92" cy="91" r="2" fill="#fff"/>
+      <circle cx="112" cy="91" r="2" fill="#fff"/>
+      <!-- Smile -->
+      <path d="M90,105 Q100,112 110,105" stroke="#1B2D4A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Cheeks -->
+      <circle cx="82" cy="100" r="5" fill="#F472B6" opacity="0.4"/>
+      <circle cx="118" cy="100" r="5" fill="#F472B6" opacity="0.4"/>
+      <!-- Arms -->
+      <path d="M75,85 Q60,80 55,72" stroke="#1B2D4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M125,85 Q140,80 145,72" stroke="#1B2D4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="53" cy="70" r="5" fill="#2DD4BF"/>
+      <circle cx="147" cy="70" r="5" fill="#2DD4BF"/>
+    </svg>
+    <div class="name">Chintu</div>
+    <div class="tag">Pencil Buddy</div>
+    <div class="desc">A walking pencil with a cute face and tiny arms. Yellow body, pink eraser hat. Energetic and always ready to write.</div>
+    <span class="badge badge-playful">Energetic</span>
+  </div>
+
+  <!-- 7. Bindi — Lotus Fairy -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer petals -->
+      <g opacity="0.6">
+        <ellipse cx="100" cy="50" rx="15" ry="30" fill="#F472B6" opacity="0.4" transform="rotate(0 100 100)"/>
+        <ellipse cx="100" cy="50" rx="15" ry="30" fill="#818CF8" opacity="0.4" transform="rotate(60 100 100)"/>
+        <ellipse cx="100" cy="50" rx="15" ry="30" fill="#F472B6" opacity="0.4" transform="rotate(120 100 100)"/>
+        <ellipse cx="100" cy="50" rx="15" ry="30" fill="#818CF8" opacity="0.4" transform="rotate(180 100 100)"/>
+        <ellipse cx="100" cy="50" rx="15" ry="30" fill="#F472B6" opacity="0.4" transform="rotate(240 100 100)"/>
+        <ellipse cx="100" cy="50" rx="15" ry="30" fill="#818CF8" opacity="0.4" transform="rotate(300 100 100)"/>
+      </g>
+      <!-- Inner petals -->
+      <g opacity="0.8">
+        <ellipse cx="100" cy="70" rx="12" ry="22" fill="#2DD4BF" opacity="0.3" transform="rotate(30 100 100)"/>
+        <ellipse cx="100" cy="70" rx="12" ry="22" fill="#2DD4BF" opacity="0.3" transform="rotate(90 100 100)"/>
+        <ellipse cx="100" cy="70" rx="12" ry="22" fill="#2DD4BF" opacity="0.3" transform="rotate(150 100 100)"/>
+        <ellipse cx="100" cy="70" rx="12" ry="22" fill="#2DD4BF" opacity="0.3" transform="rotate(210 100 100)"/>
+        <ellipse cx="100" cy="70" rx="12" ry="22" fill="#2DD4BF" opacity="0.3" transform="rotate(270 100 100)"/>
+        <ellipse cx="100" cy="70" rx="12" ry="22" fill="#2DD4BF" opacity="0.3" transform="rotate(330 100 100)"/>
+      </g>
+      <!-- Center face -->
+      <circle cx="100" cy="100" r="28" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="3"/>
+      <!-- Eyes -->
+      <circle cx="90" cy="95" r="6" fill="#fff"/>
+      <circle cx="110" cy="95" r="6" fill="#fff"/>
+      <circle cx="91" cy="96" r="3.5" fill="#0D1B2A"/>
+      <circle cx="111" cy="96" r="3.5" fill="#0D1B2A"/>
+      <circle cx="92" cy="95" r="1.5" fill="#fff"/>
+      <circle cx="112" cy="95" r="1.5" fill="#fff"/>
+      <!-- Smile -->
+      <path d="M90,108 Q100,114 110,108" stroke="#2DD4BF" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Bindi (forehead dot) -->
+      <circle cx="100" cy="85" r="4" fill="#F472B6"/>
+      <circle cx="100" cy="85" r="2" fill="#FBBF24"/>
+      <!-- Cheeks -->
+      <circle cx="82" cy="103" r="5" fill="#F472B6" opacity="0.3"/>
+      <circle cx="118" cy="103" r="5" fill="#F472B6" opacity="0.3"/>
+      <!-- Sparkles -->
+      <text x="50" y="60" font-size="14" fill="#FBBF24">✦</text>
+      <text x="145" y="65" font-size="12" fill="#FBBF24">✦</text>
+      <text x="40" y="140" font-size="10" fill="#818CF8">✦</text>
+      <text x="155" y="135" font-size="14" fill="#818CF8">✦</text>
+    </svg>
+    <div class="name">Bindi</div>
+    <div class="tag">Lotus Sprite</div>
+    <div class="desc">A lotus flower with a face and a bindi. Petals in brand lavender + pink. Represents blooming knowledge + Indian heritage.</div>
+    <span class="badge badge-unique">Elegant + Cultural</span>
+  </div>
+
+  <!-- 8. Surya — Sun -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Rays -->
+      <g stroke="#FBBF24" stroke-width="4" stroke-linecap="round">
+        <line x1="100" y1="15" x2="100" y2="30"/>
+        <line x1="100" y1="170" x2="100" y2="185"/>
+        <line x1="15" y1="100" x2="30" y2="100"/>
+        <line x1="170" y1="100" x2="185" y2="100"/>
+        <line x1="40" y1="40" x2="50" y2="50"/>
+        <line x1="150" y1="150" x2="160" y2="160"/>
+        <line x1="40" y1="160" x2="50" y2="150"/>
+        <line x1="150" y1="50" x2="160" y2="40"/>
+        <line x1="70" y1="22" x2="74" y2="35"/>
+        <line x1="130" y1="22" x2="126" y2="35"/>
+        <line x1="70" y1="178" x2="74" y2="165"/>
+        <line x1="130" y1="178" x2="126" y2="165"/>
+        <line x1="22" y1="70" x2="35" y2="74"/>
+        <line x1="22" y1="130" x2="35" y2="126"/>
+        <line x1="178" y1="70" x2="165" y2="74"/>
+        <line x1="178" y1="130" x2="165" y2="126"/>
+      </g>
+      <!-- Sun body -->
+      <circle cx="100" cy="100" r="50" fill="#FBBF24" stroke="#1B2D4A" stroke-width="3"/>
+      <!-- Inner glow -->
+      <circle cx="100" cy="100" r="42" fill="#FCD34D" opacity="0.5"/>
+      <!-- Eyes -->
+      <circle cx="85" cy="90" r="9" fill="#1B2D4A"/>
+      <circle cx="115" cy="90" r="9" fill="#1B2D4A"/>
+      <circle cx="87" cy="88" r="3.5" fill="#fff"/>
+      <circle cx="117" cy="88" r="3.5" fill="#fff"/>
+      <!-- Sunglasses (cool) -->
+      <rect x="72" y="82" width="20" height="14" rx="7" fill="#1B2D4A" opacity="0.7"/>
+      <rect x="108" y="82" width="20" height="14" rx="7" fill="#1B2D4A" opacity="0.7"/>
+      <line x1="92" y1="89" x2="108" y2="89" stroke="#1B2D4A" stroke-width="2"/>
+      <!-- Smile -->
+      <path d="M82,110 Q100,125 118,110" stroke="#1B2D4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Cheeks -->
+      <circle cx="75" cy="105" r="6" fill="#F472B6" opacity="0.4"/>
+      <circle cx="125" cy="105" r="6" fill="#F472B6" opacity="0.4"/>
+    </svg>
+    <div class="name">Surya</div>
+    <div class="tag">Sun Buddy</div>
+    <div class="desc">A radiant sun with cool sunglasses. Represents the "light of knowledge" (Vidya as light). Cheerful, warm, energetic.</div>
+    <span class="badge badge-playful">Cheerful + Warm</span>
+  </div>
+
+  <!-- 9: Motu — Dolphin -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <path d="M40,120 Q60,80 100,80 Q140,80 160,100 Q165,105 160,115 Q140,135 100,135 Q60,135 40,120 Z" fill="#2DD4BF" stroke="#1B2D4A" stroke-width="3"/>
+      <!-- Belly -->
+      <path d="M55,120 Q80,130 120,130 Q140,128 155,115 Q140,125 120,128 Q80,128 55,120" fill="#fff" opacity="0.3"/>
+      <!-- Dorsal fin -->
+      <path d="M100,80 Q105,60 115,55 Q110,68 108,80" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2"/>
+      <!-- Tail fin -->
+      <path d="M40,120 Q25,110 20,100 Q28,115 35,120 Q25,130 20,140 Q30,128 40,125" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2"/>
+      <!-- Side fin -->
+      <path d="M90,125 Q85,140 75,145 Q82,135 85,128" fill="#1B2D4A" stroke="#2DD4BF" stroke-width="2"/>
+      <!-- Eye -->
+      <circle cx="130" cy="100" r="8" fill="#fff"/>
+      <circle cx="132" cy="102" r="5" fill="#1B2D4A"/>
+      <circle cx="133" cy="101" r="2" fill="#fff"/>
+      <!-- Smile -->
+      <path d="M135,115 Q145,122 155,115" stroke="#1B2D4A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Cheek -->
+      <circle cx="120" cy="110" r="5" fill="#F472B6" opacity="0.4"/>
+      <!-- Water splash -->
+      <path d="M50,140 Q45,150 50,155" stroke="#818CF8" stroke-width="2" fill="none" opacity="0.6"/>
+      <path d="M60,145 Q55,155 60,160" stroke="#818CF8" stroke-width="2" fill="none" opacity="0.6"/>
+      <!-- Graduation cap -->
+      <rect x="110" y="65" width="30" height="5" rx="2" fill="#818CF8"/>
+      <polygon points="125,55 145,65 125,70 105,65" fill="#818CF8"/>
+      <line x1="145" y1="65" x2="145" y2="75" stroke="#818CF8" stroke-width="1.5"/>
+      <circle cx="145" cy="77" r="3" fill="#FBBF24"/>
+    </svg>
+    <div class="name">Motu</div>
+    <div class="tag">Dolphin</div>
+    <div class="desc">Intelligent, playful dolphin jumping through waves. Wears a tiny grad cap. Represents smart learning + joy of discovery.</div>
+    <span class="badge badge-cute">Smart + Playful</span>
+  </div>
+
+  <!-- 10: Janya — Lamp/Diya -->
+  <div class="card" onclick="this.style.borderColor='#2DD4BF'">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Flame glow -->
+      <ellipse cx="100" cy="55" rx="25" ry="35" fill="#FBBF24" opacity="0.2"/>
+      <!-- Flame -->
+      <path d="M100,30 Q92,50 95,65 Q100,75 105,65 Q108,50 100,30" fill="#FBBF24" stroke="#F59E0B" stroke-width="2"/>
+      <path d="M100,40 Q96,52 98,62 Q100,68 102,62 Q104,52 100,40" fill="#FCD34D"/>
+      <!-- Diya (lamp) body -->
+      <path d="M50,100 Q50,130 100,140 Q150,130 150,100 Q140,95 100,95 Q60,95 50,100" fill="#818CF8" stroke="#1B2D4A" stroke-width="3"/>
+      <!-- Diya rim -->
+      <ellipse cx="100" cy="100" rx="50" ry="8" fill="#818CF8" stroke="#1B2D4A" stroke-width="2.5"/>
+      <ellipse cx="100" cy="100" rx="45" ry="5" fill="#1B2D4A" opacity="0.3"/>
+      <!-- Decorative pattern -->
+      <circle cx="75" cy="115" r="3" fill="#FBBF24" opacity="0.6"/>
+      <circle cx="100" cy="120" r="3" fill="#FBBF24" opacity="0.6"/>
+      <circle cx="125" cy="115" r="3" fill="#FBBF24" opacity="0.6"/>
+      <!-- Eyes on diya -->
+      <circle cx="85" cy="112" r="7" fill="#fff"/>
+      <circle cx="115" cy="112" r="7" fill="#fff"/>
+      <circle cx="86" cy="114" r="4" fill="#1B2D4A"/>
+      <circle cx="116" cy="114" r="4" fill="#1B2D4A"/>
+      <circle cx="87" cy="113" r="1.5" fill="#fff"/>
+      <circle cx="117" cy="113" r="1.5" fill="#fff"/>
+      <!-- Smile -->
+      <path d="M88,125 Q100,132 112,125" stroke="#1B2D4A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Cheeks -->
+      <circle cx="75" cy="120" r="5" fill="#F472B6" opacity="0.4"/>
+      <circle cx="125" cy="120" r="5" fill="#F472B6" opacity="0.4"/>
+      <!-- Sparkles around flame -->
+      <text x="70" y="50" font-size="12" fill="#FBBF24">✦</text>
+      <text x="130" y="50" font-size="10" fill="#FBBF24">✦</text>
+      <text x="60" y="70" font-size="8" fill="#818CF8">✦</text>
+      <text x="140" y="70" font-size="10" fill="#818CF8">✦</text>
+    </svg>
+    <div class="name">Janya</div>
+    <div class="tag">Diya (Oil Lamp)</div>
+    <div class="desc">A traditional Indian diya lamp with a face. Flame = light of knowledge (Vidya). Deeply cultural — represents enlightenment + Diwali spirit.</div>
+    <span class="badge badge-unique">Cultural + Meaningful</span>
+  </div>
+
+</div>
+
+<p style="text-align:center; margin-top:40px; color:#64748B; font-size:0.85rem;">
+  Click any card to highlight it. All designs use brand colors: teal (#2DD4BF), navy (#1B2D4A), lavender (#818CF8), gold (#FBBF24).
+</p>
+</body>
+</html>
