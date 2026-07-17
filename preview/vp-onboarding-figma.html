@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vidya Prayag — School Onboarding</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #FBF8F4; --creamDeep: #F5F0E8;
+      --surface: #FBF8F4; --surfaceCard: #FFFFFF; --surfaceTint: #F8F4EF;
+      --ink: #1A1614; --ink2: #5C544E; --ink3: #8A8078;
+      --line: #E8E0D6; --lineSoft: #F0EAE0;
+      --violet: #5B41D5; --violetHover: #4A30C4; --violetSoft: #EEE8FB;
+      --coral: #F82B60; --coralSoft: #FFE4EC;
+      --gold: #FCB400; --goldSoft: #FFF4D1;
+      --success: #2D7A4A; --successSoft: #D4EDDB;
+      --error: #BA1A1A;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 50px 0; background: #eae5dd;
+      display: flex; flex-direction: column; align-items: center; gap: 50px;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif; color: var(--ink);
+    }
+    .phone {
+      width: 390px; min-height: 844px; background: var(--surface);
+      border-radius: 40px; overflow: hidden; position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12); display: flex; flex-direction: column;
+    }
+    .status-bar { height: 44px; background: var(--surface); flex-shrink: 0; }
+    .scroll {
+      flex: 1; overflow-y: auto; padding: 0 24px 120px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .scroll::-webkit-scrollbar { display: none; }
+    .header { padding: 8px 24px; display: flex; align-items: center; gap: 12px; }
+    .back-btn { width: 32px; height: 32px; background: var(--surfaceTint); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .eyebrow { font-size: 12px; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.05em; }
+    .step-title { font-size: 24px; line-height: 29px; font-weight: 800; color: var(--ink); margin-top: 8px; }
+    .step-sub { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+    .progress { display: flex; gap: 6px; margin-top: 8px; height: 2px; }
+    .progress-seg { flex: 1; background: var(--line); border-radius: 2px; }
+    .progress-seg.active { background: var(--violet); }
+    .label { font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 6px; display: block; }
+    .input { width: 100%; min-height: 48px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surfaceCard); padding: 0 16px; display: flex; align-items: center; font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 14px; }
+    .input.ph { color: var(--ink3); }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .chip { padding: 7px 14px; border-radius: 999px; background: var(--surfaceTint); color: var(--ink2); font-size: 12px; font-weight: 600; }
+    .chip.selected { background: var(--violet); color: #fff; }
+    .card { background: var(--surfaceCard); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+    .card-label { font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+    .card-body { font-size: 12px; color: var(--ink3); line-height: 17px; margin: 4px 0 8px; }
+    .row { display: flex; gap: 8px; align-items: flex-end; }
+    .col { flex: 1; }
+    .btn { width: 100%; min-height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; border: none; cursor: default; }
+    .btn-primary { background: var(--violet); color: #fff; box-shadow: 0 3px 8px rgba(91,65,213,0.25); }
+    .btn-secondary { background: var(--surfaceCard); color: var(--ink); border: 1px solid var(--line); }
+    .btn-outline { background: transparent; color: var(--ink2); border: 1px solid var(--line); }
+    .btn-sm { min-height: 40px; padding: 0 16px; width: auto; }
+    .bottom-bar { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surfaceCard); border-top: 1px solid var(--lineSoft); padding: 16px 24px; display: flex; gap: 8px; z-index: 10; }
+    .bottom-bar .btn-outline { flex: 0.4; }
+    .bottom-bar .btn-primary { flex: 1; }
+    .badge { padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; }
+    .badge-violet { background: var(--violetSoft); color: var(--violet); }
+    .badge-gold { background: var(--goldSoft); color: var(--gold); }
+    .badge-success { background: var(--successSoft); color: var(--success); }
+    .badge-ink3 { background: var(--surfaceTint); color: var(--ink3); }
+    .class-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .icon-btn { width: 28px; height: 28px; border-radius: 50%; background: rgba(248,43,96,0.1); display: flex; align-items: center; justify-content: center; border: none; }
+    .matrix { border: 1px solid var(--lineSoft); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+    .matrix-row { display: flex; border-bottom: 1px solid var(--lineSoft); }
+    .matrix-row:last-child { border-bottom: none; }
+    .matrix-header { background: var(--creamDeep); color: var(--ink3); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .matrix-cell { width: 48px; height: 36px; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--lineSoft); font-size: 11px; font-weight: 700; }
+    .matrix-cell:first-child { width: 110px; justify-content: flex-start; padding: 0 10px; color: var(--ink); font-weight: 600; font-size: 12px; }
+    .matrix-cell:last-child { border-right: none; }
+    .matrix-cell.mine { background: var(--violet); color: #fff; }
+    .matrix-cell.taken { background: var(--creamDeep); color: var(--ink3); }
+    .matrix-cell.available { background: rgba(91,65,213,0.08); color: var(--violet); }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--violetSoft); color: var(--violet); font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .teacher-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .teacher-meta { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .pill { padding: 2px 8px; border-radius: 999px; background: rgba(91,65,213,0.12); color: var(--violet); font-size: 11px; font-weight: 600; }
+    .progress-track { height: 3px; background: var(--line); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+    .progress-fill { height: 100%; background: var(--violet); border-radius: 999px; }
+    .hero { background: var(--violet); padding: 64px 24px 56px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .hero-icon { width: 96px; height: 96px; border-radius: 24px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.30); display: flex; align-items: center; justify-content: center; }
+    .hero h1 { color: #fff; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 28px 0 0; }
+    .hero p { color: rgba(255,255,255,0.88); font-size: 15px; margin: 6px 0 0; }
+    .success-ring { width: 72px; height: 72px; border-radius: 50%; background: var(--successSoft); display: flex; align-items: center; justify-content: center; }
+    .teacher-login { border-top: 1px solid var(--lineSoft); padding-top: 8px; margin-top: 8px; }
+    .muted { color: var(--ink3); font-size: 12px; line-height: 17px; }
+    .link { color: var(--violet); font-weight: 700; cursor: pointer; }
+    .empty-card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px 16px; }
+    .upload-card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px 16px; }
+    .icon { width: 20px; height: 20px; }
+    .icon-lg { width: 32px; height: 32px; }
+    .icon-xl { width: 44px; height: 44px; }
+    .spread { display: flex; align-items: center; justify-content: space-between; }
+    .mt-2 { margin-top: 2px; }
+    .mt-8 { margin-top: 8px; }
+    .w-full { width: 100%; }
+    .flex-04 { flex: 0.4; }
+    .flex-1 { flex: 1; }
+  </style>
+</head>
+<body>
+  <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
+    <defs>
+      <symbol id="icon-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></symbol>
+      <symbol id="icon-forward" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+      <symbol id="icon-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+      <symbol id="icon-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- Step 1: School identity -->
+  <div class="phone" id="step-identity">
+    <div class="status-bar"></div>
+    <div class="header">
+      <div class="back-btn"><svg class="icon"><use href="#icon-back"/></svg></div>
+    </div>
+    <div class="scroll">
+      <div class="eyebrow">ONBOARDING</div>
+      <div class="progress"><div class="progress-seg active"></div><div class="progress-seg"></div><div class="progress-seg"></div><div class="progress-seg"></div><div class="progress-seg"></div><div class="progress-seg"></div></div>
+      <div class="step-title">School identity</div>
+      <div class="step-sub">Step 1 of 6</div>
+
+      <label class="label">Full legal name</label>
+      <div class="input">Saraswati Vidya Mandir</div>
+      <label class="label">Short name</label>
+      <div class="input">SVM</div>
+      <label class="label">Affiliation number</label>
+      <div class="input">UP/CBSE/2021/4421</div>
+
+      <label class="label">BOARD</label>
+      <div class="chip-row">
+        <div class="chip selected">CBSE</div><div class="chip">ICSE</div><div class="chip">UP State</div><div class="chip">Other</div>
+      </div>
+
+      <label class="label">SCHOOL TYPE</label>
+      <div class="chip-row">
+        <div class="chip">Government</div><div class="chip">Private Aided</div><div class="chip selected">Private Unaided</div><div class="chip">Central</div>
+      </div>
+
+      <label class="label">Principal's name</label>
+      <div class="input">Dr. Anita Verma</div>
+      <label class="label">Principal's mobile</label>
+      <div class="input">+91 98XXX XXXXX</div>
+    </div>
+    <div class="bottom-bar"><button class="btn btn-primary">Continue <svg class="icon" style="margin-left:8px;color:#fff"><use href="#icon-forward"/></svg></button></div>
+  </div>
+
+  <!-- Step 2: Academic year -->
+  <div class="phone" id="step-academic">
+    <div class="status-bar"></div>
+    <div class="header"><div class="back-btn"><svg class="icon"><use href="#icon-back"/></svg></div></div>
+    <div class="scroll">
+      <div class="eyebrow">ONBOARDING</div>
+      <div class="progress"><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg"></div><div class="progress-seg"></div><div class="progress-seg"></div><div class="progress-seg"></div></div>
+      <div class="step-title">Academic year</div>
+      <div class="step-sub">Step 2 of 6</div>
+
+      <label class="label">CURRENT ACADEMIC YEAR</label>
+      <div class="chip-row"><div class="chip selected">2025-26</div><div class="chip">2026-27</div></div>
+
+      <div class="row">
+        <div class="col"><label class="label">Year starts</label><div class="input">2025-04-01</div></div>
+        <div class="col"><label class="label">Year ends</label><div class="input">2026-03-31</div></div>
+      </div>
+
+      <label class="label">WORKING DAYS</label>
+      <div class="chip-row"><div class="chip">Mon–Fri</div><div class="chip selected">Mon–Sat</div></div>
+
+      <div class="row">
+        <div class="col"><label class="label">Start time</label><div class="input">08:00 AM</div></div>
+        <div class="col"><label class="label">End time</label><div class="input">02:00 PM</div></div>
+      </div>
+
+      <label class="label">Periods per day</label>
+      <div class="input">8</div>
+    </div>
+    <div class="bottom-bar"><button class="btn btn-outline">Back</button><button class="btn btn-primary">Continue <svg class="icon" style="margin-left:8px;color:#fff"><use href="#icon-forward"/></svg></button></div>
+  </div>
+
+  <!-- Step 3: Classes & sections -->
+  <div class="phone" id="step-classes">
+    <div class="status-bar"></div>
+    <div class="header"><div class="back-btn"><svg class="icon"><use href="#icon-back"/></svg></div></div>
+    <div class="scroll">
+      <div class="eyebrow">ONBOARDING</div>
+      <div class="progress"><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg"></div><div class="progress-seg"></div><div class="progress-seg"></div></div>
+      <div class="step-title">Classes & sections</div>
+      <div class="step-sub">Step 3 of 6</div>
+
+      <div class="card">
+        <div class="card-label">TIP</div>
+        <div class="card-body">Pick the sections your school actually runs. Subjects and teachers in the next steps will only show these classes.</div>
+      </div>
+
+      <div class="card">
+        <div class="class-header">
+          <div class="card-title">Class 4</div>
+          <div class="class-actions"><span class="badge badge-ink3">3 sections</span><div class="icon-btn"><svg class="icon" style="color:var(--coral)"><use href="#icon-close"/></svg></div></div>
+        </div>
+        <div class="chip-row">
+          <div class="chip selected">A</div><div class="chip selected">B</div><div class="chip selected">C</div><div class="chip">D</div><div class="chip">E</div><div class="chip">F</div>
+        </div>
+        <div class="row">
+          <div class="input col ph">Add section (e.g. G, H)</div>
+          <button class="btn btn-primary btn-sm flex-04">+</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">ADD CLASS MANUALLY</div>
+        <div class="row mt-8">
+          <div class="input col ph">e.g. Class 11, Nursery, KG</div>
+          <button class="btn btn-primary btn-sm flex-04">Add</button>
+        </div>
+        <div class="chip-row mt-8">
+          <div class="chip">+ Class 11</div><div class="chip">+ Class 12</div><div class="chip">+ Nursery</div><div class="chip">+ LKG</div><div class="chip">+ UKG</div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-bar"><button class="btn btn-outline">Back</button><button class="btn btn-primary">Continue <svg class="icon" style="margin-left:8px;color:#fff"><use href="#icon-forward"/></svg></button></div>
+  </div>
+
+  <!-- Step 4: Subjects -->
+  <div class="phone" id="step-subjects">
+    <div class="status-bar"></div>
+    <div class="header"><div class="back-btn"><svg class="icon"><use href="#icon-back"/></svg></div></div>
+    <div class="scroll">
+      <div class="eyebrow">ONBOARDING</div>
+      <div class="progress"><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg"></div><div class="progress-seg"></div></div>
+      <div class="step-title">Subjects</div>
+      <div class="step-sub">Step 4 of 6</div>
+
+      <div class="card">
+        <div class="spread" style="align-items:flex-start">
+          <div>
+            <div class="card-label">SUBJECTS OFFERED</div>
+            <div class="card-body mt-2">Tap a subject's class chips to set where it's taught.</div>
+          </div>
+          <span class="link" style="font-size:12px">Apply to all</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="spread">
+          <div><div class="card-title">Mathematics</div><div class="card-body mt-2">math · Core</div></div>
+          <span class="badge badge-success">3 / 3</span>
+        </div>
+        <div class="chip-row mt-8"><div class="chip selected">4-A</div><div class="chip selected">4-B</div><div class="chip selected">4-C</div></div>
+      </div>
+
+      <div class="card">
+        <div class="spread">
+          <div><div class="card-title">Science</div><div class="card-body mt-2">sci · Core</div></div>
+          <span class="badge badge-gold">No classes</span>
+        </div>
+        <div class="chip-row mt-8"><div class="chip">4-A</div><div class="chip">4-B</div><div class="chip">4-C</div></div>
+      </div>
+
+      <div class="card">
+        <div class="spread">
+          <div><div class="card-title">Hindi</div><div class="card-body mt-2">hin · Language</div></div>
+          <span class="badge badge-success">1 / 3</span>
+        </div>
+        <div class="chip-row mt-8"><div class="chip selected">4-A</div><div class="chip">4-B</div><div class="chip">4-C</div></div>
+      </div>
+    </div>
+    <div class="bottom-bar"><button class="btn btn-outline">Back</button><button class="btn btn-primary">Continue <svg class="icon" style="margin-left:8px;color:#fff"><use href="#icon-forward"/></svg></button></div>
+  </div>
+
+  <!-- Step 5: Teachers -->
+  <div class="phone" id="step-teachers">
+    <div class="status-bar"></div>
+    <div class="header"><div class="back-btn"><svg class="icon"><use href="#icon-back"/></svg></div></div>
+    <div class="scroll">
+      <div class="eyebrow">ONBOARDING</div>
+      <div class="progress"><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg"></div></div>
+      <div class="step-title">Teachers</div>
+      <div class="step-sub">Step 5 of 6</div>
+
+      <div class="card">
+        <div class="card-label">ADD A TEACHER</div>
+        <div class="card-body">Enter a work email to create the teacher's login account now — they'll get a one-time password to sign in. Name only? You can add their login later from the dashboard.</div>
+        <label class="label" style="margin-top:8px">Full name</label>
+        <div class="input">Mrs. Kavita Nair</div>
+        <div class="row">
+          <div class="col"><label class="label">Work email (optional)</label><div class="input">kavita@svm.edu.in</div></div>
+          <button class="btn btn-primary btn-sm flex-04" style="min-height:48px">Add</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="spread" style="align-items:flex-start">
+          <div><div class="card-label">TEACHER COVERAGE</div><div class="card-body mt-2">5 of 6 subject × class slots assigned</div></div>
+          <span style="font-size:22px;font-weight:800;color:var(--violet)">83%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:83%"></div></div>
+        <div class="card-body mt-2" style="color:var(--gold)">1 unassigned — keep adding assignments below.</div>
+      </div>
+
+      <div class="card">
+        <div class="teacher-head">
+          <div class="avatar">KN</div>
+          <div style="flex:1">
+            <div class="card-title">Mrs. Kavita Nair</div>
+            <div class="teacher-meta">kavita@svm.edu.in</div>
+          </div>
+          <span class="badge badge-violet">2 slots</span>
+        </div>
+        <div class="matrix">
+          <div class="matrix-row matrix-header"><div class="matrix-cell" style="color:var(--ink3)">SUBJECT</div><div class="matrix-cell">4-A</div><div class="matrix-cell">4-B</div><div class="matrix-cell">4-C</div></div>
+          <div class="matrix-row"><div class="matrix-cell">Mathematics</div><div class="matrix-cell mine"><svg class="icon" style="color:#fff"><use href="#icon-check"/></svg></div><div class="matrix-cell taken">—</div><div class="matrix-cell available">+</div></div>
+          <div class="matrix-row"><div class="matrix-cell">Science</div><div class="matrix-cell available">+</div><div class="matrix-cell taken">—</div><div class="matrix-cell taken">—</div></div>
+          <div class="matrix-row"><div class="matrix-cell">Hindi</div><div class="matrix-cell taken">—</div><div class="matrix-cell mine"><svg class="icon" style="color:#fff"><use href="#icon-check"/></svg></div><div class="matrix-cell taken">—</div></div>
+        </div>
+        <div class="pill-row"><span class="pill">Math·4-A</span><span class="pill">Hindi·4-B</span></div>
+      </div>
+
+      <button class="btn btn-secondary"><svg class="icon" style="margin-right:8px;color:var(--ink3)"><use href="#icon-cloud"/></svg>Import roster from CSV</button>
+    </div>
+    <div class="bottom-bar"><button class="btn btn-outline">Back</button><button class="btn btn-primary">Continue <svg class="icon" style="margin-left:8px;color:#fff"><use href="#icon-forward"/></svg></button></div>
+  </div>
+
+  <!-- Step 6: Students -->
+  <div class="phone" id="step-students">
+    <div class="status-bar"></div>
+    <div class="header"><div class="back-btn"><svg class="icon"><use href="#icon-back"/></svg></div></div>
+    <div class="scroll">
+      <div class="eyebrow">ONBOARDING</div>
+      <div class="progress"><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div><div class="progress-seg active"></div></div>
+      <div class="step-title">Students</div>
+      <div class="step-sub">Step 6 of 6</div>
+
+      <div class="card upload-card">
+        <svg class="icon-lg" style="color:var(--ink3)"><use href="#icon-cloud"/></svg>
+        <div class="card-title mt-8">Drop your students CSV here</div>
+        <div class="card-body">or tap to browse</div>
+        <button class="btn btn-secondary" style="width:auto;min-height:44px;margin-top:16px;padding:0 24px">Download template</button>
+      </div>
+
+      <div class="card">
+        <div class="spread"><div class="card-title">No roster imported yet</div><span class="badge badge-ink3">Optional</span></div>
+        <div class="card-body">Importing students now is optional — you can finish setup and add students anytime from your dashboard. Validation results will appear here once a CSV is uploaded.</div>
+      </div>
+    </div>
+    <div class="bottom-bar"><button class="btn btn-outline">Back</button><button class="btn btn-primary">Finish setup <svg class="icon" style="margin-left:8px;color:#fff"><use href="#icon-forward"/></svg></button></div>
+  </div>
+
+  <!-- Completion -->
+  <div class="phone" id="step-completion">
+    <div class="status-bar"></div>
+    <div class="hero">
+      <div class="hero-icon"><svg class="icon-xl" style="color:#fff"><use href="#icon-check"/></svg></div>
+      <h1>You're all set</h1>
+      <p>Saraswati Vidya Mandir is live on VidyaPrayag.</p>
+    </div>
+    <div class="scroll" style="padding-top:24px;gap:16px;">
+      <div class="card empty-card">
+        <div class="success-ring"><svg class="icon-lg" style="color:var(--success)"><use href="#icon-check"/></svg></div>
+        <div class="card-title mt-8">Your school is ready!</div>
+        <div class="card-body" style="max-width:280px">Your profile setup is complete. You can now start building your digital campus by adding teachers, students and parents.</div>
+      </div>
+
+      <div class="card-label" style="padding-left:8px">TEACHER LOGINS CREATED</div>
+      <div class="card">
+        <div class="card-body">Share these one-time passwords with your teachers. They'll be asked to set their own password on first sign-in. You won't see these again — reset anytime from the dashboard.</div>
+        <div class="teacher-login">
+          <div class="card-title">Mrs. Kavita Nair</div>
+          <div class="teacher-meta">kavita@svm.edu.in</div>
+          <div class="card-body mt-2" style="display:flex;gap:4px">Password: <span style="color:var(--violet);font-weight:700">7XpL9qR2</span></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary">Open dashboard <svg class="icon" style="margin-left:8px;color:#fff"><use href="#icon-forward"/></svg></button>
+      <div class="muted" style="text-align:center">You can edit any of this later in Settings.</div>
+    </div>
+  </div>
+
+</body>
+</html>

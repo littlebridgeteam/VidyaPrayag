@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logo Watermark Background</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #EDE7F6; /* light lavender */
+  }
+
+  .watermark-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;            /* nearly invisible */
+    filter: grayscale(1) brightness(1.3);
+    z-index: 0;
+  }
+
+  .watermark-layer img {
+    position: absolute;
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    padding: 40px;
+    color: #311B92;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+</style>
+</head>
+<body>
+  <div class="watermark-layer" id="watermark"></div>
+  <div class="content">
+    <h1>Logo Watermark Background</h1>
+    <p>Light lavender background (#EDE7F6) with the app logo scattered as a repeating pattern at ~4% opacity.</p>
+  </div>
+</body>
+</html>
+<script>
+  (function () {
+    const layer = document.getElementById('watermark');
+    const logoSrc = '../brand-assets/enrollplus-logo-dp.png';
+    const minSize = 50;
+    const maxSize = 130;
+
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    // Jittered grid: structured spacing with random offset per cell
+    const cellW = 180;
+    const cellH = 180;
+    const jitter = 50;       // max px offset from grid center
+    const cols = Math.ceil(W / cellW) + 1;
+    const rows = Math.ceil(H / cellH) + 1;
+
+    // Offset the whole grid so logos aren't clipped at edges
+    const offsetX = -cellW / 2;
+    const offsetY = -cellH / 2;
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // Stagger every other row for a hex-like pattern
+        const stagger = (row % 2) * (cellW / 2);
+
+        const cx = offsetX + col * cellW + stagger + cellW / 2
+                   + (Math.random() * 2 - 1) * jitter;
+        const cy = offsetY + row * cellH + cellH / 2
+                   + (Math.random() * 2 - 1) * jitter;
+
+        const size = minSize + Math.random() * (maxSize - minSize);
+        const r = size / 2;
+
+        const img = document.createElement('img');
+        img.src = logoSrc;
+        img.width = size;
+        img.height = size;
+        img.style.left = (cx - r) + 'px';
+        img.style.top = (cy - r) + 'px';
+        img.style.transform = `rotate(${Math.random() * 40 - 20}deg)`;
+        layer.appendChild(img);
+      }
+    }
+  })();
+</script>

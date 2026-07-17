@@ -1,0 +1,57 @@
+{
+  "portal": "admin",
+  "figmaPageId": "1:9",
+  "figmaPageName": "08 — Admin Portal",
+  "device": {
+    "ip": "192.168.1.18:5555",
+    "model": "LM-F100",
+    "resolution": "1080x2460",
+    "density": 420,
+    "androidVersion": "13",
+    "frameSize": "412x937"
+  },
+  "captureScript": ".figwright/capture.sh",
+  "screens": {
+    "home": {
+      "figmaNodeId": "18:637",
+      "figmaName": "Admin — Home Dashboard",
+      "states": {
+        "success_light": { "captured": true, "screenshot": "home_stable.png", "built": true, "verified": false },
+        "loading": { "captured": false, "built": false },
+        "empty": { "captured": false, "built": false },
+        "error": { "captured": false, "built": false },
+        "offline": { "captured": false, "built": false }
+      }
+    },
+    "people": {
+      "figmaNodeId": "24:1069",
+      "figmaName": "Admin — People",
+      "states": {
+        "success_light": { "captured": true, "screenshot": "people_stable.png", "built": true, "verified": false }
+      }
+    },
+    "records": {
+      "figmaNodeId": "24:1532",
+      "figmaName": "Admin — Records (Attendance)",
+      "states": {
+        "success_light": { "captured": true, "screenshot": "records_stable.png", "built": true, "verified": false }
+      }
+    },
+    "comms": {
+      "figmaNodeId": "24:1624",
+      "figmaName": "Admin — Comms (Announcements)",
+      "states": {
+        "success_light": { "captured": true, "screenshot": "comms_stable.png", "built": true, "verified": false }
+      }
+    },
+    "settings": {
+      "figmaNodeId": "24:1694",
+      "figmaName": "Admin — Settings",
+      "states": {
+        "success_light": { "captured": true, "screenshot": "settings_tab_stable.png", "built": true, "verified": false }
+      }
+    }
+  },
+  "subScreensCaptured": [],
+  "lastUpdated": "2026-07-17T12:15:00+05:30"
+}

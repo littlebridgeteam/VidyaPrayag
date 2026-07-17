@@ -39,13 +39,6 @@ import coil3.compose.AsyncImage
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-internal val BRANDING_PRESET_COLORS = listOf(
-    "#2563EB", "#7C3AED", "#059669", "#DC2626",
-    "#EA580C", "#D97706", "#0891B2", "#4F46E5",
-    "#0D9488", "#BE185D", "#1E40AF", "#9333EA",
-    "#16A34A", "#E11D48", "#F59E0B", "#0EA5E9",
-)
-
 private val SUBDOMAIN_REGEX = Regex("^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$")
 
 internal fun parseBrandingHexColor(hex: String): Color {
@@ -564,7 +557,6 @@ internal fun BrandingColorPickerSection(
 ) {
         var hexInput by remember(currentColor) { mutableStateOf(currentColor) }
     val parsedColor = parseBrandingHexColor(hexInput)
-    var showSlider by remember { mutableStateOf(false) }
 
     VCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -582,50 +574,18 @@ internal fun BrandingColorPickerSection(
                         .size(36.dp)
                         .clip(CircleShape)
                         .background(parsedColor)
-                        .border(2.dp, VColors.line, CircleShape)
-                        .clickable { showSlider = !showSlider },
+                        .border(2.dp, VColors.line, CircleShape),
                 )
             }
 
-            // Expanded preset swatches — 2 rows of 8
-            val chunked = BRANDING_PRESET_COLORS.chunked(8)
-            chunked.forEach { rowColors ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    rowColors.forEach { hex ->
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clip(CircleShape)
-                                .background(parseBrandingHexColor(hex))
-                                .border(
-                                    width = if (hex.equals(hexInput, ignoreCase = true)) 3.dp else 0.dp,
-                                    color = VColors.ink,
-                                    shape = CircleShape,
-                                )
-                                .clickable {
-                                    hexInput = hex
-                                    onColorSelected(hex)
-                                    showSlider = false
-                                },
-                        )
-                    }
-                }
-            }
-
-            // Hue slider — tap the color circle to toggle
-            if (showSlider) {
-                HueSliderBar(
-                    currentHex = hexInput,
-                    onColorSelected = { hex ->
-                        hexInput = hex
-                        onColorSelected(hex)
-                    },
-                )
-            }
+            // HSV color picker sliders
+            HueSliderBar(
+                currentHex = hexInput,
+                onColorSelected = { hex ->
+                    hexInput = hex
+                    onColorSelected(hex)
+                },
+            )
 
             // Hex input
             VInput(
