@@ -1291,6 +1291,9 @@ val viewModelModule = module {
     factory { PinnedScreensViewModel(get(), get()) }
     factory { InstitutionalBasicOBViewModel(get(), get()) }
 
+    // Merged registration + onboarding flow (replaces separate AdminSignup + OnboardingV2)
+    factory { com.littlebridge.enrollplus.feature.admin.presentation.RegistrationOnboardingViewModel(get(), get(), get()) }
+
     factory { BrandingInfoOBViewModel(get(), get(), get()) }
 
     factory { AcademicInfoOBViewModel(get(), get()) }

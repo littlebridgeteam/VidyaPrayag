@@ -51,7 +51,8 @@ data class SchoolRegisterRequest(
     val name: String,                 // admin / principal contact name
     val identifier: String,           // email
     val password: String,
-    @SerialName("school_name") val schoolName: String,
+    @SerialName("admin_role") val adminRole: String? = null,
+    @SerialName("school_name") val schoolName: String? = null,
     val board: String? = null,
     @SerialName("school_type") val schoolType: String? = null,
     val city: String? = null,

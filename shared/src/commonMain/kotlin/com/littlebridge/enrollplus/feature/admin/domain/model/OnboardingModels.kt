@@ -138,12 +138,16 @@ data class OnboardingCompletionResponse(
 object ObPayloadKeys {
     // BASIC step
     const val SCHOOL_NAME = "school_name"
+    const val SHORT_NAME = "short_name"
     const val BOARD = "board"
+    const val SCHOOL_TYPE = "school_type"
     const val AFFILIATION_NUMBER = "affiliation_number"
     const val MEDIUM = "medium"
     const val SCHOOL_GENDER = "school_gender"
     const val CONTACT_EMAIL = "contact_email"
     const val CONTACT_PHONE = "contact_phone"
+    const val PRINCIPAL_NAME = "principal_name"
+    const val PRINCIPAL_PHONE = "principal_phone"
     const val CITY = "city"
     const val DISTRICT = "district"
     const val STATE = "state"
@@ -157,4 +161,13 @@ object ObPayloadKeys {
     const val LOGO_URL = "logo_url"
     const val BRAND_COLOR = "brand_color"
     const val COVER_IMAGE_URL = "cover_image_url"
+
+    // ACADEMIC step — merged onboarding flow academic year config
+    const val ACADEMIC_YEAR_LABEL = "academic_year_label"
+    const val ACADEMIC_YEAR_START_DATE = "academic_year_start_date"
+    const val ACADEMIC_YEAR_END_DATE = "academic_year_end_date"
+    const val WORKING_DAYS = "working_days"
+    const val SCHOOL_START_TIME = "school_start_time"
+    const val SCHOOL_END_TIME = "school_end_time"
+    const val PERIODS_PER_DAY = "periods_per_day"
 }

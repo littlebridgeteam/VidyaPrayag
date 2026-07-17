@@ -184,8 +184,12 @@ data class SchoolRegisterDto(
     val name: String,                 // admin / principal contact name
     val identifier: String,           // email (password path) — staff use email
     val password: String,
-    // School seed (kept minimal — the wizard collects the rest)
-    @SerialName("school_name") val schoolName: String,
+    // Merged onboarding flow: admin role label from Step 1 (e.g. "Principal")
+    @SerialName("admin_role") val adminRole: String? = null,
+    // School seed — schoolName is OPTIONAL in the merged flow (Step 2 creates
+    // the account before school details are collected in Step 3). When absent,
+    // a placeholder is used and the onboarding wizard fills the real name.
+    @SerialName("school_name") val schoolName: String? = null,
     val board: String? = null,        // CBSE | ICSE | UP State | Other
     @SerialName("school_type") val schoolType: String? = null,
     val city: String? = null,
@@ -508,8 +512,8 @@ fun Route.authRouting() {
                 ?: run { call.fail("Invalid body"); return@post }
 
             val id = normaliseIdentifier(req.identifier)
-            if (id.isBlank() || req.name.isBlank() || req.schoolName.isBlank()) {
-                call.fail("name, identifier and school_name are required"); return@post
+            if (id.isBlank() || req.name.isBlank()) {
+                call.fail("name and identifier are required"); return@post
             }
             // Staff register with email+password (no OTP path here).
             if (!isEmail(id)) {
@@ -536,7 +540,7 @@ fun Route.authRouting() {
             val now = Instant.now()
             val newUserId = UUID.randomUUID()
             val newSchoolId = UUID.randomUUID()
-            val cleanName = req.schoolName.trim()
+            val cleanName = req.schoolName?.takeIf { it.isNotBlank() }?.trim() ?: "Unnamed School"
             val slugBase = cleanName.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
             val slug = (slugBase.ifBlank { "school" }) + "-" + newSchoolId.toString().take(6)
 
@@ -575,6 +579,7 @@ fun Route.authRouting() {
                     it[profileCompleted] = false   // gate → onboarding wizard
                     it[mustChangePassword] = false
                     it[isActive] = true
+                    it[adminRole] = req.adminRole?.takeIf { r -> r.isNotBlank() }?.trim()
                     it[createdAt] = now
                     it[updatedAt] = now
                 }
