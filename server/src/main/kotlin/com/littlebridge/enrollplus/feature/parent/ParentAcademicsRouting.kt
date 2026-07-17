@@ -1166,9 +1166,9 @@ fun Route.parentAcademicsRouting() {
                 val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
 
                 // Gamification XP hook — quiz completed (GAM-020: use studentId, not childId)
-                val studentId = child.studentId
-                if (studentId != null && child.schoolId != null) {
-                    XpHooks.onQuizCompleted(studentId, child.schoolId, correctCount, totalMarks)
+                val studentUuid = child.studentId
+                if (studentUuid != null && child.schoolId != null) {
+                    XpHooks.onQuizCompleted(studentUuid, child.schoolId, correctCount, totalMarks)
                 }
 
                 call.ok(

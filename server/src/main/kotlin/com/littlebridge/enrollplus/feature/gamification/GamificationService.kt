@@ -257,7 +257,7 @@ object GamificationService {
             it[GameXpLedgerTable.reason] = reason
             it[GameXpLedgerTable.xpSource] = source
             it[GameXpLedgerTable.category] = category
-            it[GameXpLedgerTable.multiplier] = multiplier
+            it[GameXpLedgerTable.multiplier] = totalMultiplier
             it[GameXpLedgerTable.createdAt] = Instant.now()
         }
 
@@ -271,7 +271,7 @@ object GamificationService {
             newLevel = newLevel,
             leveledUp = leveledUp,
             newTitle = if (leveledUp) newTitle else null,
-            multiplierApplied = multiplier,
+            multiplierApplied = totalMultiplier,
             gamificationEnabled = enabled
         )
     }

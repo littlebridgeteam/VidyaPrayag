@@ -25,6 +25,7 @@ import com.littlebridge.enrollplus.db.GameStudentStatsTable
 import com.littlebridge.enrollplus.db.StudentsTable
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate

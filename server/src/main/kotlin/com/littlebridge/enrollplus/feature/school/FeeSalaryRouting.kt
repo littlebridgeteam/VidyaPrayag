@@ -70,7 +70,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.inList
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
@@ -613,7 +613,7 @@ fun Route.feeSalaryRouting() {
                         val childUuids = req.childIds.mapNotNull { parseUuid(it) }
                         ChildrenTable.selectAll()
                             .where {
-                                (ChildrenTable.id inList childUuids) and
+                                (ChildrenTable.id inList childUuids.map { EntityID(it, ChildrenTable) }) and
                                 (ChildrenTable.schoolId eq ctx.schoolId) and
                                 (ChildrenTable.isActive eq true)
                             }
@@ -1497,7 +1497,7 @@ fun Route.teacherFeeEscalationRouting() {
                 val parentIds = dbQuery {
                     ChildrenTable.selectAll()
                         .where {
-                            (ChildrenTable.id inList childUuids) and
+                            (ChildrenTable.id inList childUuids.map { EntityID(it, ChildrenTable) }) and
                             (ChildrenTable.schoolId eq ctx.schoolId)
                         }
                         .map { it[ChildrenTable.parentId] }
