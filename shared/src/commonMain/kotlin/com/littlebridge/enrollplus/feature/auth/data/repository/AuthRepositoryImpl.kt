@@ -77,6 +77,21 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun registerSchoolWithoutSession(request: SchoolRegisterRequest): NetworkResult<AuthResponse> {
+        return when (val result = api.registerSchool(request)) {
+            is NetworkResult.Success -> {
+                val data = result.data.data ?: return NetworkResult.Error("No data in response")
+                // Deliberately NOT calling saveSession — the merged registration
+                // flow holds the token in VM state and persists it only at the
+                // very end (completeOnboarding), so the app-level auth observer
+                // doesn't rip the user into NavGraphV2 mid-flow.
+                NetworkResult.Success(data)
+            }
+            is NetworkResult.Error -> NetworkResult.Error(result.message, result.code)
+            is NetworkResult.ConnectionError -> NetworkResult.ConnectionError
+        }
+    }
+
     override suspend fun login(request: LoginRequest): NetworkResult<AuthResponse> {
         return when (val result = api.login(request)) {
             is NetworkResult.Success -> {

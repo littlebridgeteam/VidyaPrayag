@@ -115,6 +115,46 @@ class OnboardingStatusTest {
         assertEquals("REVIEW", status.resumeStep())
     }
 
+    // ── Scenario 5b: Merged flow — ACADEMIC in ledger but NO classes ─────────
+    // This is the regression guard for the redirect-to-old-onboarding bug.
+    // The merged 4-step flow submits ACADEMIC via /onboarding/submit which writes
+    // "ACADEMIC" to the ledger, but may not create school_classes rows. The gate
+    // must still recognise ACADEMIC as done from the ledger alone.
+    @Test
+    fun mergedFlow_academicInLedgerButNoClasses_isAcademicDone() {
+        val status = deriveOnboardingStatus(
+            schoolExists = true,
+            ledger = setOf("BASIC", "BRANDING", "ACADEMIC"),
+            hasClasses = false, // merged flow may not create classes
+            logoPresent = false,
+            stampPresent = false,
+            hasAcademicYearConfig = false, // test ledger-only path
+        )
+        assertTrue(status.academicDone, "ACADEMIC in ledger must mark academic done even without classes")
+        assertTrue(status.basicsDone)
+        assertEquals("REVIEW", status.resumeStep())
+    }
+
+    // ── Scenario 5c: Merged flow — complete with ledger only, no classes ──────
+    // Full merged flow: BASIC+BRANDING+ACADEMIC+REVIEW in ledger, stamp set, but
+    // no classes. The gate must report isComplete=true so the admin lands on the
+    // dashboard, NOT the old 6-step onboarding wizard.
+    @Test
+    fun mergedFlow_completeWithLedgerOnly_noClasses_isComplete() {
+        val status = deriveOnboardingStatus(
+            schoolExists = true,
+            ledger = setOf("BASIC", "BRANDING", "ACADEMIC", "REVIEW"),
+            hasClasses = false,
+            logoPresent = false,
+            stampPresent = true,
+            hasAcademicYearConfig = false,
+        )
+        assertTrue(status.basicsDone)
+        assertTrue(status.academicDone, "ACADEMIC in ledger must be done")
+        assertTrue(status.finalDone, "REVIEW in ledger + stamp + basics + academic = final done")
+        assertEquals("REVIEW", status.resumeStep())
+    }
+
     // ── Scenario 6: Fully completed onboarding → complete ────────────────────
     @Test
     fun fullyCompletedOnboarding_isComplete() {

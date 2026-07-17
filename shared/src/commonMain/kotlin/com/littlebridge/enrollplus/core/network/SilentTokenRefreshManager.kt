@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.core.network
 
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.core.currentTimeMillis
 import com.littlebridge.enrollplus.feature.auth.data.remote.AuthApi
 import com.littlebridge.enrollplus.core.locale.LocaleManager
 import com.littlebridge.enrollplus.util.AppLogger
@@ -83,7 +84,7 @@ class SilentTokenRefreshManager(
      * successfully refreshed), false if the session is invalid and the user
      * should be logged out.
      */
-    suspend fun refreshIfNeeded(): Boolean {
+    override suspend fun refreshIfNeeded(): Boolean {
         val token = prefs.getUserToken().first() ?: return false
         val refreshToken = prefs.getRefreshToken().first() ?: return false
 
@@ -93,7 +94,7 @@ class SilentTokenRefreshManager(
             return true // Let TokenAuthenticator handle it reactively
         }
 
-        val nowSeconds = System.currentTimeMillis() / 1000
+        val nowSeconds = currentTimeMillis() / 1000
         val secondsUntilExpiry = expSeconds - nowSeconds
 
         if (secondsUntilExpiry > SAFETY_WINDOW_SECONDS) {
@@ -181,7 +182,7 @@ class SilentTokenRefreshManager(
             // Base64url decode the payload (part 1)
             val payload = parts[1]
             val bytes = Base64.UrlSafe.decode(payload)
-            val json = String(bytes, Charsets.UTF_8)
+            val json = bytes.decodeToString()
 
             // Extract "exp" value from the JSON — simple regex to avoid a JSON parser
             val expRegex = """"exp"\s*:\s*(\d+)""".toRegex()

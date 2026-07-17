@@ -14,7 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.littlebridge.enrollplus.feature.auth.presentation.AuthViewModel
 import com.littlebridge.enrollplus.ui.screens.admin.AdminLoginScreen
-import com.littlebridge.enrollplus.ui.screens.admin.AdminSignupScreen
+import com.littlebridge.enrollplus.ui.v2.screens.auth.SchoolRegistrationFlow
 import com.littlebridge.enrollplus.ui.screens.parent.ParentLoginScreen
 import com.littlebridge.enrollplus.ui.screens.parent.ParentSignupScreen
 import com.littlebridge.enrollplus.ui.screens.shared.ForgotPasswordScreen
@@ -39,7 +39,7 @@ fun AuthNavGraph(
             AuthRoute.ParentLogin -> "parent_login"
             AuthRoute.ParentSignup -> "parent_signup"
             AuthRoute.AdminLogin -> "admin_login"
-            AuthRoute.AdminSignup -> "admin_signup"
+            AuthRoute.SchoolRegistration -> "school_registration"
             AuthRoute.Terms -> "terms"
             AuthRoute.PrivacyPolicy -> "privacy_policy"
             AuthRoute.ForgotPassword -> "forgot_password"
@@ -59,7 +59,7 @@ fun AuthNavGraph(
             "ParentLogin" -> navigateTo(AuthRoute.ParentLogin)
             "ParentSignup" -> navigateTo(AuthRoute.ParentSignup)
             "AdminLogin" -> navigateTo(AuthRoute.AdminLogin)
-            "AdminSignup" -> navigateTo(AuthRoute.AdminSignup)
+            "SchoolRegistration" -> navigateTo(AuthRoute.SchoolRegistration)
             "Terms" -> navigateTo(AuthRoute.Terms)
             "PrivacyPolicy" -> navigateTo(AuthRoute.PrivacyPolicy)
             "ForgotPassword" -> navigateTo(AuthRoute.ForgotPassword)
@@ -95,15 +95,13 @@ fun AuthNavGraph(
             AuthRoute.AdminLogin -> AdminLoginScreen(
                 viewModel = authViewModel,
                 onBack = { navigateTo(AuthRoute.Landing) },
-                onNavigateToSignup = { navigateTo(AuthRoute.AdminSignup) },
+                onNavigateToSignup = { navigateTo(AuthRoute.SchoolRegistration) },
                 onAuthSuccess = onAuthSuccess,
                 onForgotPassword = { navigateTo(AuthRoute.ForgotPassword) },
             )
-            AuthRoute.AdminSignup -> AdminSignupScreen(
-                viewModel = authViewModel,
-                onBack = { navigateTo(AuthRoute.AdminLogin) },
+            AuthRoute.SchoolRegistration -> SchoolRegistrationFlow(
                 onNavigateToLogin = { navigateTo(AuthRoute.AdminLogin) },
-                onAuthSuccess = onAuthSuccess,
+                onOnboardingComplete = onAuthSuccess,
             )
             AuthRoute.Terms -> TermsConditionScreen(
                 onBack = { navigateTo(AuthRoute.Landing) },

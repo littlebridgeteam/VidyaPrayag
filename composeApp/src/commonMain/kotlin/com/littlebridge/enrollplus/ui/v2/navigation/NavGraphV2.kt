@@ -24,7 +24,6 @@ import com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateView
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.auth.ParentLinkChildScreenV2
-import com.littlebridge.enrollplus.ui.v2.screens.auth.SchoolOnboardingScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.auth.TeacherFirstLoginScreenV2
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.ui.v2.screens.parent.ParentPortalV2
@@ -533,7 +532,7 @@ enum class EntryRole {
 // Authenticated gate:  role → (child-link | onboarding | first-login) → portal
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class AuthedRoute { Resolving, ParentLinkChild, SchoolOnboarding, TeacherFirstLogin, Portal }
+private enum class AuthedRoute { Resolving, ParentLinkChild, TeacherFirstLogin, Portal }
 
 /**
  * AuthedFlow — runs the one-time post-login gate before handing control to the role portal.
@@ -565,16 +564,12 @@ private fun AuthedFlow(
     val authRepository = koinInject<AuthRepository>()
 
     var route by remember(role) { mutableStateOf(AuthedRoute.Resolving) }
-    // The step the school-onboarding wizard should open on, resolved from the
-    // server status (first incomplete step) for a returning/partial admin.
-    var onboardingResumeStep by remember(role) { mutableStateOf(com.littlebridge.enrollplus.feature.admin.domain.model.ObStepType.BASIC) }
 
     // Track screen views on every route change for Clarity + Firebase analytics
     LaunchedEffect(route) {
         val screenName = when (route) {
             AuthedRoute.Resolving -> "resolving"
             AuthedRoute.ParentLinkChild -> "parent_link_child"
-            AuthedRoute.SchoolOnboarding -> "school_onboarding"
             AuthedRoute.TeacherFirstLogin -> "teacher_first_login"
             AuthedRoute.Portal -> when (role) {
                 EntryRole.Parent -> "parent_portal"
@@ -608,8 +603,11 @@ private fun AuthedFlow(
             when (val g = gate) {
                 is OnboardingGate.Resolving -> route = AuthedRoute.Resolving
                 is OnboardingGate.Onboarding -> {
-                    onboardingResumeStep = g.resumeStep
-                    route = AuthedRoute.SchoolOnboarding
+                    // Old 6-step onboarding wizard is DELETED. The merged 4-step
+                    // SchoolRegistrationFlow handles all onboarding during signup.
+                    // A returning admin with incomplete onboarding lands on the
+                    // dashboard and can configure remaining settings from there.
+                    route = AuthedRoute.Portal
                 }
                 is OnboardingGate.Dashboard -> route = AuthedRoute.Portal
             }
@@ -671,11 +669,6 @@ private fun AuthedFlow(
 
             AuthedRoute.ParentLinkChild -> ParentLinkChildScreenV2(
                 onDone = { route = AuthedRoute.Portal },
-                onBack = { route = AuthedRoute.Portal },
-            )
-            AuthedRoute.SchoolOnboarding -> SchoolOnboardingScreenV2(
-                resumeStep = onboardingResumeStep,
-                onComplete = { route = AuthedRoute.Portal },
                 onBack = { route = AuthedRoute.Portal },
             )
             AuthedRoute.TeacherFirstLogin -> TeacherFirstLoginScreenV2(
