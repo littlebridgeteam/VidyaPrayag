@@ -1,11 +1,5 @@
 package com.littlebridge.enrollplus.ui.v2.screens.auth
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -15,21 +9,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -79,10 +68,9 @@ private fun VChip(
     val fg = if (selected) VColors.white else VColors.ink2
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(bg)
+            .background(bg, CircleShape)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = 7.dp),
     ) {
         Text(
             text = text,
@@ -92,16 +80,14 @@ private fun VChip(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VChipGroup(
     options: List<String>,
     selected: String?,
     onSelect: (String) -> Unit,
 ) {
-    FlowRow(
+    Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         options.forEach { opt ->
@@ -212,18 +198,17 @@ private fun VBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (showBack) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 52.dp)
+                        .heightIn(min = 48.dp)
                         .border(1.5.dp, VColors.violet, VShapes.md)
                         .clickable { onBack() }
-                        .padding(vertical = 15.dp),
+                        .padding(vertical = 14.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -263,39 +248,25 @@ fun SchoolRegistrationFlow(
             .background(VColors.cream)
             .statusBarsPadding(),
     ) {
-        AnimatedContent(
-            targetState = state.step,
-            transitionSpec = {
-                if (initialState.ordinal < targetState.ordinal) {
-                    (slideInHorizontally(VMotion.tweenSlow()) { it / 3 } + fadeIn(VMotion.tweenSlow())) togetherWith
-                        (slideOutHorizontally(VMotion.tweenSlow()) { -it / 3 } + fadeOut(VMotion.tweenFast()))
-                } else {
-                    (slideInHorizontally(VMotion.tweenSlow()) { -it / 3 } + fadeIn(VMotion.tweenSlow())) togetherWith
-                        (slideOutHorizontally(VMotion.tweenSlow()) { it / 3 } + fadeOut(VMotion.tweenFast()))
-                }
-            },
-            label = "reg-step",
-        ) { step ->
-            when (step) {
-                FlowStep.One -> StepOneBasicDetails(
-                    viewModel = viewModel,
-                    onSignIn = onNavigateToLogin,
-                )
-                FlowStep.Two -> StepTwoCreatePassword(
-                    viewModel = viewModel,
-                    onSignIn = onNavigateToLogin,
-                )
-                FlowStep.Three -> StepThreeSchoolIdentity(
-                    viewModel = viewModel,
-                )
-                FlowStep.Four -> StepFourAcademicYear(
-                    viewModel = viewModel,
-                )
-                FlowStep.Success -> SuccessScreen(
-                    viewModel = viewModel,
-                    onComplete = onOnboardingComplete,
-                )
-            }
+        when (state.step) {
+            FlowStep.One -> StepOneBasicDetails(
+                viewModel = viewModel,
+                onSignIn = onNavigateToLogin,
+            )
+            FlowStep.Two -> StepTwoCreatePassword(
+                viewModel = viewModel,
+                onSignIn = onNavigateToLogin,
+            )
+            FlowStep.Three -> StepThreeSchoolIdentity(
+                viewModel = viewModel,
+            )
+            FlowStep.Four -> StepFourAcademicYear(
+                viewModel = viewModel,
+            )
+            FlowStep.Success -> SuccessScreen(
+                viewModel = viewModel,
+                onComplete = onOnboardingComplete,
+            )
         }
     }
 }
@@ -319,9 +290,8 @@ private fun ColumnScope.StepOneBasicDetails(
         modifier = Modifier
             .weight(1f)
             .verticalScroll(rememberScrollState())
-            .imePadding()
             .padding(horizontal = 32.dp)
-            .padding(top = 24.dp, bottom = 24.dp),
+            .padding(top = 24.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         OnboardingHeader(
@@ -366,17 +336,17 @@ private fun ColumnScope.StepOneBasicDetails(
                     color = VColors.error,
                 )
             }
+            VButton(
+                text = "Continue",
+                onClick = { viewModel.submitBasicDetails {} },
+                enabled = state.adminName.isNotBlank() && state.email.isNotBlank() && state.contactPhone.isNotBlank(),
+                loading = state.isLoading,
+                icon = Icons.AutoMirrored.Filled.ArrowForward,
+            )
         }
 
         SignInFooter(onSignIn = onSignIn)
     }
-
-    VBottomBar(
-        continueText = "Continue",
-        onContinue = { viewModel.submitBasicDetails {} },
-        continueEnabled = state.adminName.isNotBlank() && state.email.isNotBlank() && state.contactPhone.isNotBlank(),
-        continueLoading = state.isLoading,
-    )
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -397,9 +367,8 @@ private fun ColumnScope.StepTwoCreatePassword(
         modifier = Modifier
             .weight(1f)
             .verticalScroll(rememberScrollState())
-            .imePadding()
             .padding(horizontal = 32.dp)
-            .padding(top = 24.dp, bottom = 24.dp),
+            .padding(top = 24.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         OnboardingHeader(
@@ -427,6 +396,7 @@ private fun ColumnScope.StepTwoCreatePassword(
                 isError = state.confirmPassword.isNotBlank() && state.password != state.confirmPassword,
                 errorMessage = if (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword) "Passwords do not match" else null,
             )
+            // Password requirements card
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -454,17 +424,17 @@ private fun ColumnScope.StepTwoCreatePassword(
                     color = VColors.error,
                 )
             }
+            VButton(
+                text = "Create Account",
+                onClick = { viewModel.createAccount {} },
+                enabled = state.password.length >= 8 && state.password == state.confirmPassword,
+                loading = state.isLoading,
+                icon = Icons.AutoMirrored.Filled.ArrowForward,
+            )
         }
 
         SignInFooter(onSignIn = onSignIn)
     }
-
-    VBottomBar(
-        continueText = "Create Account",
-        onContinue = { viewModel.createAccount {} },
-        continueEnabled = state.password.length >= 8 && state.password == state.confirmPassword,
-        continueLoading = state.isLoading,
-    )
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -500,7 +470,6 @@ private fun ColumnScope.StepThreeSchoolIdentity(
         modifier = Modifier
             .weight(1f)
             .verticalScroll(rememberScrollState())
-            .imePadding()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -609,7 +578,6 @@ private fun ColumnScope.StepFourAcademicYear(
         modifier = Modifier
             .weight(1f)
             .verticalScroll(rememberScrollState())
-            .imePadding()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -625,23 +593,7 @@ private fun ColumnScope.StepFourAcademicYear(
         ) {
             VDatePicker(
                 value = state.yearStartDate,
-                onValueChange = { newStart ->
-                    viewModel.update { s ->
-                        // Auto-compute year end = start + 1 year (same month/day)
-                        val endIso = run {
-                            val parts = newStart.split("-")
-                            if (parts.size == 3) {
-                                val y = (parts[0].toIntOrNull() ?: 2025) + 1
-                                val m = parts[1]
-                                val d = parts[2]
-                                "$y-$m-$d"
-                            } else {
-                                s.yearEndDate
-                            }
-                        }
-                        s.copy(yearStartDate = newStart, yearEndDate = endIso)
-                    }
-                },
+                onValueChange = { viewModel.update { s -> s.copy(yearStartDate = it) } },
                 label = "Year starts",
                 placeholder = "Select date",
                 modifier = Modifier.weight(1f),
@@ -750,8 +702,6 @@ private fun ColumnScope.SuccessScreen(
     Column(
         modifier = Modifier
             .weight(1f)
-            .imePadding()
-            .navigationBarsPadding()
             .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -769,7 +719,7 @@ private fun ColumnScope.SuccessScreen(
                 modifier = Modifier
                     .size(72.dp)
                     .scale(popScale.value)
-                    .background(VColors.successSoft, RoundedCornerShape(36.dp)),
+                    .background(VColors.successSoft, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(

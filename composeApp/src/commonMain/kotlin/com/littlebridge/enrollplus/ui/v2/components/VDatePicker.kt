@@ -11,15 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,13 +23,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VShapes
-import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VTheme
+import com.littlebridge.enrollplus.ui.v2.theme.colored
+import com.littlebridge.enrollplus.ui.v2.theme.shapeInput
 import com.littlebridge.enrollplus.util.MONTH_LONG
 import com.littlebridge.enrollplus.util.WEEKDAY_SHORT
 import com.littlebridge.enrollplus.util.dayOfWeek
@@ -45,26 +36,19 @@ import com.littlebridge.enrollplus.util.isoOf
 import com.littlebridge.enrollplus.util.parseIsoDate
 import com.littlebridge.enrollplus.util.todayIso
 
-private val MONTH_SHORT = listOf(
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-)
-
-private fun prettyDate(iso: String): String {
-    val (y, m, d) = parseIsoDate(iso) ?: return iso
-    return "$d ${MONTH_SHORT[m - 1]} $y"
-}
-
-private val YEAR_RANGE = (2000..2099).toList()
-
 /**
- * VDatePicker — premium date picker with month/year dropdown selectors.
+ * VDatePicker — a read-only field that opens a calendar dialog instead of
+ * letting the user type a date. This is the app-wide standard for ALL date
+ * inputs: typing dates by hand (e.g. "YYYY-MM-DD") is error-prone, so every
+ * date is now chosen from a real month grid.
  *
- * Features:
- * - Read-only field that opens a bottom sheet calendar
- * - Month and year selectable via dropdowns (no endless prev/next tapping)
- * - Clean day grid with selected/today states
- * - ISO "YYYY-MM-DD" value on the wire, friendly display in the field
+ * [value] / [onValueChange] use ISO "YYYY-MM-DD" strings to match the rest of
+ * the app (calendars, leave, PTM, announcements all speak ISO on the wire).
+ * The field shows a friendly "13 Jun 2026" label while keeping the ISO value
+ * as the source of truth.
+ *
+ * No new dependency: the calendar math lives in shared/util/DateUtil.kt and is
+ * the same Sakamoto-based logic the existing read-only calendars already use.
  */
 @Composable
 fun VDatePicker(
@@ -76,41 +60,38 @@ fun VDatePicker(
     enabled: Boolean = true,
     isError: Boolean = false,
 ) {
+    val c = VTheme.colors
     var open by remember { mutableStateOf(false) }
 
     Column(modifier.fillMaxWidth()) {
         if (label != null) {
             Text(
                 text = label,
-                style = VTypography.caption.copy(
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = VColors.ink2,
-                modifier = Modifier.padding(bottom = 6.dp),
+                style = VTheme.type.inputLabel.colored(c.ink2),
+                modifier = Modifier.padding(bottom = 8.dp),
             )
         }
         Box(
             Modifier
                 .fillMaxWidth()
-                .clip(VShapes.md)
-                .background(VColors.white)
-                .border(1.5.dp, if (isError) VColors.error else VColors.lineSoft, VShapes.md)
+                .clip(VTheme.dimens.shapeInput)
+                .background(c.cream)
+                .border(1.dp, if (isError) c.danger else c.hairline, VTheme.dimens.shapeInput)
                 .clickable(enabled = enabled) { open = true }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 14.dp, vertical = 14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    VIcons.Calendar,
+                    contentDescription = null,
+                    tint = if (enabled) c.tealDeep else c.ink3,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.size(10.dp))
                 Text(
                     text = value.takeIf { it.isNotBlank() }?.let(::prettyDate) ?: placeholder,
-                    style = VTypography.body.copy(fontSize = 15.sp),
-                    color = if (value.isBlank()) VColors.ink3 else VColors.ink,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = VColors.ink2,
-                    modifier = Modifier.size(20.dp),
+                    style = if (value.isBlank()) VTheme.type.body.colored(c.ink3)
+                    else VTheme.type.body.colored(c.ink),
                 )
             }
         }
@@ -131,276 +112,123 @@ private fun DatePickerSheet(
     onDismiss: () -> Unit,
     onPick: (String) -> Unit,
 ) {
+    val c = VTheme.colors
     val start = parseIsoDate(initialIso) ?: parseIsoDate(todayIso())!!
     var viewYear by remember { mutableStateOf(start.first) }
-    var viewMonth by remember { mutableStateOf(start.second) }
-    var selectedDay by remember { mutableStateOf(start.third) }
-    var selectedIso by remember { mutableStateOf(initialIso) }
+    var viewMonth by remember { mutableStateOf(start.second) } // 1..12
+    var selectedIso by remember { mutableStateOf(isoOf(start.first, start.second, start.third)) }
 
-    // Scrim
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(9999.dp)
-            .background(VColors.ink.copy(alpha = 0.4f))
-            .clickable { onDismiss() },
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(VColors.white, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    VBottomSheet(
+        visible = true,
+        onDismiss = onDismiss,
     ) {
-        // Title row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Select date",
-                style = VTypography.h3.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
-                color = VColors.ink,
-            )
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(VShapes.md)
-                    .background(VColors.surfaceTint)
-                    .clickable { onDismiss() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "✕",
-                    style = VTypography.body.copy(fontSize = 14.sp),
-                    color = VColors.ink2,
-                )
-            }
-        }
-
-        // Month + Year dropdown selectors
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Month dropdown
-            MonthDropdown(
-                selectedMonth = viewMonth,
-                onSelect = { viewMonth = it },
-                modifier = Modifier.weight(1f),
-            )
-            // Year dropdown
-            YearDropdown(
-                selectedYear = viewYear,
-                onSelect = { viewYear = it },
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        // Weekday header
-        Row(Modifier.fillMaxWidth()) {
-            WEEKDAY_SHORT.forEach { d ->
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+        VBottomSheetHeader(title = "Select date")
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Month header with prev / next nav
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Box(
+                        Modifier.size(34.dp).clip(VTheme.dimens.shapeInput)
+                            .clickable {
+                                if (viewMonth == 1) { viewMonth = 12; viewYear-- } else viewMonth--
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(VIcons.ChevronLeft, contentDescription = "Previous month", tint = c.ink, modifier = Modifier.size(22.dp))
+                    }
                     Text(
-                        text = d,
-                        style = VTypography.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-                        color = VColors.ink3,
+                        "${MONTH_LONG[viewMonth - 1]} $viewYear",
+                        style = VTheme.type.h3.colored(c.ink),
                     )
+                    Box(
+                        Modifier.size(34.dp).clip(VTheme.dimens.shapeInput)
+                            .clickable {
+                                if (viewMonth == 12) { viewMonth = 1; viewYear++ } else viewMonth++
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(VIcons.ChevronRight, contentDescription = "Next month", tint = c.ink, modifier = Modifier.size(22.dp))
+                    }
                 }
-            }
-        }
 
-        // Day grid
-        val firstDow = dayOfWeek(viewYear, viewMonth, 1)
-        val total = daysInMonth(viewYear, viewMonth)
-        val cells = firstDow + total
-        val rows = (cells + 6) / 7
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            for (row in 0 until rows) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    for (col in 0 until 7) {
-                        val cellIndex = row * 7 + col
-                        val day = cellIndex - firstDow + 1
-                        Box(
-                            Modifier.weight(1f).aspectRatio(1f),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (day in 1..total) {
-                                val iso = isoOf(viewYear, viewMonth, day)
-                                val isSelected = iso == selectedIso
-                                val isToday = iso == todayIso()
-                                Box(
-                                    Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) VColors.violet else VColors.surfaceWarm)
-                                        .border(
-                                            if (isToday && !isSelected) 1.5.dp else 0.dp,
-                                            if (isToday && !isSelected) VColors.violet else VColors.surfaceWarm,
-                                            RoundedCornerShape(10.dp),
-                                        )
-                                        .clickable {
-                                            selectedDay = day
-                                            selectedIso = iso
-                                        },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        text = day.toString(),
-                                        style = VTypography.body.copy(
-                                            fontSize = 14.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        ),
-                                        color = if (isSelected) VColors.white else VColors.ink,
-                                        textAlign = TextAlign.Center,
-                                    )
+                // Weekday header
+                Row(Modifier.fillMaxWidth()) {
+                    WEEKDAY_SHORT.forEach { d ->
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Text(d, style = VTheme.type.label.colored(c.ink3))
+                        }
+                    }
+                }
+
+                // Day grid
+                val firstDow = dayOfWeek(viewYear, viewMonth, 1) // 0=Sun..6=Sat
+                val total = daysInMonth(viewYear, viewMonth)
+                val cells = firstDow + total
+                val rows = (cells + 6) / 7
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    for (row in 0 until rows) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            for (col in 0 until 7) {
+                                val cellIndex = row * 7 + col
+                                val day = cellIndex - firstDow + 1
+                                Box(Modifier.weight(1f).aspectRatio(1f), contentAlignment = Alignment.Center) {
+                                    if (day in 1..total) {
+                                        val iso = isoOf(viewYear, viewMonth, day)
+                                        val isSelected = iso == selectedIso
+                                        val isToday = iso == todayIso()
+                                        Box(
+                                            Modifier
+                                                .size(38.dp)
+                                                .clip(VTheme.dimens.shapeInput)
+                                                .background(if (isSelected) c.tealDeep else c.card)
+                                                .border(
+                                                    if (isToday && !isSelected) 1.dp else 0.dp,
+                                                    if (isToday && !isSelected) c.tealDeep else c.card,
+                                                    VTheme.dimens.shapeInput,
+                                                )
+                                                .clickable { selectedIso = iso },
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text(
+                                                day.toString(),
+                                                style = VTheme.type.body.colored(if (isSelected) c.card else c.ink),
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-        }
 
-        Spacer(Modifier.height(4.dp))
-
-        // Confirm + Cancel buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 52.dp)
-                    .border(1.5.dp, VColors.violet, VShapes.md)
-                    .clickable { onDismiss() }
-                    .padding(vertical = 15.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
+                Spacer(Modifier.height(2.dp))
+                VButton(
+                    text = "Select",
+                    onClick = { onPick(selectedIso) },
+                    variant = VButtonVariant.Primary,
+                    full = true,
+                )
+                VButton(
                     text = "Cancel",
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.violet,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 52.dp)
-                    .clip(VShapes.md)
-                    .background(VColors.violet)
-                    .clickable { onPick(selectedIso) }
-                    .padding(vertical = 15.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "Confirm",
-                    style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
-                    color = VColors.white,
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Ghost,
+                    full = true,
                 )
             }
         }
     }
-}
 
-@Composable
-private fun MonthDropdown(
-    selectedMonth: Int,
-    onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
+private val MONTH_SHORT = listOf(
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+)
 
-    Box(modifier) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(VShapes.md)
-                .background(VColors.surfaceWarm)
-                .clickable { expanded = true }
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = MONTH_LONG[selectedMonth - 1],
-                style = VTypography.body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
-            )
-            Icon(
-                Icons.Filled.KeyboardArrowDown,
-                contentDescription = null,
-                tint = VColors.ink2,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            MONTH_LONG.forEachIndexed { idx, name ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = name,
-                            style = VTypography.body.copy(fontSize = 15.sp),
-                            color = if (idx + 1 == selectedMonth) VColors.violet else VColors.ink,
-                            fontWeight = if (idx + 1 == selectedMonth) FontWeight.Bold else FontWeight.Normal,
-                        )
-                    },
-                    onClick = { onSelect(idx + 1); expanded = false },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun YearDropdown(
-    selectedYear: Int,
-    onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box(modifier) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(VShapes.md)
-                .background(VColors.surfaceWarm)
-                .clickable { expanded = true }
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = selectedYear.toString(),
-                style = VTypography.body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
-                color = VColors.ink,
-            )
-            Icon(
-                Icons.Filled.KeyboardArrowDown,
-                contentDescription = null,
-                tint = VColors.ink2,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            YEAR_RANGE.forEach { yr ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = yr.toString(),
-                            style = VTypography.body.copy(fontSize = 15.sp),
-                            color = if (yr == selectedYear) VColors.violet else VColors.ink,
-                            fontWeight = if (yr == selectedYear) FontWeight.Bold else FontWeight.Normal,
-                        )
-                    },
-                    onClick = { onSelect(yr); expanded = false },
-                )
-            }
-        }
-    }
+/** "2026-06-13" -> "13 Jun 2026". Falls back to the raw value if unparseable. */
+private fun prettyDate(iso: String): String {
+    val (y, m, d) = parseIsoDate(iso) ?: return iso
+    return "$d ${MONTH_SHORT[m - 1]} $y"
 }
