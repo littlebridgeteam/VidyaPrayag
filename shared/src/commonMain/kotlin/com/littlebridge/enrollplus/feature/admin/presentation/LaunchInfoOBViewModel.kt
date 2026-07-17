@@ -135,8 +135,10 @@ class LaunchInfoOBViewModel(
                 is NetworkResult.Error -> {
                     AppLogger.e("OnboardingReview", "Failed to load REVIEW step: ${result.message} (code=${result.code})")
                     if (result.code == 401) {
-                        preferenceRepository.clearSession()
-                        _errorMessage.value = "Your session expired. Please sign in again before continuing onboarding."
+                        // TokenAuthenticator handles session clearing on true auth failure.
+                        // Don't clearSession() here — transient 401s (Render spin-down)
+                        // would log the user out unnecessarily.
+                        _errorMessage.value = "Connection issue. Please try again."
                     }
                 }
                 is NetworkResult.ConnectionError -> {
@@ -243,8 +245,10 @@ class LaunchInfoOBViewModel(
                 is NetworkResult.Error -> {
                     AppLogger.e("OnboardingReview", "Final submit failed: ${result.message} (code=${result.code})")
                     _errorMessage.value = if (result.code == 401) {
-                        preferenceRepository.clearSession()
-                        "Your session expired. Please sign in again before launching the school profile."
+                        // TokenAuthenticator already attempted refresh. If it was a
+                        // true session invalidation, the session is already cleared.
+                        // If transient (Render spin-down), session is still alive.
+                        "Connection issue. Please try again."
                     } else {
                         result.message
                     }

@@ -353,6 +353,7 @@ private data class ResolvedChild(
     val childName: String,
     val schoolId: UUID?,
     val studentCode: String?,
+    val studentId: UUID?,
     val grade: String?,
     val section: String,
     // RA-S19: true only when `section` came from a linked `students` row. When the
@@ -394,6 +395,7 @@ private suspend fun ApplicationCall.requireOwnedChild(): ResolvedChild? {
         childName = row[ChildrenTable.childName],
         schoolId = row[ChildrenTable.schoolId],
         studentCode = studentCode,
+        studentId = student?.get(StudentsTable.id)?.value,
         grade = student?.get(StudentsTable.className) ?: row[ChildrenTable.currentGrade],
         section = linkedSection ?: "A",
         sectionResolved = linkedSection != null,
@@ -1163,10 +1165,10 @@ fun Route.parentAcademicsRouting() {
                 val totalMarks = questions.size
                 val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
 
-                // Gamification XP hook — quiz completed
-                val childId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                if (childId != null && child.schoolId != null) {
-                    XpHooks.onQuizCompleted(childId, child.schoolId, correctCount, totalMarks)
+                // Gamification XP hook — quiz completed (GAM-020: use studentId, not childId)
+                val studentId = child.studentId
+                if (studentId != null && child.schoolId != null) {
+                    XpHooks.onQuizCompleted(studentId, child.schoolId, correctCount, totalMarks)
                 }
 
                 call.ok(

@@ -53,6 +53,7 @@ import com.littlebridge.enrollplus.feature.gamification.presentation.AdminGamifi
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
@@ -68,6 +69,13 @@ fun AdminGamificationScreenV2(
     viewModel: AdminGamificationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+
+    var pendingApproveRedemptionId by remember { mutableStateOf<String?>(null) }
+    var pendingRejectRedemptionId by remember { mutableStateOf<String?>(null) }
+    var pendingCreateBoost by remember { mutableStateOf(false) }
+    var pendingBoostParams by remember { mutableStateOf<Triple<String, Float, String>?>(null) }
+    var pendingBoostTargetId by remember { mutableStateOf<String?>(null) }
+    var pendingBoostHours by remember { mutableStateOf(24) }
 
     LaunchedEffect(Unit) { viewModel.load() }
 
@@ -162,11 +170,64 @@ fun AdminGamificationScreenV2(
                 item { QuestsCard(quests = state.quests) }
                 item { EventsCard(events = state.events) }
                 item { LeaderboardCard(leaderboard = state.leaderboard) }
-                item { RedemptionsCard(state = state, onApprove = { id -> viewModel.updateRedemptionStatus(id, "APPROVED") }, onReject = { id -> viewModel.updateRedemptionStatus(id, "REJECTED") }) }
-                item { BoostsCard(state = state, onCreateBoost = { type, mult, scope, tid, hrs -> viewModel.createBoost(type, mult, scope, tid, hrs) }) }
+                item { RedemptionsCard(state = state, onApprove = { id -> pendingApproveRedemptionId = id }, onReject = { id -> pendingRejectRedemptionId = id }) }
+                item { BoostsCard(state = state, onCreateBoost = { type, mult, scope, tid, hrs -> pendingCreateBoost = true; pendingBoostParams = Triple(type, mult, scope); pendingBoostTargetId = tid; pendingBoostHours = hrs }) }
             }
             }
         }
+    }
+
+    // GAM-022: Confirmation dialogs for redemption approve/reject
+    pendingApproveRedemptionId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Approve Redemption?",
+            message = "This will approve the reward redemption request.",
+            confirmLabel = "Approve",
+            onConfirm = {
+                viewModel.updateRedemptionStatus(id, "APPROVED")
+                pendingApproveRedemptionId = null
+            },
+            onDismiss = { pendingApproveRedemptionId = null },
+        )
+    }
+    pendingRejectRedemptionId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Reject Redemption?",
+            message = "This will reject the reward redemption request. The student's XP will be refunded.",
+            confirmLabel = "Reject",
+            onConfirm = {
+                viewModel.updateRedemptionStatus(id, "REJECTED")
+                pendingRejectRedemptionId = null
+            },
+            onDismiss = { pendingRejectRedemptionId = null },
+        )
+    }
+
+    // GAM-026: Confirmation dialog for boost creation
+    if (pendingCreateBoost) {
+        VConfirmDialog(
+            visible = true,
+            title = "Create XP Boost?",
+            message = "This will activate a ${pendingBoostParams?.third?.lowercase() ?: "all"} XP boost with ${pendingBoostParams?.second ?: 1.0f}x multiplier for ${pendingBoostHours}h.",
+            confirmLabel = "Create",
+            onConfirm = {
+                pendingBoostParams?.let { (type, mult, scope) ->
+                    viewModel.createBoost(type, mult, scope, pendingBoostTargetId, pendingBoostHours)
+                }
+                pendingCreateBoost = false
+                pendingBoostParams = null
+                pendingBoostTargetId = null
+                pendingBoostHours = 24
+            },
+            onDismiss = {
+                pendingCreateBoost = false
+                pendingBoostParams = null
+                pendingBoostTargetId = null
+                pendingBoostHours = 24
+            },
+        )
     }
 }
 
@@ -337,7 +398,7 @@ private fun AnalyticsMetric(label: String, value: String, color: Color) {
 @Composable
 private fun BadgeDefinitionsCard(badges: List<BadgeDefinition>) {
     if (badges.isEmpty()) return
-    AdminCard(title = "Badge Catalog (${badges.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_BADGE_CATALOG, "count" to badges.size)) {
         badges.forEach { badge ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -365,7 +426,7 @@ private fun BadgeDefinitionsCard(badges: List<BadgeDefinition>) {
 @Composable
 private fun LevelDefinitionsCard(levels: List<LevelDefinition>) {
     if (levels.isEmpty()) return
-    AdminCard(title = "Level Definitions (${levels.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_LEVEL_DEFINITIONS, "count" to levels.size)) {
         levels.forEach { level ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -388,7 +449,7 @@ private fun LevelDefinitionsCard(levels: List<LevelDefinition>) {
 @Composable
 private fun HousesCard(houses: List<House>) {
     if (houses.isEmpty()) return
-    AdminCard(title = "Houses (${houses.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_HOUSES, "count" to houses.size)) {
         houses.forEach { house ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -408,7 +469,7 @@ private fun HousesCard(houses: List<House>) {
 @Composable
 private fun RewardsCard(rewards: List<Reward>) {
     if (rewards.isEmpty()) return
-    AdminCard(title = "Rewards Catalog (${rewards.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_REWARDS_CATALOG, "count" to rewards.size)) {
         rewards.forEach { reward ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -429,7 +490,7 @@ private fun RewardsCard(rewards: List<Reward>) {
 @Composable
 private fun QuestsCard(quests: List<QuestDefinition>) {
     if (quests.isEmpty()) return
-    AdminCard(title = "Quest Pool (${quests.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_QUEST_POOL, "count" to quests.size)) {
         quests.forEach { quest ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -449,7 +510,7 @@ private fun QuestsCard(quests: List<QuestDefinition>) {
 @Composable
 private fun EventsCard(events: List<SeasonalEvent>) {
     if (events.isEmpty()) return
-    AdminCard(title = "Seasonal Events (${events.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_EVENTS_TITLE, "count" to events.size)) {
         events.forEach { event ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -469,7 +530,7 @@ private fun EventsCard(events: List<SeasonalEvent>) {
 @Composable
 private fun LeaderboardCard(leaderboard: List<LeaderboardEntry>) {
     if (leaderboard.isEmpty()) return
-    AdminCard(title = "School Leaderboard (Top ${leaderboard.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_SCHOOL_LEADERBOARD, "count" to leaderboard.size)) {
         leaderboard.take(10).forEach { entry ->
             val rankColor = when (entry.rank) {
                 1 -> VColors.gold
@@ -489,7 +550,7 @@ private fun LeaderboardCard(leaderboard: List<LeaderboardEntry>) {
                     Text("${entry.rank}", style = VTypography.body.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), color = rankColor)
                 }
                 Text("Student #${entry.studentId.takeLast(6)}", style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink, modifier = Modifier.weight(1f))
-                Text("Lv ${entry.currentLevel}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+                Text(appString(StringKeys.AGAM_LV, "level" to entry.currentLevel), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
                 Spacer(Modifier.size(8.dp))
                 Text("${entry.totalXp} XP", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
             }
@@ -504,7 +565,7 @@ private fun RedemptionsCard(
     onReject: (String) -> Unit,
 ) {
     if (state.redemptions.isEmpty()) return
-    AdminCard(title = "Redemption Approvals (${state.redemptions.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_REDEMPTION_APPROVALS, "count" to state.redemptions.size)) {
         state.redemptions.forEach { redemption ->
             val id = redemption["id"]?.toString() ?: return@forEach
             val rewardName = redemption["rewardName"]?.toString() ?: "Unknown"
@@ -528,7 +589,7 @@ private fun RedemptionsCard(
                             .clickable { onApprove(id) }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                     ) {
-                        Text("Approve", style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.mint)
+                        Text(appString(StringKeys.AGAM_APPROVE), style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.mint)
                     }
                     Box(
                         modifier = Modifier
@@ -537,7 +598,7 @@ private fun RedemptionsCard(
                             .clickable { onReject(id) }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                     ) {
-                        Text("Reject", style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.error)
+                        Text(appString(StringKeys.AGAM_REJECT), style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.error)
                     }
                 } else {
                     StatusPill(status, if (status == "APPROVED") VColors.mint else VColors.error)
@@ -559,7 +620,7 @@ private fun BoostsCard(
     var targetId by remember { mutableStateOf("") }
     var durationHours by remember { mutableStateOf("24") }
 
-    AdminCard(title = "XP Boosts (${state.boosts.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_BOOSTS_TITLE, "count" to state.boosts.size)) {
         state.boosts.forEach { boost ->
             val type = boost["boostType"]?.toString() ?: "Unknown"
             val mult = boost["multiplier"]?.toString() ?: "1.0"
@@ -585,7 +646,7 @@ private fun BoostsCard(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                if (showForm) "Cancel" else "+ Create New Boost",
+                if (showForm) appString(StringKeys.COMMON_BUTTON_CANCEL) else appString(StringKeys.AGAM_CREATE_NEW_BOOST),
                 style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                 color = VColors.violet,
             )
@@ -596,7 +657,7 @@ private fun BoostsCard(
             OutlinedTextField(
                 value = boostType,
                 onValueChange = { boostType = it },
-                label = { Text("Boost Type") },
+                label = { Text(appString(StringKeys.AGAM_BOOST_TYPE)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
@@ -605,7 +666,7 @@ private fun BoostsCard(
             OutlinedTextField(
                 value = multiplier,
                 onValueChange = { multiplier = it },
-                label = { Text("Multiplier (e.g. 2.0)") },
+                label = { Text(appString(StringKeys.AGAM_MULTIPLIER_LABEL)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
@@ -615,7 +676,7 @@ private fun BoostsCard(
             OutlinedTextField(
                 value = targetScope,
                 onValueChange = { targetScope = it.uppercase() },
-                label = { Text("Target Scope (ALL / CLASS / STUDENT)") },
+                label = { Text(appString(StringKeys.AGAM_TARGET_SCOPE)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
@@ -635,7 +696,7 @@ private fun BoostsCard(
             OutlinedTextField(
                 value = durationHours,
                 onValueChange = { durationHours = it },
-                label = { Text("Duration (hours)") },
+                label = { Text(appString(StringKeys.AGAM_DURATION_HOURS)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
@@ -660,7 +721,7 @@ private fun BoostsCard(
                 if (state.isActionLoading) {
                     CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
                 } else {
-                    Text("Create Boost", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                    Text(appString(StringKeys.AGAM_CREATE_BOOST), style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
                 }
             }
         }

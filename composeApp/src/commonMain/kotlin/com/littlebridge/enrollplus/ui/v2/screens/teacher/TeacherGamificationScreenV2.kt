@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -43,6 +45,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -303,6 +306,9 @@ fun TeacherClassGamificationCard(
     var buddy1Id by remember { mutableStateOf("") }
     var buddy2Id by remember { mutableStateOf("") }
     var goalError by remember { mutableStateOf("") }
+    var pendingDeleteShoutoutId by remember { mutableStateOf<String?>(null) }
+    var pendingUnassignMentorId by remember { mutableStateOf<String?>(null) }
+    var pendingUnassignBuddyId by remember { mutableStateOf<String?>(null) }
 
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -449,7 +455,7 @@ fun TeacherClassGamificationCard(
                 state.shoutouts.take(5).forEach { shoutout ->
                     ShoutoutRow(
                         shoutout = shoutout,
-                        onDelete = { id -> gamificationViewModel.deleteShoutout(id) },
+                        onDelete = { id -> pendingDeleteShoutoutId = id },
                     )
                 }
             }
@@ -480,7 +486,7 @@ fun TeacherClassGamificationCard(
                         Text(
                             appString(StringKeys.GAM_REMOVE),
                             style = VTypography.caption, color = VColors.error, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { gamificationViewModel.unassignMentor(aId) },
+                            modifier = Modifier.clickable { pendingUnassignMentorId = aId },
                         )
                     }
                 }
@@ -499,23 +505,17 @@ fun TeacherClassGamificationCard(
 
             if (showMentorForm) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = mentorId,
-                        onValueChange = { mentorId = it },
-                        placeholder = { Text(appString(StringKeys.GAM_MENTOR_ID_PH)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        textStyle = VTypography.body.copy(color = VColors.ink),
-                        shape = VShapes.md,
+                    StudentPickerDropdown(
+                        label = appString(StringKeys.GAM_MENTOR_ID_PH),
+                        students = state.classLeaderboard,
+                        selectedId = mentorId,
+                        onSelected = { mentorId = it },
                     )
-                    OutlinedTextField(
-                        value = menteeId,
-                        onValueChange = { menteeId = it },
-                        placeholder = { Text(appString(StringKeys.GAM_MENTEE_ID_PH)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        textStyle = VTypography.body.copy(color = VColors.ink),
-                        shape = VShapes.md,
+                    StudentPickerDropdown(
+                        label = appString(StringKeys.GAM_MENTEE_ID_PH),
+                        students = state.classLeaderboard,
+                        selectedId = menteeId,
+                        onSelected = { menteeId = it },
                     )
                     VButton(
                         appString(StringKeys.GAM_ASSIGN),
@@ -556,7 +556,7 @@ fun TeacherClassGamificationCard(
                         Text(
                             appString(StringKeys.GAM_REMOVE),
                             style = VTypography.caption, color = VColors.error, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { gamificationViewModel.unassignStudyBuddy(pId) },
+                            modifier = Modifier.clickable { pendingUnassignBuddyId = pId },
                         )
                     }
                 }
@@ -575,23 +575,17 @@ fun TeacherClassGamificationCard(
 
             if (showBuddyForm) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = buddy1Id,
-                        onValueChange = { buddy1Id = it },
-                        placeholder = { Text(appString(StringKeys.GAM_STUDENT1_ID_PH)) },
-                        modifier = Modifier.fillMaxWidth().defaultMinSize(minWidth = 120.dp),
-                        singleLine = true,
-                        textStyle = VTypography.body.copy(color = VColors.ink),
-                        shape = VShapes.md,
+                    StudentPickerDropdown(
+                        label = appString(StringKeys.GAM_STUDENT1_ID_PH),
+                        students = state.classLeaderboard,
+                        selectedId = buddy1Id,
+                        onSelected = { buddy1Id = it },
                     )
-                    OutlinedTextField(
-                        value = buddy2Id,
-                        onValueChange = { buddy2Id = it },
-                        placeholder = { Text(appString(StringKeys.GAM_STUDENT2_ID_PH)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        textStyle = VTypography.body.copy(color = VColors.ink),
-                        shape = VShapes.md,
+                    StudentPickerDropdown(
+                        label = appString(StringKeys.GAM_STUDENT2_ID_PH),
+                        students = state.classLeaderboard,
+                        selectedId = buddy2Id,
+                        onSelected = { buddy2Id = it },
                     )
                     VButton(
                         appString(StringKeys.GAM_PAIR_THEM),
@@ -633,6 +627,47 @@ fun TeacherClassGamificationCard(
                 }
             }
         }
+    }
+
+    // GAM-021: Confirmation dialogs for destructive actions
+    pendingDeleteShoutoutId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Delete Shoutout?",
+            message = "This shoutout will be permanently removed.",
+            confirmLabel = "Delete",
+            onConfirm = {
+                gamificationViewModel.deleteShoutout(id)
+                pendingDeleteShoutoutId = null
+            },
+            onDismiss = { pendingDeleteShoutoutId = null },
+        )
+    }
+    pendingUnassignMentorId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Remove Mentor Assignment?",
+            message = "This mentor-mentee pairing will be removed.",
+            confirmLabel = "Remove",
+            onConfirm = {
+                gamificationViewModel.unassignMentor(id)
+                pendingUnassignMentorId = null
+            },
+            onDismiss = { pendingUnassignMentorId = null },
+        )
+    }
+    pendingUnassignBuddyId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Remove Study Buddy Pair?",
+            message = "This study buddy pairing will be removed.",
+            confirmLabel = "Remove",
+            onConfirm = {
+                gamificationViewModel.unassignStudyBuddy(id)
+                pendingUnassignBuddyId = null
+            },
+            onDismiss = { pendingUnassignBuddyId = null },
+        )
     }
 }
 
@@ -794,5 +829,59 @@ private fun ShoutoutRow(
                 .clip(CircleShape)
                 .clickable(interactionSource = ix, indication = null) { onDelete(id) },
         )
+    }
+}
+
+@Composable
+private fun StudentPickerDropdown(
+    label: String,
+    students: List<LeaderboardEntry>,
+    selectedId: String,
+    onSelected: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val c = VtC
+    val selectedName = students.find { it.studentId == selectedId }?.studentName ?: ""
+
+    Box {
+        OutlinedTextField(
+            value = selectedName,
+            onValueChange = {},
+            readOnly = true,
+            placeholder = { Text(label, color = c.ink3) },
+            modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+            singleLine = true,
+            textStyle = VTypography.body.copy(color = VColors.ink),
+            shape = VShapes.md,
+            trailingIcon = {
+                Icon(
+                    VIcons.ChevronDown,
+                    contentDescription = null,
+                    tint = c.ink3,
+                    modifier = Modifier.size(18.dp),
+                )
+            },
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            if (students.isEmpty()) {
+                DropdownMenuItem(
+                    text = { Text("No students available", style = VTypography.caption, color = c.ink3) },
+                    onClick = { expanded = false },
+                )
+            } else {
+                students.forEach { student ->
+                    DropdownMenuItem(
+                        text = { Text(student.studentName, style = VTypography.body) },
+                        onClick = {
+                            onSelected(student.studentId)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
     }
 }

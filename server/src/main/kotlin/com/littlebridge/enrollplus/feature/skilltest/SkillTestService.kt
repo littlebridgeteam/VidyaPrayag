@@ -28,6 +28,7 @@ package com.littlebridge.enrollplus.feature.skilltest
 import com.littlebridge.enrollplus.db.ChildHolisticMetricsTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.GameBadgeDefinitionsTable
 import com.littlebridge.enrollplus.db.GameStudentBadgesTable
 import com.littlebridge.enrollplus.db.SkillTestAnswersTable
@@ -740,10 +741,21 @@ object SkillTestService {
                 nextEligible = nextEligible,
             )
 
-            // Award XP via gamification
+            // Award XP via gamification (GAM-020: resolve childId→studentId via studentCode)
             if (schoolId != null) {
                 try {
-                    XpHooks.onQuizCompleted(childId, schoolId, correctSoFar, totalQuestions)
+                    val resolvedStudentId = dbQuery {
+                        val childRow = ChildrenTable.selectAll()
+                            .where { ChildrenTable.id eq childId }
+                            .firstOrNull() ?: return@dbQuery null
+                        val sCode = childRow[ChildrenTable.studentCode] ?: return@dbQuery null
+                        StudentsTable.selectAll()
+                            .where { StudentsTable.studentCode eq sCode }
+                            .firstOrNull()?.get(StudentsTable.id)?.value
+                    }
+                    if (resolvedStudentId != null) {
+                        XpHooks.onQuizCompleted(resolvedStudentId, schoolId, correctSoFar, totalQuestions)
+                    }
                 } catch (e: Exception) {
                     log.warn("XP award failed for skill test: {}", e.message)
                 }
