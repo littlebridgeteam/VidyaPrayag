@@ -41,10 +41,13 @@ import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.okMessage
 import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.db.AppUsersTable
+import com.littlebridge.enrollplus.db.ChildrenTable
+import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.AuthOtpsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.SchoolsTable
 import com.littlebridge.enrollplus.db.UserSessionsTable
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notification.repository.DeviceTokenRepository
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -54,6 +57,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.or
@@ -705,6 +709,31 @@ fun Route.authRouting() {
                 ip = call.request.origin.remoteHost,
                 ua = call.request.headers["User-Agent"]
             )
+
+            // GAM-024: Award daily login XP to all children linked to this parent.
+            // Students don't log in directly — the parent's login counts for them.
+            if (role == "parent") {
+                try {
+                    val linkedStudents = dbQuery {
+                        ChildrenTable.join(
+                            StudentsTable,
+                            JoinType.INNER,
+                            ChildrenTable.studentCode,
+                            StudentsTable.studentCode
+                        ).selectAll()
+                            .where {
+                                (ChildrenTable.parentId eq userId) and
+                                (ChildrenTable.isActive eq true)
+                            }
+                            .map { it[StudentsTable.id].value to it[StudentsTable.schoolId] }
+                    }
+                    linkedStudents.forEach { (studentId, schoolId) ->
+                        XpHooks.onDailyLogin(studentId, schoolId)
+                    }
+                } catch (_: Exception) {
+                    // Fire-and-forget — never block login
+                }
+            }
 
             call.ok(
                 AuthTokenResponse(

@@ -67,4 +67,21 @@ interface GamificationRepository {
     suspend fun getAdminBoosts(token: String): NetworkResult<ApiResponse<List<Map<String, *>>>>
     suspend fun createBoost(token: String, boostType: String, multiplier: Float, targetScope: String = "ALL", targetId: String? = null, durationHours: Int = 24): NetworkResult<ApiResponse<Map<String, *>>>
     suspend fun getAnalytics(token: String): NetworkResult<ApiResponse<Map<String, *>>>
+
+    // Parent: Combo status
+    suspend fun getCombos(token: String, childId: String): NetworkResult<ApiResponse<ComboStatus>>
+
+    // Admin CRUD
+    suspend fun createBadge(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun toggleBadgeActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun createLevel(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun toggleLevelActive(token: String, level: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun createHouse(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun deleteHouse(token: String, houseId: String): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun createReward(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun toggleRewardActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun createQuest(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun toggleQuestActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun createEvent(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>>
+    suspend fun toggleEventActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>>
 }

@@ -4732,3 +4732,18 @@ object FeeLateFeeTiersTable : UUIDTable("fee_late_fee_tiers", "id") {
 }
 
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)
+
+object GameStudentCombosTable : UUIDTable("game_student_combos", "id") {
+    val studentId    = uuid("student_id")
+    val schoolId     = uuid("school_id")
+    val comboType    = varchar("combo_type", 32)  // HOMEWORK, ATTENDANCE, STUDY, READING
+    val streakCount  = integer("streak_count").default(0)
+    val lastEventAt  = timestamp("last_event_at")
+    val isActive     = bool("is_active").default(true)
+    val createdAt    = timestamp("created_at")
+    val updatedAt    = timestamp("updated_at")
+
+    init {
+        uniqueIndex("ux_student_combo_type", studentId, comboType)
+    }
+}

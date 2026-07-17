@@ -189,10 +189,22 @@ object GamificationService {
     ): XpAwardResult = dbQuery {
         val flags = getGamificationFlagsRaw()
         val enabled = flags["is_gamification_enabled"]?.toBoolean() ?: false
+        val combosEnabled = flags["gamification_combos"]?.toBoolean() ?: true
 
         // Get active boosts
-        val multiplier = getActiveBoostMultiplier(schoolId, studentId)
-        val finalAmount = (amount * multiplier).toInt()
+        val boostMultiplier = getActiveBoostMultiplier(schoolId, studentId)
+
+        // Get combo multiplier if combos are enabled and source matches a combo type
+        val comboType = sourceToComboType(source)
+        val comboMultiplier = if (combosEnabled && comboType != null) {
+            ComboService.getComboMultiplier(studentId, comboType)
+        } else {
+            1.0f
+        }
+
+        // Combined multiplier (capped at x5 per spec)
+        val totalMultiplier = minOf(boostMultiplier * comboMultiplier, 5.0f)
+        val finalAmount = (amount * totalMultiplier).toInt()
 
         // Ensure student stats row exists
         ensureStatsRow(studentId, schoolId)
@@ -306,7 +318,46 @@ object GamificationService {
             }
     }
 
+    suspend fun createLevel(schoolId: UUID?, req: CreateLevelRequest): LevelDefinitionDto? = dbQuery {
+        val existing = GameLevelDefinitionsTable.selectAll()
+            .where { (GameLevelDefinitionsTable.schoolId eq schoolId) and (GameLevelDefinitionsTable.level eq req.level) }
+            .firstOrNull()
+        if (existing != null) return@dbQuery null
+
+        GameLevelDefinitionsTable.insert {
+            it[GameLevelDefinitionsTable.schoolId] = schoolId
+            it[GameLevelDefinitionsTable.level] = req.level
+            it[GameLevelDefinitionsTable.xpRequired] = req.xpRequired
+            it[GameLevelDefinitionsTable.title] = req.title
+            it[GameLevelDefinitionsTable.iconName] = req.iconName
+            it[GameLevelDefinitionsTable.isActive] = true
+            it[GameLevelDefinitionsTable.createdAt] = Instant.now()
+        }
+        LevelDefinitionDto(
+            level = req.level, xpRequired = req.xpRequired,
+            title = req.title, iconName = req.iconName
+        )
+    }
+
+    suspend fun toggleLevelActive(level: Int, isActive: Boolean): Boolean = dbQuery {
+        GameLevelDefinitionsTable.update({
+            (GameLevelDefinitionsTable.schoolId.isNull()) and (GameLevelDefinitionsTable.level eq level)
+        }) {
+            it[GameLevelDefinitionsTable.isActive] = isActive
+        } > 0
+    }
+
     // ── Internal helpers ─────────────────────────────────────────────────
+
+    private fun sourceToComboType(source: String): String? {
+        return when (source.uppercase()) {
+            "HOMEWORK_REVIEWED", "HOMEWORK" -> "HOMEWORK"
+            "ATTENDANCE_PRESENT", "ATTENDANCE" -> "ATTENDANCE"
+            "QUIZ_COMPLETED", "SYLLABUS_TOPIC_COVERED", "AI_TUTOR", "STUDY" -> "STUDY"
+            "LIBRARY_BOOK_RETURNED", "READING" -> "READING"
+            else -> null
+        }
+    }
 
     private fun getGamificationFlagsRaw(): Map<String, String> {
         val flagsRow = AppConfigTable.selectAll()

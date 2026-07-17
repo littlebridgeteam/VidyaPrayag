@@ -26,6 +26,7 @@ data class ParentGamificationState(
     val rewards: List<Reward> = emptyList(),
     val redemptions: List<RewardRedemption> = emptyList(),
     val events: List<SeasonalEvent> = emptyList(),
+    val comboStatus: ComboStatus? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
 )
@@ -59,6 +60,7 @@ class ParentGamificationViewModel(
             val rewards = safeCall { repository.getRewards(token, childId) }
             val redemptions = safeCall { repository.getRedemptions(token, childId) }
             val events = safeCall { repository.getActiveEvents(token) }
+            val combos = safeCall { repository.getCombos(token, childId) }
 
             _state.update {
                 it.copy(
@@ -74,6 +76,7 @@ class ParentGamificationViewModel(
                     rewards = rewards ?: emptyList(),
                     redemptions = redemptions ?: emptyList(),
                     events = events ?: emptyList(),
+                    comboStatus = combos,
                     error = errorMsg,
                 )
             }
@@ -644,6 +647,237 @@ class AdminGamificationViewModel(
 
     fun clearActionMessage() {
         _state.update { it.copy(actionMessage = null) }
+    }
+
+    // ── Admin CRUD: Badges ─────────────────────────────────────────────
+    fun createBadge(code: String, name: String, description: String, iconName: String, category: String, rarity: String, xpRequirement: Int, isSeasonal: Boolean) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.createBadge(token, mapOf(
+                "code" to code, "name" to name, "description" to description,
+                "iconName" to iconName, "category" to category, "rarity" to rarity,
+                "xpRequirement" to xpRequirement, "isSeasonal" to isSeasonal
+            ))
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Badge '$name' created"
+                    else -> "Failed to create badge"
+                })
+            }
+            load()
+        }
+    }
+
+    fun toggleBadgeActive(id: String, isActive: Boolean) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.toggleBadgeActive(token, id, isActive)
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Badge ${if (isActive) "activated" else "deactivated"}"
+                    else -> "Failed to toggle badge"
+                })
+            }
+            load()
+        }
+    }
+
+    // ── Admin CRUD: Levels ─────────────────────────────────────────────
+    fun createLevel(level: Int, xpRequired: Int, title: String, iconName: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.createLevel(token, mapOf(
+                "level" to level, "xpRequired" to xpRequired,
+                "title" to title, "iconName" to iconName
+            ))
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Level $level created"
+                    else -> "Failed to create level"
+                })
+            }
+            load()
+        }
+    }
+
+    fun toggleLevelActive(level: String, isActive: Boolean) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.toggleLevelActive(token, level, isActive)
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Level ${if (isActive) "activated" else "deactivated"}"
+                    else -> "Failed to toggle level"
+                })
+            }
+            load()
+        }
+    }
+
+    // ── Admin CRUD: Houses ─────────────────────────────────────────────
+    fun createHouse(name: String, iconName: String, color: String, motto: String?) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.createHouse(token, mapOf(
+                "name" to name, "iconName" to iconName, "color" to color, "motto" to (motto ?: "")
+            ))
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "House '$name' created"
+                    else -> "Failed to create house"
+                })
+            }
+            load()
+        }
+    }
+
+    fun deleteHouse(houseId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.deleteHouse(token, houseId)
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "House deleted"
+                    else -> "Failed to delete house"
+                })
+            }
+            load()
+        }
+    }
+
+    // ── Admin CRUD: Rewards ────────────────────────────────────────────
+    fun createReward(name: String, description: String, iconName: String, xpCost: Int, stockLimit: Int?, fulfillmentRole: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val body = mutableMapOf<String, Any>(
+                "name" to name, "description" to description,
+                "iconName" to iconName, "xpCost" to xpCost, "fulfillmentRole" to fulfillmentRole
+            )
+            stockLimit?.let { body["stockLimit"] = it }
+            val result = repository.createReward(token, body)
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Reward '$name' created"
+                    else -> "Failed to create reward"
+                })
+            }
+            load()
+        }
+    }
+
+    fun toggleRewardActive(id: String, isActive: Boolean) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.toggleRewardActive(token, id, isActive)
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Reward ${if (isActive) "activated" else "deactivated"}"
+                    else -> "Failed to toggle reward"
+                })
+            }
+            load()
+        }
+    }
+
+    // ── Admin CRUD: Quests ─────────────────────────────────────────────
+    fun createQuest(code: String, name: String, description: String, questType: String, category: String, xpReward: Int, durationHours: Int) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.createQuest(token, mapOf(
+                "code" to code, "name" to name, "description" to description,
+                "questType" to questType, "category" to category,
+                "xpReward" to xpReward, "durationHours" to durationHours
+            ))
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Quest '$name' created"
+                    else -> "Failed to create quest"
+                })
+            }
+            load()
+        }
+    }
+
+    fun toggleQuestActive(id: String, isActive: Boolean) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.toggleQuestActive(token, id, isActive)
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Quest ${if (isActive) "activated" else "deactivated"}"
+                    else -> "Failed to toggle quest"
+                })
+            }
+            load()
+        }
+    }
+
+    // ── Admin CRUD: Events ─────────────────────────────────────────────
+    fun createEvent(code: String, name: String, startDate: String, endDate: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.createEvent(token, mapOf(
+                "code" to code, "name" to name,
+                "startDate" to startDate, "endDate" to endDate
+            ))
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Event '$name' created"
+                    else -> "Failed to create event"
+                })
+            }
+            load()
+        }
+    }
+
+    fun toggleEventActive(id: String, isActive: Boolean) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = preferenceRepository.getUserToken().first() ?: run {
+                _state.update { it.copy(isActionLoading = false) }; return@launch
+            }
+            val result = repository.toggleEventActive(token, id, isActive)
+            _state.update {
+                it.copy(isActionLoading = false, actionMessage = when (result) {
+                    is NetworkResult.Success -> "Event ${if (isActive) "activated" else "deactivated"}"
+                    else -> "Failed to toggle event"
+                })
+            }
+            load()
+        }
     }
 
     private inline fun <T> safeCall(block: () -> NetworkResult<ApiResponse<T>>): T? {

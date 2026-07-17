@@ -236,6 +236,40 @@ object QuestService {
         }
         completed
     }
+
+    suspend fun createQuest(schoolId: UUID?, req: CreateQuestRequest): QuestDefinitionDto? = dbQuery {
+        val existing = GameQuestDefinitionsTable.selectAll()
+            .where { GameQuestDefinitionsTable.code eq req.code }
+            .firstOrNull()
+        if (existing != null) return@dbQuery null
+
+        val id = GameQuestDefinitionsTable.insert {
+            it[GameQuestDefinitionsTable.schoolId] = schoolId
+            it[GameQuestDefinitionsTable.code] = req.code
+            it[GameQuestDefinitionsTable.name] = req.name
+            it[GameQuestDefinitionsTable.description] = req.description
+            it[GameQuestDefinitionsTable.questType] = req.questType
+            it[GameQuestDefinitionsTable.category] = req.category
+            it[GameQuestDefinitionsTable.xpReward] = req.xpReward
+            it[GameQuestDefinitionsTable.criteriaJson] = req.criteriaJson
+            it[GameQuestDefinitionsTable.targetScope] = req.targetScope
+            it[GameQuestDefinitionsTable.durationHours] = req.durationHours
+            it[GameQuestDefinitionsTable.isActive] = true
+            it[GameQuestDefinitionsTable.createdAt] = Instant.now()
+        }[GameQuestDefinitionsTable.id].value
+
+        QuestDefinitionDto(
+            id = id.toString(), code = req.code, name = req.name,
+            description = req.description, xpReward = req.xpReward,
+            questType = req.questType, isActive = true
+        )
+    }
+
+    suspend fun toggleQuestActive(questId: UUID, isActive: Boolean): Boolean = dbQuery {
+        GameQuestDefinitionsTable.update({ GameQuestDefinitionsTable.id eq questId }) {
+            it[GameQuestDefinitionsTable.isActive] = isActive
+        } > 0
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -311,6 +345,34 @@ object HouseService {
             totalPoints = 0,
             memberCount = 0
         )
+    }
+
+    suspend fun createHouse(schoolId: UUID, req: CreateHouseRequest): HouseDto? = dbQuery {
+        val existing = GameHousesTable.selectAll()
+            .where { (GameHousesTable.schoolId eq schoolId) and (GameHousesTable.name eq req.name) }
+            .firstOrNull()
+        if (existing != null) return@dbQuery null
+
+        val id = GameHousesTable.insert {
+            it[GameHousesTable.schoolId] = schoolId
+            it[GameHousesTable.name] = req.name
+            it[GameHousesTable.iconName] = req.iconName
+            it[GameHousesTable.color] = req.color
+            it[GameHousesTable.motto] = req.motto
+            it[GameHousesTable.createdAt] = Instant.now()
+        }[GameHousesTable.id].value
+
+        HouseDto(id = id.toString(), name = req.name, iconName = req.iconName,
+            color = req.color, totalPoints = 0, memberCount = 0)
+    }
+
+    suspend fun deleteHouse(houseId: UUID, schoolId: UUID): Boolean = dbQuery {
+        val owned = GameHousesTable.selectAll()
+            .where { (GameHousesTable.id eq houseId) and (GameHousesTable.schoolId eq schoolId) }
+            .firstOrNull() ?: return@dbQuery false
+        GameStudentHouseAssignmentsTable.deleteWhere { GameStudentHouseAssignmentsTable.houseId eq houseId }
+        GameHousesTable.deleteWhere { GameHousesTable.id eq houseId }
+        true
     }
 }
 
@@ -400,6 +462,33 @@ object RewardService {
                     createdAt = it[GameRewardRedemptionsTable.createdAt].toString()
                 )
             }
+    }
+
+    suspend fun createReward(schoolId: UUID, req: CreateRewardRequest): RewardDto? = dbQuery {
+        val id = GameRewardCatalogTable.insert {
+            it[GameRewardCatalogTable.schoolId] = schoolId
+            it[GameRewardCatalogTable.name] = req.name
+            it[GameRewardCatalogTable.description] = req.description
+            it[GameRewardCatalogTable.iconName] = req.iconName
+            it[GameRewardCatalogTable.xpCost] = req.xpCost
+            it[GameRewardCatalogTable.stockLimit] = req.stockLimit
+            it[GameRewardCatalogTable.stockRemaining] = req.stockLimit
+            it[GameRewardCatalogTable.fulfillmentRole] = req.fulfillmentRole
+            it[GameRewardCatalogTable.isActive] = true
+            it[GameRewardCatalogTable.createdAt] = Instant.now()
+        }[GameRewardCatalogTable.id].value
+
+        RewardDto(
+            id = id.toString(), name = req.name, description = req.description,
+            xpCost = req.xpCost, fulfillmentRole = req.fulfillmentRole,
+            stockRemaining = req.stockLimit, isActive = true
+        )
+    }
+
+    suspend fun toggleRewardActive(rewardId: UUID, isActive: Boolean): Boolean = dbQuery {
+        GameRewardCatalogTable.update({ GameRewardCatalogTable.id eq rewardId }) {
+            it[GameRewardCatalogTable.isActive] = isActive
+        } > 0
     }
 }
 
@@ -519,5 +608,38 @@ object SeasonalEventService {
                     isActive = it[GameSeasonalEventsTable.isActive]
                 )
             }
+    }
+
+    suspend fun createEvent(schoolId: UUID?, req: CreateEventRequest): SeasonalEventDto? = dbQuery {
+        val existing = GameSeasonalEventsTable.selectAll()
+            .where { GameSeasonalEventsTable.code eq req.code }
+            .firstOrNull()
+        if (existing != null) return@dbQuery null
+
+        val badgeId = req.badgeId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+        val questId = req.questId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+        val id = GameSeasonalEventsTable.insert {
+            it[GameSeasonalEventsTable.schoolId] = schoolId
+            it[GameSeasonalEventsTable.code] = req.code
+            it[GameSeasonalEventsTable.name] = req.name
+            it[GameSeasonalEventsTable.badgeId] = badgeId ?: UUID.randomUUID()
+            it[GameSeasonalEventsTable.questId] = questId ?: UUID.randomUUID()
+            it[GameSeasonalEventsTable.startDate] = LocalDate.parse(req.startDate)
+            it[GameSeasonalEventsTable.endDate] = LocalDate.parse(req.endDate)
+            it[GameSeasonalEventsTable.isActive] = true
+            it[GameSeasonalEventsTable.createdAt] = Instant.now()
+        }[GameSeasonalEventsTable.id].value
+
+        SeasonalEventDto(
+            id = id.toString(), code = req.code, name = req.name,
+            startDate = req.startDate, endDate = req.endDate, isActive = true
+        )
+    }
+
+    suspend fun toggleEventActive(eventId: UUID, isActive: Boolean): Boolean = dbQuery {
+        GameSeasonalEventsTable.update({ GameSeasonalEventsTable.id eq eventId }) {
+            it[GameSeasonalEventsTable.isActive] = isActive
+        } > 0
     }
 }

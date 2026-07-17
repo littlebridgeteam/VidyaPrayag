@@ -219,8 +219,15 @@ fun TeacherPortalV2(
     BackHandler(enabled = overlay != TeacherOverlay.None) {
         overlay = TeacherOverlay.None
     }
-    // From a non-home tab, Back returns to HOME (familiar app behaviour).
-    BackHandler(enabled = overlay == TeacherOverlay.None && tab != "home") {
+    // From the Update tab with a scoped class, Back returns to the scope gate.
+    BackHandler(enabled = overlay == TeacherOverlay.None && tab == "update" && updateAssignmentId != null) {
+        updateAssignmentId = null
+        updateScopeLabel = ""
+        updateInitialTool = UpdateTool.Attendance
+        updateScopeNonce++
+    }
+    // From a non-home tab (without internal sub-state), Back returns to HOME.
+    BackHandler(enabled = overlay == TeacherOverlay.None && tab != "home" && !(tab == "update" && updateAssignmentId != null)) {
         tab = "home"
     }
     // At root (home + no overlay), consume back to prevent app exit.

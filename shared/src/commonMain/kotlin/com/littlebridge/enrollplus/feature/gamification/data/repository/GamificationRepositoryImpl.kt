@@ -62,4 +62,19 @@ class GamificationRepositoryImpl(
     override suspend fun getAdminBoosts(token: String) = api.getAdminBoosts(token)
     override suspend fun createBoost(token: String, boostType: String, multiplier: Float, targetScope: String, targetId: String?, durationHours: Int) = api.createBoost(token, boostType, multiplier, targetScope, targetId, durationHours)
     override suspend fun getAnalytics(token: String) = api.getAnalytics(token)
+
+    override suspend fun getCombos(token: String, childId: String) = api.getCombos(token, childId)
+
+    override suspend fun createBadge(token: String, body: Map<String, *>) = api.createBadge(token, body)
+    override suspend fun toggleBadgeActive(token: String, id: String, isActive: Boolean) = api.toggleBadgeActive(token, id, isActive)
+    override suspend fun createLevel(token: String, body: Map<String, *>) = api.createLevel(token, body)
+    override suspend fun toggleLevelActive(token: String, level: String, isActive: Boolean) = api.toggleLevelActive(token, level, isActive)
+    override suspend fun createHouse(token: String, body: Map<String, *>) = api.createHouse(token, body)
+    override suspend fun deleteHouse(token: String, houseId: String) = api.deleteHouse(token, houseId)
+    override suspend fun createReward(token: String, body: Map<String, *>) = api.createReward(token, body)
+    override suspend fun toggleRewardActive(token: String, id: String, isActive: Boolean) = api.toggleRewardActive(token, id, isActive)
+    override suspend fun createQuest(token: String, body: Map<String, *>) = api.createQuest(token, body)
+    override suspend fun toggleQuestActive(token: String, id: String, isActive: Boolean) = api.toggleQuestActive(token, id, isActive)
+    override suspend fun createEvent(token: String, body: Map<String, *>) = api.createEvent(token, body)
+    override suspend fun toggleEventActive(token: String, id: String, isActive: Boolean) = api.toggleEventActive(token, id, isActive)
 }

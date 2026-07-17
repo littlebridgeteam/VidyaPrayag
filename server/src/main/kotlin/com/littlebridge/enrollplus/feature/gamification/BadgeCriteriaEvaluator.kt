@@ -205,6 +205,41 @@ object BadgeCriteriaEvaluator {
             }
     }
 
+    suspend fun createBadge(schoolId: UUID?, req: CreateBadgeRequest): BadgeDefinitionDto? = dbQuery {
+        val existing = GameBadgeDefinitionsTable.selectAll()
+            .where { GameBadgeDefinitionsTable.code eq req.code }
+            .firstOrNull()
+        if (existing != null) return@dbQuery null
+
+        val id = GameBadgeDefinitionsTable.insert {
+            it[GameBadgeDefinitionsTable.schoolId] = schoolId
+            it[GameBadgeDefinitionsTable.code] = req.code
+            it[GameBadgeDefinitionsTable.name] = req.name
+            it[GameBadgeDefinitionsTable.description] = req.description
+            it[GameBadgeDefinitionsTable.iconName] = req.iconName
+            it[GameBadgeDefinitionsTable.category] = req.category
+            it[GameBadgeDefinitionsTable.rarity] = req.rarity
+            it[GameBadgeDefinitionsTable.xpRequirement] = req.xpRequirement
+            it[GameBadgeDefinitionsTable.criteriaJson] = req.criteriaJson
+            it[GameBadgeDefinitionsTable.isActive] = true
+            it[GameBadgeDefinitionsTable.isSeasonal] = req.isSeasonal
+            it[GameBadgeDefinitionsTable.createdAt] = Instant.now()
+        }[GameBadgeDefinitionsTable.id].value
+
+        BadgeDefinitionDto(
+            id = id.toString(), code = req.code, name = req.name,
+            description = req.description, iconName = req.iconName,
+            category = req.category, rarity = req.rarity,
+            xpRequirement = req.xpRequirement, isSeasonal = req.isSeasonal
+        )
+    }
+
+    suspend fun toggleBadgeActive(badgeId: UUID, isActive: Boolean): Boolean = dbQuery {
+        GameBadgeDefinitionsTable.update({ GameBadgeDefinitionsTable.id eq badgeId }) {
+            it[GameBadgeDefinitionsTable.isActive] = isActive
+        } > 0
+    }
+
     // Count events from the XP ledger by source
     private fun countStudentEvents(studentId: UUID, source: String): Int {
         return GameXpLedgerTable.selectAll()

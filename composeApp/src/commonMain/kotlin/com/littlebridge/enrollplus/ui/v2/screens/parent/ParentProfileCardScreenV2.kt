@@ -57,6 +57,8 @@ import com.littlebridge.enrollplus.feature.gamification.domain.model.SeasonalEve
 import com.littlebridge.enrollplus.feature.gamification.domain.model.XpHistoryEntry
 import com.littlebridge.enrollplus.feature.gamification.domain.model.XpBoost
 import com.littlebridge.enrollplus.feature.gamification.domain.model.ClassGoal
+import com.littlebridge.enrollplus.feature.gamification.domain.model.Combo
+import com.littlebridge.enrollplus.feature.gamification.domain.model.ComboStatus
 import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationState
 import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge
@@ -366,6 +368,7 @@ private fun ProfileLoaded(
             activeBoosts = gamification.activeBoosts,
             events = gamification.events,
             rewards = gamification.rewards,
+            comboStatus = gamification.comboStatus,
             currentXp = gameStats?.currentXp ?: 0,
             redemptions = gamification.redemptions,
             xpHistory = gamification.xpHistory,
@@ -890,6 +893,71 @@ private fun BoostsRow(boosts: List<XpBoost>) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — combos
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun CombosRow(combos: List<Combo>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        combos.forEach { combo ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(VShapes.md)
+                        .background(VColors.goldSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "x${combo.streakCount}",
+                        style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                        color = VColors.gold,
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        combo.comboType.replaceFirstChar { it.uppercase() } + " Combo",
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        "${combo.streakCount} consecutive ${if (combo.streakCount == 1) "day" else "days"}",
+                        style = VTypography.caption.copy(fontSize = 12.sp),
+                        color = VColors.ink3,
+                    )
+                }
+                if (combo.multiplier > 1.0f) {
+                    Box(
+                        modifier = Modifier
+                            .clip(VShapes.md)
+                            .background(VColors.violetSoft)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "${combo.multiplier}x XP",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                            color = VColors.violet,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // GAMIFICATION — seasonal events
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1322,6 +1390,7 @@ private fun GamificationCollapsibleSection(
     activeBoosts: List<XpBoost>,
     events: List<SeasonalEvent>,
     rewards: List<Reward>,
+    comboStatus: ComboStatus?,
     currentXp: Int,
     redemptions: List<RewardRedemption>,
     xpHistory: List<XpHistoryEntry>,
@@ -1501,6 +1570,16 @@ private fun GamificationCollapsibleSection(
                         BoostsRow(boosts = activeBoosts)
                     } else {
                         GamificationEmptyState(text = "No active XP boosts right now.")
+                    }
+                }
+
+                // Combos
+                GamificationSubSection(title = "Combos") {
+                    val combos = comboStatus?.combos?.filter { it.streakCount > 0 } ?: emptyList()
+                    if (combos.isNotEmpty()) {
+                        CombosRow(combos = combos)
+                    } else {
+                        GamificationEmptyState(text = "No active combos. Keep up daily activities to build streaks!")
                     }
                 }
 

@@ -384,4 +384,111 @@ class GamificationApi(
             bearerAuth(token)
         }
     }
+
+    // ── Admin: Badge CRUD ────────────────────────────────────────────
+    suspend fun createBadge(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/admin/gamification/badges")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+    }
+
+    // ── Parent: Combo status ─────────────────────────────────────────
+    suspend fun getCombos(token: String, childId: String): NetworkResult<ApiResponse<ComboStatus>> = safeApiCall {
+        client.get(getUrl("api/v1/parent/gamification/$childId/combos")) {
+            bearerAuth(token)
+        }
+    }
+
+    suspend fun toggleBadgeActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/admin/gamification/badges/toggle")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("id" to id, "isActive" to isActive))
+        }
+    }
+
+    // ── Admin: Level CRUD ────────────────────────────────────────────
+    suspend fun createLevel(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/admin/gamification/levels")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+    }
+
+    suspend fun toggleLevelActive(token: String, level: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/admin/gamification/levels/toggle")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("id" to level, "isActive" to isActive))
+        }
+    }
+
+    // ── Admin: House CRUD ────────────────────────────────────────────
+    suspend fun createHouse(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/admin/gamification/houses")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+    }
+
+    suspend fun deleteHouse(token: String, houseId: String): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.delete(getUrl("api/v1/admin/gamification/houses/$houseId")) {
+            bearerAuth(token)
+        }
+    }
+
+    // ── Admin: Reward CRUD ───────────────────────────────────────────
+    suspend fun createReward(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/admin/gamification/rewards")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+    }
+
+    suspend fun toggleRewardActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/admin/gamification/rewards/toggle")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("id" to id, "isActive" to isActive))
+        }
+    }
+
+    // ── Admin: Quest CRUD ────────────────────────────────────────────
+    suspend fun createQuest(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/admin/gamification/quests")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+    }
+
+    suspend fun toggleQuestActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/admin/gamification/quests/toggle")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("id" to id, "isActive" to isActive))
+        }
+    }
+
+    // ── Admin: Event CRUD ────────────────────────────────────────────
+    suspend fun createEvent(token: String, body: Map<String, *>): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.post(getUrl("api/v1/admin/gamification/events")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+    }
+
+    suspend fun toggleEventActive(token: String, id: String, isActive: Boolean): NetworkResult<ApiResponse<Map<String, *>>> = safeApiCall {
+        client.put(getUrl("api/v1/admin/gamification/events/toggle")) {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("id" to id, "isActive" to isActive))
+        }
+    }
 }
