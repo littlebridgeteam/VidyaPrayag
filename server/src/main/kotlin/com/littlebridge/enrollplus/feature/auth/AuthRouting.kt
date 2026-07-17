@@ -41,10 +41,13 @@ import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.okMessage
 import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.db.AppUsersTable
+import com.littlebridge.enrollplus.db.ChildrenTable
+import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.AuthOtpsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.SchoolsTable
 import com.littlebridge.enrollplus.db.UserSessionsTable
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import com.littlebridge.enrollplus.feature.notification.repository.DeviceTokenRepository
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -54,6 +57,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.or
@@ -180,8 +184,12 @@ data class SchoolRegisterDto(
     val name: String,                 // admin / principal contact name
     val identifier: String,           // email (password path) — staff use email
     val password: String,
-    // School seed (kept minimal — the wizard collects the rest)
-    @SerialName("school_name") val schoolName: String,
+    // Merged onboarding flow: admin role label from Step 1 (e.g. "Principal")
+    @SerialName("admin_role") val adminRole: String? = null,
+    // School seed — schoolName is OPTIONAL in the merged flow (Step 2 creates
+    // the account before school details are collected in Step 3). When absent,
+    // a placeholder is used and the onboarding wizard fills the real name.
+    @SerialName("school_name") val schoolName: String? = null,
     val board: String? = null,        // CBSE | ICSE | UP State | Other
     @SerialName("school_type") val schoolType: String? = null,
     val city: String? = null,
@@ -504,8 +512,8 @@ fun Route.authRouting() {
                 ?: run { call.fail("Invalid body"); return@post }
 
             val id = normaliseIdentifier(req.identifier)
-            if (id.isBlank() || req.name.isBlank() || req.schoolName.isBlank()) {
-                call.fail("name, identifier and school_name are required"); return@post
+            if (id.isBlank() || req.name.isBlank()) {
+                call.fail("name and identifier are required"); return@post
             }
             // Staff register with email+password (no OTP path here).
             if (!isEmail(id)) {
@@ -532,7 +540,7 @@ fun Route.authRouting() {
             val now = Instant.now()
             val newUserId = UUID.randomUUID()
             val newSchoolId = UUID.randomUUID()
-            val cleanName = req.schoolName.trim()
+            val cleanName = req.schoolName?.takeIf { it.isNotBlank() }?.trim() ?: "Unnamed School"
             val slugBase = cleanName.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
             val slug = (slugBase.ifBlank { "school" }) + "-" + newSchoolId.toString().take(6)
 
@@ -571,6 +579,7 @@ fun Route.authRouting() {
                     it[profileCompleted] = false   // gate → onboarding wizard
                     it[mustChangePassword] = false
                     it[isActive] = true
+                    it[adminRole] = req.adminRole?.takeIf { r -> r.isNotBlank() }?.trim()
                     it[createdAt] = now
                     it[updatedAt] = now
                 }
@@ -705,6 +714,31 @@ fun Route.authRouting() {
                 ip = call.request.origin.remoteHost,
                 ua = call.request.headers["User-Agent"]
             )
+
+            // GAM-024: Award daily login XP to all children linked to this parent.
+            // Students don't log in directly — the parent's login counts for them.
+            if (role == "parent") {
+                try {
+                    val linkedStudents = dbQuery {
+                        ChildrenTable.join(
+                            StudentsTable,
+                            JoinType.INNER,
+                            ChildrenTable.studentCode,
+                            StudentsTable.studentCode
+                        ).selectAll()
+                            .where {
+                                (ChildrenTable.parentId eq userId) and
+                                (ChildrenTable.isActive eq true)
+                            }
+                            .map { it[StudentsTable.id].value to it[StudentsTable.schoolId] }
+                    }
+                    linkedStudents.forEach { (studentId, schoolId) ->
+                        XpHooks.onDailyLogin(studentId, schoolId)
+                    }
+                } catch (_: Exception) {
+                    // Fire-and-forget — never block login
+                }
+            }
 
             call.ok(
                 AuthTokenResponse(

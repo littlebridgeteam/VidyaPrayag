@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +91,13 @@ fun TeacherClassesScreenV2(
 
     // Student-profile drill-down lives here (over the class detail).
     var openStudentId by remember { mutableStateOf<String?>(null) }
+
+    BackHandler(enabled = openStudentId != null) {
+        openStudentId = null
+    }
+    BackHandler(enabled = openStudentId == null && state.openAssignmentId != null) {
+        viewModel.closeClass()
+    }
 
     AnimatedContent(
         targetState = Triple(state.openAssignmentId, openStudentId, state.classes.size),

@@ -35,6 +35,9 @@ class TutorRepositoryImpl(
     override suspend fun getEfficacy(token: String, childId: String, subjectId: String): NetworkResult<EfficacyResponse> =
         api.getEfficacy(token, childId, subjectId)
 
+    override suspend fun getSafetyFlags(token: String): NetworkResult<SafetyFlagsResponse> =
+        api.getSafetyFlags(token)
+
     override suspend fun getModuleStatus(token: String): NetworkResult<ModuleStatusResponse> =
         api.getModuleStatus(token)
 }

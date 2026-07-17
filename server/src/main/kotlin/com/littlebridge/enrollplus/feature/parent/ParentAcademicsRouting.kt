@@ -353,6 +353,7 @@ private data class ResolvedChild(
     val childName: String,
     val schoolId: UUID?,
     val studentCode: String?,
+    val studentId: UUID?,
     val grade: String?,
     val section: String,
     // RA-S19: true only when `section` came from a linked `students` row. When the
@@ -394,6 +395,7 @@ private suspend fun ApplicationCall.requireOwnedChild(): ResolvedChild? {
         childName = row[ChildrenTable.childName],
         schoolId = row[ChildrenTable.schoolId],
         studentCode = studentCode,
+        studentId = student?.get(StudentsTable.id)?.value,
         grade = student?.get(StudentsTable.className) ?: row[ChildrenTable.currentGrade],
         section = linkedSection ?: "A",
         sectionResolved = linkedSection != null,
@@ -986,9 +988,9 @@ fun Route.parentAcademicsRouting() {
             }
 
             // ── Quiz detail — questions without correct answers ──────────────
-            get("/quiz/{id}") {
+            get("/quiz/{quizId}") {
                 val child = call.requireOwnedChild() ?: return@get
-                val quizIdStr = call.parameters["id"]
+                val quizIdStr = call.parameters["quizId"]
                 if (quizIdStr.isNullOrBlank()) {
                     call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
                 }
@@ -1163,10 +1165,10 @@ fun Route.parentAcademicsRouting() {
                 val totalMarks = questions.size
                 val percentage = if (totalMarks > 0) (correctCount * 100) / totalMarks else 0
 
-                // Gamification XP hook — quiz completed
-                val childId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-                if (childId != null && child.schoolId != null) {
-                    XpHooks.onQuizCompleted(childId, child.schoolId, correctCount, totalMarks)
+                // Gamification XP hook — quiz completed (GAM-020: use studentId, not childId)
+                val studentUuid = child.studentId
+                if (studentUuid != null && child.schoolId != null) {
+                    XpHooks.onQuizCompleted(studentUuid, child.schoolId, correctCount, totalMarks)
                 }
 
                 call.ok(
@@ -1183,9 +1185,9 @@ fun Route.parentAcademicsRouting() {
             }
 
             // ── Quiz leaderboard — per-quiz ranking ─────────────────────────
-            get("/quiz/{id}/leaderboard") {
+            get("/quiz/{quizId}/leaderboard") {
                 val child = call.requireOwnedChild() ?: return@get
-                val quizIdStr = call.parameters["id"]
+                val quizIdStr = call.parameters["quizId"]
                 if (quizIdStr.isNullOrBlank()) {
                     call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
                 }
@@ -1267,9 +1269,9 @@ fun Route.parentAcademicsRouting() {
             }
 
             // ── Quiz result — view past results for a submitted quiz ─────────
-            get("/quiz/{id}/result") {
+            get("/quiz/{quizId}/result") {
                 val child = call.requireOwnedChild() ?: return@get
-                val quizIdStr = call.parameters["id"]
+                val quizIdStr = call.parameters["quizId"]
                 if (quizIdStr.isNullOrBlank()) {
                     call.fail("Quiz ID is required", HttpStatusCode.BadRequest, "MISSING_PARAM"); return@get
                 }
@@ -1315,40 +1317,40 @@ fun Route.parentAcademicsRouting() {
                     }.orderBy(SyllabusQuizQuestionsTable.position, SortOrder.ASC).toList()
                 }
 
+                val answerByQuestionId = answers.associateBy { it[SyllabusQuizAnswersTable.questionId] }
+
                 val questionResults = mutableListOf<QuizQuestionResultDto>()
                 var correctCount = 0
-                answers.forEach { ansRow ->
-                    val qId = ansRow[SyllabusQuizAnswersTable.questionId]
-                    val qRow = questions.find { it[SyllabusQuizQuestionsTable.id].value == qId }
-                    if (qRow != null) {
-                        val opts = runCatching {
-                            Json.decodeFromString(
-                                ListSerializer(serializer<String>()),
-                                qRow[SyllabusQuizQuestionsTable.optionsJson]
-                            )
-                        }.getOrDefault(emptyList())
-                        val qType = qRow[SyllabusQuizQuestionsTable.questionType]
-                        val correctAnswer = qRow[SyllabusQuizQuestionsTable.correctAnswer]
-                        val selectedAnswer = ansRow[SyllabusQuizAnswersTable.answerText]
-                        val isCorrect = ansRow[SyllabusQuizAnswersTable.isCorrect]
-                        if (isCorrect) correctCount++
-                        val correctIdx = opts.indexOfFirst { it.startsWith(correctAnswer) }.takeIf { it >= 0 } ?: 0
-                        val selectedIdx = opts.indexOfFirst { it == selectedAnswer }.takeIf { it >= 0 } ?: -1
-
-                        questionResults.add(
-                            QuizQuestionResultDto(
-                                questionId = qId.toString(),
-                                question = qRow[SyllabusQuizQuestionsTable.questionText],
-                                selectedIndex = selectedIdx,
-                                correctIndex = correctIdx,
-                                correct = isCorrect,
-                                explanation = qRow[SyllabusQuizQuestionsTable.explanation],
-                                selectedAnswer = selectedAnswer,
-                                correctAnswer = correctAnswer,
-                                questionType = qType,
-                            )
+                questions.forEach { qRow ->
+                    val qId = qRow[SyllabusQuizQuestionsTable.id].value
+                    val opts = runCatching {
+                        Json.decodeFromString(
+                            ListSerializer(serializer<String>()),
+                            qRow[SyllabusQuizQuestionsTable.optionsJson]
                         )
-                    }
+                    }.getOrDefault(emptyList())
+                    val qType = qRow[SyllabusQuizQuestionsTable.questionType]
+                    val correctAnswer = qRow[SyllabusQuizQuestionsTable.correctAnswer]
+                    val ansRow = answerByQuestionId[qId]
+                    val selectedAnswer = ansRow?.get(SyllabusQuizAnswersTable.answerText) ?: ""
+                    val isCorrect = ansRow?.get(SyllabusQuizAnswersTable.isCorrect) ?: false
+                    if (isCorrect) correctCount++
+                    val correctIdx = opts.indexOfFirst { it.startsWith(correctAnswer) }.takeIf { it >= 0 } ?: 0
+                    val selectedIdx = opts.indexOfFirst { it == selectedAnswer }.takeIf { it >= 0 } ?: -1
+
+                    questionResults.add(
+                        QuizQuestionResultDto(
+                            questionId = qId.toString(),
+                            question = qRow[SyllabusQuizQuestionsTable.questionText],
+                            selectedIndex = selectedIdx,
+                            correctIndex = correctIdx,
+                            correct = isCorrect,
+                            explanation = qRow[SyllabusQuizQuestionsTable.explanation],
+                            selectedAnswer = selectedAnswer,
+                            correctAnswer = correctAnswer,
+                            questionType = qType,
+                        )
+                    )
                 }
 
                 val totalMarks = questions.size

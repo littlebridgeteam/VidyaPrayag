@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.core.network.TokenRefreshManager
 import com.littlebridge.enrollplus.feature.schools.domain.usecase.GetSchoolsUseCase
 import com.littlebridge.enrollplus.feature.schools.domain.model.School
 import com.littlebridge.enrollplus.domain.util.UiState
@@ -21,6 +22,7 @@ class MainViewModel(
     private val preferenceRepository: PreferenceRepository,
     private val authRepository: com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository,
     private val notificationService: com.littlebridge.enrollplus.feature.notification.domain.service.NotificationService,
+    private val silentTokenRefreshManager: TokenRefreshManager,
 ) : ViewModel() {
 
     private val _schools = MutableStateFlow<UiState<List<School>>>(UiState.Loading)
@@ -51,10 +53,14 @@ class MainViewModel(
     init {
         refreshSchools()
 
-        // Trigger FCM sync when user becomes authenticated
+        // Proactive silent token refresh — check on app start if the access
+        // token is about to expire and refresh it before any API call hits a
+        // 401. This eliminates the Render spin-down race condition where a
+        // reactive 401 refresh fails because the server is asleep.
         viewModelScope.launch {
             userToken.collect { token ->
                 if (!token.isNullOrBlank()) {
+                    silentTokenRefreshManager.refreshIfNeeded()
                     notificationService.syncDeviceToken()
                 }
             }
@@ -102,6 +108,21 @@ class MainViewModel(
                 }
             } catch (e: Exception) {
                 _schools.value = UiState.Error(e.message ?: "Unknown error occurred")
+            }
+        }
+    }
+
+    /**
+     * Called when the app comes to the foreground (ON_RESUME lifecycle event).
+     * Triggers a proactive token refresh so the access token is fresh before
+     * the user interacts with any screen. This is the key difference from
+     * reactive refresh — we refresh BEFORE the token expires, not after.
+     */
+    fun refreshOnForeground() {
+        viewModelScope.launch {
+            val token = preferenceRepository.getUserToken().first()
+            if (!token.isNullOrBlank()) {
+                silentTokenRefreshManager.refreshIfNeeded()
             }
         }
     }

@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.feature.parent.data.repository
 
 import com.littlebridge.enrollplus.core.cache.CacheManager
 import com.littlebridge.enrollplus.core.cache.cacheFirstNetworkResult
+import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.parent.data.remote.ParentApi
 import com.littlebridge.enrollplus.feature.parent.domain.model.*
@@ -21,6 +22,15 @@ class ParentRepositoryImpl(
 
     override suspend fun getFees(token: String, childId: String?): NetworkResult<FeeResponse> =
         cacheFirstNetworkResult(cache, "parent_fees_${childId ?: "all"}", FeeResponse.serializer()) { api.getFees(token, childId) }
+
+    override suspend fun payFee(token: String, feeId: String): NetworkResult<ApiResponse<PayFeeResponse>> {
+        val result = api.payFee(token, feeId)
+        if (result is NetworkResult.Success) {
+            cache.delete("parent_fees_${null}")
+            cache.delete("parent_fees_all")
+        }
+        return result
+    }
 
     override suspend fun getScholarships(token: String): NetworkResult<ScholarshipsResponse> =
         cacheFirstNetworkResult(cache, "parent_scholarships", ScholarshipsResponse.serializer()) { api.getScholarships(token) }

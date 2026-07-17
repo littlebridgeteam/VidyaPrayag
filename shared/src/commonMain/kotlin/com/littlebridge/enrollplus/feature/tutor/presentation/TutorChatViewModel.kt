@@ -26,6 +26,7 @@ data class TutorChatState(
     val isLoadingSubjects: Boolean = false,
     val isStreaming: Boolean = false,
     val streamingText: String = "",
+    val safetyFlag: String? = null,
 )
 
 data class ChatMessage(
@@ -34,6 +35,7 @@ data class ChatMessage(
     val nextPrompt: String? = null,
     val isPractice: Boolean = false,
     val practiceQuestions: List<PracticeQuestionDto>? = null,
+    val safetyFlag: String? = null,
 )
 
 class TutorChatViewModel(
@@ -109,6 +111,7 @@ class TutorChatViewModel(
                         val nextPrompt = turn.studentFacing?.nextPrompt
                         val isPractice = turn.practice?.isNotEmpty() == true
                         val practiceQuestions = turn.practice
+                        val flag = resultDto.safetyFlag ?: turn.teacherFlag?.reason
 
                         _state.update {
                             it.copy(
@@ -116,12 +119,14 @@ class TutorChatViewModel(
                                 turn = turn,
                                 isStreaming = true,
                                 streamingText = "",
+                                safetyFlag = flag,
                                 conversationHistory = it.conversationHistory + ChatMessage(
                                     role = "tutor",
                                     text = fullText,
                                     nextPrompt = nextPrompt,
                                     isPractice = isPractice,
                                     practiceQuestions = practiceQuestions,
+                                    safetyFlag = flag,
                                 ),
                             )
                         }

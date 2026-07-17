@@ -149,6 +149,16 @@ class TutorApi(
         }
     }
 
+    // ── Teacher Safety Flags ──────────────────────────────────────────
+
+    suspend fun getSafetyFlags(token: String): NetworkResult<SafetyFlagsResponse> {
+        return safeApiCall {
+            client.get(getUrl("api/v1/tutor/safety-flags")) {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }
+    }
+
     // ── Module Status ─────────────────────────────────────────────────
 
     suspend fun getModuleStatus(token: String): NetworkResult<ModuleStatusResponse> {

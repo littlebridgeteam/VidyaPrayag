@@ -6,7 +6,7 @@ enum class AuthRoute {
     ParentLogin,
     ParentSignup,
     AdminLogin,
-    AdminSignup,
+    SchoolRegistration,
     Terms,
     PrivacyPolicy,
     ForgotPassword,

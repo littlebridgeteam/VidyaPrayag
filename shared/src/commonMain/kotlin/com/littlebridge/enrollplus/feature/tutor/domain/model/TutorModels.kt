@@ -343,6 +343,26 @@ data class TopicProgressDto(
     val correct: Int,
 )
 
+// ── Teacher Safety Flags (Cross-role) ────────────────────────────────
+
+@Serializable
+data class SafetyFlagsResponse(
+    val success: Boolean,
+    val message: String = "",
+    val data: List<SafetyFlagDto>? = null,
+)
+
+@Serializable
+data class SafetyFlagDto(
+    val sessionId: String,
+    val childId: String,
+    val childName: String,
+    val subjectId: String? = null,
+    val safetyFlag: String? = null,
+    val mode: String,
+    val createdAt: String,
+)
+
 // ── Efficacy (Tier 4 Learn) ──────────────────────────────────────────
 
 @Serializable

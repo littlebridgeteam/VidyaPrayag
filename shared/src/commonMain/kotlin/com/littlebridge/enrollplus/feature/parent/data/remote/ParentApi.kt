@@ -46,6 +46,16 @@ class ParentApi(
         }
     }
 
+    suspend fun payFee(token: String, feeId: String): NetworkResult<ApiResponse<PayFeeResponse>> {
+        return safeApiCall {
+            client.post(getUrl("api/v1/parent/fees/pay")) {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(PayFeeRequest(feeId))
+            }
+        }
+    }
+
     suspend fun getScholarships(token: String): NetworkResult<ScholarshipsResponse> {
         return safeApiCall {
             client.get(getUrl("api/v1/parent/scholarships"))

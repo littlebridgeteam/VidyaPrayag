@@ -16,8 +16,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +57,8 @@ import com.littlebridge.enrollplus.feature.gamification.domain.model.SeasonalEve
 import com.littlebridge.enrollplus.feature.gamification.domain.model.XpHistoryEntry
 import com.littlebridge.enrollplus.feature.gamification.domain.model.XpBoost
 import com.littlebridge.enrollplus.feature.gamification.domain.model.ClassGoal
+import com.littlebridge.enrollplus.feature.gamification.domain.model.Combo
+import com.littlebridge.enrollplus.feature.gamification.domain.model.ComboStatus
 import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationState
 import com.littlebridge.enrollplus.feature.gamification.presentation.ParentGamificationViewModel
 import com.littlebridge.enrollplus.feature.parent.presentation.AchievementBadge
@@ -68,6 +73,7 @@ import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import org.koin.compose.viewmodel.koinViewModel
@@ -171,6 +177,9 @@ private fun ProfileContent(
         modifier = modifier
             .fillMaxSize()
             .background(VColors.cream)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(bottom = 100.dp),
     ) {
@@ -316,7 +325,7 @@ private fun ProfileLoaded(
 
     val gameStats = gamification.stats
     val gameLevel = gameStats?.currentLevel ?: track.currentLevel
-    val gameXp = gameStats?.totalXp ?: (track.overallProgress * 5000).roundToInt()
+    val gameXp = gameStats?.totalXp ?: 0
     val gameLevelTitle = gameStats?.levelTitle ?: "Scholar"
     val gameStreak = gameStats?.streakDays ?: 0
 
@@ -331,6 +340,7 @@ private fun ProfileLoaded(
             level = gameLevel,
             levelTitle = gameLevelTitle,
             totalXp = gameXp,
+            currentXp = gameStats?.currentXp ?: 0,
             streakDays = gameStreak,
         )
 
@@ -358,6 +368,7 @@ private fun ProfileLoaded(
             activeBoosts = gamification.activeBoosts,
             events = gamification.events,
             rewards = gamification.rewards,
+            comboStatus = gamification.comboStatus,
             currentXp = gameStats?.currentXp ?: 0,
             redemptions = gamification.redemptions,
             xpHistory = gamification.xpHistory,
@@ -391,10 +402,11 @@ private fun ProfileHeroCard(
     level: Int,
     levelTitle: String,
     totalXp: Int,
+    currentXp: Int,
     streakDays: Int,
 ) {
-    val xpMax = 5000
-    val xpProgress = (totalXp.toFloat() / xpMax.toFloat()).coerceIn(0f, 1f)
+    val xpMax = (level + 1) * 1000
+    val xpProgress = (currentXp.toFloat() / xpMax.toFloat()).coerceIn(0f, 1f)
 
     Column(
         modifier = Modifier
@@ -475,7 +487,7 @@ private fun ProfileHeroCard(
                 color = VColors.white,
             )
             Text(
-                text = "$totalXp / $xpMax XP",
+                text = "$currentXp / $xpMax XP",
                 style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
                 color = VColors.white.copy(alpha = 0.8f),
             )
@@ -874,6 +886,71 @@ private fun BoostsRow(boosts: List<XpBoost>) {
                         style = VTypography.caption.copy(fontSize = 12.sp),
                         color = VColors.ink3,
                     )
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION — combos
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun CombosRow(combos: List<Combo>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.xl)
+            .background(VColors.surfaceCard)
+            .border(1.dp, VColors.line, VShapes.xl)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        combos.forEach { combo ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(VShapes.md)
+                        .background(VColors.goldSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "x${combo.streakCount}",
+                        style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                        color = VColors.gold,
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        combo.comboType.replaceFirstChar { it.uppercase() } + " Combo",
+                        style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
+                        color = VColors.ink,
+                    )
+                    Text(
+                        "${combo.streakCount} consecutive ${if (combo.streakCount == 1) "day" else "days"}",
+                        style = VTypography.caption.copy(fontSize = 12.sp),
+                        color = VColors.ink3,
+                    )
+                }
+                if (combo.multiplier > 1.0f) {
+                    Box(
+                        modifier = Modifier
+                            .clip(VShapes.md)
+                            .background(VColors.violetSoft)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "${combo.multiplier}x XP",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                            color = VColors.violet,
+                        )
+                    }
                 }
             }
         }
@@ -1313,13 +1390,15 @@ private fun GamificationCollapsibleSection(
     activeBoosts: List<XpBoost>,
     events: List<SeasonalEvent>,
     rewards: List<Reward>,
+    comboStatus: ComboStatus?,
     currentXp: Int,
     redemptions: List<RewardRedemption>,
     xpHistory: List<XpHistoryEntry>,
     classGoals: List<ClassGoal>,
     onRedeemReward: (String) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(true) }
+    var pendingRedeemRewardId by remember { mutableStateOf<String?>(null) }
 
     val activeCount = badges.size + quests.size + activeBoosts.size + events.size +
         rewards.size + redemptions.size + xpHistory.size + classGoals.size
@@ -1494,6 +1573,16 @@ private fun GamificationCollapsibleSection(
                     }
                 }
 
+                // Combos
+                GamificationSubSection(title = "Combos") {
+                    val combos = comboStatus?.combos?.filter { it.streakCount > 0 } ?: emptyList()
+                    if (combos.isNotEmpty()) {
+                        CombosRow(combos = combos)
+                    } else {
+                        GamificationEmptyState(text = "No active combos. Keep up daily activities to build streaks!")
+                    }
+                }
+
                 // Seasonal Events
                 GamificationSubSection(title = "Seasonal Events") {
                     if (events.isNotEmpty()) {
@@ -1509,7 +1598,7 @@ private fun GamificationCollapsibleSection(
                         RewardsRow(
                             rewards = rewards,
                             currentXp = currentXp,
-                            onRedeem = onRedeemReward,
+                            onRedeem = { rewardId -> pendingRedeemRewardId = rewardId },
                         )
                     } else {
                         GamificationEmptyState(text = "No rewards available in the shop yet.")
@@ -1544,6 +1633,21 @@ private fun GamificationCollapsibleSection(
                 }
             }
         }
+    }
+
+    pendingRedeemRewardId?.let { rewardId ->
+        val reward = rewards.find { it.id == rewardId }
+        VConfirmDialog(
+            visible = true,
+            title = "Redeem Reward?",
+            message = "Spend ${reward?.xpCost ?: 0} XP on \"${reward?.name ?: "this reward"}\"? This cannot be undone.",
+            confirmLabel = "Redeem",
+            onConfirm = {
+                onRedeemReward(rewardId)
+                pendingRedeemRewardId = null
+            },
+            onDismiss = { pendingRedeemRewardId = null },
+        )
     }
 }
 

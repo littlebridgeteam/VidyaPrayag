@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
+import com.littlebridge.enrollplus.feature.admin.domain.repository.AdminDashboardRepository
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AnalyticsRepository
 import com.littlebridge.enrollplus.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +50,7 @@ data class AnalyticsDashboardState(
     val currentGrowth: String = "0%",
     val cards: List<AnalyticsCardData> = emptyList(),
     val insights: List<InsightItem> = emptyList(),
+    val overview: AdminDashboardOverview? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val parseWarning: String? = null,
@@ -61,6 +64,7 @@ data class AnalyticsDashboardState(
 
 class AnalyticsDashboardViewModel(
     private val analyticsRepository: AnalyticsRepository,
+    private val adminDashboardRepository: AdminDashboardRepository,
     private val preferenceRepository: PreferenceRepository
 ) : ViewModel() {
 
@@ -77,9 +81,15 @@ class AnalyticsDashboardViewModel(
                 _state.value = _state.value.copy(isLoading = false)
                 return@launch
             }
-            when (val result = analyticsRepository.getOverview(token)) {
+
+            // Fetch analytics overview (trend, cards, insights) and admin dashboard
+            // overview (KPIs, fee analytics, parent engagement, school pulse) in parallel.
+            val analyticsResult = analyticsRepository.getOverview(token)
+            val overviewResult = adminDashboardRepository.getOverview(token)
+
+            when (analyticsResult) {
                 is NetworkResult.Success -> {
-                    val data = result.data.data
+                    val data = analyticsResult.data.data
                     val rawCards = data?.cards ?: emptyList()
                     val rawInsights = data?.insights ?: emptyList()
                     val parsedCards = rawCards.mapNotNull { parseCard(it) }
@@ -89,21 +99,25 @@ class AnalyticsDashboardViewModel(
                     val warning = if (cardFailures > 0 || insightFailures > 0) {
                         "Some data could not be displayed ($cardFailures card(s), $insightFailures insight(s) failed to parse)"
                     } else null
+
+                    val overviewData = (overviewResult as? NetworkResult.Success)?.data?.data
+
                     _state.value = _state.value.copy(
                         performanceTrend = data?.performanceTrend?.map { it.toFloat() } ?: emptyList(),
                         trendLabels      = data?.trendLabels ?: emptyList(),
                         currentGrowth    = data?.currentGrowth ?: "0%",
                         cards            = parsedCards,
                         insights         = parsedInsights,
+                        overview         = overviewData,
                         isLoading        = false,
                         parseWarning     = warning,
-                        isStale          = result.isStale,
-                        isOffline        = result.isOffline,
+                        isStale          = analyticsResult.isStale,
+                        isOffline        = analyticsResult.isOffline,
                     )
                 }
                 is NetworkResult.Error -> {
-                    AppLogger.e("AnalyticsDashboardVM", "getOverview error: ${result.message}")
-                    _state.value = _state.value.copy(isLoading = false, errorMessage = result.message)
+                    AppLogger.e("AnalyticsDashboardVM", "getOverview error: ${analyticsResult.message}")
+                    _state.value = _state.value.copy(isLoading = false, errorMessage = analyticsResult.message)
                 }
                 is NetworkResult.ConnectionError -> {
                     AppLogger.e("AnalyticsDashboardVM", "getOverview connection error")

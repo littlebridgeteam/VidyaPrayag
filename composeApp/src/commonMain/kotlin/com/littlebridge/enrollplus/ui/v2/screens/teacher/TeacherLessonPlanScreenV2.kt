@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -80,7 +81,7 @@ fun TeacherLessonPlanScreenV2(
         }
     }
 
-    Box(modifier.fillMaxSize().background(VColors.cream)) {
+    Box(modifier.fillMaxSize().imePadding().background(VColors.cream)) {
         when (state.mode) {
             LessonPlanMode.List -> LessonPlanListMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
             LessonPlanMode.Editor -> LessonPlanEditorMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
@@ -166,7 +167,7 @@ private fun LessonPlanListMode(
 
         // Post-complete quiz suggestion banner
         if (state.showQuizSuggestion) {
-            item { QuizSuggestionBanner(viewModel, state.completedPlanTitle) }
+            item { QuizSuggestionBanner(viewModel, state.completedPlanTitle, onToolChange) }
         }
 
         when {
@@ -284,6 +285,8 @@ private fun LessonPlanEditorMode(
     var resourceText by remember { mutableStateOf("") }
     var activityText by remember { mutableStateOf("") }
     var activityDuration by remember { mutableStateOf("15") }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showSkipConfirm by remember { mutableStateOf(false) }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -305,7 +308,7 @@ private fun LessonPlanEditorMode(
             VtCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(VColors.surfaceTint)
+                        Modifier.size(44.dp).clip(CircleShape).background(VColors.surfaceTint)
                             .clickable { viewModel.closeEditor() },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
@@ -422,10 +425,10 @@ private fun LessonPlanEditorMode(
                             Box(Modifier.size(6.dp).clip(CircleShape).background(VColors.violet))
                             Text(obj, style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
                                                     Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(VColors.surfaceTint)
+                                Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
                                     .clickable { viewModel.removeObjective(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(16.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -457,10 +460,10 @@ private fun LessonPlanEditorMode(
                             Box(Modifier.size(6.dp).clip(CircleShape).background(VColors.success))
                             Text("${act.activity} (${act.durationMin} min)", style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
                                                     Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(VColors.surfaceTint)
+                                Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
                                     .clickable { viewModel.removeActivity(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(16.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -503,10 +506,10 @@ private fun LessonPlanEditorMode(
                             Box(Modifier.size(6.dp).clip(CircleShape).background(VColors.success))
                             Text(res, style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
                                                     Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(VColors.surfaceTint)
+                                Modifier.size(36.dp).clip(CircleShape).background(VColors.surfaceTint)
                                     .clickable { viewModel.removeResource(i) },
                                 contentAlignment = Alignment.Center,
-                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(12.dp)) }
+                            ) { Icon(VIcons.Close, contentDescription = appString(StringKeys.TC_REMOVE), tint = VColors.ink3, modifier = Modifier.size(16.dp)) }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -571,7 +574,7 @@ private fun LessonPlanEditorMode(
                         )
                         VButton(
                             text = appString(StringKeys.TC_SKIP),
-                            onClick = { viewModel.skipPlan() },
+                            onClick = { showSkipConfirm = true },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Secondary,
                             tone = VButtonTone.Lavender,
@@ -589,7 +592,7 @@ private fun LessonPlanEditorMode(
                         )
                         VButton(
                             text = appString(StringKeys.COMMON_BUTTON_DELETE),
-                            onClick = { viewModel.deletePlan() },
+                            onClick = { showDeleteConfirm = true },
                             modifier = Modifier.weight(1f),
                             variant = VButtonVariant.Ghost,
                             size = VButtonSize.Sm,
@@ -604,6 +607,27 @@ private fun LessonPlanEditorMode(
     if (state.showSaveTemplateDialog) {
         SaveTemplateDialog(viewModel)
     }
+    // Delete confirmation
+    if (showDeleteConfirm) {
+        TeacherConfirmSheet(
+            title = appString(StringKeys.COMMON_BUTTON_DELETE),
+            body = "Are you sure you want to delete this lesson plan? This cannot be undone.",
+            confirmLabel = appString(StringKeys.COMMON_BUTTON_DELETE),
+            onConfirm = { showDeleteConfirm = false; viewModel.deletePlan() },
+            onDismiss = { showDeleteConfirm = false },
+            destructive = true,
+        )
+    }
+    // Skip confirmation
+    if (showSkipConfirm) {
+        TeacherConfirmSheet(
+            title = appString(StringKeys.TC_SKIP),
+            body = "Mark this lesson plan as skipped? You can still view it later.",
+            confirmLabel = appString(StringKeys.TC_SKIP),
+            onConfirm = { showSkipConfirm = false; viewModel.skipPlan() },
+            onDismiss = { showSkipConfirm = false },
+        )
+    }
 }
 
 @Composable
@@ -615,7 +639,7 @@ private fun SaveTemplateDialog(viewModel: TeacherLessonPlanViewModel) {
             VInput(value = state.templateTitle, onValueChange = viewModel::setTemplateTitle, placeholder = appString(StringKeys.TC_TEMPLATE_TITLE))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(
-                    Modifier.size(24.dp).clip(CircleShape)
+                    Modifier.size(36.dp).clip(CircleShape)
                         .background(if (state.templateIsShared) VColors.violet.copy(alpha = 0.14f) else VColors.surfaceTint)
                         .border(1.dp, if (state.templateIsShared) VColors.violet else VColors.line, CircleShape)
                         .clickable { viewModel.setTemplateShared(!state.templateIsShared) },
@@ -666,7 +690,7 @@ private fun LessonPlanCalendarMode(
             VtCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(VColors.surfaceTint)
+                        Modifier.size(44.dp).clip(CircleShape).background(VColors.surfaceTint)
                             .clickable { viewModel.closeCalendar() },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
@@ -737,6 +761,7 @@ private fun LessonPlanTemplatesMode(
     onChangeClass: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateV2()
+    var deleteTemplateId by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -756,7 +781,7 @@ private fun LessonPlanTemplatesMode(
             VtCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
-                        Modifier.size(34.dp).clip(CircleShape).background(VColors.surfaceTint)
+                        Modifier.size(44.dp).clip(CircleShape).background(VColors.surfaceTint)
                             .clickable { viewModel.closeTemplates() },
                         contentAlignment = Alignment.Center,
                     ) { Icon(VIcons.ArrowLeft, contentDescription = appString(StringKeys.COMMON_BUTTON_BACK), tint = VColors.ink2, modifier = Modifier.size(18.dp)) }
@@ -794,7 +819,7 @@ private fun LessonPlanTemplatesMode(
                 TemplateRow(
                     template = tpl,
                     onInstantiate = { viewModel.openInstantiateDialog(tpl.id) },
-                    onDelete = { viewModel.deleteTemplate(tpl.id) },
+                    onDelete = { deleteTemplateId = tpl.id },
                 )
             }
         }
@@ -803,6 +828,17 @@ private fun LessonPlanTemplatesMode(
     // Instantiate dialog
     if (state.showInstantiateDialog) {
         InstantiateDialog(viewModel)
+    }
+    // Template delete confirmation
+    if (deleteTemplateId != null) {
+        TeacherConfirmSheet(
+            title = appString(StringKeys.COMMON_BUTTON_DELETE),
+            body = "Delete this template? This cannot be undone.",
+            confirmLabel = appString(StringKeys.COMMON_BUTTON_DELETE),
+            onConfirm = { val id = deleteTemplateId; deleteTemplateId = null; if (id != null) viewModel.deleteTemplate(id) },
+            onDismiss = { deleteTemplateId = null },
+            destructive = true,
+        )
     }
 }
 
@@ -947,6 +983,7 @@ private fun PickerRow(
 private fun QuizSuggestionBanner(
     viewModel: TeacherLessonPlanViewModel,
     completedPlanTitle: String,
+    onToolChange: (UpdateTool) -> Unit,
 ) {
     VtCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -976,7 +1013,10 @@ private fun QuizSuggestionBanner(
                 )
                 VButton(
                     text = appString(StringKeys.TC_CREATE_QUIZ),
-                    onClick = { viewModel.dismissQuizSuggestion() },
+                    onClick = {
+                        viewModel.dismissQuizSuggestion()
+                        onToolChange(UpdateTool.Syllabus)
+                    },
                     modifier = Modifier.weight(1f),
                     variant = VButtonVariant.Secondary,
                     tone = VButtonTone.Lavender,

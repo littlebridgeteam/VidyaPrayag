@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -62,7 +65,7 @@ fun TeacherStudentProfilePane(
     LaunchedEffect(studentId) { viewModel.load(studentId) }
 
     val c = VtC
-    Column(modifier.fillMaxSize()) {
+    Column(modifier.fillMaxSize().statusBarsPadding()) {
         TeacherSubHeader(
             title = state.profile?.name ?: appString(StringKeys.TC_STUDENT),
             subtitle = state.profile?.let { "${it.className} · ${it.section}" },
@@ -105,8 +108,8 @@ fun TeacherStudentProfilePane(
 private fun StudentProfileBody(p: StudentProfileData) {
     val c = VtC
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+        modifier = Modifier.fillMaxSize().imePadding().navigationBarsPadding(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = TeacherDockClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { IdentityCard(p) }

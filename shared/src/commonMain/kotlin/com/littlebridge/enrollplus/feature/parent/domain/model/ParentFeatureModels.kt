@@ -72,6 +72,17 @@ data class ParentFeeItemDto(
 )
 
 @Serializable
+data class MonthlyFeeSummary(
+    val month: String,
+    @SerialName("total_amount") val totalAmount: Double,
+    @SerialName("paid_amount") val paidAmount: Double,
+    @SerialName("due_amount") val dueAmount: Double,
+    val status: String,
+    val items: List<ParentFeeItemDto> = emptyList(),
+    val currency: String = "INR",
+)
+
+@Serializable
 data class FeeData(
     @SerialName("total_collected") val totalCollected: String,
     @SerialName("collection_progress") val collectionProgress: Float,
@@ -79,6 +90,7 @@ data class FeeData(
     @SerialName("overdue_count") val overdueCount: Int,
     val announcements: List<FeeAnnouncementDto>,
     @SerialName("fee_items") val feeItems: List<ParentFeeItemDto> = emptyList(),
+    @SerialName("monthly_summary") val monthlySummary: List<MonthlyFeeSummary> = emptyList(),
 )
 
 @Serializable
@@ -90,6 +102,18 @@ data class FeeAnnouncementDto(
     @SerialName("open_rate") val openRate: String,
     val engagement: String,
     val type: String
+)
+
+@Serializable
+data class PayFeeRequest(
+    @SerialName("fee_id") val feeId: String,
+)
+
+@Serializable
+data class PayFeeResponse(
+    @SerialName("fee_id") val feeId: String,
+    val status: String,
+    @SerialName("paid_at") val paidAt: String,
 )
 
 // --- Scholarships ---

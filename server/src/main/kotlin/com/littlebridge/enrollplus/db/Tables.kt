@@ -82,6 +82,8 @@ object AppUsersTable : UUIDTable("app_users", "id") {
     // Nullable for backward compatibility — standalone school admins remain unlinked.
     val organizationId  = uuid("organization_id").nullable()
     val orgAdminRole    = varchar("org_admin_role", 16).nullable() // org_admin | null
+    // Merged onboarding flow: admin role label from Step 1 (e.g. "Principal", "Director")
+    val adminRole       = text("admin_role").nullable()
     val isActive         = bool("is_active").default(true)
     val lastLoginAt      = timestamp("last_login_at").nullable()
     val passwordChangedAt = timestamp("password_changed_at").nullable()
@@ -243,6 +245,15 @@ object SchoolsTable : UUIDTable("schools", "id") {
     val totalClasses       = integer("total_classes").nullable()
     val academicYearStartMonth = text("academic_year_start_month").nullable()
     val gradingSystem      = text("grading_system").nullable()
+    // Merged onboarding flow fields (Figma "New School Onboarding Flow")
+    val shortName          = text("short_name").nullable()
+    val academicYearLabel  = text("academic_year_label").nullable()
+    val academicYearStartDate = text("academic_year_start_date").nullable()
+    val academicYearEndDate = text("academic_year_end_date").nullable()
+    val workingDays        = text("working_days").nullable()
+    val schoolStartTime    = text("school_start_time").nullable()
+    val schoolEndTime      = text("school_end_time").nullable()
+    val periodsPerDay      = integer("periods_per_day").nullable()
     // EXPLICIT per-wizard-step completion ledger (onboarding redirect fix).
     //
     // The bug: self-registration (`POST /auth/register-school`) pre-creates a
@@ -4732,3 +4743,18 @@ object FeeLateFeeTiersTable : UUIDTable("fee_late_fee_tiers", "id") {
 }
 
 val SYSTEM_SCHOOL_ID: UUID = UUID(0, 0)
+
+object GameStudentCombosTable : UUIDTable("game_student_combos", "id") {
+    val studentId    = uuid("student_id")
+    val schoolId     = uuid("school_id")
+    val comboType    = varchar("combo_type", 32)  // HOMEWORK, ATTENDANCE, STUDY, READING
+    val streakCount  = integer("streak_count").default(0)
+    val lastEventAt  = timestamp("last_event_at")
+    val isActive     = bool("is_active").default(true)
+    val createdAt    = timestamp("created_at")
+    val updatedAt    = timestamp("updated_at")
+
+    init {
+        uniqueIndex("ux_student_combo_type", studentId, comboType)
+    }
+}

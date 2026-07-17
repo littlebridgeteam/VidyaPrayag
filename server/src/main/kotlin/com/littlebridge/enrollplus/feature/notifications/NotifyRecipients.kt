@@ -75,6 +75,33 @@ object NotifyRecipients {
     }
 
     /**
+     * Subject teacher(s) for a specific child + subject. Resolves the child's
+     * current_grade from [ChildrenTable], then finds active teacher assignments
+     * matching that class + [subjectId] in [TeacherSubjectAssignmentsTable].
+     * Returns app_users.id values (teacherId column).
+     */
+    suspend fun subjectTeachersOfChild(
+        schoolId: UUID,
+        childId: UUID,
+        subjectId: UUID?,
+    ): List<UUID> = dbQuery {
+        if (subjectId == null) return@dbQuery emptyList<UUID>()
+        val child = ChildrenTable.selectAll().where {
+            (ChildrenTable.id eq childId) and (ChildrenTable.isActive eq true)
+        }.singleOrNull() ?: return@dbQuery emptyList<UUID>()
+
+        val grade = child[ChildrenTable.currentGrade] ?: return@dbQuery emptyList<UUID>()
+
+        TeacherSubjectAssignmentsTable.selectAll().where {
+            (TeacherSubjectAssignmentsTable.schoolId eq schoolId) and
+                (TeacherSubjectAssignmentsTable.className eq grade) and
+                (TeacherSubjectAssignmentsTable.subjectId eq subjectId) and
+                (TeacherSubjectAssignmentsTable.isActive eq true) and
+                (TeacherSubjectAssignmentsTable.teacherId.isNotNull())
+        }.mapNotNull { it[TeacherSubjectAssignmentsTable.teacherId] }.distinct()
+    }
+
+    /**
      * Alumni app_users.id for a school — active, approved, with user_id linked.
      * Optionally filtered by graduation_year for batch-wise targeting.
      */

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
+import com.littlebridge.enrollplus.feature.admin.domain.model.BulkCreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeStructureRequest
@@ -33,7 +34,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class FeeSalaryTab { FEES, SALARY }
-enum class FeeSubTab { STRUCTURE, PAYMENT_TRACKING, REMINDER_SETTINGS, LATE_FEE_TIERS }
+enum class FeeSubTab { STRUCTURE, PAYMENT_TRACKING, REMINDER_SETTINGS, LATE_FEE_TIERS, CHARGES }
 
 data class FeeSalaryState(
     val isLoading: Boolean = true,
@@ -107,6 +108,10 @@ class FeeSalaryViewModel(
             FeeSubTab.PAYMENT_TRACKING -> if (_state.value.feeStudents.isEmpty()) loadFeeStudents()
             FeeSubTab.REMINDER_SETTINGS -> if (_state.value.reminderConfig == null) loadReminderConfig()
             FeeSubTab.LATE_FEE_TIERS -> if (_state.value.lateFeeTiers.isEmpty()) loadLateFeeTiers()
+            FeeSubTab.CHARGES -> {
+                if (_state.value.additionalCharges.isEmpty()) loadAdditionalCharges()
+                if (_state.value.feeStudents.isEmpty()) loadFeeStudents()
+            }
         }
         if (_state.value.classes.isEmpty()) loadClasses()
         if (_state.value.teachers.isEmpty()) loadTeachers()
@@ -144,7 +149,7 @@ class FeeSalaryViewModel(
         }
     }
 
-    fun createFeeStructure(title: String, amount: Double, description: String?, classId: String?) {
+    fun createFeeStructure(title: String, amount: Double, description: String?, classId: String?, frequency: String = "MONTHLY") {
         viewModelScope.launch {
             _state.update { it.copy(isActionLoading = true, actionMessage = null) }
             val token = getToken() ?: return@launch
@@ -153,6 +158,7 @@ class FeeSalaryViewModel(
                 title = title,
                 description = description,
                 amount = amount,
+                frequency = frequency,
             )
             when (val result = repository.createFeeStructure(token, req)) {
                 is NetworkResult.Success -> {
@@ -220,7 +226,8 @@ class FeeSalaryViewModel(
             val month = _state.value.selectedMonth.ifBlank {
                 todayIso().substring(0, 7)
             }
-            when (val result = repository.getFeeStudents(token, month = month, search = _state.value.searchQuery.ifBlank { null })) {
+            val classId = _state.value.selectedClassFilter
+            when (val result = repository.getFeeStudents(token, classId = classId, month = month, search = _state.value.searchQuery.ifBlank { null })) {
                 is NetworkResult.Success -> {
                     val data = result.data.data
                     _state.update {
@@ -245,6 +252,11 @@ class FeeSalaryViewModel(
 
     fun setMonth(month: String) {
         _state.update { it.copy(selectedMonth = month) }
+        loadFeeStudents()
+    }
+
+    fun setClassFilter(classId: String?) {
+        _state.update { it.copy(selectedClassFilter = classId, feeStudents = emptyList()) }
         loadFeeStudents()
     }
 
@@ -326,6 +338,26 @@ class FeeSalaryViewModel(
             when (val result = repository.createAdditionalCharge(token, request)) {
                 is NetworkResult.Success -> {
                     _state.update { it.copy(isActionLoading = false, actionMessage = "Additional charge added") }
+                    loadAdditionalCharges()
+                }
+                is NetworkResult.Error -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = result.message) }
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = "Connection error") }
+                }
+            }
+        }
+    }
+
+    fun bulkCreateAdditionalCharge(request: BulkCreateFeeAdditionalChargeRequest) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = getToken() ?: return@launch
+            when (val result = repository.bulkCreateAdditionalCharge(token, request)) {
+                is NetworkResult.Success -> {
+                    val created = result.data.data?.get("created") ?: 0
+                    _state.update { it.copy(isActionLoading = false, actionMessage = "Charges created for $created students") }
                     loadAdditionalCharges()
                 }
                 is NetworkResult.Error -> {
@@ -532,6 +564,26 @@ class FeeSalaryViewModel(
             when (val result = repository.createLateFeeTier(token, req)) {
                 is NetworkResult.Success -> {
                     _state.update { it.copy(isActionLoading = false, actionMessage = "Late fee tier created") }
+                    loadLateFeeTiers()
+                }
+                is NetworkResult.Error -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = result.message) }
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.update { it.copy(isActionLoading = false, errorMessage = "Connection error") }
+                }
+            }
+        }
+    }
+
+    fun updateLateFeeTier(id: String, daysAfterDue: Int, amount: Double) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true, actionMessage = null) }
+            val token = getToken() ?: return@launch
+            val req = UpdateFeeLateFeeTierRequest(daysAfterDue = daysAfterDue, amount = amount)
+            when (val result = repository.updateLateFeeTier(token, id, req)) {
+                is NetworkResult.Success -> {
+                    _state.update { it.copy(isActionLoading = false, actionMessage = "Late fee tier updated") }
                     loadLateFeeTiers()
                 }
                 is NetworkResult.Error -> {

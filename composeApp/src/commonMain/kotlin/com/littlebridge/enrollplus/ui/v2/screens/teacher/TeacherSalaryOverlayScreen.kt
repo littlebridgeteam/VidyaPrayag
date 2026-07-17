@@ -14,7 +14,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +34,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
+import com.littlebridge.enrollplus.ui.v2.screens.vFormatCurrency
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
@@ -41,6 +46,10 @@ fun TeacherSalaryOverlayScreen(
     viewModel: TeacherSalaryViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
 
     Column(
         modifier = modifier
@@ -61,8 +70,11 @@ fun TeacherSalaryOverlayScreen(
             skeleton = { SkeletonList(rows = 4) },
         ) {
             VPullRefresh(
-                isRefreshing = state.isLoading,
-                onRefresh = { viewModel.load() },
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    isRefreshing = true
+                    viewModel.load()
+                },
                 modifier = Modifier.fillMaxSize(),
             ) {
                 Column(
@@ -73,6 +85,35 @@ fun TeacherSalaryOverlayScreen(
                         .padding(bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    if (state.records.isNotEmpty()) {
+                        val totalEarned = state.records.sumOf { it.netAmount }
+                        val totalReceived = state.records.filter { it.status == "PAID" }.sumOf { it.netAmount }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            VCard(modifier = Modifier.weight(1f)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Total Earned", style = VTypography.caption, color = VColors.ink3)
+                                    Text(
+                                        "₹${vFormatCurrency(totalEarned)}",
+                                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                                        color = VColors.violet,
+                                    )
+                                }
+                            }
+                            VCard(modifier = Modifier.weight(1f)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Total Received", style = VTypography.caption, color = VColors.ink3)
+                                    Text(
+                                        "₹${vFormatCurrency(totalReceived)}",
+                                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                                        color = VColors.success,
+                                    )
+                                }
+                            }
+                        }
+                    }
                     state.records.forEach { record ->
                         SalaryRecordCard(record = record)
                     }
@@ -103,12 +144,12 @@ private fun SalaryRecordCard(record: SalaryRecordDto) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column {
-                    Text("Base: ₹${"%,.0f".format(record.baseSalary)}", style = VTypography.caption, color = VColors.ink2)
-                    Text("Allowances: ₹${"%,.0f".format(record.allowances)}", style = VTypography.caption, color = VColors.ink2)
-                    Text("Deductions: ₹${"%,.0f".format(record.deductions)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Base: ₹${vFormatCurrency(record.baseSalary)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Allowances: ₹${vFormatCurrency(record.allowances)}", style = VTypography.caption, color = VColors.ink2)
+                    Text("Deductions: ₹${vFormatCurrency(record.deductions)}", style = VTypography.caption, color = VColors.ink2)
                 }
                 Text(
-                    "Net: ₹${"%,.0f".format(record.netAmount)}",
+                    "Net: ₹${vFormatCurrency(record.netAmount)}",
                     style = VTypography.body,
                     fontWeight = FontWeight.Bold,
                     color = VColors.violet,

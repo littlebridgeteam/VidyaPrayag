@@ -52,6 +52,7 @@ import com.littlebridge.enrollplus.core.OwnedAssignment
 import com.littlebridge.enrollplus.core.TeacherContext
 import com.littlebridge.enrollplus.core.created
 import com.littlebridge.enrollplus.core.fail
+import com.littlebridge.enrollplus.core.enrollmentsFor
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.okMessage
 import com.littlebridge.enrollplus.core.requireOwnedAssignment
@@ -65,6 +66,7 @@ import com.littlebridge.enrollplus.db.SyllabusSourcesTable
 import com.littlebridge.enrollplus.feature.ai.NcertReferenceService
 import com.littlebridge.enrollplus.feature.ai.SyllabusAiService
 import com.littlebridge.enrollplus.feature.ai.SyllabusPaceService
+import com.littlebridge.enrollplus.feature.gamification.XpHooks
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
@@ -793,6 +795,14 @@ private fun Route.syllabusToggleProgress() {
                 }
             }
         }
+
+        // GAM-024: Award XP to all enrolled students when a syllabus topic is covered
+        if (req.isCovered) {
+            enrollmentsFor(asg).forEach { student ->
+                XpHooks.onSyllabusTopicCovered(student.studentId, ctx.schoolId)
+            }
+        }
+
         val node = nodeForUnit(asg, unitId)
         if (node == null) {
             call.fail("Progress saved but unit could not be reloaded", HttpStatusCode.InternalServerError, "RELOAD_FAILED")

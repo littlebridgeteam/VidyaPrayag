@@ -370,7 +370,8 @@ private fun SkillTestInProgress(
     )
     Spacer(Modifier.height(20.dp))
 
-    // Question
+    // Question + options + feedback + navigation — all inside AnimatedContent
+    // so they're properly scoped to the question index and render correctly.
     AnimatedContent(
         targetState = state.currentQuestionIndex,
         transitionSpec = {
@@ -380,30 +381,40 @@ private fun SkillTestInProgress(
                 slideOutHorizontally(tween(dur), targetOffsetX = { if (forward) -it / 3 else it / 3 }) + fadeOut(tween(dur))
         },
         label = "skill-test-question",
-    ) { _ ->
-        Column {
+    ) { index ->
+        val q = state.questions.getOrNull(index)
+        if (q == null) {
+            Text("No question available", style = VTypography.body, color = VColors.ink3)
+            return@AnimatedContent
+        }
+
+        val isAnswered = q.id in state.answeredQuestions
+        val result = state.answerResults[q.id]
+        val showFeedback = isAnswered && result != null
+        val selectedAnswer = state.selectedAnswers[q.id]
+        val isLastQuestion = index >= state.totalQuestions - 1
+        val showNext = isAnswered && !state.isSubmittingAnswer && !isLastQuestion
+        val showSeeResults = isAnswered && !state.isSubmittingAnswer && isLastQuestion
+        val showBack = index > 0 && !state.isSubmittingAnswer
+
+        Column(Modifier.fillMaxWidth()) {
             // Subject tag
-            SkillTestSubjectTag(question.subject)
+            SkillTestSubjectTag(q.subject)
             Spacer(Modifier.height(8.dp))
 
             // Question text
             Text(
-                question.questionText,
+                q.questionText,
                 style = VTypography.body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
                 color = VColors.ink,
             )
             Spacer(Modifier.height(16.dp))
 
             // Options
-            val isAnswered = question.id in state.answeredQuestions
-            val lastResult = state.lastAnswerResult
-            val showFeedback = isAnswered && lastResult != null && lastResult.questionId == question.id
-            val selectedAnswer = state.lastSelectedAnswer
-
-            question.options.forEach { option ->
-                val letter = option.substringBefore(")").trim()
-                val isCorrectOption = showFeedback && lastResult?.correctAnswer?.equals(letter, ignoreCase = true) == true
-                val isUserWrongChoice = showFeedback && lastResult?.isCorrect == false &&
+            q.options.forEachIndexed { optIndex, option ->
+                val letter = ('A' + optIndex).toString()
+                val isCorrectOption = showFeedback && result?.correctAnswer?.equals(letter, ignoreCase = true) == true
+                val isUserWrongChoice = showFeedback && result?.isCorrect == false &&
                     selectedAnswer?.equals(letter, ignoreCase = true) == true
 
                 SkillTestOptionRow(
@@ -412,64 +423,58 @@ private fun SkillTestInProgress(
                     isWrong = isUserWrongChoice,
                     showCorrect = showFeedback && isCorrectOption,
                     enabled = !isAnswered && !state.isSubmittingAnswer,
-                    onClick = { onSubmitAnswer(question.id, letter) },
+                    onClick = { onSubmitAnswer(q.id, letter) },
                 )
             }
 
             // Instant feedback
-            if (showFeedback && lastResult != null) {
+            if (showFeedback && result != null) {
                 Spacer(Modifier.height(12.dp))
-                SkillTestFeedbackBox(lastResult.isCorrect, lastResult.correctAnswer, lastResult.explanation)
+                SkillTestFeedbackBox(result.isCorrect, result.correctAnswer, result.explanation)
             }
-        }
-    }
 
-    // Submitting indicator
-    if (state.isSubmittingAnswer) {
-        Spacer(Modifier.height(12.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TeacherSpinner(16.dp, 2.dp)
-            Spacer(Modifier.size(8.dp))
-            Text("Evaluating...", style = VTypography.caption, color = VColors.ink3)
-        }
-    }
-
-    // Answer error
-    state.answerError?.let {
-        Spacer(Modifier.height(8.dp))
-        Text(it, style = VTypography.caption, color = VColors.error)
-    }
-
-    // Navigation buttons — Back (if not first), Next (if answered and not last), See Results (if last and answered)
-    val isAnswered = question.id in state.answeredQuestions
-    val isLastQuestion = state.currentQuestionIndex >= state.totalQuestions - 1
-    val showNext = isAnswered && !state.isSubmittingAnswer && !isLastQuestion
-    val showSeeResults = isAnswered && !state.isSubmittingAnswer && isLastQuestion
-    val showBack = state.currentQuestionIndex > 0 && !state.isSubmittingAnswer
-    if (showBack || showNext || showSeeResults) {
-        Spacer(Modifier.height(16.dp))
-        if (showSeeResults) {
-            // See Results is a full-width primary action — give it its own line
-            if (showBack) {
-                VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
-                Spacer(Modifier.height(8.dp))
-            }
-            VButton("See Results", onClick = onSeeResults, modifier = Modifier.fillMaxWidth())
-        } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = if (showBack && showNext) Arrangement.SpaceBetween else if (showBack) Arrangement.Start else Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (showBack) {
-                    VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
+            // Submitting indicator
+            if (state.isSubmittingAnswer) {
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TeacherSpinner(16.dp, 2.dp)
+                    Spacer(Modifier.size(8.dp))
+                    Text("Evaluating...", style = VTypography.caption, color = VColors.ink3)
                 }
-                if (showNext) {
-                    VButton("Next Question", onClick = onNext)
+            }
+
+            // Answer error
+            state.answerError?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, style = VTypography.caption, color = VColors.error)
+            }
+
+            // Navigation buttons
+            if (showBack || showNext || showSeeResults) {
+                Spacer(Modifier.height(16.dp))
+                if (showSeeResults) {
+                    if (showBack) {
+                        VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    VButton("See Results", onClick = onSeeResults, modifier = Modifier.fillMaxWidth())
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (showBack && showNext) Arrangement.SpaceBetween else if (showBack) Arrangement.Start else Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (showBack) {
+                            VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
+                        }
+                        if (showNext) {
+                            VButton("Next Question", onClick = onNext)
+                        }
+                    }
                 }
             }
         }

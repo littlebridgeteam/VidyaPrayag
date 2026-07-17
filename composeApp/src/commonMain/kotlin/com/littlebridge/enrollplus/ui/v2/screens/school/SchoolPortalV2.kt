@@ -167,6 +167,7 @@ fun SchoolPortalV2(
                     "announcements" -> { tab = "comms"; overlay = SchoolOverlay.None }
                     "calendar" -> overlay = SchoolOverlay.AcademicCalendarPlatform
                     "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
+                    "fee-salary", "fee_salary" -> overlay = SchoolOverlay.FeeSalaryManagement
                     "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
                     "timetable" -> overlay = SchoolOverlay.ClassesSubjects
                     "timetable-requests" -> overlay = SchoolOverlay.ClassesSubjects

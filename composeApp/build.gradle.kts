@@ -191,10 +191,18 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            isMinifyEnabled = false
+            // Firebase Crashlytics — explicitly enable for debug builds.
+            // The manifest flag + runtime call handle collection, but this
+            // ensures the Crashlytics Gradle plugin processes debug variants
+            // (mapping upload, SDK injection) the same as release.
+        }
         getByName("release") {
             isMinifyEnabled = false
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21

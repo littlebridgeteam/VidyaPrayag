@@ -9,6 +9,13 @@ interface AuthRepository {
     suspend fun signup(request: SignupRequest): NetworkResult<AuthResponse>
     /** "Onboard your school" — mints a school_admin + a pending school in one call. */
     suspend fun registerSchool(request: SchoolRegisterRequest): NetworkResult<AuthResponse>
+    /**
+     * Same as [registerSchool] but does NOT call [saveSession] — the caller is
+     * responsible for persisting the session later (used by the merged
+     * registration + onboarding flow which needs to stay in the unauthenticated
+     * nav graph until all steps are complete).
+     */
+    suspend fun registerSchoolWithoutSession(request: SchoolRegisterRequest): NetworkResult<AuthResponse>
     suspend fun login(request: LoginRequest): NetworkResult<AuthResponse>
     suspend fun sendOtp(identifier: String, purpose: String? = null): NetworkResult<String>
     suspend fun verifyOtp(identifier: String, code: String, purpose: String? = null): NetworkResult<Boolean>

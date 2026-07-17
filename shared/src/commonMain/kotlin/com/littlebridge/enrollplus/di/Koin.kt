@@ -34,14 +34,6 @@ import com.littlebridge.enrollplus.feature.parent.presentation.TrackProgressView
 
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewModel
-import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalBasicOBViewModel
-
-import com.littlebridge.enrollplus.feature.admin.presentation.BrandingInfoOBViewModel
-
-import com.littlebridge.enrollplus.feature.admin.presentation.AcademicInfoOBViewModel
-
-import com.littlebridge.enrollplus.feature.admin.presentation.LaunchInfoOBViewModel
-
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.AdmissionCRMViewModel
@@ -251,6 +243,23 @@ val commonModule = module {
 
         ) 
 
+    }
+
+    // SilentTokenRefreshManager: proactive token refresh before expiry.
+    // Uses the same session-clearing path as TokenAuthenticator's onRefreshFailed.
+    single<com.littlebridge.enrollplus.core.network.TokenRefreshManager> {
+        val prefs: PreferenceRepository = get()
+        val authedClient: HttpClient = get()
+        com.littlebridge.enrollplus.core.network.SilentTokenRefreshManager(
+            prefs = prefs,
+            authApi = get(),
+            localeManager = get(),
+            onSessionInvalid = {
+                AppLogger.i("SilentRefresh", "Session invalid — clearing session + bearer cache")
+                prefs.clearSession()
+                authedClient.clearBearerCache()
+            },
+        )
     }
 
     single {
@@ -1198,7 +1207,7 @@ val commonModule = module {
 
 val viewModelModule = module {
 
-    factory { MainViewModel(get(), get(), get(), get()) }
+    factory { MainViewModel(get(), get(), get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.presentation.PermissionViewModel(get(), get()) }
 
@@ -1272,19 +1281,8 @@ val viewModelModule = module {
 
     factory { SchoolDashboardViewModel(get(), get(), get()) }
     factory { PinnedScreensViewModel(get(), get()) }
-    factory { InstitutionalBasicOBViewModel(get(), get()) }
-
-    factory { BrandingInfoOBViewModel(get(), get(), get()) }
-
-    factory { AcademicInfoOBViewModel(get(), get()) }
-
-    // Onboarding-time teacher provisioning (creates REAL loginable teacher
-
-    // accounts via TeachersRepository → POST /school/teachers).
-
-    factory { com.littlebridge.enrollplus.feature.admin.presentation.TeacherProvisioningOBViewModel(get(), get()) }
-
-    factory { LaunchInfoOBViewModel(get(), get()) }
+    // Merged registration + onboarding flow (replaces separate AdminSignup + OnboardingV2)
+    factory { com.littlebridge.enrollplus.feature.admin.presentation.RegistrationOnboardingViewModel(get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
 
@@ -1340,7 +1338,7 @@ val viewModelModule = module {
 
     factory { DailyAttendanceViewModel(get(), get(), get()) }
 
-    factory { AnalyticsDashboardViewModel(get(), get()) }
+    factory { AnalyticsDashboardViewModel(get(), get(), get()) }
 
     factory { StudentAnalyticsViewModel(get(), get()) }
 
@@ -1490,6 +1488,8 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorPracticeViewModel(get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherHeatmapViewModel(get(), get()) }
+
+    factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherSafetyFlagsViewModel(get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.ParentProgressViewModel(get(), get(), get()) }
 

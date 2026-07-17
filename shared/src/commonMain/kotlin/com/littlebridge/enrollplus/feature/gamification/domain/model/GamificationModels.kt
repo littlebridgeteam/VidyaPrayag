@@ -194,3 +194,18 @@ data class ClassGoal(
     val reward: String,
     val deadline: String
 )
+
+@Serializable
+data class Combo(
+    val comboType: String,
+    val streakCount: Int,
+    val multiplier: Float,
+    val isActive: Boolean
+)
+
+@Serializable
+data class ComboStatus(
+    val combos: List<Combo>,
+    val bestStreak: Int,
+    val activeMultiplier: Float
+)

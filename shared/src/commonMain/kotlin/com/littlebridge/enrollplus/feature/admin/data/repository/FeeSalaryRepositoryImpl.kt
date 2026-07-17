@@ -3,6 +3,7 @@ package com.littlebridge.enrollplus.feature.admin.data.repository
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.feature.admin.data.remote.FeeSalaryApi
+import com.littlebridge.enrollplus.feature.admin.domain.model.BulkCreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeStructureRequest
@@ -47,6 +48,9 @@ class FeeSalaryRepositoryImpl(
 
     override suspend fun createAdditionalCharge(token: String, request: CreateFeeAdditionalChargeRequest): NetworkResult<ApiResponse<Unit>> =
         api.createAdditionalCharge(token, request)
+
+    override suspend fun bulkCreateAdditionalCharge(token: String, request: BulkCreateFeeAdditionalChargeRequest): NetworkResult<ApiResponse<Map<String, Int>>> =
+        api.bulkCreateAdditionalCharge(token, request)
 
     override suspend fun deleteAdditionalCharge(token: String, id: String): NetworkResult<ApiResponse<Unit>> =
         api.deleteAdditionalCharge(token, id)

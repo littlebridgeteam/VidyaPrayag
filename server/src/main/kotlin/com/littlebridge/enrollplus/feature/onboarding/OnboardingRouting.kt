@@ -68,6 +68,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -196,11 +197,16 @@ data class CompletionResponse(
 // ---------- Field schemas per step ----------
 private val BASIC_FIELDS = listOf(
     Triple("school_name", "SchoolName", "line"),
-    Triple("board", "Board", "dropdown"),               // CBSE|ICSE|UP_STATE…
+    Triple("short_name", "ShortName", "line"),
+    Triple("board", "Board", "dropdown"),               // CBSE|ICSE|UP State|Other
+    Triple("school_type", "SchoolType", "dropdown"),     // Government|Private Aided|Private Unaided|Central
+    Triple("affiliation_number", "AffiliationNumber", "line"),
     Triple("medium", "Medium", "dropdown"),
     Triple("school_gender", "Gender", "dropdown"),
     Triple("contact_email", "Email", "line"),
     Triple("contact_phone", "Phone", "line"),
+    Triple("principal_name", "PrincipalName", "line"),
+    Triple("principal_phone", "PrincipalPhone", "line"),
     Triple("city", "City", "line"),
     Triple("district", "District", "line"),
     Triple("state", "State", "line"),
@@ -325,12 +331,16 @@ private fun syncSchoolBasics(schoolId: UUID, uid: UUID) {
     val now = Instant.now()
     SchoolsTable.update({ SchoolsTable.id eq schoolId }) {
         basics["school_name"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[name] = v }
+        basics["short_name"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[shortName] = v }
         basics["board"]?.let { v -> it[board] = v }
+        basics["school_type"]?.let { v -> it[schoolType] = v }
         basics["affiliation_number"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[affiliationNumber] = v }
         basics["medium"]?.let { v -> it[medium] = v }
         basics["school_gender"]?.let { v -> it[schoolGender] = v }
         basics["contact_email"]?.let { v -> it[contactEmail] = v }
         basics["contact_phone"]?.let { v -> it[contactPhone] = v }
+        basics["principal_name"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[principalName] = v }
+        basics["principal_phone"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[principalPhone] = v }
         basics["full_address"]?.let { v -> it[fullAddress] = v }
         basics["city"]?.let { v -> it[city] = v }
         basics["district"]?.let { v -> it[district] = v }
@@ -349,6 +359,40 @@ private fun syncSchoolBasics(schoolId: UUID, uid: UUID) {
  * explicitly configure classes and subjects during onboarding. Seeding
  * defaults caused Bug 23 (unwanted classes/subjects appearing on dashboard).
  */
+
+/**
+ * Persists academic year configuration fields from the merged onboarding flow's
+ * Step 4 (Academic Year) into the `schools` row. These fields are collected in
+ * addition to or instead of classes/subjects. Must be called inside a dbQuery {}.
+ *
+ * Payload keys (all optional):
+ *   "academic_year_label"  — e.g. "2025-26"
+ *   "academic_year_end_date" — e.g. "2026-03-31"
+ *   "working_days"         — e.g. "Mon-Sat"
+ *   "school_start_time"    — e.g. "08:00 AM"
+ *   "school_end_time"      — e.g. "02:00 PM"
+ *   "periods_per_day"      — e.g. 8
+ */
+private fun persistAcademicYearConfig(schoolId: UUID, payload: JsonObject) {
+    val now = Instant.now()
+    SchoolsTable.update({ SchoolsTable.id eq schoolId }) {
+        payload["academic_year_label"]?.jsonPrimitive?.contentOrNull
+            ?.takeIf { it.isNotBlank() }?.let { v -> it[academicYearLabel] = v }
+        payload["academic_year_start_date"]?.jsonPrimitive?.contentOrNull
+            ?.takeIf { it.isNotBlank() }?.let { v -> it[academicYearStartDate] = v }
+        payload["academic_year_end_date"]?.jsonPrimitive?.contentOrNull
+            ?.takeIf { it.isNotBlank() }?.let { v -> it[academicYearEndDate] = v }
+        payload["working_days"]?.jsonPrimitive?.contentOrNull
+            ?.takeIf { it.isNotBlank() }?.let { v -> it[workingDays] = v }
+        payload["school_start_time"]?.jsonPrimitive?.contentOrNull
+            ?.takeIf { it.isNotBlank() }?.let { v -> it[schoolStartTime] = v }
+        payload["school_end_time"]?.jsonPrimitive?.contentOrNull
+            ?.takeIf { it.isNotBlank() }?.let { v -> it[schoolEndTime] = v }
+        payload["periods_per_day"]?.jsonPrimitive?.intOrNull
+            ?.let { v -> it[periodsPerDay] = v }
+        it[updatedAt] = now
+    }
+}
 
 /**
  * Persists the academic structure for [schoolId] from the submit payload.
@@ -762,12 +806,17 @@ private suspend fun computeOnboardingStatusResponse(uid: UUID): OnboardingStatus
     // self-registered school, so "a named school row exists" no longer falsely
     // marks BASIC complete — THIS is the redirect fix. Derivation + resume logic
     // are shared (and unit-tested) via deriveOnboardingStatus / resumeStep.
+    // Merged onboarding flow: academic year config fields are an alternative
+    // signal for ACADEMIC completion (the new Step 4 may not collect classes).
+    val hasAcademicYearConfig = schoolRow[SchoolsTable.academicYearLabel]?.isNotBlank() == true
+
     val status = deriveOnboardingStatus(
         schoolExists = true,
         ledger = parseOnboardingLedger(schoolRow[SchoolsTable.onboardingStepsDone]),
         hasClasses = hasClasses,
         logoPresent = schoolRow[SchoolsTable.logoUrl]?.isNotBlank() == true,
         stampPresent = schoolRow[SchoolsTable.onboardedAt] != null,
+        hasAcademicYearConfig = hasAcademicYearConfig,
     )
 
     val steps = listOf(
@@ -1013,11 +1062,24 @@ fun Route.onboardingRouting() {
                             // never writes the ledger, so a fresh school always
                             // starts the wizard at BASIC.
                             markStepCompleted(sid, step)
+                            // Merged onboarding flow: BRANDING step is removed —
+                            // auto-mark it done when BASIC is submitted so the
+                            // gate doesn't resume at BRANDING.
+                            if (step == "BASIC") {
+                                markStepCompleted(sid, "BRANDING")
+                            }
                             null
                         }
                         "ACADEMIC" -> {
                             val sid = ensureSchoolForUser(uid)
                             syncSchoolBasics(sid, uid)
+                            // Merged onboarding flow: ACADEMIC step now collects
+                            // academic year config (label, dates, working days,
+                            // timings, periods) in addition to or instead of
+                            // classes/subjects. Persist year config to SchoolsTable.
+                            persistAcademicYearConfig(sid, req.dataPayload)
+                            // Still try to persist classes/subjects if present in
+                            // the payload (backward compat with old wizard).
                             val validationError = persistAcademicStructure(sid, req.dataPayload)
                             if (validationError != null) {
                                 return@dbQuery validationError

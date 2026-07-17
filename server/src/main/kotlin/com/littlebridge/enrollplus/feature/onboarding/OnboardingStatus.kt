@@ -124,14 +124,23 @@ fun deriveOnboardingStatus(
     hasClasses: Boolean,
     logoPresent: Boolean,
     stampPresent: Boolean,
+    hasAcademicYearConfig: Boolean = false,
 ): OnboardingStatus {
     if (!schoolExists) return EMPTY_STATUS
 
-    val academicDone = hasClasses
+    // ACADEMIC is done if the admin submitted the ACADEMIC wizard step (ledger),
+    // OR if substantive academic data exists (classes or year config). The ledger
+    // check is the PRIMARY signal — the merged onboarding flow's Step 4 submits
+    // ACADEMIC with year config but may not create classes, so without checking
+    // the ledger the gate would falsely report ACADEMIC incomplete and redirect
+    // to the old 6-step wizard.
+    val academicDone = "ACADEMIC" in ledger || hasClasses || hasAcademicYearConfig
     // BASIC done only when the admin submitted Step 1 (ledger) OR a legacy row
     // already has substantive wizard data (classes). A registration-seeded name
     // + contact is intentionally NOT sufficient.
     val basicsDone = "BASIC" in ledger || academicDone
+    // BRANDING is auto-marked done when BASIC is submitted in the merged flow.
+    // Legacy rows still fall back to logo presence or academic data.
     val brandingDone = "BRANDING" in ledger || logoPresent || academicDone
     // REVIEW requires the completion stamp (or an explicit REVIEW ledger entry)
     // AND the substantive prerequisite data. A stale stamp alone never completes.
@@ -186,11 +195,16 @@ suspend fun computeOnboardingStatus(userId: UUID): OnboardingStatus = dbQuery {
         .where { SchoolClassesTable.schoolId eq schoolId }
         .count() > 0L
 
+    // Merged onboarding flow: academic year config fields are an alternative
+    // signal for ACADEMIC completion (the new Step 4 may not collect classes).
+    val hasAcademicYearConfig = school[SchoolsTable.academicYearLabel]?.isNotBlank() == true
+
     deriveOnboardingStatus(
         schoolExists = true,
         ledger = ledger,
         hasClasses = hasClasses,
         logoPresent = school[SchoolsTable.logoUrl]?.isNotBlank() == true,
         stampPresent = school[SchoolsTable.onboardedAt] != null,
+        hasAcademicYearConfig = hasAcademicYearConfig,
     )
 }

@@ -142,7 +142,7 @@ class TeacherLessonPlanViewModel(
                     _state.update { it.copy(items = items, isLoading = false, isStale = result.isStale, isOffline = result.isOffline) }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(isLoading = false, error = result.message ?: "Failed to load") }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isLoading = false, error = "Connection error. Please check your network.") }
             }
         }
     }
@@ -192,7 +192,7 @@ class TeacherLessonPlanViewModel(
                     }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = result.message ?: "Failed to load")) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = "Connection error. Please check your network.")) }
             }
         }
     }
@@ -212,19 +212,19 @@ class TeacherLessonPlanViewModel(
             val syllabusResult = repository.loadSyllabus(t, asgId)
             when (syllabusResult) {
                 is NetworkResult.Success -> _state.update { it.copy(syllabusUnits = syllabusResult.data.data.units) }
-                else -> {}
+                else -> Unit
             }
             // Load homework list for the homework link picker
             val hwResult = repository.listHomework(t, asgId)
             when (hwResult) {
                 is NetworkResult.Success -> _state.update { it.copy(homeworkOptions = hwResult.data.data.items) }
-                else -> {}
+                else -> Unit
             }
             // Load existing quizzes for the quiz attach picker
             val quizResult = repository.listQuizzes(t, asgId)
             when (quizResult) {
                 is NetworkResult.Success -> _state.update { it.copy(existingQuizzes = quizResult.data.data.quizzes) }
-                else -> {}
+                else -> Unit
             }
         }
     }
@@ -294,7 +294,7 @@ class TeacherLessonPlanViewModel(
                     load(_state.value.assignmentId, _state.value.scopeLabel)
                 }
                 is NetworkResult.Error -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = result.message ?: "Save failed")) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = "Connection error. Please check your network.")) }
             }
         }
     }
@@ -312,7 +312,7 @@ class TeacherLessonPlanViewModel(
                     load(_state.value.assignmentId, _state.value.scopeLabel)
                 }
                 is NetworkResult.Error -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = result.message ?: "Complete failed")) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = "Connection error. Please check your network.")) }
             }
         }
     }
@@ -329,7 +329,7 @@ class TeacherLessonPlanViewModel(
                     load(_state.value.assignmentId, _state.value.scopeLabel)
                 }
                 is NetworkResult.Error -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = result.message ?: "Skip failed")) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = "Connection error. Please check your network.")) }
             }
         }
     }
@@ -346,7 +346,7 @@ class TeacherLessonPlanViewModel(
                     load(_state.value.assignmentId, _state.value.scopeLabel)
                 }
                 is NetworkResult.Error -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = result.message ?: "Delete failed")) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(editor = it.editor.copy(isSaving = false, error = "Connection error. Please check your network.")) }
             }
         }
     }
@@ -386,7 +386,7 @@ class TeacherLessonPlanViewModel(
                     }
                 }
                 is NetworkResult.Error -> _state.update { it.copy(isCalendarLoading = false) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isCalendarLoading = false) }
             }
         }
     }
@@ -408,7 +408,7 @@ class TeacherLessonPlanViewModel(
             when (result) {
                 is NetworkResult.Success -> _state.update { it.copy(templates = result.data.data, isTemplatesLoading = false) }
                 is NetworkResult.Error -> _state.update { it.copy(isTemplatesLoading = false, templatesError = result.message ?: "Failed to load") }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isTemplatesLoading = false, templatesError = "Connection error. Please check your network.") }
             }
         }
     }
@@ -445,8 +445,8 @@ class TeacherLessonPlanViewModel(
             ))
             when (result) {
                 is NetworkResult.Success -> _state.update { it.copy(isSavingTemplate = false, showSaveTemplateDialog = false, templateTitle = "", templateIsShared = false) }
-                is NetworkResult.Error -> _state.update { it.copy(isSavingTemplate = false) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.Error -> _state.update { it.copy(isSavingTemplate = false, templatesError = result.message ?: "Failed to save template") }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isSavingTemplate = false, templatesError = "Connection error. Please check your network.") }
             }
         }
     }
@@ -477,8 +477,8 @@ class TeacherLessonPlanViewModel(
                     _state.update { it.copy(isInstantiating = false, showInstantiateDialog = false, instantiateTemplateId = null, mode = LessonPlanMode.List) }
                     load(_state.value.assignmentId, _state.value.scopeLabel)
                 }
-                is NetworkResult.Error -> _state.update { it.copy(isInstantiating = false) }
-                is NetworkResult.ConnectionError -> {}
+                is NetworkResult.Error -> _state.update { it.copy(isInstantiating = false, templatesError = result.message ?: "Failed to instantiate") }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isInstantiating = false, templatesError = "Connection error. Please check your network.") }
             }
         }
     }
@@ -486,8 +486,11 @@ class TeacherLessonPlanViewModel(
     fun deleteTemplate(templateId: String) {
         viewModelScope.launch {
             val t = token() ?: return@launch
-            repository.deleteLessonTemplate(t, templateId)
-            loadTemplates()
+            when (val result = repository.deleteLessonTemplate(t, templateId)) {
+                is NetworkResult.Success -> loadTemplates()
+                is NetworkResult.Error -> _state.update { it.copy(templatesError = result.message ?: "Failed to delete template") }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(templatesError = "Connection error. Please check your network.") }
+            }
         }
     }
 
