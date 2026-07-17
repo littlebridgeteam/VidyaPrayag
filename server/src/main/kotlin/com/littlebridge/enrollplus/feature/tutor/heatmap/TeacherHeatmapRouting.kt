@@ -4,11 +4,18 @@ package com.littlebridge.enrollplus.feature.tutor.heatmap
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.db.ChildrenTable
+import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
+import com.littlebridge.enrollplus.db.TutorSessionsTable
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
 /**
@@ -79,7 +86,60 @@ fun Route.heatmapRouting() {
             "Heatmap (${heatmap.cells.size} cells)"
         )
     }
+
+    get("/tutor/safety-flags") {
+        val ctx = call.requireSchoolContext() ?: return@get
+
+        val service = TeacherHeatmapService()
+        val scope = service.getTeacherScope(ctx.schoolId, ctx.userId)
+        if (scope.isEmpty()) {
+            call.ok(emptyList<SafetyFlagResponse>(), "No safety flags (no assignments)")
+            return@get
+        }
+
+        val scopeSubjectIds = scope.map { it.subjectId }.toSet()
+
+        val flags = dbQuery {
+            TutorSessionsTable.selectAll().where {
+                (TutorSessionsTable.schoolId eq ctx.schoolId) and
+                    (TutorSessionsTable.safetyFlag.isNotNull())
+            }.orderBy(TutorSessionsTable.createdAt, SortOrder.DESC)
+                .limit(50)
+                .toList()
+        }.filter { row ->
+            val sid = row[TutorSessionsTable.subjectId]
+            sid != null && sid in scopeSubjectIds
+        }.map { row ->
+            val childId = row[TutorSessionsTable.childId]
+            val childName = dbQuery {
+                ChildrenTable.selectAll().where { ChildrenTable.id eq childId }
+                    .singleOrNull()?.get(ChildrenTable.childName)
+            } ?: "Unknown"
+            SafetyFlagResponse(
+                sessionId = row[TutorSessionsTable.id].value.toString(),
+                childId = childId.toString(),
+                childName = childName,
+                subjectId = row[TutorSessionsTable.subjectId]?.toString(),
+                safetyFlag = row[TutorSessionsTable.safetyFlag],
+                mode = row[TutorSessionsTable.mode],
+                createdAt = row[TutorSessionsTable.createdAt].toString(),
+            )
+        }
+
+        call.ok(flags, "Safety flags (${flags.size})")
+    }
 }
+
+@Serializable
+data class SafetyFlagResponse(
+    val sessionId: String,
+    val childId: String,
+    val childName: String,
+    val subjectId: String? = null,
+    val safetyFlag: String? = null,
+    val mode: String,
+    val createdAt: String,
+)
 
 @Serializable
 data class TeacherScopeResponse(

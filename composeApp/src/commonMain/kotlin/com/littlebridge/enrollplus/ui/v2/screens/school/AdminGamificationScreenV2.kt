@@ -53,7 +53,9 @@ import com.littlebridge.enrollplus.feature.gamification.presentation.AdminGamifi
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
@@ -69,7 +71,20 @@ fun AdminGamificationScreenV2(
 ) {
     val state by viewModel.state.collectAsStateV2()
 
+    var pendingApproveRedemptionId by remember { mutableStateOf<String?>(null) }
+    var pendingRejectRedemptionId by remember { mutableStateOf<String?>(null) }
+    var pendingCreateBoost by remember { mutableStateOf(false) }
+    var pendingBoostParams by remember { mutableStateOf<Triple<String, Float, String>?>(null) }
+    var pendingBoostTargetId by remember { mutableStateOf<String?>(null) }
+    var pendingBoostHours by remember { mutableStateOf(24) }
+    var pendingDeleteHouseId by remember { mutableStateOf<String?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) { viewModel.load() }
+
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) isRefreshing = false
+    }
 
     LaunchedEffect(state.actionMessage) {
         if (state.actionMessage != null) {
@@ -78,8 +93,16 @@ fun AdminGamificationScreenV2(
         }
     }
 
+    VPullRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            viewModel.load()
+        },
+        modifier = modifier.fillMaxSize(),
+    ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(VColors.cream)
             .statusBarsPadding()
@@ -155,18 +178,87 @@ fun AdminGamificationScreenV2(
             ) {
                 item { FeatureFlagsCard(state = state, onToggle = viewModel::setEnabled, onGranularToggle = viewModel::setGranularFlag) }
                 item { AnalyticsCard(state = state) }
-                item { BadgeDefinitionsCard(badges = state.badgeDefinitions) }
-                item { LevelDefinitionsCard(levels = state.levelDefinitions) }
-                item { HousesCard(houses = state.houses) }
-                item { RewardsCard(rewards = state.rewards) }
-                item { QuestsCard(quests = state.quests) }
-                item { EventsCard(events = state.events) }
+                item { BadgeDefinitionsCard(badges = state.badgeDefinitions, isActionLoading = state.isActionLoading, onCreate = { code, name, desc, icon, cat, rar, xp, seasonal -> viewModel.createBadge(code, name, desc, icon, cat, rar, xp, seasonal) }, onToggle = { id, active -> viewModel.toggleBadgeActive(id, active) }) }
+                item { LevelDefinitionsCard(levels = state.levelDefinitions, isActionLoading = state.isActionLoading, onCreate = { lvl, xp, title, icon -> viewModel.createLevel(lvl, xp, title, icon) }, onToggle = { lvl, active -> viewModel.toggleLevelActive(lvl, active) }) }
+                item { HousesCard(houses = state.houses, isActionLoading = state.isActionLoading, onCreate = { name, icon, color, motto -> viewModel.createHouse(name, icon, color, motto) }, onDelete = { id -> pendingDeleteHouseId = id }) }
+                item { RewardsCard(rewards = state.rewards, isActionLoading = state.isActionLoading, onCreate = { name, desc, icon, xp, stock, role -> viewModel.createReward(name, desc, icon, xp, stock, role) }, onToggle = { id, active -> viewModel.toggleRewardActive(id, active) }) }
+                item { QuestsCard(quests = state.quests, isActionLoading = state.isActionLoading, onCreate = { code, name, desc, type, cat, xp, hrs -> viewModel.createQuest(code, name, desc, type, cat, xp, hrs) }, onToggle = { id, active -> viewModel.toggleQuestActive(id, active) }) }
+                item { EventsCard(events = state.events, isActionLoading = state.isActionLoading, onCreate = { code, name, start, end -> viewModel.createEvent(code, name, start, end) }, onToggle = { id, active -> viewModel.toggleEventActive(id, active) }) }
                 item { LeaderboardCard(leaderboard = state.leaderboard) }
-                item { RedemptionsCard(state = state, onApprove = { id -> viewModel.updateRedemptionStatus(id, "APPROVED") }, onReject = { id -> viewModel.updateRedemptionStatus(id, "REJECTED") }) }
-                item { BoostsCard(state = state, onCreateBoost = { type, mult, scope, tid, hrs -> viewModel.createBoost(type, mult, scope, tid, hrs) }) }
+                item { RedemptionsCard(state = state, onApprove = { id -> pendingApproveRedemptionId = id }, onReject = { id -> pendingRejectRedemptionId = id }) }
+                item { BoostsCard(state = state, onCreateBoost = { type, mult, scope, tid, hrs -> pendingCreateBoost = true; pendingBoostParams = Triple(type, mult, scope); pendingBoostTargetId = tid; pendingBoostHours = hrs }) }
             }
             }
         }
+    }
+    }
+
+    // GAM-022: Confirmation dialogs for redemption approve/reject
+    pendingApproveRedemptionId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Approve Redemption?",
+            message = "This will approve the reward redemption request.",
+            confirmLabel = "Approve",
+            onConfirm = {
+                viewModel.updateRedemptionStatus(id, "APPROVED")
+                pendingApproveRedemptionId = null
+            },
+            onDismiss = { pendingApproveRedemptionId = null },
+        )
+    }
+    pendingRejectRedemptionId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Reject Redemption?",
+            message = "This will reject the reward redemption request. The student's XP will be refunded.",
+            confirmLabel = "Reject",
+            onConfirm = {
+                viewModel.updateRedemptionStatus(id, "REJECTED")
+                pendingRejectRedemptionId = null
+            },
+            onDismiss = { pendingRejectRedemptionId = null },
+        )
+    }
+
+    // GAM-008: Confirmation dialog for house deletion
+    pendingDeleteHouseId?.let { id ->
+        VConfirmDialog(
+            visible = true,
+            title = "Delete House?",
+            message = "This will remove the house and unassign all members. This cannot be undone.",
+            confirmLabel = "Delete",
+            onConfirm = {
+                viewModel.deleteHouse(id)
+                pendingDeleteHouseId = null
+            },
+            onDismiss = { pendingDeleteHouseId = null },
+        )
+    }
+
+    // GAM-026: Confirmation dialog for boost creation
+    if (pendingCreateBoost) {
+        VConfirmDialog(
+            visible = true,
+            title = "Create XP Boost?",
+            message = "This will activate a ${pendingBoostParams?.third?.lowercase() ?: "all"} XP boost with ${pendingBoostParams?.second ?: 1.0f}x multiplier for ${pendingBoostHours}h.",
+            confirmLabel = "Create",
+            onConfirm = {
+                pendingBoostParams?.let { (type, mult, scope) ->
+                    viewModel.createBoost(type, mult, scope, pendingBoostTargetId, pendingBoostHours)
+                }
+                pendingCreateBoost = false
+                pendingBoostParams = null
+                pendingBoostTargetId = null
+                pendingBoostHours = 24
+            },
+            onDismiss = {
+                pendingCreateBoost = false
+                pendingBoostParams = null
+                pendingBoostTargetId = null
+                pendingBoostHours = 24
+            },
+        )
     }
 }
 
@@ -292,7 +384,22 @@ private fun FlagToggleRow(
 
 @Composable
 private fun AnalyticsCard(state: AdminGamificationState) {
-    val analytics = state.analytics ?: return
+    val analytics = state.analytics
+    if (analytics == null) {
+        AdminCard(title = appString(StringKeys.AGAM_ANALYTICS_OVERVIEW)) {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "No analytics data available yet.",
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                )
+            }
+        }
+        return
+    }
     val totalXp = analytics["totalXpAwarded"]?.toString() ?: "—"
     val totalBadges = analytics["totalBadgesEarned"]?.toString() ?: "—"
     val activeQuests = analytics["activeQuests"]?.toString() ?: "—"
@@ -320,9 +427,24 @@ private fun AnalyticsMetric(label: String, value: String, color: Color) {
 }
 
 @Composable
-private fun BadgeDefinitionsCard(badges: List<BadgeDefinition>) {
+private fun BadgeDefinitionsCard(
+    badges: List<BadgeDefinition>,
+    isActionLoading: Boolean,
+    onCreate: (String, String, String, String, String, String, Int, Boolean) -> Unit,
+    onToggle: (String, Boolean) -> Unit,
+) {
     if (badges.isEmpty()) return
-    AdminCard(title = "Badge Catalog (${badges.size})") {
+    var showForm by remember { mutableStateOf(false) }
+    var code by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var desc by remember { mutableStateOf("") }
+    var icon by remember { mutableStateOf("star") }
+    var category by remember { mutableStateOf("ACADEMIC") }
+    var rarity by remember { mutableStateOf("COMMON") }
+    var xp by remember { mutableStateOf("0") }
+    var seasonal by remember { mutableStateOf(false) }
+
+    AdminCard(title = appString(StringKeys.AGAM_BADGE_CATALOG, "count" to badges.size)) {
         badges.forEach { badge ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -342,15 +464,59 @@ private fun BadgeDefinitionsCard(badges: List<BadgeDefinition>) {
                 if (badge.isSeasonal) {
                     StatusPill("Seasonal", VColors.coral)
                 }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(VColors.violetSoft)
+                        .clickable { onToggle(badge.id, !badge.isSeasonal) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Text("Toggle", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
+                }
+            }
+        }
+
+        CrudToggleButton(showForm = showForm) { showForm = !showForm }
+
+        if (showForm) {
+            Spacer(Modifier.height(4.dp))
+            CrudTextField("Code", code) { code = it }
+            CrudTextField("Name", name) { name = it }
+            CrudTextField("Description", desc) { desc = it }
+            CrudTextField("Icon", icon) { icon = it }
+            CrudTextField("Category", category) { category = it }
+            CrudTextField("Rarity", rarity) { rarity = it }
+            CrudTextField("XP Requirement", xp, KeyboardType.Number) { xp = it }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Seasonal", style = VTypography.caption, color = VColors.ink2)
+                Spacer(Modifier.size(8.dp))
+                Switch(checked = seasonal, onCheckedChange = { seasonal = it })
+            }
+            CrudSubmitButton(isActionLoading, "Create Badge") {
+                if (code.isNotBlank() && name.isNotBlank()) {
+                    onCreate(code, name, desc, icon, category, rarity, xp.toIntOrNull() ?: 0, seasonal)
+                    showForm = false; code = ""; name = ""; desc = ""
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LevelDefinitionsCard(levels: List<LevelDefinition>) {
+private fun LevelDefinitionsCard(
+    levels: List<LevelDefinition>,
+    isActionLoading: Boolean,
+    onCreate: (Int, Int, String, String) -> Unit,
+    onToggle: (String, Boolean) -> Unit,
+) {
     if (levels.isEmpty()) return
-    AdminCard(title = "Level Definitions (${levels.size})") {
+    var showForm by remember { mutableStateOf(false) }
+    var levelNum by remember { mutableStateOf("") }
+    var xpReq by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf("") }
+    var icon by remember { mutableStateOf("star") }
+
+    AdminCard(title = appString(StringKeys.AGAM_LEVEL_DEFINITIONS, "count" to levels.size)) {
         levels.forEach { level ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -365,15 +531,53 @@ private fun LevelDefinitionsCard(levels: List<LevelDefinition>) {
                 }
                 Text(level.title, style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium), color = VColors.ink, modifier = Modifier.weight(1f))
                 Text("${level.xpRequired} XP", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(VColors.violetSoft)
+                        .clickable { onToggle(level.level.toString(), false) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Text("Disable", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
+                }
+            }
+        }
+
+        CrudToggleButton(showForm = showForm) { showForm = !showForm }
+
+        if (showForm) {
+            Spacer(Modifier.height(4.dp))
+            CrudTextField("Level Number", levelNum, KeyboardType.Number) { levelNum = it }
+            CrudTextField("XP Required", xpReq, KeyboardType.Number) { xpReq = it }
+            CrudTextField("Title", title) { title = it }
+            CrudTextField("Icon", icon) { icon = it }
+            CrudSubmitButton(isActionLoading, "Create Level") {
+                val lvl = levelNum.toIntOrNull() ?: 0
+                val xp = xpReq.toIntOrNull() ?: 0
+                if (lvl > 0 && title.isNotBlank()) {
+                    onCreate(lvl, xp, title, icon)
+                    showForm = false; levelNum = ""; xpReq = ""; title = ""
+                }
             }
         }
     }
 }
 
 @Composable
-private fun HousesCard(houses: List<House>) {
+private fun HousesCard(
+    houses: List<House>,
+    isActionLoading: Boolean,
+    onCreate: (String, String, String, String?) -> Unit,
+    onDelete: (String) -> Unit,
+) {
     if (houses.isEmpty()) return
-    AdminCard(title = "Houses (${houses.size})") {
+    var showForm by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
+    var icon by remember { mutableStateOf("home") }
+    var color by remember { mutableStateOf("#6750A4") }
+    var motto by remember { mutableStateOf("") }
+
+    AdminCard(title = appString(StringKeys.AGAM_HOUSES, "count" to houses.size)) {
         houses.forEach { house ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -385,15 +589,53 @@ private fun HousesCard(houses: List<House>) {
                     Text(house.name, style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium), color = VColors.ink)
                     Text("${house.memberCount} members · ${house.totalPoints} pts", style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
                 }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(VColors.error.copy(alpha = 0.12f))
+                        .clickable { onDelete(house.id) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Text("Delete", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.error)
+                }
+            }
+        }
+
+        CrudToggleButton(showForm = showForm) { showForm = !showForm }
+
+        if (showForm) {
+            Spacer(Modifier.height(4.dp))
+            CrudTextField("Name", name) { name = it }
+            CrudTextField("Icon", icon) { icon = it }
+            CrudTextField("Color (hex)", color) { color = it }
+            CrudTextField("Motto (optional)", motto) { motto = it }
+            CrudSubmitButton(isActionLoading, "Create House") {
+                if (name.isNotBlank()) {
+                    onCreate(name, icon, color, motto.ifBlank { null })
+                    showForm = false; name = ""; motto = ""
+                }
             }
         }
     }
 }
 
 @Composable
-private fun RewardsCard(rewards: List<Reward>) {
+private fun RewardsCard(
+    rewards: List<Reward>,
+    isActionLoading: Boolean,
+    onCreate: (String, String, String, Int, Int?, String) -> Unit,
+    onToggle: (String, Boolean) -> Unit,
+) {
     if (rewards.isEmpty()) return
-    AdminCard(title = "Rewards Catalog (${rewards.size})") {
+    var showForm by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
+    var desc by remember { mutableStateOf("") }
+    var icon by remember { mutableStateOf("redeem") }
+    var xpCost by remember { mutableStateOf("") }
+    var stock by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("TEACHER") }
+
+    AdminCard(title = appString(StringKeys.AGAM_REWARDS_CATALOG, "count" to rewards.size)) {
         rewards.forEach { reward ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -405,16 +647,58 @@ private fun RewardsCard(rewards: List<Reward>) {
                     Text(reward.description, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3, maxLines = 1)
                 }
                 Text("${reward.xpCost} XP", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
-                if (reward.isActive) StatusPill("Active", VColors.mint) else StatusPill("Inactive", VColors.ink3)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(VColors.violetSoft)
+                        .clickable { onToggle(reward.id, !reward.isActive) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Text(if (reward.isActive) "Disable" else "Enable", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
+                }
+            }
+        }
+
+        CrudToggleButton(showForm = showForm) { showForm = !showForm }
+
+        if (showForm) {
+            Spacer(Modifier.height(4.dp))
+            CrudTextField("Name", name) { name = it }
+            CrudTextField("Description", desc) { desc = it }
+            CrudTextField("Icon", icon) { icon = it }
+            CrudTextField("XP Cost", xpCost, KeyboardType.Number) { xpCost = it }
+            CrudTextField("Stock Limit (optional)", stock, KeyboardType.Number) { stock = it }
+            CrudTextField("Fulfillment Role", role) { role = it }
+            CrudSubmitButton(isActionLoading, "Create Reward") {
+                val xp = xpCost.toIntOrNull() ?: 0
+                val stockLimit = stock.toIntOrNull()
+                if (name.isNotBlank() && xp > 0) {
+                    onCreate(name, desc, icon, xp, stockLimit, role)
+                    showForm = false; name = ""; desc = ""; xpCost = ""; stock = ""
+                }
             }
         }
     }
 }
 
 @Composable
-private fun QuestsCard(quests: List<QuestDefinition>) {
+private fun QuestsCard(
+    quests: List<QuestDefinition>,
+    isActionLoading: Boolean,
+    onCreate: (String, String, String, String, String, Int, Int) -> Unit,
+    onToggle: (String, Boolean) -> Unit,
+) {
     if (quests.isEmpty()) return
-    AdminCard(title = "Quest Pool (${quests.size})") {
+    var showForm by remember { mutableStateOf(false) }
+    var code by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var desc by remember { mutableStateOf("") }
+    var questType by remember { mutableStateOf("DAILY") }
+    var category by remember { mutableStateOf("ACADEMIC") }
+    var xpReward by remember { mutableStateOf("10") }
+    var durationHours by remember { mutableStateOf("24") }
+
+    AdminCard(title = appString(StringKeys.AGAM_QUEST_POOL, "count" to quests.size)) {
         quests.forEach { quest ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -425,16 +709,54 @@ private fun QuestsCard(quests: List<QuestDefinition>) {
                     Text(quest.name, style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium), color = VColors.ink)
                     Text("${quest.questType} · ${quest.xpReward} XP", style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
                 }
-                if (quest.isActive) StatusPill("Active", VColors.mint) else StatusPill("Inactive", VColors.ink3)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(VColors.violetSoft)
+                        .clickable { onToggle(quest.id, !quest.isActive) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Text(if (quest.isActive) "Disable" else "Enable", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
+                }
+            }
+        }
+
+        CrudToggleButton(showForm = showForm) { showForm = !showForm }
+
+        if (showForm) {
+            Spacer(Modifier.height(4.dp))
+            CrudTextField("Code", code) { code = it }
+            CrudTextField("Name", name) { name = it }
+            CrudTextField("Description", desc) { desc = it }
+            CrudTextField("Quest Type", questType) { questType = it }
+            CrudTextField("Category", category) { category = it }
+            CrudTextField("XP Reward", xpReward, KeyboardType.Number) { xpReward = it }
+            CrudTextField("Duration (hours)", durationHours, KeyboardType.Number) { durationHours = it }
+            CrudSubmitButton(isActionLoading, "Create Quest") {
+                if (code.isNotBlank() && name.isNotBlank()) {
+                    onCreate(code, name, desc, questType, category, xpReward.toIntOrNull() ?: 10, durationHours.toIntOrNull() ?: 24)
+                    showForm = false; code = ""; name = ""; desc = ""
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EventsCard(events: List<SeasonalEvent>) {
+private fun EventsCard(
+    events: List<SeasonalEvent>,
+    isActionLoading: Boolean,
+    onCreate: (String, String, String, String) -> Unit,
+    onToggle: (String, Boolean) -> Unit,
+) {
     if (events.isEmpty()) return
-    AdminCard(title = "Seasonal Events (${events.size})") {
+    var showForm by remember { mutableStateOf(false) }
+    var code by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+
+    AdminCard(title = appString(StringKeys.AGAM_EVENTS_TITLE, "count" to events.size)) {
         events.forEach { event ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -445,7 +767,31 @@ private fun EventsCard(events: List<SeasonalEvent>) {
                     Text(event.name, style = VTypography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium), color = VColors.ink)
                     Text("${event.startDate} → ${event.endDate}", style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
                 }
-                if (event.isActive) StatusPill("Active", VColors.mint) else StatusPill("Ended", VColors.ink3)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(VColors.violetSoft)
+                        .clickable { onToggle(event.id, !event.isActive) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Text(if (event.isActive) "Disable" else "Enable", style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), color = VColors.violet)
+                }
+            }
+        }
+
+        CrudToggleButton(showForm = showForm) { showForm = !showForm }
+
+        if (showForm) {
+            Spacer(Modifier.height(4.dp))
+            CrudTextField("Code", code) { code = it }
+            CrudTextField("Name", name) { name = it }
+            CrudTextField("Start Date (YYYY-MM-DD)", startDate) { startDate = it }
+            CrudTextField("End Date (YYYY-MM-DD)", endDate) { endDate = it }
+            CrudSubmitButton(isActionLoading, "Create Event") {
+                if (code.isNotBlank() && name.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()) {
+                    onCreate(code, name, startDate, endDate)
+                    showForm = false; code = ""; name = ""; startDate = ""; endDate = ""
+                }
             }
         }
     }
@@ -454,7 +800,7 @@ private fun EventsCard(events: List<SeasonalEvent>) {
 @Composable
 private fun LeaderboardCard(leaderboard: List<LeaderboardEntry>) {
     if (leaderboard.isEmpty()) return
-    AdminCard(title = "School Leaderboard (Top ${leaderboard.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_SCHOOL_LEADERBOARD, "count" to leaderboard.size)) {
         leaderboard.take(10).forEach { entry ->
             val rankColor = when (entry.rank) {
                 1 -> VColors.gold
@@ -474,7 +820,7 @@ private fun LeaderboardCard(leaderboard: List<LeaderboardEntry>) {
                     Text("${entry.rank}", style = VTypography.body.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), color = rankColor)
                 }
                 Text("Student #${entry.studentId.takeLast(6)}", style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink, modifier = Modifier.weight(1f))
-                Text("Lv ${entry.currentLevel}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+                Text(appString(StringKeys.AGAM_LV, "level" to entry.currentLevel), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
                 Spacer(Modifier.size(8.dp))
                 Text("${entry.totalXp} XP", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
             }
@@ -489,7 +835,7 @@ private fun RedemptionsCard(
     onReject: (String) -> Unit,
 ) {
     if (state.redemptions.isEmpty()) return
-    AdminCard(title = "Redemption Approvals (${state.redemptions.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_REDEMPTION_APPROVALS, "count" to state.redemptions.size)) {
         state.redemptions.forEach { redemption ->
             val id = redemption["id"]?.toString() ?: return@forEach
             val rewardName = redemption["rewardName"]?.toString() ?: "Unknown"
@@ -513,7 +859,7 @@ private fun RedemptionsCard(
                             .clickable { onApprove(id) }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                     ) {
-                        Text("Approve", style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.mint)
+                        Text(appString(StringKeys.AGAM_APPROVE), style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.mint)
                     }
                     Box(
                         modifier = Modifier
@@ -522,7 +868,7 @@ private fun RedemptionsCard(
                             .clickable { onReject(id) }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                     ) {
-                        Text("Reject", style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.error)
+                        Text(appString(StringKeys.AGAM_REJECT), style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp), color = VColors.error)
                     }
                 } else {
                     StatusPill(status, if (status == "APPROVED") VColors.mint else VColors.error)
@@ -541,9 +887,10 @@ private fun BoostsCard(
     var boostType by remember { mutableStateOf("WEEKEND_DOUBLE") }
     var multiplier by remember { mutableStateOf("2.0") }
     var targetScope by remember { mutableStateOf("ALL") }
+    var targetId by remember { mutableStateOf("") }
     var durationHours by remember { mutableStateOf("24") }
 
-    AdminCard(title = "XP Boosts (${state.boosts.size})") {
+    AdminCard(title = appString(StringKeys.AGAM_BOOSTS_TITLE, "count" to state.boosts.size)) {
         state.boosts.forEach { boost ->
             val type = boost["boostType"]?.toString() ?: "Unknown"
             val mult = boost["multiplier"]?.toString() ?: "1.0"
@@ -569,7 +916,7 @@ private fun BoostsCard(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                if (showForm) "Cancel" else "+ Create New Boost",
+                if (showForm) appString(StringKeys.COMMON_BUTTON_CANCEL) else appString(StringKeys.AGAM_CREATE_NEW_BOOST),
                 style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
                 color = VColors.violet,
             )
@@ -580,7 +927,7 @@ private fun BoostsCard(
             OutlinedTextField(
                 value = boostType,
                 onValueChange = { boostType = it },
-                label = { Text("Boost Type") },
+                label = { Text(appString(StringKeys.AGAM_BOOST_TYPE)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
@@ -589,7 +936,7 @@ private fun BoostsCard(
             OutlinedTextField(
                 value = multiplier,
                 onValueChange = { multiplier = it },
-                label = { Text("Multiplier (e.g. 2.0)") },
+                label = { Text(appString(StringKeys.AGAM_MULTIPLIER_LABEL)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
@@ -598,17 +945,28 @@ private fun BoostsCard(
             )
             OutlinedTextField(
                 value = targetScope,
-                onValueChange = { targetScope = it },
-                label = { Text("Target Scope (ALL / CLASS / STUDENT)") },
+                onValueChange = { targetScope = it.uppercase() },
+                label = { Text(appString(StringKeys.AGAM_TARGET_SCOPE)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
                 singleLine = true,
             )
+            if (targetScope == "STUDENT" || targetScope == "CLASS") {
+                OutlinedTextField(
+                    value = targetId,
+                    onValueChange = { targetId = it },
+                    label = { Text(if (targetScope == "STUDENT") "Student ID" else "Class Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = VTypography.body.copy(color = VColors.ink),
+                    shape = VShapes.md,
+                    singleLine = true,
+                )
+            }
             OutlinedTextField(
                 value = durationHours,
                 onValueChange = { durationHours = it },
-                label = { Text("Duration (hours)") },
+                label = { Text(appString(StringKeys.AGAM_DURATION_HOURS)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = VTypography.body.copy(color = VColors.ink),
                 shape = VShapes.md,
@@ -623,7 +981,8 @@ private fun BoostsCard(
                     .clickable {
                         val mult = multiplier.toFloatOrNull() ?: 1.0f
                         val hrs = durationHours.toIntOrNull() ?: 24
-                        onCreateBoost(boostType, mult, targetScope, null, hrs)
+                        val tid = if (targetScope == "STUDENT" || targetScope == "CLASS") targetId.ifBlank { null } else null
+                        onCreateBoost(boostType, mult, targetScope, tid, hrs)
                         showForm = false
                     }
                     .padding(vertical = 12.dp),
@@ -632,7 +991,7 @@ private fun BoostsCard(
                 if (state.isActionLoading) {
                     CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
                 } else {
-                    Text("Create Boost", style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                    Text(appString(StringKeys.AGAM_CREATE_BOOST), style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
                 }
             }
         }
@@ -648,5 +1007,66 @@ private fun StatusPill(text: String, color: Color) {
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
         Text(text, style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold), color = color)
+    }
+}
+
+@Composable
+private fun CrudToggleButton(showForm: Boolean, onToggle: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(50))
+            .background(VColors.violetSoft)
+            .clickable { onToggle() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            if (showForm) appString(StringKeys.COMMON_BUTTON_CANCEL) else "Add New",
+            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+            color = VColors.violet,
+        )
+    }
+}
+
+@Composable
+private fun CrudTextField(
+    label: String,
+    value: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    onValueChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        textStyle = VTypography.body.copy(color = VColors.ink),
+        shape = VShapes.md,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+    )
+}
+
+@Composable
+private fun CrudSubmitButton(
+    isActionLoading: Boolean,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(VShapes.md)
+            .background(VColors.violet)
+            .clickable { if (!isActionLoading) onClick() }
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isActionLoading) {
+            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+        } else {
+            Text(label, style = VTypography.body.copy(fontWeight = FontWeight.Bold, color = Color.White))
+        }
     }
 }

@@ -50,7 +50,7 @@ class TutorTriageService(
 
     @Serializable
     data class TriageResult(
-        val intent: String,           // doubt | practice_request | concept_explain | plan_review | check_in
+        val intent: String,           // doubt | practice_request | concept_explain | plan_review | check_in | inappropriate
         val onSyllabus: Boolean,
         val syllabusStatus: String,   // ON_SYLLABUS | AHEAD_OF_SYLLABUS | OFF_CURRICULUM | UNKNOWN
         val knownMisconception: Boolean,
@@ -60,6 +60,7 @@ class TutorTriageService(
         val cacheHit: Boolean = false,
         val modelUsed: Boolean = false,
         val providerUsed: String? = null,
+        val safetyFlag: String? = null,
     )
 
     /**
@@ -110,9 +111,26 @@ class TutorTriageService(
 
         // 5. LLM-based intent classification (cheap CLASSIFY lane)
         val intentResult = classifyIntent(schoolId, question)
+        val classifiedIntent = intentResult?.intent ?: "doubt"
+
+        // 6. If triage detects inappropriate content → skip agent, flag for review
+        if (classifiedIntent == "inappropriate") {
+            log.warn("Triage: inappropriate content detected for child {} — skipping agent", childId)
+            return TriageResult(
+                intent = "inappropriate",
+                onSyllabus = onSyllabus,
+                syllabusStatus = syllabusStatus.name,
+                knownMisconception = false,
+                skipAgent = true,
+                skipReason = "inappropriate_content",
+                modelUsed = intentResult != null,
+                providerUsed = intentResult?.providerUsed,
+                safetyFlag = "inappropriate_content",
+            )
+        }
 
         return TriageResult(
-            intent = intentResult?.intent ?: "doubt",
+            intent = classifiedIntent,
             onSyllabus = onSyllabus,
             syllabusStatus = syllabusStatus.name,
             knownMisconception = false,
@@ -196,6 +214,10 @@ class TutorTriageService(
         - concept_explain: The student wants a concept explained.
         - plan_review: The student wants to review their study plan.
         - check_in: A casual check-in or greeting.
+        - inappropriate: The student is asking for inappropriate, explicit, or harmful content.
+
+        If the input contains pornographic, violent, self-harm, or otherwise inappropriate
+        content for a school student, classify it as "inappropriate".
 
         Respond with ONLY a JSON object: {"intent": "one_of_the_above"}
         No other text, no explanation.

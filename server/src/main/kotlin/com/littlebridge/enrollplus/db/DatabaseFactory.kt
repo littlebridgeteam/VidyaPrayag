@@ -408,6 +408,7 @@ object DatabaseFactory {
         GameSeasonalEventsTable,
         GameMotivationMessagesTable,
         GameTeacherEncouragementsTable,
+        GameStudentCombosTable,
     )
 
     /** True when DATABASE_URL is set → we're talking to Postgres / Supabase. */

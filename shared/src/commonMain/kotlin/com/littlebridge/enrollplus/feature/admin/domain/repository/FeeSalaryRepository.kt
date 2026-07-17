@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.feature.admin.domain.repository
 
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
+import com.littlebridge.enrollplus.feature.admin.domain.model.BulkCreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeAdditionalChargeRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeLateFeeTierRequest
 import com.littlebridge.enrollplus.feature.admin.domain.model.CreateFeeStructureRequest
@@ -32,6 +33,7 @@ interface FeeSalaryRepository {
 
     suspend fun getAdditionalCharges(token: String, childId: String? = null, month: String? = null): NetworkResult<ApiResponse<FeeAdditionalChargeListResponse>>
     suspend fun createAdditionalCharge(token: String, request: CreateFeeAdditionalChargeRequest): NetworkResult<ApiResponse<Unit>>
+    suspend fun bulkCreateAdditionalCharge(token: String, request: BulkCreateFeeAdditionalChargeRequest): NetworkResult<ApiResponse<Map<String, Int>>>
     suspend fun deleteAdditionalCharge(token: String, id: String): NetworkResult<ApiResponse<Unit>>
 
     suspend fun getFeeStudents(token: String, classId: String? = null, section: String? = null, month: String? = null, search: String? = null): NetworkResult<ApiResponse<FeeStudentListResponse>>

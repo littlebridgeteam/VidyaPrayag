@@ -253,6 +253,23 @@ val commonModule = module {
 
     }
 
+    // SilentTokenRefreshManager: proactive token refresh before expiry.
+    // Uses the same session-clearing path as TokenAuthenticator's onRefreshFailed.
+    single<com.littlebridge.enrollplus.core.network.TokenRefreshManager> {
+        val prefs: PreferenceRepository = get()
+        val authedClient: HttpClient = get()
+        com.littlebridge.enrollplus.core.network.SilentTokenRefreshManager(
+            prefs = prefs,
+            authApi = get(),
+            localeManager = get(),
+            onSessionInvalid = {
+                AppLogger.i("SilentRefresh", "Session invalid — clearing session + bearer cache")
+                prefs.clearSession()
+                authedClient.clearBearerCache()
+            },
+        )
+    }
+
     single {
 
         com.littlebridge.enrollplus.feature.parent.data.remote.ParentApi(
@@ -1198,7 +1215,7 @@ val commonModule = module {
 
 val viewModelModule = module {
 
-    factory { MainViewModel(get(), get(), get(), get()) }
+    factory { MainViewModel(get(), get(), get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.presentation.PermissionViewModel(get(), get()) }
 
@@ -1340,7 +1357,7 @@ val viewModelModule = module {
 
     factory { DailyAttendanceViewModel(get(), get(), get()) }
 
-    factory { AnalyticsDashboardViewModel(get(), get()) }
+    factory { AnalyticsDashboardViewModel(get(), get(), get()) }
 
     factory { StudentAnalyticsViewModel(get(), get()) }
 
@@ -1490,6 +1507,8 @@ val viewModelModule = module {
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TutorPracticeViewModel(get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherHeatmapViewModel(get(), get()) }
+
+    factory { com.littlebridge.enrollplus.feature.tutor.presentation.TeacherSafetyFlagsViewModel(get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.tutor.presentation.ParentProgressViewModel(get(), get(), get()) }
 

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.setSingletonImageLoaderFactory
@@ -87,6 +88,22 @@ fun App(
 
         val viewModel: MainViewModel = koinViewModel()
         val authState by viewModel.authState.collectAsState()
+
+        // Proactive token refresh on app foreground — when the app returns to
+        // the foreground (ON_RESUME), check if the access token is about to
+        // expire and refresh it silently before the user interacts with any
+        // screen. This is the professional pattern: refresh BEFORE expiry,
+        // not after a 401.
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    viewModel.refreshOnForeground()
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
 
         // Multi-Language: provide the current locale to all composables via LocalLocale.
         val localeManager = koinInject<LocaleManager>()

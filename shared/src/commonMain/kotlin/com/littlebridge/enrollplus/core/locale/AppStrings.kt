@@ -607,6 +607,11 @@ object StringKeys {
     const val OB_SJ_TAP_HINT          = "ob.sj_tap_hint"
     const val OB_SJ_APPLY_ALL         = "ob.sj_apply_all"
     const val OB_SJ_NO_CLASSES        = "ob.sj_no_classes"
+    const val OB_SJ_ADD               = "ob.sj_add"
+    const val OB_SJ_ADD_PH            = "ob.sj_add_ph"
+    const val OB_SJ_ADD_BTN           = "ob.sj_add_btn"
+    const val OB_SJ_NONE_YET          = "ob.sj_none_yet"
+    const val OB_SJ_NONE_DESC         = "ob.sj_none_desc"
     // V2 — Step 5: Teachers
     const val OB_TC_ADD               = "ob.tc_add"
     const val OB_TC_ADD_DESC          = "ob.tc_add_desc"
@@ -3424,6 +3429,8 @@ object StringKeys {
     const val GAM_PAIR_STUDY_BUDDIES    = "gam.pair_study_buddies"
     const val GAM_PAIR_THEM             = "gam.pair_them"
     const val GAM_TOTAL_XP              = "gam.total_xp"
+    const val GAM_LEVEL                 = "gam.level"
+    const val GAM_STREAK                = "gam.streak"
     const val GAM_BADGES                = "gam.badges"
     const val GAM_QUESTS                = "gam.quests"
     const val GAM_BUDDY_PAIR            = "gam.buddy_pair"
@@ -4172,6 +4179,11 @@ object AppStrings {
         StringKeys.OB_SJ_TAP_HINT          to "Tap a subject's class chips to set where it's taught.",
         StringKeys.OB_SJ_APPLY_ALL         to "Apply to all",
         StringKeys.OB_SJ_NO_CLASSES        to "No classes",
+        StringKeys.OB_SJ_ADD               to "ADD A SUBJECT",
+        StringKeys.OB_SJ_ADD_PH            to "e.g. Mathematics, Physics, English",
+        StringKeys.OB_SJ_ADD_BTN           to "Add",
+        StringKeys.OB_SJ_NONE_YET          to "No subjects yet",
+        StringKeys.OB_SJ_NONE_DESC         to "Add the subjects your school teaches, then tap class chips to assign them.",
         // Step 5: Teachers
         StringKeys.OB_TC_ADD               to "ADD A TEACHER",
         StringKeys.OB_TC_ADD_DESC          to "Enter a work email to create the teacher's login account now — they'll get a one-time password to sign in. Name only? You can add their login later from the dashboard.",
@@ -6912,6 +6924,8 @@ object AppStrings {
         StringKeys.GAM_PAIR_STUDY_BUDDIES       to "Pair Study Buddies",
         StringKeys.GAM_PAIR_THEM                to "Pair Them",
         StringKeys.GAM_TOTAL_XP                 to "Total XP",
+        StringKeys.GAM_LEVEL                    to "Level",
+        StringKeys.GAM_STREAK                   to "Streak",
         StringKeys.GAM_BADGES                   to "Badges",
         StringKeys.GAM_QUESTS                   to "Quests",
         StringKeys.GAM_BUDDY_PAIR               to "{id1}... & {id2}...",
@@ -7659,6 +7673,11 @@ object AppStrings {
         StringKeys.OB_SJ_TAP_HINT          to "विषय के कक्षा चिप्स पर टैप करके चुनें कि कहाँ पढ़ाया जाता है।",
         StringKeys.OB_SJ_APPLY_ALL         to "सभी पर लागू करें",
         StringKeys.OB_SJ_NO_CLASSES        to "कोई कक्षा नहीं",
+        StringKeys.OB_SJ_ADD               to "विषय जोड़ें",
+        StringKeys.OB_SJ_ADD_PH            to "जैसे गणित, भौतिकी, अंग्रेजी",
+        StringKeys.OB_SJ_ADD_BTN           to "जोड़ें",
+        StringKeys.OB_SJ_NONE_YET          to "अभी कोई विषय नहीं",
+        StringKeys.OB_SJ_NONE_DESC         to "अपने स्कूल के विषय जोड़ें, फिर कक्षा चिप्स पर टैप करके उन्हें असाइन करें।",
         // Step 5: Teachers
         StringKeys.OB_TC_ADD               to "शिक्षक जोड़ें",
         StringKeys.OB_TC_ADD_DESC          to "शिक्षक का लॉगिन खाता बनाने के लिए कार्य ईमेल दर्ज करें — उन्हें साइन इन के लिए एक बार का पासवर्ड मिलेगा। केवल नाम? आप डैशबोर्ड से बाद में लॉगिन जोड़ सकते हैं।",

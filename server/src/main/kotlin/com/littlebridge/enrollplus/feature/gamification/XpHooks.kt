@@ -45,6 +45,7 @@ object XpHooks {
                 source = "attendance",
                 category = "ACADEMIC"
             )
+            ComboService.recordComboEvent(studentId, schoolId, "ATTENDANCE")
             BadgeCriteriaEvaluator.evaluateBadges(studentId, schoolId)
         } catch (e: Exception) {
             logger.warn("XpHooks.onAttendancePresent failed: ${e.message}")
@@ -62,6 +63,7 @@ object XpHooks {
                 source = "quiz",
                 category = "ACADEMIC"
             )
+            ComboService.recordComboEvent(studentId, schoolId, "STUDY")
             BadgeCriteriaEvaluator.evaluateBadges(studentId, schoolId)
         } catch (e: Exception) {
             logger.warn("XpHooks.onQuizCompleted failed: ${e.message}")
@@ -98,6 +100,7 @@ object XpHooks {
                 source = "homework",
                 category = "ACADEMIC"
             )
+            ComboService.recordComboEvent(studentId, schoolId, "HOMEWORK")
             BadgeCriteriaEvaluator.evaluateBadges(studentId, schoolId)
         } catch (e: Exception) {
             logger.warn("XpHooks.onHomeworkReviewed failed: ${e.message}")
@@ -130,6 +133,7 @@ object XpHooks {
                 source = "syllabus",
                 category = "ACADEMIC"
             )
+            ComboService.recordComboEvent(studentId, schoolId, "STUDY")
             BadgeCriteriaEvaluator.evaluateBadges(studentId, schoolId)
         } catch (e: Exception) {
             logger.warn("XpHooks.onSyllabusTopicCovered failed: ${e.message}")

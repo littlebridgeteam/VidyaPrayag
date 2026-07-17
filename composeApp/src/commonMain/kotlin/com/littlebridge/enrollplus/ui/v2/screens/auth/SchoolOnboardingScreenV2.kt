@@ -588,6 +588,17 @@ private fun ClassesStep(classesBuilt: MutableList<OBClass>) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<String>) {
+    if (classCodes.isEmpty()) {
+        CreamCard {
+            Text(
+                "Add classes first before configuring subjects.",
+                style = VTypography.caption,
+                color = VColors.ink3,
+            )
+        }
+        return
+    }
+
     CreamCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
@@ -604,18 +615,41 @@ private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<Stri
             )
         }
     }
-    subjects.forEach { s ->
+
+    if (subjects.isEmpty()) {
+        CreamCard {
+            Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(VIcons.BookOpen, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(appString(StringKeys.OB_SJ_NONE_YET), style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                Text(appString(StringKeys.OB_SJ_NONE_DESC), style = VTypography.caption, color = VColors.ink3, textAlign = TextAlign.Center)
+            }
+        }
+    }
+
+    subjects.forEachIndexed { idx, s ->
         CreamCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(s.name, style = VTypography.body.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                    Text("${s.code} · ${s.type}", style = VTypography.caption, color = VColors.ink3)
+                    Text(s.code, style = VTypography.caption, color = VColors.ink3)
                 }
                 MiniBadge(
                     text = if (s.classes.isEmpty()) appString(StringKeys.OB_SJ_NO_CLASSES) else "${s.classes.size} / ${classCodes.size}",
                     color = if (s.classes.isEmpty()) VColors.gold else VColors.success,
                     bg = if (s.classes.isEmpty()) VColors.goldSoft else VColors.successSoft,
                 )
+                Spacer(Modifier.width(8.dp))
+                Box(
+                    Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(VColors.coral.copy(alpha = 0.1f))
+                        .clickable { subjects.removeAt(idx) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(VIcons.Close, contentDescription = "Delete subject", tint = VColors.coral, modifier = Modifier.size(16.dp))
+                }
             }
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -623,6 +657,40 @@ private fun SubjectsStep(subjects: MutableList<OBSubject>, classCodes: List<Stri
                     val on = s.classes.contains(cc)
                     FilterChip(label = cc, selected = on, onClick = { if (on) s.classes.remove(cc) else s.classes.add(cc) })
                 }
+            }
+        }
+    }
+
+    var newSubjectName by remember { mutableStateOf("") }
+
+    CreamCard {
+        Text(appString(StringKeys.OB_SJ_ADD), style = VTypography.label, color = VColors.ink3)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+            VInput(newSubjectName, { newSubjectName = it }, placeholder = appString(StringKeys.OB_SJ_ADD_PH), modifier = Modifier.weight(1f))
+            VButton(
+                text = appString(StringKeys.OB_SJ_ADD_BTN),
+                onClick = {
+                    val nm = newSubjectName.trim()
+                    if (nm.isNotBlank() && subjects.none { it.name.equals(nm, ignoreCase = true) }) {
+                        val code = nm.uppercase().replace(Regex("[^A-Z0-9]+"), "").take(6).ifBlank { "SUB${subjects.size + 1}" }
+                        subjects.add(OBSubject(id = "s${subjects.size + 1}", name = nm, code = code, type = "Core", classes = mutableStateListOf()))
+                        newSubjectName = ""
+                    }
+                },
+                enabled = newSubjectName.isNotBlank(),
+                modifier = Modifier.weight(0.4f),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf("Mathematics", "Science", "English", "Hindi", "Social Studies", "Sanskrit", "Computer Science", "Physical Education").forEach { q ->
+                FilterChip(label = "+ $q", selected = false, onClick = {
+                    if (subjects.none { it.name.equals(q, ignoreCase = true) }) {
+                        val code = q.uppercase().replace(Regex("[^A-Z0-9]+"), "").take(6).ifBlank { "SUB${subjects.size + 1}" }
+                        subjects.add(OBSubject(id = "s${subjects.size + 1}", name = q, code = code, type = "Core", classes = mutableStateListOf()))
+                    }
+                })
             }
         }
     }

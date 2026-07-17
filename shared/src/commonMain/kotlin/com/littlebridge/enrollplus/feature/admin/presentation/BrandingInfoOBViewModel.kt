@@ -204,8 +204,10 @@ class BrandingInfoOBViewModel(
                 is NetworkResult.Error -> {
                     AppLogger.e("OnboardingBranding", "Submit failed: ${result.message} (code=${result.code})")
                     _errorMessage.value = if (result.code == 401) {
-                        preferenceRepository.clearSession()
-                        "Your session expired. Please sign in again before continuing onboarding."
+                        // TokenAuthenticator already attempted refresh. If it was a
+                        // true session invalidation, the session is already cleared.
+                        // If transient (Render spin-down), session is still alive.
+                        "Connection issue. Please try again."
                     } else {
                         result.message
                     }

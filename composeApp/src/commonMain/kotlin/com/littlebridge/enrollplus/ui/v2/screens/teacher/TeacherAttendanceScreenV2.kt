@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,7 +93,7 @@ fun TeacherAttendanceScreenV2(
         if (showInsights) pewsViewModel.load()
     }
 
-    Box(modifier.fillMaxSize().background(VColors.cream)) {
+    Box(modifier.fillMaxSize().imePadding().background(VColors.cream)) {
         when {
             state.isLoading && state.students.isEmpty() && !showInsights -> VtCenterState { TeacherSpinner() }
             state.error != null && state.students.isEmpty() && !showInsights -> VtErrorState(
@@ -218,8 +219,25 @@ private fun AttendanceBody(
             }
         }
 
-        items(students, key = { it.studentId }) { s ->
-            AttendanceStudentRow(s, onSetStatus = { status -> viewModel.setStatus(s.studentId, status) })
+        if (students.isEmpty()) {
+            item {
+                VtCard {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    ) {
+                        VtIconDisc(VIcons.ListChecks, tint = VColors.ink3, bg = VColors.surfaceTint, size = 48.dp, glyph = 24.dp)
+                        Spacer(Modifier.height(10.dp))
+                        Text("No students enrolled", style = VTypography.h3.copy(color = VColors.ink))
+                        Spacer(Modifier.height(4.dp))
+                        Text("Students will appear here once they are added to this class.", style = VTypography.caption.copy(color = VColors.ink3))
+                    }
+                }
+            }
+        } else {
+            items(students, key = { it.studentId }) { s ->
+                AttendanceStudentRow(s, onSetStatus = { status -> viewModel.setStatus(s.studentId, status) })
+            }
         }
 
         // ── Save footer ──

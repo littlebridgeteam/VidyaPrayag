@@ -28,6 +28,7 @@ package com.littlebridge.enrollplus.feature.skilltest
 import com.littlebridge.enrollplus.db.ChildHolisticMetricsTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
+import com.littlebridge.enrollplus.db.StudentsTable
 import com.littlebridge.enrollplus.db.GameBadgeDefinitionsTable
 import com.littlebridge.enrollplus.db.GameStudentBadgesTable
 import com.littlebridge.enrollplus.db.SkillTestAnswersTable
@@ -527,7 +528,8 @@ object SkillTestService {
         }
 
         val bestScore = SkillTestBestScoresTable.selectAll()
-            .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
+            .where { SkillTestBestScoresTable.childId eq childId }
+            .firstOrNull()
 
         val hasQuestions = SkillTestQuestionsTable.selectAll()
             .where {
@@ -586,7 +588,8 @@ object SkillTestService {
 
         // Check eligibility
         val bestScore = SkillTestBestScoresTable.selectAll()
-            .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
+            .where { SkillTestBestScoresTable.childId eq childId }
+            .firstOrNull()
         val nextEligible = bestScore?.get(SkillTestBestScoresTable.nextEligibleAt)
         if (nextEligible != null && Instant.now().isBefore(nextEligible)) {
             return@dbQuery null // not eligible yet
@@ -663,7 +666,8 @@ object SkillTestService {
     ): AnswerResultDto? = dbQuery {
         // Fetch the question to check correctness
         val question = SkillTestQuestionsTable.selectAll()
-            .firstOrNull { it[SkillTestQuestionsTable.id] == questionId }
+            .where { SkillTestQuestionsTable.id eq questionId }
+            .firstOrNull()
             ?: return@dbQuery null
 
         val correctAnswer = question[SkillTestQuestionsTable.correctAnswer]
@@ -678,8 +682,8 @@ object SkillTestService {
                 it[SkillTestAnswersTable.isCorrect] = isCorrect
                 it[SkillTestAnswersTable.answeredAt] = Instant.now()
             }
-        } catch (e: Exception) {
-            // Already answered — return existing result
+        } catch (e: org.jetbrains.exposed.exceptions.ExposedSQLException) {
+            // Duplicate answer (unique constraint violation) — return existing result
             val existing = SkillTestAnswersTable.selectAll()
                 .where {
                     (SkillTestAnswersTable.attemptId eq attemptId) and
@@ -690,7 +694,8 @@ object SkillTestService {
 
         // Check if all questions answered
         val attempt = SkillTestAttemptsTable.selectAll()
-            .firstOrNull { it[SkillTestAttemptsTable.id] == attemptId }
+            .where { SkillTestAttemptsTable.id eq attemptId }
+            .firstOrNull()
             ?: return@dbQuery null
 
         val totalQuestions = attempt[SkillTestAttemptsTable.totalQuestions]
@@ -736,10 +741,21 @@ object SkillTestService {
                 nextEligible = nextEligible,
             )
 
-            // Award XP via gamification
+            // Award XP via gamification (GAM-020: resolve childId→studentId via studentCode)
             if (schoolId != null) {
                 try {
-                    XpHooks.onQuizCompleted(childId, schoolId, correctSoFar, totalQuestions)
+                    val resolvedStudentId = dbQuery {
+                        val childRow = ChildrenTable.selectAll()
+                            .where { ChildrenTable.id eq childId }
+                            .firstOrNull() ?: return@dbQuery null
+                        val sCode = childRow[ChildrenTable.studentCode] ?: return@dbQuery null
+                        StudentsTable.selectAll()
+                            .where { StudentsTable.studentCode eq sCode }
+                            .firstOrNull()?.get(StudentsTable.id)?.value
+                    }
+                    if (resolvedStudentId != null) {
+                        XpHooks.onQuizCompleted(resolvedStudentId, schoolId, correctSoFar, totalQuestions)
+                    }
                 } catch (e: Exception) {
                     log.warn("XP award failed for skill test: {}", e.message)
                 }
@@ -783,7 +799,8 @@ object SkillTestService {
         nextEligible: Instant,
     ): Boolean = dbQuery {
         val existing = SkillTestBestScoresTable.selectAll()
-            .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
+            .where { SkillTestBestScoresTable.childId eq childId }
+            .firstOrNull()
 
         val isNewBest = existing == null || finalScore > existing!![SkillTestBestScoresTable.bestScore]
         val attemptsCount = (existing?.get(SkillTestBestScoresTable.attemptsCount) ?: 0) + 1
@@ -905,7 +922,8 @@ object SkillTestService {
         }
 
         val attemptsCount = SkillTestBestScoresTable.selectAll()
-            .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
+            .where { SkillTestBestScoresTable.childId eq childId }
+            .firstOrNull()
             ?.get(SkillTestBestScoresTable.attemptsCount) ?: 1
 
         val empathy = 0.70f
@@ -914,7 +932,8 @@ object SkillTestService {
 
         val now = Instant.now()
         val existing = ChildHolisticMetricsTable.selectAll()
-            .firstOrNull { it[ChildHolisticMetricsTable.childId] == childId }
+            .where { ChildHolisticMetricsTable.childId eq childId }
+            .firstOrNull()
 
         if (existing == null) {
             ChildHolisticMetricsTable.insert {
@@ -963,7 +982,8 @@ object SkillTestService {
      */
     suspend fun getBestScore(childId: UUID): BestScoreDto? = dbQuery {
         val row = SkillTestBestScoresTable.selectAll()
-            .firstOrNull { it[SkillTestBestScoresTable.childId] == childId }
+            .where { SkillTestBestScoresTable.childId eq childId }
+            .firstOrNull()
             ?: return@dbQuery null
 
         BestScoreDto(
@@ -1006,7 +1026,8 @@ object SkillTestService {
 
         answers.map { ans ->
             val question = SkillTestQuestionsTable.selectAll()
-                .firstOrNull { it[SkillTestQuestionsTable.id] == ans[SkillTestAnswersTable.questionId] }
+                .where { SkillTestQuestionsTable.id eq ans[SkillTestAnswersTable.questionId] }
+                .firstOrNull()
                 ?: return@map null
 
             QuestionWithAnswerDto(
@@ -1073,7 +1094,8 @@ object SkillTestService {
             }
             .count().toInt()
         val attempt = SkillTestAttemptsTable.selectAll()
-            .firstOrNull { it[SkillTestAttemptsTable.id] == attemptId }
+            .where { SkillTestAttemptsTable.id eq attemptId }
+            .firstOrNull()
         val total = attempt?.get(SkillTestAttemptsTable.totalQuestions) ?: 0
 
         return AnswerResultDto(

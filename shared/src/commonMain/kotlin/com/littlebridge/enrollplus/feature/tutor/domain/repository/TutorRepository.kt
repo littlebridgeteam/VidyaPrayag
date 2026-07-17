@@ -13,5 +13,6 @@ interface TutorRepository {
     suspend fun getHeatmap(token: String, classId: String, subjectId: String): NetworkResult<HeatmapResponse>
     suspend fun getProgressCard(token: String, childId: String, subjectId: String): NetworkResult<ProgressCardResponse>
     suspend fun getEfficacy(token: String, childId: String, subjectId: String): NetworkResult<EfficacyResponse>
+    suspend fun getSafetyFlags(token: String): NetworkResult<SafetyFlagsResponse>
     suspend fun getModuleStatus(token: String): NetworkResult<ModuleStatusResponse>
 }

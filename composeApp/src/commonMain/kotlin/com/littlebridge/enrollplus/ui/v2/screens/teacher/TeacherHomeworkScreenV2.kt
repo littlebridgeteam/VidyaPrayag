@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -77,7 +78,7 @@ fun TeacherHomeworkScreenV2(
         if (assignmentId.isNotBlank() && state.assignmentId != assignmentId) viewModel.load(assignmentId)
     }
 
-    Box(modifier.fillMaxSize().background(VColors.cream)) {
+    Box(modifier.fillMaxSize().imePadding().background(VColors.cream)) {
         when (state.mode) {
             HomeworkMode.List -> HomeworkListMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)
             HomeworkMode.Board -> HomeworkBoardMode(viewModel, scopeLabel, tool, onToolChange, onChangeClass)

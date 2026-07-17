@@ -1,3 +1,4 @@
+import com.google.firebase.crashlytics.buildtools.gradle.FirebaseCrashlyticsMappingType
 import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -191,9 +192,22 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            isMinifyEnabled = false
+            // Firebase Crashlytics — explicitly enable for debug builds.
+            // The manifest flag + runtime call handle collection, but this
+            // ensures the Crashlytics Gradle plugin processes debug variants
+            // (mapping upload, SDK injection) the same as release.
+        }
         getByName("release") {
             isMinifyEnabled = false
         }
+    }
+
+    // Firebase Crashlytics — process all build types (debug + release) so
+    // crash reports are collected in every mode, not just release.
+    firebaseCrashlytics {
+        mappingTypes = FirebaseCrashlyticsMappingType.FULL
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21

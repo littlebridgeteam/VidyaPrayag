@@ -189,8 +189,10 @@ class InstitutionalBasicOBViewModel(
                     // the one that issued it). Make the cause explicit instead of
                     // showing the raw server "Session expired" string.
                     _errorMessage.value = if (result.code == 401) {
-                        preferenceRepository.clearSession()
-                        "Your session expired. Please sign in again before continuing onboarding."
+                        // TokenAuthenticator already attempted refresh. If it was a
+                        // true session invalidation, the session is already cleared.
+                        // If transient (Render spin-down), session is still alive.
+                        "Connection issue. Please try again."
                     } else {
                         result.message
                     }

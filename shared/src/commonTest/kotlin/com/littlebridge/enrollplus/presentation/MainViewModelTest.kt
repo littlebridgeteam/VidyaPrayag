@@ -5,6 +5,7 @@ import com.littlebridge.enrollplus.feature.notification.domain.service.Notificat
 import com.littlebridge.enrollplus.feature.schools.domain.model.School
 import com.littlebridge.enrollplus.feature.schools.domain.repository.SchoolRepository
 import com.littlebridge.enrollplus.feature.schools.domain.usecase.GetSchoolsUseCase
+import com.littlebridge.enrollplus.core.network.TokenRefreshManager
 import com.littlebridge.enrollplus.feature.auth.domain.repository.AuthRepository
 import com.littlebridge.enrollplus.core.model.ApiResponse
 import com.littlebridge.enrollplus.core.network.NetworkResult
@@ -36,6 +37,7 @@ class MainViewModelTest {
         val fakeSchoolRepo = FakeSchoolRepository()
         val fakeSchoolsUseCase = GetSchoolsUseCase(fakeSchoolRepo)
         val fakeAuthRepo = FakeAuthRepository()
+        val fakeSilentRefresh = FakeSilentTokenRefreshManager()
 
         // Initial state: not logged in
         fakePrefs.userTokenFlow.value = null
@@ -44,7 +46,8 @@ class MainViewModelTest {
             fakeSchoolsUseCase,
             fakePrefs,
             fakeAuthRepo,
-            fakeNotificationService
+            fakeNotificationService,
+            fakeSilentRefresh
         )
 
         advanceUntilIdle()
@@ -128,5 +131,9 @@ class MainViewModelTest {
         override suspend fun getPinnedScreens(): NetworkResult<ApiResponse<PinnedScreensResponse>> = TODO()
         override suspend fun updatePinnedScreens(screens: List<String>): NetworkResult<ApiResponse<PinnedScreensResponse>> = TODO()
         override suspend fun syncThemePref(themePref: String): NetworkResult<Unit> = TODO()
+    }
+
+    class FakeSilentTokenRefreshManager : TokenRefreshManager {
+        override suspend fun refreshIfNeeded(): Boolean = true
     }
 }

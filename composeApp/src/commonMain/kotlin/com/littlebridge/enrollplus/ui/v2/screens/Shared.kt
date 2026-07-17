@@ -228,3 +228,19 @@ fun VPortalHeader(
         trailing?.invoke()
     }
 }
+
+/**
+ * Formats a Double as a currency string with thousands separators (KMP-safe).
+ * Example: 123456.0 -> "123,456"
+ */
+fun vFormatCurrency(value: Double): String {
+    val whole = value.toLong()
+    val s = whole.toString()
+    val sb = StringBuilder()
+    val len = s.length
+    for (i in 0 until len) {
+        if (i > 0 && (len - i) % 3 == 0) sb.append(',')
+        sb.append(s[i])
+    }
+    return sb.toString()
+}

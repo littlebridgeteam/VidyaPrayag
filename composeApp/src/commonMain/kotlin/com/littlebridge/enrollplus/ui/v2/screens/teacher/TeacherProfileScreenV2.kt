@@ -94,6 +94,7 @@ fun TeacherProfileScreenV2(
     unreadCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
     onOpenSalary: () -> Unit = {},
+    onOpenFeeEscalation: () -> Unit = {},
     profileViewModel: TeacherProfileViewModel = koinViewModel(),
     actionsViewModel: TeacherProfileActionsViewModel = koinViewModel(),
 ) {
@@ -217,6 +218,16 @@ fun TeacherProfileScreenV2(
                         Text("View Salary History", style = VtT.h3.coloredV(c.navyDeep))
                         Spacer(Modifier.height(4.dp))
                         Text("See your monthly salary breakdown and payment status", style = VtT.caption.coloredV(c.ink3))
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                TCard {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clickable { onOpenFeeEscalation() },
+                    ) {
+                        Text("Fee Escalation", style = VtT.h3.coloredV(c.navyDeep))
+                        Spacer(Modifier.height(4.dp))
+                        Text("View unpaid fees in your classes and remind parents", style = VtT.caption.coloredV(c.ink3))
                     }
                 }
             }

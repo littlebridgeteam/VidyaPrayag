@@ -25,8 +25,6 @@ package com.littlebridge.enrollplus.feature.parent
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserId
-import com.littlebridge.enrollplus.db.AppConfigTable
-import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FeeAdditionalChargesTable
 import com.littlebridge.enrollplus.db.FeeLateFeeTiersTable
@@ -37,9 +35,6 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -80,6 +75,17 @@ data class ParentFeeItemDto(
 )
 
 @Serializable
+data class MonthlyFeeSummary(
+    val month: String,
+    @SerialName("total_amount") val totalAmount: Double,
+    @SerialName("paid_amount") val paidAmount: Double,
+    @SerialName("due_amount") val dueAmount: Double,
+    val status: String,
+    val items: List<ParentFeeItemDto> = emptyList(),
+    val currency: String = "INR",
+)
+
+@Serializable
 data class ParentFeesResponse(
     @SerialName("total_collected") val totalCollected: String,
     @SerialName("collection_progress") val collectionProgress: Float,
@@ -87,9 +93,8 @@ data class ParentFeesResponse(
     @SerialName("overdue_count") val overdueCount: Int,
     val announcements: List<FeesAnnouncement>,
     @SerialName("fee_items") val feeItems: List<ParentFeeItemDto> = emptyList(),
+    @SerialName("monthly_summary") val monthlySummary: List<MonthlyFeeSummary> = emptyList(),
 )
-
-private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true }
 
 private fun money(amount: Double, currency: String): String {
     // RA-25: India-first product — default to ₹ (INR), matching the
@@ -245,41 +250,6 @@ fun Route.parentFeesRouting() {
                     val progress = if (total <= 0.0) 0f
                                    else (collected / total).coerceIn(0.0, 1.0).toFloat()
 
-                    // ----- announcements (CMS, school-scoped — RA-26) -----
-                    // Resolve the parent's school from their first active child,
-                    // then prefer a school-scoped CMS key so each school can
-                    // publish its OWN fee announcements. Fall back to the legacy
-                    // global key, then to a static default, so older configs and
-                    // parents without a linked school still get sensible copy.
-                    val schoolId = ChildrenTable.selectAll()
-                        .where { (ChildrenTable.parentId eq uid) and (ChildrenTable.isActive eq true) }
-                        .orderBy(ChildrenTable.createdAt, SortOrder.ASC)
-                        .firstOrNull()
-                        ?.get(ChildrenTable.schoolId)
-
-                    fun readConfig(key: String): String? = AppConfigTable.selectAll()
-                        .where { AppConfigTable.key eq key }
-                        .singleOrNull()
-                        ?.get(AppConfigTable.value)
-
-                    val annRaw = (schoolId?.let { readConfig("parent_fees_announcements:$it") })
-                        ?: readConfig("parent_fees_announcements")
-                    val announcements: List<FeesAnnouncement> = annRaw?.let {
-                        runCatching {
-                            lenientJson.decodeFromString(ListSerializer(FeesAnnouncement.serializer()), it)
-                        }.getOrNull()
-                    } ?: listOf(
-                        FeesAnnouncement(
-                            id = "f1",
-                            title = "Deadline",
-                            time = "2h ago",
-                            description = "Submit Q3 fees.",
-                            openRate = "0%",
-                            engagement = "0",
-                            type = "Payment"
-                        )
-                    )
-
                     val feeItems = rows.map { row ->
                         ParentFeeItemDto(
                             id = row[FeeRecordsTable.id].value.toString(),
@@ -293,6 +263,47 @@ fun Route.parentFeesRouting() {
                         )
                     }
 
+                    // ── Monthly summary: group fee items by month ──
+                    val monthlySummary = feeItems
+                        .groupBy { it.month ?: "Unknown" }
+                        .map { (month, items) ->
+                            val total = items.sumOf { it.amount }
+                            val paid = items.filter { it.status == "PAID" }.sumOf { it.amount }
+                            val due = items.filter { it.status in setOf("DUE", "OVERDUE") }.sumOf { it.amount }
+                            val status = when {
+                                due <= 0.0 -> "PAID"
+                                items.any { it.status == "OVERDUE" } -> "OVERDUE"
+                                else -> "DUE"
+                            }
+                            MonthlyFeeSummary(
+                                month = month,
+                                totalAmount = total,
+                                paidAmount = paid,
+                                dueAmount = due,
+                                status = status,
+                                items = items,
+                                currency = currency,
+                            )
+                        }
+                        .sortedByDescending { it.month }
+
+                    // ── Announcements derived from actual fee data (one per month with unpaid fees) ──
+                    val announcements = monthlySummary
+                        .filter { it.dueAmount > 0.0 }
+                        .map { ms ->
+                            val type = if (ms.status == "OVERDUE") "Emergency" else "Payment"
+                            val desc = "${ms.items.size} fee item(s) — ${money(ms.dueAmount, currency)} due"
+                            FeesAnnouncement(
+                                id = "month_${ms.month}",
+                                title = "Fees due for ${ms.month}",
+                                time = if (ms.status == "OVERDUE") "Overdue" else "Pending",
+                                description = desc,
+                                openRate = "0%",
+                                engagement = "0",
+                                type = type,
+                            )
+                        }
+
                     ParentFeesResponse(
                         totalCollected = money(collected, currency),
                         collectionProgress = progress,
@@ -300,6 +311,7 @@ fun Route.parentFeesRouting() {
                         overdueCount = overdueCount,
                         announcements = announcements,
                         feeItems = feeItems,
+                        monthlySummary = monthlySummary,
                     )
                 }
 

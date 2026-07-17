@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -90,7 +91,7 @@ fun TeacherSyllabusScreenV2(
         }
     }
 
-    Box(modifier.fillMaxSize().background(VColors.cream)) {
+    Box(modifier.fillMaxSize().imePadding().background(VColors.cream)) {
         when {
             state.isLoading && state.units.isEmpty() -> TeacherCenterState { TeacherSpinner() }
             state.error != null && state.units.isEmpty() -> TeacherCenterState {
@@ -133,6 +134,8 @@ private fun SyllabusBody(
 ) {
     val state by viewModel.state.collectAsStateV2()
     val pct = (state.progress * 100).toInt()
+    var deleteUnitId by remember { mutableStateOf<String?>(null) }
+    var showRejectAllConfirm by remember { mutableStateOf(false) }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -192,7 +195,7 @@ private fun SyllabusBody(
 
         // ── Draft approval bar (if draft units exist) ──
         if (state.hasDraftUnits || state.draftUnits.isNotEmpty()) {
-            item { DraftApprovalBar(viewModel) }
+            item { DraftApprovalBar(viewModel, onRejectAll = { showRejectAllConfirm = true }) }
         }
 
         // ── Agentic action buttons (always visible) ──
@@ -274,7 +277,7 @@ private fun SyllabusBody(
                     isDraft = u.approvalStatus == "DRAFT",
                     onToggle = { viewModel.toggleUnit(u.id) },
                     onAddTopic = { viewModel.openAdd(u.id) },
-                    onDelete = { viewModel.deleteUnit(u.id) },
+                    onDelete = { deleteUnitId = u.id },
                 )
             }
         }
@@ -290,6 +293,29 @@ private fun SyllabusBody(
                 QuizRow(q, onPublish = { viewModel.publishQuiz(q.id) }, onLeaderboard = { viewModel.loadLeaderboard(q.id) })
             }
         }
+    }
+
+    // Unit delete confirmation
+    if (deleteUnitId != null) {
+        TeacherConfirmSheet(
+            title = appString(StringKeys.COMMON_BUTTON_DELETE),
+            body = "Delete this syllabus unit? This cannot be undone.",
+            confirmLabel = appString(StringKeys.COMMON_BUTTON_DELETE),
+            onConfirm = { val id = deleteUnitId; deleteUnitId = null; if (id != null) viewModel.deleteUnit(id) },
+            onDismiss = { deleteUnitId = null },
+            destructive = true,
+        )
+    }
+    // Reject all drafts confirmation
+    if (showRejectAllConfirm) {
+        TeacherConfirmSheet(
+            title = appString(StringKeys.TC_REJECT_ALL),
+            body = "Reject all draft units? They will be permanently removed.",
+            confirmLabel = appString(StringKeys.TC_REJECT_ALL),
+            onConfirm = { showRejectAllConfirm = false; viewModel.rejectAllDrafts() },
+            onDismiss = { showRejectAllConfirm = false },
+            destructive = true,
+        )
     }
 }
 
@@ -981,7 +1007,7 @@ private fun PaceWarningBanner(warning: com.littlebridge.enrollplus.feature.teach
 // ── Draft approval bar ───────────────────────────────────────────────────────
 
 @Composable
-private fun DraftApprovalBar(viewModel: TeacherSyllabusViewModel) {
+private fun DraftApprovalBar(viewModel: TeacherSyllabusViewModel, onRejectAll: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateV2()
     val draftCount = state.draftUnits.size
     VtCard(padding = 14.dp) {
@@ -994,7 +1020,7 @@ private fun DraftApprovalBar(viewModel: TeacherSyllabusViewModel) {
             }
             Text(appString(StringKeys.TC_DRAFT_UNITS_NOT_VISIBLE_TO_PARENTS), style = VTypography.caption.copy(color = VColors.ink3))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VButton(appString(StringKeys.TC_REJECT_ALL), onClick = { viewModel.rejectAllDrafts() }, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Sm, loading = state.isApproving)
+                VButton(appString(StringKeys.TC_REJECT_ALL), onClick = onRejectAll, modifier = Modifier.weight(1f), variant = VButtonVariant.Ghost, size = VButtonSize.Sm, loading = state.isApproving)
                 VButton(appString(StringKeys.TC_APPROVE_ALL), onClick = { viewModel.approveAllDrafts() }, modifier = Modifier.weight(1f), tone = VButtonTone.Lavender, size = VButtonSize.Sm, loading = state.isApproving)
             }
             if (state.approveError != null) {

@@ -42,6 +42,7 @@ import com.littlebridge.enrollplus.core.principalUserId
 import com.littlebridge.enrollplus.core.principalUserUuid
 import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.core.requireSchoolContext
+import com.littlebridge.enrollplus.core.requireTeacherContext
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
@@ -52,6 +53,7 @@ import com.littlebridge.enrollplus.db.FeeReminderConfigTable
 import com.littlebridge.enrollplus.db.FeeStructuresTable
 import com.littlebridge.enrollplus.db.SalaryRecordsTable
 import com.littlebridge.enrollplus.db.SchoolClassesTable
+import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.feature.notifications.Notify
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -68,6 +70,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
@@ -139,6 +142,17 @@ data class FeeAdditionalChargeListResponse(
 data class CreateFeeAdditionalChargeRequest(
     @SerialName("child_id") val childId: String,
     @SerialName("class_id") val classId: String? = null,
+    val month: String,
+    val title: String,
+    val description: String? = null,
+    val amount: Double,
+    val currency: String = "INR",
+)
+
+@Serializable
+data class BulkCreateFeeAdditionalChargeRequest(
+    @SerialName("class_id") val classId: String,
+    @SerialName("child_ids") val childIds: List<String> = emptyList(),
     val month: String,
     val title: String,
     val description: String? = null,
@@ -575,6 +589,67 @@ fun Route.feeSalaryRouting() {
                     call.fail("Charge not found", HttpStatusCode.NotFound, "NOT_FOUND")
                 }
             }
+
+            post("/bulk") {
+                val ctx = call.requireSchoolAdmin() ?: return@post
+                val req = call.receive<BulkCreateFeeAdditionalChargeRequest>()
+                if (req.classId.isBlank() || req.month.isBlank() || req.title.isBlank()) {
+                    call.fail("classId, month, and title are required", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@post
+                }
+                val classId = parseUuid(req.classId) ?: run {
+                    call.fail("Invalid classId", HttpStatusCode.BadRequest, "BAD_REQUEST")
+                    return@post
+                }
+                val now = Instant.now()
+
+                // Resolve target children: specific childIds if provided, else all active children in the class
+                val targetChildren = dbQuery {
+                    val className = SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.id eq classId }
+                        .firstOrNull()?.get(SchoolClassesTable.name)
+
+                    if (req.childIds.isNotEmpty()) {
+                        val childUuids = req.childIds.mapNotNull { parseUuid(it) }
+                        ChildrenTable.selectAll()
+                            .where {
+                                (ChildrenTable.id inList childUuids.map { EntityID(it, ChildrenTable) }) and
+                                (ChildrenTable.schoolId eq ctx.schoolId) and
+                                (ChildrenTable.isActive eq true)
+                            }
+                            .map { it[ChildrenTable.id].value to it[ChildrenTable.childName] }
+                    } else {
+                        ChildrenTable.selectAll()
+                            .where {
+                                (ChildrenTable.schoolId eq ctx.schoolId) and
+                                (ChildrenTable.isActive eq true) and
+                                (ChildrenTable.currentGrade eq (className ?: ""))
+                            }
+                            .map { it[ChildrenTable.id].value to it[ChildrenTable.childName] }
+                    }
+                }
+
+                var created = 0
+                dbQuery {
+                    targetChildren.forEach { (childId, _) ->
+                        FeeAdditionalChargesTable.insert {
+                            it[FeeAdditionalChargesTable.id] = UUID.randomUUID()
+                            it[FeeAdditionalChargesTable.schoolId] = ctx.schoolId
+                            it[FeeAdditionalChargesTable.childId] = childId
+                            it[FeeAdditionalChargesTable.classId] = classId
+                            it[FeeAdditionalChargesTable.month] = req.month
+                            it[FeeAdditionalChargesTable.title] = req.title.trim()
+                            it[FeeAdditionalChargesTable.description] = req.description
+                            it[FeeAdditionalChargesTable.amount] = req.amount
+                            it[FeeAdditionalChargesTable.currency] = req.currency
+                            it[FeeAdditionalChargesTable.createdAt] = now
+                            it[FeeAdditionalChargesTable.updatedAt] = now
+                        }
+                        created++
+                    }
+                }
+                call.ok(mapOf("created" to created), message = "Additional charges created for $created students")
+            }
         }
 
         // ── Admin Fee Payment Tracking ────────────────────────────────────────
@@ -668,10 +743,16 @@ fun Route.feeSalaryRouting() {
                 }
 
                 val students = dbQuery {
+                    val classNameFilter = classIdFilter?.let { cid ->
+                        SchoolClassesTable.selectAll()
+                            .where { SchoolClassesTable.id eq cid }
+                            .firstOrNull()?.get(SchoolClassesTable.name)
+                    }
+
                     val children = ChildrenTable.selectAll()
                         .where {
                             val base: org.jetbrains.exposed.sql.Op<Boolean> = (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true)
-                            if (classIdFilter != null) base and (ChildrenTable.id eq classIdFilter) else base
+                            if (classNameFilter != null) base and (ChildrenTable.currentGrade eq classNameFilter) else base
                         }
                         .toList()
 
@@ -811,10 +892,16 @@ fun Route.feeSalaryRouting() {
 
                     if (structures.isEmpty()) return@dbQuery GenerateFeesResponse(0, 0)
 
+                    val classNameFilter = classIdFilter?.let { cid ->
+                        SchoolClassesTable.selectAll()
+                            .where { SchoolClassesTable.id eq cid }
+                            .firstOrNull()?.get(SchoolClassesTable.name)
+                    }
+
                     val children = ChildrenTable.selectAll()
                         .where {
                             val base: org.jetbrains.exposed.sql.Op<Boolean> = (ChildrenTable.schoolId eq ctx.schoolId) and (ChildrenTable.isActive eq true)
-                            if (classIdFilter != null) base and (ChildrenTable.id eq classIdFilter) else base
+                            if (classNameFilter != null) base and (ChildrenTable.currentGrade eq classNameFilter) else base
                         }
                         .toList()
 
@@ -1302,6 +1389,138 @@ fun Route.teacherSalaryRouting() {
                         }
                 }
                 call.ok(TeacherSalaryResponse(records), message = "Salary history fetched")
+            }
+        }
+    }
+}
+
+// ─────────────────────── Teacher Fee Escalation Routes ────────────────────────
+
+@Serializable
+data class TeacherFeeStudentDto(
+    @SerialName("child_id") val childId: String,
+    @SerialName("child_name") val childName: String,
+    @SerialName("class_name") val className: String? = null,
+    @SerialName("parent_id") val parentId: String,
+    val month: String,
+    @SerialName("due_amount") val dueAmount: Double,
+    val status: String,
+)
+
+@Serializable
+data class TeacherFeeListResponse(
+    val students: List<TeacherFeeStudentDto>,
+    @SerialName("total_due") val totalDue: Double,
+)
+
+@Serializable
+data class EscalateFeeRequest(
+    @SerialName("child_ids") val childIds: List<String>,
+    val message: String? = null,
+)
+
+fun Route.teacherFeeEscalationRouting() {
+    authenticate("jwt") {
+        route("/api/v1/teacher/fees") {
+
+            // List students with unpaid fees in the teacher's classes
+            get("/unpaid") {
+                val ctx = call.requireTeacherContext() ?: return@get
+                val monthFilter = call.request.queryParameters["month"] ?: LocalDate.now().toString().substring(0, 7)
+
+                val students = dbQuery {
+                    // Find classes this teacher teaches
+                    val teacherClasses = TeacherSubjectAssignmentsTable.selectAll()
+                        .where {
+                            (TeacherSubjectAssignmentsTable.schoolId eq ctx.schoolId) and
+                            (TeacherSubjectAssignmentsTable.teacherId eq ctx.userId)
+                        }
+                        .map { it[TeacherSubjectAssignmentsTable.className] }
+                        .distinct()
+
+                    // Find children in those classes with unpaid fees
+                    ChildrenTable.selectAll()
+                        .where {
+                            (ChildrenTable.schoolId eq ctx.schoolId) and
+                            (ChildrenTable.isActive eq true) and
+                            (ChildrenTable.currentGrade inList teacherClasses)
+                        }
+                        .toList()
+                }
+
+                val result = students.mapNotNull { child ->
+                    val childId = child[ChildrenTable.id].value
+                    val childName = child[ChildrenTable.childName]
+                    val parentId = child[ChildrenTable.parentId]
+                    val className = child[ChildrenTable.currentGrade]
+
+                    val unpaidRecords = dbQuery {
+                        FeeRecordsTable.selectAll()
+                            .where {
+                                (FeeRecordsTable.childId eq childId) and
+                                (FeeRecordsTable.schoolId eq ctx.schoolId) and
+                                (FeeRecordsTable.status inList listOf("DUE", "OVERDUE"))
+                            }
+                            .filter { row ->
+                                row[FeeRecordsTable.dueDate]?.startsWith(monthFilter) == true
+                            }
+                    }
+
+                    val dueAmount = unpaidRecords.sumOf { it[FeeRecordsTable.amount] }
+                    if (dueAmount > 0) {
+                        TeacherFeeStudentDto(
+                            childId = childId.toString(),
+                            childName = childName,
+                            className = className,
+                            parentId = parentId.toString(),
+                            month = monthFilter,
+                            dueAmount = dueAmount,
+                            status = if (unpaidRecords.any { it[FeeRecordsTable.status] == "OVERDUE" }) "OVERDUE" else "DUE",
+                        )
+                    } else null
+                }
+
+                val totalDue = result.sumOf { it.dueAmount }
+                call.ok(TeacherFeeListResponse(students = result, totalDue = totalDue), message = "Unpaid fees fetched")
+            }
+
+            // Escalate unpaid fees to parents via notification
+            post("/escalate") {
+                val ctx = call.requireTeacherContext() ?: return@post
+                val req = call.receive<EscalateFeeRequest>()
+                if (req.childIds.isEmpty()) {
+                    call.fail("At least one student must be selected", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@post
+                }
+
+                val childUuids = req.childIds.mapNotNull { parseUuid(it) }
+                val parentIds = dbQuery {
+                    ChildrenTable.selectAll()
+                        .where {
+                            (ChildrenTable.id inList childUuids.map { EntityID(it, ChildrenTable) }) and
+                            (ChildrenTable.schoolId eq ctx.schoolId)
+                        }
+                        .map { it[ChildrenTable.parentId] }
+                        .distinct()
+                }
+
+                val escalationMessage = req.message ?: "Please clear your child's pending school fees at the earliest."
+                val teacherName = ctx.fullName
+
+                Notify.toUsers(
+                    userIds = parentIds,
+                    category = "fee_escalation",
+                    title = "Fee Reminder from $teacherName",
+                    body = escalationMessage,
+                    schoolId = ctx.schoolId,
+                    actorId = ctx.userId,
+                    deepLink = "enrollplus://parent/fees",
+                )
+
+                call.ok(
+                    mapOf("notified" to parentIds.size),
+                    message = "Fee escalation sent to ${parentIds.size} parent(s)",
+                )
             }
         }
     }

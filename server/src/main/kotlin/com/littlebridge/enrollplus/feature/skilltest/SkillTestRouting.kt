@@ -162,6 +162,10 @@ fun Route.skillTestRouting() {
                         call.fail("Invalid questionId", HttpStatusCode.BadRequest); return@post
                     }
 
+                if (req.selectedAnswer.length > 8) {
+                    call.fail("Selected answer must be a single letter (A, B, C, or D)", HttpStatusCode.BadRequest, "ANSWER_TOO_LONG"); return@post
+                    }
+
                 val result = SkillTestService.submitAnswer(attemptId, questionId, req.selectedAnswer)
 
                 if (result == null) {

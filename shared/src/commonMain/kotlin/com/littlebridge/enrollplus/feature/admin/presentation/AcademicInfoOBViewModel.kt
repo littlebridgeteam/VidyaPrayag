@@ -133,8 +133,13 @@ class AcademicInfoOBViewModel(
                 is NetworkResult.Error -> {
                     AppLogger.e("OnboardingAcademic", "Failed to load ACADEMIC step: ${result.message}")
                     if (result.code == 401) {
-                        preferenceRepository.clearSession()
-                        _errorMessage.value = "Your session expired. Please sign in again before continuing onboarding."
+                        // TokenAuthenticator already tried to refresh and failed.
+                        // If it was a true session invalidation (revoked/expired refresh
+                        // token), onRefreshFailed() already cleared the session.
+                        // If it was a transient failure (Render spin-down), the session
+                        // is still alive — clearing it here would log the user out
+                        // unnecessarily. Just show the error; the next request will retry.
+                        _errorMessage.value = "Connection issue. Please try again."
                     }
                     // Non-auth errors are not surfaced as blocking errors - the screen
                     // still works with the fallback class/subject list.
@@ -181,8 +186,9 @@ class AcademicInfoOBViewModel(
             is NetworkResult.Error -> {
                 AppLogger.e("OnboardingAcademic", "class-details failed: ${res.message}")
                 if (res.code == 401) {
-                    preferenceRepository.clearSession()
-                    _errorMessage.value = "Your session expired. Please sign in again before continuing onboarding."
+                    // TokenAuthenticator handles session clearing on true auth failure.
+                    // Don't clearSession() here — transient 401s (Render spin-down)
+                    // would log the user out unnecessarily.
                 }
             }
             is NetworkResult.ConnectionError -> {
@@ -351,8 +357,10 @@ class AcademicInfoOBViewModel(
                 is NetworkResult.Error -> {
                     AppLogger.e("OnboardingAcademic", "Submit failed: ${result.message} (code=${result.code})")
                     _errorMessage.value = if (result.code == 401) {
-                        preferenceRepository.clearSession()
-                        "Your session expired. Please sign in again before continuing onboarding."
+                        // TokenAuthenticator already attempted refresh. If it was a
+                        // true session invalidation, the session is already cleared.
+                        // If transient (Render spin-down), session is still alive.
+                        "Connection issue. Please try again."
                     } else {
                         result.message
                     }

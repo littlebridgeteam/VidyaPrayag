@@ -505,7 +505,8 @@ class TeacherSyllabusViewModel(
             if (token == null) return@launch
             when (val result = repository.listDailyLogs(token, s0.assignmentId)) {
                 is NetworkResult.Success -> _state.update { it.copy(dailyLogs = result.data.data.logs) }
-                else -> Unit
+                is NetworkResult.Error -> _state.update { it.copy(dailyLogError = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(dailyLogError = "Connection error. Please check your network.") }
             }
         }
     }
@@ -738,7 +739,8 @@ class TeacherSyllabusViewModel(
             if (token == null) return@launch
             when (val result = repository.listQuizzes(token, s0.assignmentId)) {
                 is NetworkResult.Success -> _state.update { it.copy(quizzes = result.data.data.quizzes) }
-                else -> Unit
+                is NetworkResult.Error -> _state.update { it.copy(quizError = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(quizError = "Connection error. Please check your network.") }
             }
         }
     }
@@ -749,7 +751,8 @@ class TeacherSyllabusViewModel(
             if (token == null) return@launch
             when (val result = repository.publishQuiz(token, quizId)) {
                 is NetworkResult.Success -> loadQuizzes()
-                else -> Unit
+                is NetworkResult.Error -> _state.update { it.copy(quizError = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(quizError = "Connection error. Please check your network.") }
             }
         }
     }
@@ -908,7 +911,8 @@ class TeacherSyllabusViewModel(
                     val w = result.data.data
                     _state.update { it.copy(isLoadingPace = false, paceWarning = w) }
                 }
-                else -> _state.update { it.copy(isLoadingPace = false) }
+                is NetworkResult.Error -> _state.update { it.copy(isLoadingPace = false, error = result.message) }
+                is NetworkResult.ConnectionError -> _state.update { it.copy(isLoadingPace = false, error = "Connection error. Please check your network.") }
             }
         }
     }
