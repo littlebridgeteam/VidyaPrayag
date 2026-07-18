@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — School Registration</title>
+<style>
+/* ═══ DESIGN TOKENS (from VColors.kt — same as admin-home-prototype) ═══ */
+:root {
+  --cream: #FBF8F4; --cream-deep: #F5F0E8; --white: #FFF;
+  --surface: #FBF8F4; --surface-card: #FFF; --surface-tint: #F8F4EF; --surface-warm: #FFF6EE;
+  --ink: #1A1614; --ink2: #5C544E; --ink3: #8A8078;
+  --line: #E8E0D6; --line-soft: #F0EAE0;
+  --violet: #5B41D5; --violet-hover: #4A30C4; --violet-soft: #EEE8FB; --violet-ink: #16006E;
+  --coral: #F82B60; --coral-soft: #FFE4EC;
+  --gold: #FCB400; --gold-soft: #FFF4D1;
+  --sky: #18BFFF; --sky-soft: #E0F6FF;
+  --mint: #2DCE89; --mint-soft: #DCF5E8;
+  --success: #2D7A4A; --success-soft: #D4EDDB;
+  --error: #BA1A1A; --error-soft: #FFDAD6;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 20px; --radius-xxl: 28px; --radius-full: 9999px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font); background: #1a1a2e; color: var(--ink); overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+/* ═══ PHONE FRAME ═══ */
+.phone-frame { width: 390px; height: 844px; background: var(--cream); border-radius: 48px; overflow: hidden; position: relative; box-shadow: 0 0 0 12px #1a1a2e, 0 0 0 14px #333, 0 40px 80px rgba(0,0,0,0.5); }
+.phone-screen { width: 100%; height: 100%; position: relative; overflow: hidden; }
+.notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 120px; height: 34px; background: #000; border-radius: 20px; z-index: 200; }
+.home-indicator { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; background: var(--ink); border-radius: 3px; z-index: 200; opacity: 0.15; }
+
+/* ═══ STEP PAGES ═══ */
+.step-page { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; transform: translateX(30px); transition: opacity 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth); pointer-events: none; }
+.step-page.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.step-page.exit { opacity: 0; transform: translateX(-30px); }
+
+/* ═══ BRAND HEADER (back arrow + step counter) ═══ */
+.brand-bar { display: flex; align-items: center; justify-content: space-between; padding: 56px 24px 0; }
+.brand-left { display: flex; align-items: center; gap: 12px; }
+.step-counter { font-size: 12px; font-weight: 700; color: var(--ink3); }
+.step-counter .current { color: var(--ink); }
+
+/* ═══ VBackHeader style (from VBackHeader.kt) ═══ */
+.back-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); background: var(--surface-tint); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s var(--ease), background 0.2s var(--ease); border: none; flex-shrink: 0; }
+.back-btn:hover { background: var(--line-soft); }
+.back-btn:active { transform: scale(0.92); }
+.back-btn svg { width: 18px; height: 18px; color: var(--ink); }
+
+/* ═══ PROGRESS BAR ═══ */
+.progress-wrap { padding: 12px 28px 0; display: flex; gap: 6px; }
+.progress-seg { flex: 1; height: 3px; border-radius: var(--radius-full); background: var(--line); overflow: hidden; position: relative; }
+.progress-seg .fill { position: absolute; inset: 0; width: 0%; background: var(--violet); border-radius: var(--radius-full); transition: width 0.6s var(--ease); }
+.progress-seg.done .fill { width: 100%; }
+.progress-seg.current .fill { width: 100%; animation: pulse-fill 2s var(--ease-smooth) infinite; }
+@keyframes pulse-fill { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+/* ═══ WORDMARK (above step header, centered) ═══ */
+.brand-wordmark { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; text-align: center; padding: 16px 32px 0; }
+.brand-wordmark .plus { color: var(--violet); }
+
+/* ═══ STEP HEADER — Centered like parent signup ═══ */
+.step-header { padding: 8px 32px 20px; text-align: center; }
+.step-eyebrow { font-size: 11px; font-weight: 700; color: var(--violet); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 8px; }
+.step-title { font-size: 26px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; line-height: 1.15; margin-bottom: 6px; }
+.step-subtitle { font-size: 14px; color: var(--ink3); line-height: 1.45; }
+
+/* ═══ FORM SCROLL ═══ */
+.form-scroll { flex: 1; overflow-y: auto; padding: 0 32px 120px; }
+.form-scroll::-webkit-scrollbar { width: 0; }
+.field-group { display: flex; flex-direction: column; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--ink2); }
+
+/* ═══ INPUT ═══ */
+.field-input { width: 100%; padding: 15px 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-card); font-family: var(--font); font-size: 15px; color: var(--ink); outline: none; transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.field-input::placeholder { color: var(--ink3); opacity: 0.5; }
+.field-input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.field-input.error { border-color: var(--error); }
+.field-error { font-size: 12px; font-weight: 500; color: var(--error); }
+.input-prefix { display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-card); transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.input-prefix:focus-within { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.input-prefix .prefix { padding: 0 0 0 16px; font-size: 15px; color: var(--ink3); font-weight: 600; }
+.input-prefix input { border: none; box-shadow: none; flex: 1; }
+.input-prefix input:focus { box-shadow: none; border-color: transparent; }
+
+/* ═══ PREMIUM DROPDOWN (bottom sheet style) ═══ */
+.dropdown { position: relative; }
+.dropdown-trigger { width: 100%; padding: 15px 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-card); font-family: var(--font); font-size: 15px; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.dropdown-trigger:hover { border-color: var(--violet-soft); }
+.dropdown-trigger.placeholder { color: var(--ink3); opacity: 0.5; }
+.dropdown-trigger.open { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.dropdown-trigger .chevron { width: 18px; height: 18px; color: var(--ink3); transition: transform 0.25s var(--ease); flex-shrink: 0; }
+.dropdown-trigger.open .chevron { transform: rotate(180deg); }
+
+/* Hide old dropdown menus — bottom sheet handles display */
+.dropdown-menu { display: none; }
+
+/* Bottom sheet overlay */
+.sheet-backdrop { position: absolute; inset: 0; background: rgba(26,22,20,0.4); z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.25s var(--ease); }
+.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+.sheet { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface-card); border-radius: var(--radius-xxl) var(--radius-xxl) 0 0; box-shadow: 0 -8px 40px rgba(0,0,0,0.12); z-index: 95; transform: translateY(100%); transition: transform 0.35s var(--ease-smooth); max-height: 60%; display: flex; flex-direction: column; }
+.sheet.open { transform: translateY(0); }
+.sheet-handle { width: 40px; height: 4px; background: var(--line); border-radius: 2px; margin: 12px auto 8px; flex-shrink: 0; }
+.sheet-title { font-size: 16px; font-weight: 700; color: var(--ink); text-align: center; padding: 0 24px 12px; flex-shrink: 0; }
+.sheet-options { overflow-y: auto; padding: 0 8px 32px; flex: 1; }
+.sheet-options::-webkit-scrollbar { width: 0; }
+.sheet-option { padding: 14px 20px; font-size: 15px; color: var(--ink2); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-radius: var(--radius-md); transition: background 0.15s var(--ease); }
+.sheet-option:hover { background: var(--surface-tint); }
+.sheet-option.selected { background: var(--violet-soft); color: var(--violet); font-weight: 600; }
+.sheet-option .check { width: 18px; height: 18px; color: var(--violet); opacity: 0; transition: opacity 0.15s var(--ease); }
+.sheet-option.selected .check { opacity: 1; }
+
+/* ═══ CHIPS ═══ */
+.section-label { font-size: 11px; font-weight: 700; color: var(--ink3); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 10px 18px; border-radius: var(--radius-full); border: 1px solid var(--line); background: var(--surface-card); font-size: 13px; font-weight: 600; color: var(--ink2); cursor: pointer; transition: all 0.2s var(--ease); }
+.chip:hover { border-color: var(--violet-soft); }
+.chip.selected { background: var(--violet); border-color: var(--violet); color: white; }
+
+/* ═══ DATE ROW ═══ */
+.date-row { display: flex; gap: 12px; }
+.date-row .field { flex: 1; }
+
+/* ═══ DATE PICKER (trigger only — uses bottom sheet) ═══ */
+.date-picker { position: relative; }
+.date-trigger { width: 100%; padding: 15px 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-card); font-family: var(--font); font-size: 15px; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.date-trigger:hover { border-color: var(--violet-soft); }
+.date-trigger.placeholder { color: var(--ink3); opacity: 0.5; }
+.date-trigger.open { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.date-trigger .cal-icon { width: 18px; height: 18px; color: var(--ink3); flex-shrink: 0; }
+.date-popover { display: none; }
+
+/* ═══ TIME PICKER (trigger only — uses bottom sheet) ═══ */
+.time-picker { position: relative; }
+.time-trigger { width: 100%; padding: 15px 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-card); font-family: var(--font); font-size: 15px; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.time-trigger:hover { border-color: var(--violet-soft); }
+.time-trigger.open { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.time-trigger .clock-icon { width: 18px; height: 18px; color: var(--ink3); flex-shrink: 0; }
+.time-popover { display: none; }
+
+/* ═══ PREMIUM CALENDAR SHEET ═══ */
+.cal-sheet-content { padding: 0 20px 32px; }
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cal-month-label { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; cursor: pointer; padding: 6px 12px; border-radius: var(--radius-md); transition: background 0.15s var(--ease); display: flex; align-items: center; gap: 4px; }
+.cal-month-label:hover { background: var(--surface-tint); }
+.cal-month-label .cal-chev { width: 14px; height: 14px; color: var(--ink3); transition: transform 0.2s var(--ease); }
+.cal-month-label.open .cal-chev { transform: rotate(180deg); }
+.cal-nav-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--surface-card); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s var(--ease); }
+.cal-nav-btn:hover { background: var(--surface-tint); border-color: var(--violet-soft); }
+.cal-nav-btn svg { width: 16px; height: 16px; color: var(--ink2); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-day-header { font-size: 11px; font-weight: 700; color: var(--ink3); text-align: center; padding: 6px 0; }
+.cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: var(--ink2); border-radius: var(--radius-md); cursor: pointer; transition: all 0.15s var(--ease); }
+.cal-day:hover { background: var(--surface-tint); }
+.cal-day.other-month { color: var(--line); pointer-events: none; }
+.cal-day.today { color: var(--violet); font-weight: 800; }
+.cal-day.selected { background: var(--violet); color: white; font-weight: 800; box-shadow: 0 4px 12px rgba(91,65,213,0.3); }
+.cal-day.selected:hover { background: var(--violet-hover); }
+/* Month/Year selector overlay */
+.cal-selector { display: none; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 16px; }
+.cal-selector.open { display: grid; }
+.cal-selector-month, .cal-selector-year { padding: 10px 4px; font-size: 14px; font-weight: 600; color: var(--ink2); text-align: center; border-radius: var(--radius-md); cursor: pointer; transition: all 0.15s var(--ease); border: 1px solid transparent; }
+.cal-selector-month:hover, .cal-selector-year:hover { background: var(--surface-tint); }
+.cal-selector-month.selected, .cal-selector-year.selected { background: var(--violet); color: white; font-weight: 700; border-color: var(--violet); }
+.cal-selector-month.current, .cal-selector-year.current { border-color: var(--violet-soft); color: var(--violet); }
+
+/* ═══ PREMIUM TIME WHEEL SHEET ═══ */
+.time-sheet-content { padding: 0 20px 32px; }
+.time-display { text-align: center; font-size: 48px; font-weight: 800; color: var(--ink); letter-spacing: -2px; margin-bottom: 20px; }
+.time-display .colon { color: var(--violet); animation: blink 1.2s infinite; }
+@keyframes blink { 50% { opacity: 0.3; } }
+.time-display .ampm { font-size: 18px; font-weight: 700; color: var(--ink3); margin-left: 8px; }
+.time-wheels { display: flex; gap: 8px; justify-content: center; }
+.time-wheel-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.time-wheel-label { font-size: 10px; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.time-scroll { max-height: 180px; overflow-y: auto; width: 64px; scrollbar-width: none; }
+.time-scroll::-webkit-scrollbar { width: 0; }
+.time-item { padding: 10px 0; font-size: 18px; font-weight: 600; color: var(--ink3); text-align: center; cursor: pointer; border-radius: var(--radius-md); transition: all 0.15s var(--ease); }
+.time-item:hover { background: var(--surface-tint); color: var(--ink2); }
+.time-item.selected { background: var(--violet); color: white; font-weight: 800; box-shadow: 0 2px 8px rgba(91,65,213,0.25); }
+.time-separator { font-size: 24px; font-weight: 700; color: var(--ink3); padding-top: 32px; }
+
+/* ═══ PASSWORD STRENGTH ═══ */
+.strength-bar { display: flex; gap: 4px; align-items: center; }
+.strength-seg { flex: 1; height: 3px; border-radius: var(--radius-full); background: var(--line); transition: background 0.3s var(--ease); }
+.strength-seg.active { background: var(--mint); }
+.strength-seg.active.weak { background: var(--coral); }
+.strength-seg.active.fair { background: var(--gold); }
+.strength-seg.active.good { background: var(--sky); }
+.strength-label { font-size: 11px; font-weight: 700; margin-left: 8px; white-space: nowrap; }
+.req-box { background: var(--violet-soft); border: 1px solid rgba(91,65,213,0.12); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.req-title { font-size: 12px; font-weight: 700; color: var(--ink); }
+.req-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink3); transition: color 0.2s var(--ease); }
+.req-item.met { color: var(--success); }
+.req-dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--ink3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s var(--ease); }
+.req-item.met .req-dot { border-color: var(--success); background: var(--success); }
+.req-dot svg { width: 10px; height: 10px; color: white; opacity: 0; transition: opacity 0.2s var(--ease); }
+.req-item.met .req-dot svg { opacity: 1; }
+
+/* ═══ FOOTER ═══ */
+.step-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px 32px 32px; background: linear-gradient(to top, var(--cream) 70%, rgba(251,248,244,0)); display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+.btn-primary { width: 100%; padding: 16px; border: none; border-radius: var(--radius-lg); background: var(--violet); color: white; font-family: var(--font); font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s var(--ease), transform 0.15s var(--ease); }
+.btn-primary:hover { background: var(--violet-hover); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { background: var(--line); color: var(--ink3); cursor: not-allowed; }
+.btn-primary svg { width: 18px; height: 18px; }
+.btn-outline { width: 100%; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: transparent; color: var(--ink2); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s var(--ease), border-color 0.2s var(--ease); }
+.btn-outline:hover { background: var(--surface-tint); border-color: var(--violet-soft); }
+.signin-link { text-align: center; font-size: 13px; color: var(--ink3); }
+.signin-link a { color: var(--violet); font-weight: 600; text-decoration: none; cursor: pointer; }
+.signin-link a:hover { opacity: 0.7; }
+
+/* ═══ SUCCESS SCREEN — premium admin feature carousel ═══ */
+.success-screen { display: flex; flex-direction: column; height: 100%; background: var(--cream); padding: 24px 0 0; position: relative; overflow: hidden; }
+.success-top { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; margin-bottom: 4px; }
+.success-wordmark { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
+.success-wordmark .plus { color: var(--violet); }
+.success-header { padding: 0 32px; margin-bottom: 20px; }
+.success-congrats { font-size: 13px; font-weight: 700; color: var(--violet); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; opacity: 0; animation: fade-up 0.5s var(--ease-smooth) 0.15s forwards; }
+.success-headline { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; line-height: 1.25; margin-bottom: 6px; opacity: 0; animation: fade-up 0.5s var(--ease-smooth) 0.3s forwards; }
+.success-headline .light { font-weight: 400; color: var(--ink2); }
+.success-sub { font-size: 13px; color: var(--ink3); line-height: 1.5; opacity: 0; animation: fade-up 0.5s var(--ease-smooth) 0.45s forwards; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Carousel */
+.success-carousel { flex: 1; display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 0 0 8px; gap: 14px; scrollbar-width: none; -ms-overflow-style: none; opacity: 0; animation: fade-up 0.5s var(--ease-smooth) 0.6s forwards; }
+.success-carousel::-webkit-scrollbar { display: none; }
+.success-carousel-pad { flex-shrink: 0; width: 28px; }
+.feat-card { flex-shrink: 0; width: 280px; scroll-snap-align: center; background: var(--surface-card); border: 1px solid var(--line); border-radius: var(--radius-xxl); overflow: hidden; transition: transform 0.3s var(--ease-smooth), opacity 0.3s var(--ease-smooth); }
+.feat-card-art { height: 200px; background: var(--cream-deep); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.feat-card-body { padding: 18px 20px 20px; }
+.feat-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.feat-card-title { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
+.feat-card-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.feat-card-sub { font-size: 13px; color: var(--ink2); line-height: 1.45; }
+
+/* ═══ Artifact system — solid colored cards with white overlays (parent carousel style) ═══ */
+.art-glow { position: absolute; width: 220px; height: 220px; border-radius: 50%; opacity: 0.08; pointer-events: none; }
+.art-stack { position: relative; display: flex; flex-direction: column; gap: 10px; width: 210px; z-index: 1; }
+.art-card { border-radius: var(--radius-xl); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.art-card-violet { background: var(--violet); }
+.art-card-mint { background: var(--mint); }
+.art-card-coral { background: var(--coral); }
+.art-card-gold { background: var(--gold); }
+.art-card-sky { background: var(--sky); }
+.art-w-line { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.25); }
+.art-w-line.bold { height: 8px; background: rgba(255,255,255,0.4); }
+.art-w-box { border-radius: var(--radius-sm); background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; }
+.art-w-pill { height: 18px; border-radius: var(--radius-full); background: rgba(255,255,255,0.2); }
+.art-w-text { font-size: 14px; font-weight: 800; color: white; }
+.art-w-text-sm { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; }
+
+/* Command Desk artifact */
+.art-desk-top { display: flex; align-items: center; gap: 10px; }
+.art-desk-icon { width: 36px; height: 36px; border-radius: var(--radius-md); background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.art-desk-icon svg { width: 18px; height: 18px; color: white; }
+.art-desk-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.art-desk-tile { height: 42px; border-radius: var(--radius-md); background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; }
+.art-desk-tile-dot { width: 14px; height: 14px; border-radius: 4px; }
+
+/* CRM artifact */
+.art-crm-row { display: flex; align-items: center; gap: 10px; }
+.art-crm-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.art-crm-avatar svg { width: 14px; height: 14px; color: white; }
+.art-crm-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.art-crm-status { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.art-crm-status svg { width: 12px; height: 12px; color: white; }
+
+/* PEWS artifact */
+.art-pews-top { display: flex; align-items: center; gap: 12px; }
+.art-pews-gauge { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+.art-pews-ring { width: 56px; height: 56px; border-radius: 50%; border: 5px solid rgba(255,255,255,0.2); border-top-color: white; transform: rotate(-90deg); }
+.art-pews-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; font-weight: 800; color: white; }
+.art-pews-list { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.art-pews-item { display: flex; align-items: center; gap: 6px; }
+.art-pews-item-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.art-pews-item-bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.15); overflow: hidden; }
+.art-pews-item-fill { height: 100%; border-radius: 3px; background: rgba(255,255,255,0.5); }
+
+/* Fees artifact */
+.art-fees-amount { font-size: 24px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+.art-fees-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.2); overflow: hidden; }
+.art-fees-bar-fill { height: 100%; border-radius: 4px; background: rgba(255,255,255,0.5); }
+.art-fees-split { display: flex; gap: 8px; }
+.art-fees-chip { flex: 1; height: 28px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; gap: 4px; }
+.art-fees-chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+.art-fees-chip-text { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.8); }
+
+/* Comms artifact */
+.art-comms-msg { padding: 10px 12px; border-radius: 16px; display: flex; flex-direction: column; gap: 5px; }
+.art-comms-msg.recv { background: rgba(255,255,255,0.15); border-bottom-left-radius: 4px; margin-right: 40px; }
+.art-comms-msg.sent { background: rgba(255,255,255,0.25); border-bottom-right-radius: 4px; margin-left: 40px; }
+
+/* Floating elements for LinkChild-style artifacts */
+.art-float { position: absolute; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; }
+.art-float svg { width: 22px; height: 22px; }
+.art-orb { position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px; }
+.art-orb svg { width: 24px; height: 24px; color: white; }
+.art-orb-text { font-size: 10px; font-weight: 800; color: white; }
+
+/* Dot indicators */
+.success-dots { display: flex; justify-content: center; gap: 6px; padding: 12px 0 16px; opacity: 0; animation: fade-up 0.5s var(--ease-smooth) 0.75s forwards; }
+.success-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: all 0.25s var(--ease-smooth); cursor: pointer; }
+.success-dot.active { width: 20px; border-radius: 3px; background: var(--violet); }
+
+/* Bottom section */
+.success-bottom { padding: 0 32px 32px; opacity: 0; animation: fade-up 0.5s var(--ease-smooth) 0.9s forwards; }
+.success-school-row { display: flex; align-items: center; gap: 12px; background: var(--surface-card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 12px 14px; margin-bottom: 16px; }
+.success-school-avatar { width: 38px; height: 38px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--violet), #7B5FE8); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: white; flex-shrink: 0; }
+.success-school-info { text-align: left; flex: 1; }
+.success-school-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 1px; }
+.success-school-meta { font-size: 11px; color: var(--ink3); }
+.success-school-badge { font-size: 9px; font-weight: 700; color: var(--success); background: var(--success-soft); padding: 3px 8px; border-radius: var(--radius-full); flex-shrink: 0; letter-spacing: 0.5px; }
+.success-footer-note { text-align: center; font-size: 11px; color: var(--ink3); margin-top: 12px; }
+
+</style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="phone-screen">
+    <div class="notch"></div>
+    <div class="home-indicator"></div>
+    <!-- Bottom sheet for dropdowns -->
+    <div class="sheet-backdrop" id="sheet-backdrop" onclick="closeSheet()"></div>
+    <div class="sheet" id="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sheet-title">Select</div>
+      <div class="sheet-options" id="sheet-options"></div>
+    </div>
+
+    <!-- ═══ STEP 1: BASIC DETAILS ═══ -->
+    <div class="step-page active" id="step-1">
+      <div class="brand-bar">
+        <div class="back-btn" onclick="goLogin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></div>
+        <div class="step-counter"><span class="current">01</span> / 04</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-seg current"><div class="fill"></div></div>
+        <div class="progress-seg"><div class="fill"></div></div>
+        <div class="progress-seg"><div class="fill"></div></div>
+        <div class="progress-seg"><div class="fill"></div></div>
+      </div>
+      <div class="brand-wordmark">Enroll<span class="plus">+</span></div>
+      <div class="step-header">
+        <div class="step-eyebrow">Let's get started</div>
+        <div class="step-title">Basic Details</div>
+        <div class="step-subtitle">Tell us about yourself — we'll set up your school next</div>
+      </div>
+      <div class="form-scroll">
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label">Your Full Name</label>
+            <input class="field-input" type="text" placeholder="Dr. Rajesh Sharma" id="s1-name" oninput="checkStep1()" />
+          </div>
+          <div class="field">
+            <label class="field-label">Your Role</label>
+            <div class="dropdown" id="s1-role-dd">
+              <div class="dropdown-trigger placeholder" onclick="event.stopPropagation();toggleDropdown('s1-role-dd')">
+                <span class="dd-label">Select your role</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="dropdown-menu" id="s1-role-menu">
+                <div class="dropdown-option" onclick="pickDropdown('s1-role-dd','Principal')"><span>Principal</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="dropdown-option" onclick="pickDropdown('s1-role-dd','Vice Principal')"><span>Vice Principal</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="dropdown-option" onclick="pickDropdown('s1-role-dd','Administrator')"><span>Administrator</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="dropdown-option" onclick="pickDropdown('s1-role-dd','Director')"><span>Director</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="dropdown-option" onclick="pickDropdown('s1-role-dd','Manager')"><span>Manager</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Email Address</label>
+            <input class="field-input" type="email" placeholder="principal@dps.edu.in" id="s1-email" oninput="checkStep1()" />
+          </div>
+          <div class="field">
+            <label class="field-label">Phone Number</label>
+            <div class="input-prefix">
+              <span class="prefix">+91</span>
+              <input class="field-input" type="tel" placeholder="98765 43210" id="s1-phone" maxlength="10" oninput="checkStep1()" style="border:none;box-shadow:none" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn-primary" id="s1-btn" disabled onclick="goNext(1,2)">
+          <span>Continue</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <div class="signin-link">Already have an account? <a onclick="goLogin()">Sign in</a></div>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 2: CREATE PASSWORD ═══ -->
+    <div class="step-page" id="step-2">
+      <div class="brand-bar">
+        <div class="back-btn" onclick="goBack(2,1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></div>
+        <div class="step-counter"><span class="current">02</span> / 04</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-seg done"><div class="fill"></div></div>
+        <div class="progress-seg current"><div class="fill"></div></div>
+        <div class="progress-seg"><div class="fill"></div></div>
+        <div class="progress-seg"><div class="fill"></div></div>
+      </div>
+      <div class="brand-wordmark">Enroll<span class="plus">+</span></div>
+      <div class="step-header">
+        <div class="step-eyebrow">Secure your account</div>
+        <div class="step-title">Create Password</div>
+        <div class="step-subtitle">Set a strong password to protect your school data</div>
+      </div>
+      <div class="form-scroll">
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label">Create Password</label>
+            <input class="field-input" type="password" placeholder="Min. 8 characters" id="s2-pass" oninput="checkPassword()" />
+          </div>
+          <div class="strength-bar" id="strength-bar">
+            <div class="strength-seg"></div><div class="strength-seg"></div><div class="strength-seg"></div><div class="strength-seg"></div>
+            <span class="strength-label" id="strength-label"></span>
+          </div>
+          <div class="field">
+            <label class="field-label">Confirm Password</label>
+            <input class="field-input" type="password" placeholder="Re-enter password" id="s2-confirm" oninput="checkMatch()" />
+            <span class="field-error" id="s2-err" style="display:none">Passwords do not match</span>
+          </div>
+          <div class="req-box">
+            <div class="req-title">Password requirements</div>
+            <div class="req-item" id="req-1"><div class="req-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>At least 8 characters</span></div>
+            <div class="req-item" id="req-2"><div class="req-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>One uppercase letter (A–Z)</span></div>
+            <div class="req-item" id="req-3"><div class="req-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>One number (0–9)</span></div>
+            <div class="req-item" id="req-4"><div class="req-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>One special character (!@#$%)</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn-primary" id="s2-btn" disabled onclick="goNext(2,3)">
+          <span>Create Account</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <div class="signin-link">Already have an account? <a onclick="goLogin()">Sign in</a></div>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 3: SCHOOL IDENTITY ═══ -->
+    <div class="step-page" id="step-3">
+      <div class="brand-bar">
+        <div class="back-btn" onclick="goBack(3,2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></div>
+        <div class="step-counter"><span class="current">03</span> / 04</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-seg done"><div class="fill"></div></div>
+        <div class="progress-seg done"><div class="fill"></div></div>
+        <div class="progress-seg current"><div class="fill"></div></div>
+        <div class="progress-seg"><div class="fill"></div></div>
+      </div>
+      <div class="brand-wordmark">Enroll<span class="plus">+</span></div>
+      <div class="step-header">
+        <div class="step-eyebrow">About your school</div>
+        <div class="step-title">School Identity</div>
+        <div class="step-subtitle">This information appears on reports, ID cards & certificates</div>
+      </div>
+      <div class="form-scroll">
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label">Full Legal Name</label>
+            <input class="field-input" type="text" placeholder="Delhi Public School" id="s3-school" oninput="checkStep3()" />
+          </div>
+          <div class="field">
+            <label class="field-label">Short Name</label>
+            <input class="field-input" type="text" placeholder="DPS" id="s3-short" />
+          </div>
+          <div class="field">
+            <label class="field-label">Affiliation Number</label>
+            <input class="field-input" type="text" placeholder="1234567" id="s3-affil" />
+          </div>
+          <div class="section-label">BOARD</div>
+          <div class="chip-row" id="s3-board">
+            <div class="chip" onclick="selectChip(this,'s3-board');checkStep3()">CBSE</div>
+            <div class="chip" onclick="selectChip(this,'s3-board');checkStep3()">ICSE</div>
+            <div class="chip" onclick="selectChip(this,'s3-board');checkStep3()">UP State</div>
+            <div class="chip" onclick="selectChip(this,'s3-board');checkStep3()">Other</div>
+          </div>
+          <div class="section-label">SCHOOL TYPE</div>
+          <div class="chip-row" id="s3-type">
+            <div class="chip" onclick="selectChip(this,'s3-type')">Government</div>
+            <div class="chip" onclick="selectChip(this,'s3-type')">Private Aided</div>
+            <div class="chip" onclick="selectChip(this,'s3-type')">Private Unaided</div>
+            <div class="chip" onclick="selectChip(this,'s3-type')">Central</div>
+          </div>
+          <div class="field">
+            <label class="field-label">Principal's Name</label>
+            <input class="field-input" type="text" placeholder="Dr. Rajesh Sharma" id="s3-principal" />
+          </div>
+          <div class="field">
+            <label class="field-label">Principal's Mobile</label>
+            <div class="input-prefix">
+              <span class="prefix">+91</span>
+              <input class="field-input" type="tel" placeholder="98765 43210" id="s3-pphone" maxlength="10" style="border:none;box-shadow:none" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">City</label>
+            <div class="dropdown" id="s3-city-dd">
+              <div class="dropdown-trigger placeholder" onclick="event.stopPropagation();toggleDropdown('s3-city-dd')">
+                <span class="dd-label">Select city</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="dropdown-menu" id="s3-city-menu"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn-primary" id="s3-btn" disabled onclick="goNext(3,4)">
+          <span>Continue</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 4: ACADEMIC YEAR ═══ -->
+    <div class="step-page" id="step-4">
+      <div class="brand-bar">
+        <div class="back-btn" onclick="goBack(4,3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></div>
+        <div class="step-counter"><span class="current">04</span> / 04</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-seg done"><div class="fill"></div></div>
+        <div class="progress-seg done"><div class="fill"></div></div>
+        <div class="progress-seg done"><div class="fill"></div></div>
+        <div class="progress-seg current"><div class="fill"></div></div>
+      </div>
+      <div class="brand-wordmark">Enroll<span class="plus">+</span></div>
+      <div class="step-header">
+        <div class="step-eyebrow">Final step</div>
+        <div class="step-title">Academic Year</div>
+        <div class="step-subtitle">Set up your academic calendar & timetable structure</div>
+      </div>
+      <div class="form-scroll">
+        <div class="field-group">
+          <div class="section-label">CURRENT ACADEMIC YEAR</div>
+          <div class="chip-row" id="s4-year">
+            <div class="chip" onclick="selectChip(this,'s4-year');checkStep4()">2025-26</div>
+            <div class="chip" onclick="selectChip(this,'s4-year');checkStep4()">2026-27</div>
+          </div>
+          <div class="date-row">
+            <div class="field">
+              <label class="field-label">Year Starts</label>
+              <div class="date-picker" id="s4-start-dp">
+                <div class="date-trigger placeholder" onclick="event.stopPropagation();toggleDatePicker('s4-start-dp')">
+                  <span class="dp-label">Select date</span>
+                  <svg class="cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="date-popover" id="s4-start-cal"></div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Year Ends</label>
+              <div class="date-picker" id="s4-end-dp">
+                <div class="date-trigger placeholder" onclick="event.stopPropagation();toggleDatePicker('s4-end-dp')">
+                  <span class="dp-label">Select date</span>
+                  <svg class="cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="date-popover" id="s4-end-cal"></div>
+              </div>
+            </div>
+          </div>
+          <div class="section-label">WORKING DAYS</div>
+          <div class="chip-row" id="s4-days">
+            <div class="chip" onclick="selectChip(this,'s4-days');checkStep4()">Mon-Fri</div>
+            <div class="chip" onclick="selectChip(this,'s4-days');checkStep4()">Mon-Sat</div>
+          </div>
+          <div class="date-row">
+            <div class="field">
+              <label class="field-label">Start Time</label>
+              <div class="time-picker" id="s4-st-tp">
+                <div class="time-trigger" onclick="event.stopPropagation();toggleTimePicker('s4-st-tp')">
+                  <span class="tp-label">08:00 AM</span>
+                  <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="time-popover" id="s4-st-wheel"></div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">End Time</label>
+              <div class="time-picker" id="s4-et-tp">
+                <div class="time-trigger" onclick="event.stopPropagation();toggleTimePicker('s4-et-tp')">
+                  <span class="tp-label">02:00 PM</span>
+                  <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="time-popover" id="s4-et-wheel"></div>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Periods per Day</label>
+            <div class="dropdown" id="s4-periods-dd">
+              <div class="dropdown-trigger placeholder" onclick="event.stopPropagation();toggleDropdown('s4-periods-dd')">
+                <span class="dd-label">Select periods</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="dropdown-menu" id="s4-periods-menu"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button class="btn-primary" id="s4-btn" disabled onclick="showSuccess()">
+          <span>Register School</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ SUCCESS ═══ -->
+    <div class="step-page" id="step-success">
+      <div class="success-screen">
+        <div class="success-top">
+          <div class="success-wordmark">Enroll<span class="plus">+</span></div>
+        </div>
+        <div class="success-header">
+          <div class="success-congrats">Congratulations</div>
+          <div class="success-headline">Your school onboarding is complete <span class="light">— welcome to paperless school management.</span></div>
+          <div class="success-sub">Swipe to explore the premium tools now at your fingertips.</div>
+        </div>
+        <div class="success-carousel" id="feat-carousel">
+          <div class="success-carousel-pad"></div>
+          <!-- Card 1: Command Desk -->
+          <div class="feat-card">
+            <div class="feat-card-art">
+              <div class="art-glow" style="background:var(--violet)"></div>
+              <div class="art-stack">
+                <div class="art-card art-card-violet" style="height:70px">
+                  <div class="art-desk-top">
+                    <div class="art-desk-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3L12 3z"/></svg></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:4px"><div class="art-w-line bold" style="width:80px"></div><div class="art-w-line" style="width:120px"></div></div>
+                  </div>
+                </div>
+                <div class="art-card art-card-violet" style="height:90px">
+                  <div class="art-w-line bold" style="width:140px"></div>
+                  <div class="art-w-line"></div>
+                  <div class="art-w-line" style="width:70%"></div>
+                  <div style="display:flex;gap:6px"><div class="art-w-pill" style="width:40px"></div><div class="art-w-pill" style="width:50px"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="feat-card-body">
+              <div class="feat-card-top"><div class="feat-card-title">Command Desk</div><div class="feat-card-dot" style="background:var(--violet)"></div></div>
+              <div class="feat-card-sub">AI daily digest, quick actions and a single dashboard commanding your entire school.</div>
+            </div>
+          </div>
+          <!-- Card 2: Admissions CRM -->
+          <div class="feat-card">
+            <div class="feat-card-art">
+              <div class="art-glow" style="background:var(--mint)"></div>
+              <div class="art-stack">
+                <div class="art-card art-card-mint" style="height:110px">
+                  <div class="art-crm-row"><div class="art-crm-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg></div><div class="art-crm-info"><div class="art-w-line bold" style="width:90px"></div><div class="art-w-line" style="width:60px"></div></div><div class="art-crm-status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+                  <div class="art-crm-row"><div class="art-crm-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg></div><div class="art-crm-info"><div class="art-w-line bold" style="width:100px"></div><div class="art-w-line" style="width:50px"></div></div><div class="art-crm-status" style="background:rgba(255,255,255,0.35)"></div></div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <div class="art-card art-card-mint" style="flex:1;height:60px;align-items:center;justify-content:center"><div class="art-w-text">+12</div><div class="art-w-text-sm">NEW</div></div>
+                  <div class="art-card art-card-mint" style="flex:1;height:60px;align-items:center;justify-content:center"><div class="art-w-text">48</div><div class="art-w-text-sm">TOTAL</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="feat-card-body">
+              <div class="feat-card-top"><div class="feat-card-title">Admissions CRM</div><div class="feat-card-dot" style="background:var(--mint)"></div></div>
+              <div class="feat-card-sub">Track every application, manage enrollments and convert leads — all from one pipeline.</div>
+            </div>
+          </div>
+          <!-- Card 3: PEWS -->
+          <div class="feat-card">
+            <div class="feat-card-art">
+              <div class="art-glow" style="background:var(--coral)"></div>
+              <div class="art-stack">
+                <div class="art-card art-card-coral" style="height:80px">
+                  <div class="art-pews-top">
+                    <div class="art-pews-gauge"><div class="art-pews-ring"></div><div class="art-pews-num">23</div></div>
+                    <div class="art-pews-list">
+                      <div class="art-pews-item"><div class="art-pews-item-dot" style="background:rgba(255,255,255,0.9)"></div><div class="art-pews-item-bar"><div class="art-pews-item-fill" style="width:85%"></div></div></div>
+                      <div class="art-pews-item"><div class="art-pews-item-dot" style="background:rgba(255,255,255,0.6)"></div><div class="art-pews-item-bar"><div class="art-pews-item-fill" style="width:55%"></div></div></div>
+                      <div class="art-pews-item"><div class="art-pews-item-dot" style="background:rgba(255,255,255,0.4)"></div><div class="art-pews-item-bar"><div class="art-pews-item-fill" style="width:30%"></div></div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="art-card art-card-coral" style="height:60px;flex-direction:row;align-items:center;gap:10px">
+                  <div class="art-w-box" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:white"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px"><div class="art-w-line bold" style="width:100px"></div><div class="art-w-line" style="width:70px"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="feat-card-body">
+              <div class="feat-card-top"><div class="feat-card-title">PEWS Alerts</div><div class="feat-card-dot" style="background:var(--coral)"></div></div>
+              <div class="feat-card-sub">Predictive Early Warning System flags at-risk students before they fall behind.</div>
+            </div>
+          </div>
+          <!-- Card 4: Fee Collection -->
+          <div class="feat-card">
+            <div class="feat-card-art">
+              <div class="art-glow" style="background:var(--gold)"></div>
+              <div class="art-stack">
+                <div class="art-card art-card-gold" style="height:100px">
+                  <div style="display:flex;align-items:center;gap:10px"><div class="art-w-box" style="width:36px;height:36px;border-radius:var(--radius-md);flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:white"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div style="flex:1;display:flex;flex-direction:column;gap:4px"><div class="art-fees-amount">\u20b98.4L</div><div class="art-w-text-sm">COLLECTED</div></div></div>
+                  <div class="art-fees-bar"><div class="art-fees-bar-fill" style="width:72%"></div></div>
+                </div>
+                <div class="art-fees-split">
+                  <div class="art-fees-chip"><div class="art-fees-chip-dot" style="background:rgba(255,255,255,0.8)"></div><div class="art-fees-chip-text">72% Paid</div></div>
+                  <div class="art-fees-chip"><div class="art-fees-chip-dot" style="background:rgba(255,255,255,0.5)"></div><div class="art-fees-chip-text">18% Due</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="feat-card-body">
+              <div class="feat-card-top"><div class="feat-card-title">Fee Collection</div><div class="feat-card-dot" style="background:var(--gold)"></div></div>
+              <div class="feat-card-sub">Digital payments, auto-reminders and real-time collection tracking — no more chasing.</div>
+            </div>
+          </div>
+          <!-- Card 5: Communication Hub -->
+          <div class="feat-card">
+            <div class="feat-card-art">
+              <div class="art-glow" style="background:var(--sky)"></div>
+              <div class="art-stack">
+                <div class="art-card art-card-sky" style="height:140px;gap:6px;padding:12px 14px">
+                  <div class="art-comms-msg recv"><div class="art-w-line bold" style="width:80px"></div><div class="art-w-line" style="width:60%"></div></div>
+                  <div class="art-comms-msg sent"><div class="art-w-line bold" style="width:90px"></div><div class="art-w-line" style="width:60%"></div></div>
+                  <div class="art-comms-msg recv"><div class="art-w-line bold" style="width:70px"></div><div class="art-w-line" style="width:50%"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="feat-card-body">
+              <div class="feat-card-top"><div class="feat-card-title">Communication Hub</div><div class="feat-card-dot" style="background:var(--sky)"></div></div>
+              <div class="feat-card-sub">Announcements, threaded messages and event RSVPs — reach every parent instantly.</div>
+            </div>
+          </div>
+          <div class="success-carousel-pad"></div>
+        </div>
+        <div class="success-dots" id="success-dots"></div>
+        <div class="success-bottom">
+          <div class="success-school-row">
+            <div class="success-school-avatar">E</div>
+            <div class="success-school-info">
+              <div class="success-school-name">Enroll+ Test</div>
+              <div class="success-school-meta">School Admin · Just registered</div>
+            </div>
+            <div class="success-school-badge">ACTIVE</div>
+          </div>
+          <button class="btn-primary" onclick="goHome()"><span>Continue to Dashboard</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          <div class="success-footer-note">A welcome email is on its way to your inbox</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══ STEP NAVIGATION ═══
+function goNext(from,to){const o=document.getElementById('step-'+from),n=document.getElementById('step-'+to);o.classList.remove('active');o.classList.add('exit');setTimeout(()=>{o.classList.remove('exit');n.classList.add('active')},50)}
+function goBack(from,to){const o=document.getElementById('step-'+from),n=document.getElementById('step-'+to);o.classList.remove('active');o.style.transform='translateX(30px)';n.classList.remove('exit');n.style.transform='';n.classList.add('active')}
+function showSuccess(){const o=document.getElementById('step-4'),n=document.getElementById('step-success');o.classList.remove('active');o.classList.add('exit');setTimeout(()=>{o.classList.remove('exit');n.classList.add('active')},50)}
+function goHome(){document.querySelectorAll('.step-page').forEach(el=>el.classList.remove('active','exit'));document.getElementById('step-1').classList.add('active')}
+function goLogin(){console.log('login')}
+
+// ═══ DROPDOWN (bottom sheet) ═══
+let sheetData = {};
+function toggleDropdown(id) {
+  const dd = document.getElementById(id);
+  const trig = dd.querySelector('.dropdown-trigger');
+  document.querySelectorAll('.dropdown-trigger.open').forEach(t => t.classList.remove('open'));
+  trig.classList.add('open');
+  const label = trig.querySelector('.dd-label').textContent;
+  const options = Array.from(dd.querySelectorAll('.dropdown-option')).map(o => o.querySelector('span').textContent);
+  const currentVal = trig.classList.contains('placeholder') ? null : label;
+  openSheet(id, options, currentVal);
+}
+function openSheet(id, options, currentVal) {
+  const backdrop = document.getElementById('sheet-backdrop');
+  const sheet = document.getElementById('sheet');
+  const titleEl = document.getElementById('sheet-title');
+  const optsEl = document.getElementById('sheet-options');
+  sheetData = { id, options };
+  titleEl.textContent = 'Select an option';
+  optsEl.innerHTML = '';
+  options.forEach(opt => {
+    const div = document.createElement('div');
+    div.className = 'sheet-option' + (opt === currentVal ? ' selected' : '');
+    div.innerHTML = `<span>${opt}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    div.onclick = () => pickFromSheet(opt);
+    optsEl.appendChild(div);
+  });
+  backdrop.classList.add('open');
+  sheet.classList.add('open');
+}
+function pickFromSheet(val) {
+  const { id } = sheetData;
+  const dd = document.getElementById(id);
+  const trig = dd.querySelector('.dropdown-trigger');
+  trig.querySelector('.dd-label').textContent = val;
+  trig.classList.remove('placeholder');
+  closeSheet();
+  if (id === 's1-role-dd') checkStep1();
+  if (id === 's4-periods-dd') checkStep4();
+}
+function closeSheet() {
+  document.getElementById('sheet-backdrop').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+  document.querySelectorAll('.dropdown-trigger.open').forEach(t => t.classList.remove('open'));
+}
+function closeAll() {
+  closeSheet();
+  document.querySelectorAll('.date-trigger.open').forEach(t => t.classList.remove('open'));
+  document.querySelectorAll('.date-popover.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.time-trigger.open').forEach(t => t.classList.remove('open'));
+  document.querySelectorAll('.time-popover.open').forEach(p => p.classList.remove('open'));
+}
+// Document click handler removed — triggers use event.stopPropagation(),
+// backdrop has its own onclick, and sheet content clicks are inside .sheet
+
+// Populate city dropdown
+const cities=['New Delhi','Mumbai','Bangalore','Chennai','Kolkata','Hyderabad','Pune','Ahmedabad','Jaipur','Lucknow','Kanpur','Varanasi','Meerut','Noida','Ghaziabad','Gurugram'];
+const cityMenu=document.getElementById('s3-city-menu');
+cities.forEach(c=>{const opt=document.createElement('div');opt.className='dropdown-option';opt.innerHTML=`<span>${c}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;cityMenu.appendChild(opt)});
+
+// Populate periods dropdown
+const periodsMenu=document.getElementById('s4-periods-menu');
+['4','5','6','7','8','9','10','11','12'].forEach(p=>{const opt=document.createElement('div');opt.className='dropdown-option';opt.innerHTML=`<span>${p} periods</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;periodsMenu.appendChild(opt)});
+
+// ═══ CHIPS ═══
+function selectChip(el,groupId){document.getElementById(groupId).querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected')}
+
+// ═══ PREMIUM DATE PICKER (bottom sheet calendar with month/year selector) ═══
+let calState={};
+let calPickerId=null;
+let calSelectorMode=null;
+function toggleDatePicker(id){const dp=document.getElementById(id);const trig=dp.querySelector('.date-trigger');const isOpen=trig.classList.contains('open');closeAll();if(!isOpen){trig.classList.add('open');calPickerId=id;if(!calState[id])calState[id]=new Date();openCalendarSheet(id)}}
+function openCalendarSheet(id){const backdrop=document.getElementById('sheet-backdrop');const sheet=document.getElementById('sheet');const titleEl=document.getElementById('sheet-title');const optsEl=document.getElementById('sheet-options');titleEl.textContent='Select Date';calSelectorMode=null;optsEl.innerHTML='<div class="cal-sheet-content" id="cal-sheet-content"></div>';renderCalendarSheet(id);backdrop.classList.add('open');sheet.classList.add('open')}
+function renderCalendarSheet(id){const container=document.getElementById('cal-sheet-content');if(!container)return;const d=calState[id];const year=d.getFullYear();const month=d.getMonth();const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+let html='';
+if(calSelectorMode==='month'){html+='<div class="cal-selector open">';months.forEach((m,i)=>{html+='<div class="cal-selector-month'+(i===month?' selected':'')+'" onclick="calPickMonth(\''+id+'\','+i+')">'+m.substring(0,3)+'</div>'});html+='</div>'}
+else if(calSelectorMode==='year'){const curYear=new Date().getFullYear();html+='<div class="cal-selector open">';for(let y=curYear-2;y<=curYear+10;y++){html+='<div class="cal-selector-year'+(y===year?' selected':'')+(y===curYear?' current':'')+'" onclick="calPickYear(\''+id+'\','+y+')">'+y+'</div>'}html+='</div>'}
+else{const firstDay=new Date(year,month,1).getDay();const daysInMonth=new Date(year,month+1,0).getDate();const daysPrevMonth=new Date(year,month,0).getDate();html+='<div class="cal-header"><div class="cal-nav-btn" onclick="calNavSheet(\''+id+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div><div style="display:flex;gap:4px"><div class="cal-month-label" onclick="calToggleSelector(\''+id+'\',\'month\')">'+months[month]+'<svg class="cal-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div><div class="cal-month-label" onclick="calToggleSelector(\''+id+'\',\'year\')">'+year+'<svg class="cal-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div></div><div class="cal-nav-btn" onclick="calNavSheet(\''+id+'\',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div></div><div class="cal-grid">';['S','M','T','W','T','F','S'].forEach(d=>html+='<div class="cal-day-header">'+d+'</div>');for(let i=firstDay-1;i>=0;i--)html+='<div class="cal-day other-month">'+(daysPrevMonth-i)+'</div>';const today=new Date();for(let i=1;i<=daysInMonth;i++){const isToday=i===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();const sel=calState[id+'_sel'];const isSel=sel&&sel.getDate()===i&&sel.getMonth()===month&&sel.getFullYear()===year;html+='<div class="cal-day'+(isToday?' today':'')+(isSel?' selected':'')+'" onclick="pickDateSheet(\''+id+'\','+i+','+month+','+year+')">'+i+'</div>'}html+='</div>'}
+container.innerHTML=html}
+function calToggleSelector(id,mode){calSelectorMode=(calSelectorMode===mode)?null:mode;renderCalendarSheet(id)}
+function calPickMonth(id,m){calState[id].setMonth(m);calSelectorMode=null;renderCalendarSheet(id)}
+function calPickYear(id,y){calState[id].setFullYear(y);calSelectorMode=null;renderCalendarSheet(id)}
+function calNavSheet(id,dir){const d=calState[id];d.setMonth(d.getMonth()+dir);renderCalendarSheet(id)}
+function pickDateSheet(id,day,month,year){const d=new Date(year,month,day);calState[id+'_sel']=d;const dp=document.getElementById(id);const trig=dp.querySelector('.date-trigger');const fmt=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});trig.querySelector('.dp-label').textContent=fmt;trig.classList.remove('placeholder','open');closeSheet();checkStep4()}
+
+// ═══ PREMIUM TIME PICKER (bottom sheet wheel) ═══
+let timeState={};
+let timePickerId=null;
+function toggleTimePicker(id){const tp=document.getElementById(id);const trig=tp.querySelector('.time-trigger');const isOpen=trig.classList.contains('open');closeAll();if(!isOpen){trig.classList.add('open');timePickerId=id;if(!timeState[id])timeState[id]={h:8,m:0,ampm:'AM'};openTimeSheet(id)}}
+function openTimeSheet(id){const backdrop=document.getElementById('sheet-backdrop');const sheet=document.getElementById('sheet');const titleEl=document.getElementById('sheet-title');const optsEl=document.getElementById('sheet-options');titleEl.textContent='Select Time';optsEl.innerHTML='<div class="time-sheet-content" id="time-sheet-content"></div>';renderTimeSheet(id);backdrop.classList.add('open');sheet.classList.add('open')}
+function renderTimeSheet(id){const container=document.getElementById('time-sheet-content');if(!container)return;const t=timeState[id];let html='<div class="time-display">'+String(t.h).padStart(2,'0')+'<span class="colon">:</span>'+String(t.m).padStart(2,'0')+'<span class="ampm">'+t.ampm+'</span></div><div class="time-wheels"><div class="time-wheel-col"><div class="time-wheel-label">Hour</div><div class="time-scroll">';for(let h=1;h<=12;h++)html+='<div class="time-item'+(h===t.h?' selected':'')+'" onclick="pickTimeSheet(\''+id+'\','+h+',null)">'+String(h).padStart(2,'0')+'</div>';html+='</div></div><div class="time-separator">:</div><div class="time-wheel-col"><div class="time-wheel-label">Min</div><div class="time-scroll">';for(let m=0;m<60;m+=5)html+='<div class="time-item'+(m===t.m?' selected':'')+'" onclick="pickTimeSheet(\''+id+'\',null,'+m+')">'+String(m).padStart(2,'0')+'</div>';html+='</div></div><div class="time-wheel-col"><div class="time-wheel-label">AM/PM</div><div class="time-scroll"><div class="time-item'+(t.ampm==='AM'?' selected':'')+'" onclick="pickTimeSheet(\''+id+'\',null,null,\'AM\')">AM</div><div class="time-item'+(t.ampm==='PM'?' selected':'')+'" onclick="pickTimeSheet(\''+id+'\',null,null,\'PM\')">PM</div></div></div></div>';container.innerHTML=html;const sel=container.querySelector('.time-item.selected');if(sel)sel.scrollIntoView({block:'center'})}
+function pickTimeSheet(id,h,m,ampm){const t=timeState[id];if(h!==null)t.h=h;if(m!==null)t.m=m;if(ampm)t.ampm=ampm;renderTimeSheet(id);const tp=document.getElementById(id);const trig=tp.querySelector('.time-trigger');trig.querySelector('.tp-label').textContent=String(t.h).padStart(2,'0')+':'+String(t.m).padStart(2,'0')+' '+t.ampm;checkStep4()}
+
+// ═══ VALIDATION ═══
+function checkStep1(){const n=document.getElementById('s1-name').value.trim(),e=document.getElementById('s1-email').value.trim(),p=document.getElementById('s1-phone').value.trim(),r=document.getElementById('s1-role-dd').querySelector('.dd-label').textContent;document.getElementById('s1-btn').disabled=!(n&&e&&p.length===10&&r!=='Select your role')}
+function checkPassword(){const pw=document.getElementById('s2-pass').value;let s=0;if(pw.length>=8)s++;if(/[A-Z]/.test(pw))s++;if(/[0-9]/.test(pw))s++;if(/[^A-Za-z0-9]/.test(pw))s++;['req-1','req-2','req-3','req-4'].forEach((id,i)=>{const el=document.getElementById(id);const checks=[pw.length>=8,/[A-Z]/.test(pw),/[0-9]/.test(pw),/[^A-Za-z0-9]/.test(pw)];if(checks[i])el.classList.add('met');else el.classList.remove('met')});const segs=document.querySelectorAll('#strength-bar .strength-seg');const labels=['','Weak','Fair','Good','Strong'];const cls=['','weak','fair','good',''];segs.forEach((seg,i)=>{seg.classList.remove('active','weak','fair','good');if(i<s){seg.classList.add('active');if(cls[s])seg.classList.add(cls[s])}});const lbl=document.getElementById('strength-label');lbl.textContent=labels[s];lbl.style.color=['','var(--coral)','var(--gold)','var(--sky)','var(--mint)'][s];checkMatch()}
+function checkMatch(){const pw=document.getElementById('s2-pass').value,cf=document.getElementById('s2-confirm').value;const err=document.getElementById('s2-err');if(cf&&pw!==cf){err.style.display='block';document.getElementById('s2-confirm').classList.add('error')}else{err.style.display='none';document.getElementById('s2-confirm').classList.remove('error')}let s=0;if(pw.length>=8)s++;if(/[A-Z]/.test(pw))s++;if(/[0-9]/.test(pw))s++;if(/[^A-Za-z0-9]/.test(pw))s++;document.getElementById('s2-btn').disabled=!(s===4&&pw===cf&&pw.length>0)}
+function checkStep3(){const s=document.getElementById('s3-school').value.trim(),b=document.querySelector('#s3-board .chip.selected');document.getElementById('s3-btn').disabled=!(s.length>=3&&b)}
+function checkStep4(){const y=document.querySelector('#s4-year .chip.selected'),s=calState['s4-start-dp_sel'],e=calState['s4-end-dp_sel'],d=document.querySelector('#s4-days .chip.selected'),p=document.getElementById('s4-periods-dd').querySelector('.dd-label').textContent;document.getElementById('s4-btn').disabled=!(y&&s&&e&&d&&p!=='Select periods')}
+
+// ═══ SUCCESS CAROUSEL ═══
+(function(){
+  const carousel=document.getElementById('feat-carousel');
+  const dotsEl=document.getElementById('success-dots');
+  if(!carousel||!dotsEl)return;
+  const cards=carousel.querySelectorAll('.feat-card');
+  // Build dots
+  cards.forEach((_,i)=>{
+    const dot=document.createElement('div');
+    dot.className='success-dot'+(i===0?' active':'');
+    dot.onclick=()=>{cards[i].scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'})};
+    dotsEl.appendChild(dot);
+  });
+  const dots=dotsEl.querySelectorAll('.success-dot');
+  // Track scroll → update dots + scale cards
+  let scrollTimer;
+  carousel.addEventListener('scroll',()=>{
+    clearTimeout(scrollTimer);
+    scrollTimer=setTimeout(()=>{
+      const cw=carousel.offsetWidth;
+      const center=cw/2;
+      let nearest=0,nearestDist=Infinity;
+      cards.forEach((card,i)=>{
+        const rect=card.getBoundingClientRect();
+        const cardCenter=rect.left+rect.width/2;
+        const dist=Math.abs(cardCenter-center);
+        if(dist<nearestDist){nearestDist=dist;nearest=i}
+        // Scale based on distance from center
+        const scale=1-(dist/cw)*0.15;
+        const opacity=1-(dist/cw)*0.3;
+        card.style.transform='scale('+scale+')';
+        card.style.opacity=opacity;
+      });
+      dots.forEach((d,i)=>d.classList.toggle('active',i===nearest));
+    },50);
+  });
+  // Trigger initial scale
+  setTimeout(()=>{carousel.dispatchEvent(new Event('scroll'))},100);
+})();
+</script>
+</body>
+</html>
