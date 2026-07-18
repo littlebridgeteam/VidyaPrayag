@@ -1,0 +1,2967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Admin Home Screen Prototype</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Lifted verbatim from VColors.kt (production Compose app)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Warm Cream Base */
+  --cream: #FBF8F4;
+  --cream-deep: #F5F0E8;
+  --white: #FFFFFF;
+
+  /* Warm Surfaces */
+  --surface: #FBF8F4;
+  --surface-card: #FFFFFF;
+  --surface-tint: #F8F4EF;
+  --surface-warm: #FFF6EE;
+
+  /* On-surface */
+  --ink: #1A1614;
+  --ink2: #5C544E;
+  --ink3: #8A8078;
+  --line: #E8E0D6;
+  --line-soft: #F0EAE0;
+
+  /* Primary — Deep Violet */
+  --violet: #5B41D5;
+  --violet-hover: #4A30C4;
+  --violet-soft: #EEE8FB;
+  --violet-ink: #16006E;
+
+  /* Accent Colors */
+  --coral: #F82B60;
+  --coral-soft: #FFE4EC;
+  --gold: #FCB400;
+  --gold-soft: #FFF4D1;
+  --sky: #18BFFF;
+  --sky-soft: #E0F6FF;
+  --mint: #2DCE89;
+  --mint-soft: #DCF5E8;
+
+  /* States */
+  --success: #2D7A4A;
+  --success-soft: #D4EDDB;
+  --error: #BA1A1A;
+  --error-soft: #FFDAD6;
+
+  /* Shape tokens */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-xxl: 28px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-family);
+  background: #1a1a2e;
+  color: var(--ink);
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FIGMA-LIKE WORKSPACE LAYOUT
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.workspace {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ── Top Toolbar ── */
+.toolbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 48px;
+  background: #2a2a3e;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+  border-bottom: 1px solid #3a3a4e;
+}
+.toolbar-left, .toolbar-center, .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-logo {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--violet);
+  letter-spacing: -0.5px;
+}
+.toolbar-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #a0a0b8;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.toolbar-btn:hover { background: #3a3a4e; color: #e0e0f0; }
+.toolbar-btn.active { background: var(--violet); color: white; }
+.toolbar-divider { width: 1px; height: 20px; background: #3a3a4e; margin: 0 4px; }
+.toolbar-file-name {
+  font-size: 13px;
+  color: #c0c0d0;
+  font-weight: 500;
+}
+.toolbar-zoom {
+  font-size: 12px;
+  color: #a0a0b8;
+  padding: 4px 10px;
+  background: #3a3a4e;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.toolbar-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--violet);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Left Panel (Layers) ── */
+.layers-panel {
+  width: 240px;
+  background: #2a2a3e;
+  border-right: 1px solid #3a3a4e;
+  padding-top: 48px;
+  height: 100vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.panel-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #707090;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 12px 16px 8px;
+}
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: #b0b0c8;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.layer-item:hover { background: #3a3a4e; }
+.layer-item.selected { background: #3d3a5e; color: #e0e0f0; border-left: 2px solid var(--violet); }
+.layer-item .layer-icon { width: 14px; height: 14px; opacity: 0.6; flex-shrink: 0; }
+.layer-item .layer-indent { width: 12px; flex-shrink: 0; }
+.layer-item .layer-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Center Canvas ── */
+.canvas-area {
+  flex: 1;
+  background: #1e1e30;
+  overflow: auto;
+  padding-top: 48px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px 24px;
+  position: relative;
+}
+.canvas-area::-webkit-scrollbar { width: 8px; }
+.canvas-area::-webkit-scrollbar-track { background: #1a1a2e; }
+.canvas-area::-webkit-scrollbar-thumb { background: #3a3a4e; border-radius: 4px; }
+
+/* ── Right Panel (Design Inspector) ── */
+.inspector-panel {
+  width: 260px;
+  background: #2a2a3e;
+  border-left: 1px solid #3a3a4e;
+  padding-top: 48px;
+  height: 100vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.inspector-section {
+  border-bottom: 1px solid #3a3a4e;
+  padding: 12px 16px;
+}
+.inspector-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #707090;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.inspector-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.inspector-field {
+  font-size: 12px;
+  color: #b0b0c8;
+}
+.inspector-value {
+  font-size: 12px;
+  color: #e0e0f0;
+  font-weight: 500;
+  background: #3a3a4e;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.color-swatch {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 6px;
+  border: 1px solid #4a4a5e;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PHONE MOCKUP — iPhone-like frame
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.phone-frame {
+  width: 393px;
+  height: 852px;
+  background: #000;
+  border-radius: 55px;
+  padding: 12px;
+  box-shadow: 0 0 0 2px #2a2a3e, 0 20px 60px rgba(0,0,0,0.5);
+  position: relative;
+  flex-shrink: 0;
+}
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--cream);
+  border-radius: 44px;
+  overflow: hidden;
+  position: relative;
+}
+.phone-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 50;
+}
+.phone-home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 5px;
+  background: var(--ink);
+  border-radius: 3px;
+  opacity: 0.3;
+  z-index: 50;
+}
+
+/* Status bar */
+.status-bar {
+  height: 54px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.status-bar .status-time { font-weight: 700; }
+.status-bar .status-icons { display: flex; align-items: center; gap: 5px; }
+.status-bar .status-icons svg { width: 16px; height: 16px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SCREEN CONTENT — Scrollable
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.screen-scroll {
+  height: calc(100% - 54px - 34px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.screen-scroll::-webkit-scrollbar { width: 0; }
+.screen-content {
+  padding: 0 24px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TEACHER-STYLE PREMIUM HEADER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.premium-header {
+  padding-top: 8px;
+}
+.header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.wordmark {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--violet);
+  letter-spacing: -0.5px;
+}
+.bell-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+.bell-btn svg { width: 18px; height: 18px; color: var(--ink); }
+.bell-dot {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--coral);
+  border: 2px solid var(--surface-card);
+}
+.header-eyebrow {
+  font-size: 15.4px;
+  font-weight: 600;
+  color: var(--violet);
+  margin-bottom: 2px;
+}
+.header-greeting {
+  font-size: 26.4px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.header-greeting .accent { color: var(--violet); }
+.header-greeting .lead { color: var(--ink); }
+
+/* ── Premium Search Bar ── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin-top: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-bar:focus-within {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px var(--violet-soft);
+}
+.search-bar svg {
+  width: 18px;
+  height: 18px;
+  color: var(--ink3);
+  flex-shrink: 0;
+}
+.search-bar input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: var(--font-family);
+  color: var(--ink);
+  flex: 1;
+}
+.search-bar input::placeholder {
+  color: var(--ink3);
+}
+.search-bar .search-shortcut {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink3);
+  background: var(--line-soft);
+  border-radius: var(--radius-sm);
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HERO CARD — Rebuilt with real admin info & premium polish
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.hero-card {
+  background: linear-gradient(145deg, #7B5FE8 0%, #5B41D5 40%, #3A26A8 75%, var(--violet-ink) 100%);
+  border-radius: var(--radius-xxl);
+  padding: 20px 22px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(91,65,213,0.3), 0 4px 12px rgba(22,0,110,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 60%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hero-card::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; left: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(201,184,255,0.1) 0%, transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hero-school-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.hero-school-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hero-school-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.4px;
+}
+.hero-school-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.2px;
+}
+.hero-live-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+.hero-live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #4ADE80;
+  box-shadow: 0 0 8px rgba(74,222,128,0.7);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.hero-metrics {
+  display: flex;
+  gap: 1px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(10px);
+}
+.hero-metric {
+  flex: 1;
+  background: rgba(255,255,255,0.02);
+  border-radius: var(--radius-md);
+  padding: 11px 6px;
+  text-align: center;
+  transition: background 0.2s;
+  position: relative;
+}
+.hero-metric:hover {
+  background: rgba(255,255,255,0.08);
+}
+.hero-metric-value {
+  font-size: 21px;
+  font-weight: 800;
+  color: white;
+  line-height: 1.1;
+  letter-spacing: -0.4px;
+  text-shadow: 0 1px 8px rgba(255,255,255,0.1);
+}
+.hero-metric-value .unit {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+.hero-metric-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-top: 3px;
+}
+.hero-collection-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  position: relative;
+  z-index: 1;
+}
+.hero-collection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.hero-collection-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.2px;
+}
+.hero-collection-amount {
+  font-size: 14px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.2px;
+}
+.hero-collection-amount .muted {
+  font-weight: 500;
+  color: rgba(255,255,255,0.4);
+}
+.hero-progress-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+.hero-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #C9B8FF 0%, #E8DFFF 40%, white 80%, #C9B8FF 100%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+  box-shadow: 0 0 16px rgba(255,255,255,0.35);
+  animation: shimmer-bar 3s linear infinite;
+}
+@keyframes shimmer-bar {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SECTION HEADER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 4px;
+  margin-bottom: -6px;
+}
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+.section-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--violet);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.section-action:hover { opacity: 0.7; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   KPI GRID — Premium compact cards with inline infographics
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.kpi-card {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 12px 13px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  border-color: var(--violet-soft);
+}
+.kpi-row1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.kpi-icon {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-icon svg { width: 13px; height: 13px; color: white; }
+.kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink2);
+  flex: 1;
+}
+.kpi-trend {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.kpi-trend.up { color: var(--success); background: var(--success-soft); }
+.kpi-trend.down { color: var(--error); background: var(--error-soft); }
+.kpi-trend svg { width: 8px; height: 8px; }
+.kpi-row2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.4px;
+  line-height: 1;
+}
+
+/* Mini progress bar */
+.kpi-progress {
+  flex: 1;
+  max-width: 70px;
+}
+.kpi-progress-track {
+  height: 4px;
+  background: var(--line-soft);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.kpi-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+/* Mini ring */
+.kpi-ring {
+  width: 26px; height: 26px;
+  position: relative;
+  flex-shrink: 0;
+}
+.kpi-ring svg { transform: rotate(-90deg); }
+.kpi-ring-text {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* Mini bars */
+.kpi-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.kpi-bar {
+  width: 3px;
+  border-radius: 1px;
+  min-height: 3px;
+}
+
+/* Mini sparkline */
+.kpi-spark {
+  width: 60px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.kpi-sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink3);
+}
+
+/* Dual mini bars (staff & teachers) */
+.kpi-dual-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  max-width: 60px;
+}
+.kpi-dual-bar-track {
+  height: 3px;
+  background: var(--line-soft);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.kpi-dual-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+/* Analytics content sections */
+.analytics-content { display: none; }
+.analytics-content.active { display: block; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PRIORITY CAROUSEL — Horizontal scroll (from parent home)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.priority-carousel {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+.priority-carousel::-webkit-scrollbar { display: none; }
+.priority-card {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.priority-card:hover { transform: translateY(-2px); }
+.priority-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.priority-icon svg { width: 24px; height: 24px; color: white; }
+.priority-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.priority-subtitle {
+  font-size: 12px;
+  color: var(--ink2);
+  margin-bottom: 14px;
+}
+.priority-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.priority-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.priority-badge {
+  border-radius: var(--radius-full);
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   OPERATIONS DASHBOARD — Merged Priority + Enrollment
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.ops-card {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.ops-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px 12px;
+}
+.ops-head-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+.ops-head-action {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--violet);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ops-head-action:hover { opacity: 0.7; }
+.ops-alerts {
+  padding: 0 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ops-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-tint);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  border: 1px solid transparent;
+}
+.ops-alert:hover {
+  background: var(--surface-warm);
+  border-color: var(--line);
+  transform: translateX(2px);
+}
+.ops-alert-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ops-alert-icon svg { width: 14px; height: 14px; color: white; }
+.ops-alert-info { flex: 1; min-width: 0; }
+.ops-alert-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ops-alert-sub {
+  font-size: 10px;
+  color: var(--ink3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ops-alert-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ops-alert-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.ops-alert-badge {
+  border-radius: var(--radius-full);
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 800;
+  color: white;
+  white-space: nowrap;
+}
+.ops-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--line) 20%, var(--line) 80%, transparent 100%);
+  margin: 0 18px;
+}
+.ops-chart-section {
+  padding: 14px 18px 18px;
+}
+.ops-chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+.ops-chart-stat {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.6px;
+  line-height: 1;
+}
+.ops-chart-label {
+  font-size: 11px;
+  color: var(--ink2);
+  margin-top: 3px;
+}
+.ops-chart-delta {
+  text-align: right;
+}
+.ops-chart-delta-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--success);
+}
+.ops-chart-delta-sub {
+  font-size: 10px;
+  color: var(--ink3);
+}
+.ops-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 80px;
+}
+.ops-chart-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ops-chart-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.8s ease, filter 0.2s;
+}
+.ops-chart-bar-group:hover .ops-chart-bar {
+  filter: brightness(1.15);
+}
+.ops-chart-bar-label {
+  font-size: 8px;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SURFACE CARD — White container (from teacher kit)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.surface-card {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   QUICK ACTIONS GRID — 2-column (from teacher home)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.quick-tile {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 11px 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.quick-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  border-color: var(--violet-soft);
+}
+.quick-tile-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.quick-tile-icon svg { width: 14px; height: 14px; color: white; }
+.quick-tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.quick-tile-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+.quick-tile-sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink3);
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ACTIVITY FEED
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.activity-list { display: flex; flex-direction: column; gap: 12px; }
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.activity-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+}
+.activity-info { flex: 1; min-width: 0; }
+.activity-text {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activity-time {
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ENROLLMENT CHART — Larger infographic card
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.enrollment-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+  margin-top: 16px;
+}
+.enrollment-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.enrollment-bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.8s ease;
+  position: relative;
+}
+.enrollment-bar-label {
+  font-size: 10px;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ANALYTICS OVERLAY — Premium slide-up dashboard
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.analytics-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.analytics-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.analytics-sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  max-height: 92%;
+  background: var(--cream);
+  border-radius: 28px 28px 0 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+}
+.analytics-overlay.active .analytics-sheet {
+  transform: translateY(0);
+}
+.analytics-sheet::-webkit-scrollbar { width: 0; }
+.analytics-sheet-inner {
+  padding: 0 20px 30px;
+}
+.analytics-handle {
+  width: 40px; height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+.analytics-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 16px;
+}
+.analytics-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.4px;
+}
+.analytics-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.analytics-close svg { width: 16px; height: 16px; color: var(--ink2); }
+
+/* Filter row */
+.analytics-filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 16px;
+}
+.analytics-filters::-webkit-scrollbar { display: none; }
+.analytics-filter {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.analytics-filter:hover { border-color: var(--violet-soft); }
+.analytics-filter.active {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: white;
+}
+
+/* Bento grid */
+.bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.bento-card {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+.bento-card.full { grid-column: 1 / -1; }
+.bento-card.tall { grid-row: span 2; }
+
+/* Bento stat */
+.bento-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.bento-stat-icon {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bento-stat-icon svg { width: 12px; height: 12px; color: white; }
+.bento-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.bento-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.bento-stat-delta {
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.bento-stat-delta.up { color: var(--success); }
+.bento-stat-delta.down { color: var(--error); }
+
+/* Bento donut */
+.bento-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bento-donut {
+  width: 70px; height: 70px;
+  position: relative;
+  flex-shrink: 0;
+}
+.bento-donut svg { transform: rotate(-90deg); }
+.bento-donut-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.bento-donut-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+.bento-donut-unit {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--ink3);
+}
+.bento-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+.bento-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+.bento-legend-dot {
+  width: 7px; height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.bento-legend-val {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Bento bar chart */
+.bento-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 60px;
+  margin-top: 8px;
+}
+.bento-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.bento-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  transition: height 0.6s ease;
+}
+.bento-bar-label {
+  font-size: 7px;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+/* Bento trend */
+.bento-trend-chart {
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+}
+
+/* Bento progress list */
+.bento-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.bento-progress-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bento-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.bento-progress-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.bento-progress-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.bento-progress-track {
+  height: 5px;
+  background: var(--line-soft);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.bento-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+/* Bento section label */
+.bento-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 8px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NEW NAV BAR — Figma-exact floating pill design
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.bottom-nav {
+  position: absolute;
+  bottom: 12px; left: 16px; right: 16px;
+  height: 60px;
+  background: rgba(255,255,255,0.988);
+  border: 1px solid rgba(38,35,77,0.06);
+  border-radius: 32px;
+  box-shadow: 0 8px 24px rgba(38,35,77,0.09);
+  display: flex;
+  align-items: center;
+  padding: 7px;
+  z-index: 40;
+  overflow: hidden;
+}
+.nav-pill {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: 96px;
+  height: 46px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6C5CE5, #544AB8);
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 1;
+}
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 46px;
+  cursor: pointer;
+  transition: width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow: hidden;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+.nav-item.active { width: 96px; }
+.nav-item:not(.active) { width: 71px; }
+.nav-item svg {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  transition: color 0.3s ease;
+}
+.nav-item.active svg { color: #FFFFFF; }
+.nav-item:not(.active) svg { color: #6D7A77; }
+.nav-item .nav-label {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #FFFFFF;
+  white-space: nowrap;
+  opacity: 0;
+  max-width: 0;
+  transition: opacity 0.25s ease 0.1s, max-width 0.4s ease;
+}
+.nav-item.active .nav-label {
+  opacity: 1;
+  max-width: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STALE CHIP
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.stale-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  margin-bottom: -8px;
+}
+.stale-chip svg { width: 12px; height: 12px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FILTER CHIPS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.filter-chips {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.filter-chips::-webkit-scrollbar { display: none; }
+.filter-chip {
+  border-radius: var(--radius-full);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: var(--surface-card);
+  color: var(--ink2);
+  transition: all 0.15s;
+}
+.filter-chip.active {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.spacer-12 { height: 12px; }
+.spacer-16 { height: 16px; }
+.spacer-24 { height: 24px; }
+
+/* SVG icon helper */
+.icon-svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════
+     FIGMA-LIKE WORKSPACE
+     ═══════════════════════════════════════════════════════════════════════════════ -->
+<div class="workspace">
+
+  <!-- ── Top Toolbar ── -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <span class="toolbar-logo">Enroll+</span>
+      <div class="toolbar-divider"></div>
+      <span class="toolbar-file-name">Admin Home — Prototype</span>
+    </div>
+    <div class="toolbar-center">
+      <button class="toolbar-btn active" onclick="document.getElementById('phone-frame').scrollIntoView({behavior:'smooth',block:'center'})">
+        <svg class="icon-svg" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        Prototype
+      </button>
+      <button class="toolbar-btn">Design</button>
+      <button class="toolbar-btn">Inspect</button>
+      <div class="toolbar-divider"></div>
+      <button class="toolbar-btn">Share</button>
+    </div>
+    <div class="toolbar-right">
+      <span class="toolbar-zoom" id="zoom-label">100%</span>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-avatar">AD</div>
+    </div>
+  </div>
+
+  <!-- ── Left Panel (Layers) ── -->
+  <div class="layers-panel">
+    <div class="panel-header">Layers</div>
+    <div class="layer-item selected">
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/></svg>
+      <span class="layer-name">Phone Mockup</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Screen / Admin Home</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Status Bar</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Premium Header</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+      <span class="layer-name">Hero Card (gradient)</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Filter Chips</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">KPI Grid (4 cards)</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Priority Carousel</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Enrollment Chart</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Quick Actions Grid</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Activity Feed</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-indent"></span>
+      <span class="layer-indent"></span>
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="layer-name">Bottom Nav Bar</span>
+    </div>
+
+    <div class="panel-header" style="margin-top: 8px;">Assets</div>
+    <div class="layer-item">
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+      <span class="layer-name">VColors.tokens</span>
+    </div>
+    <div class="layer-item">
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+      <span class="layer-name">VTypography.tokens</span>
+    </div>
+    <div class="layer-item">
+      <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+      <span class="layer-name">VShapes.tokens</span>
+    </div>
+  </div>
+
+  <!-- ── Center Canvas ── -->
+  <div class="canvas-area">
+
+    <!-- ═══ PHONE MOCKUP ═══ -->
+    <div class="phone-frame" id="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-home-indicator"></div>
+
+      <div class="phone-screen">
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <span class="status-time">9:41</span>
+          <div class="status-icons">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h2v-6H2v6zm5 0h2V12H7v10zm5 0h2V8h-2v14zm5 0h2V4h-2v18z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C7 3 2.7 5.1 0 8.5l12 12 12-12C21.3 5.1 17 3 12 3z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="22" y="10" width="2" height="4" rx="1" fill="currentColor"/></svg>
+          </div>
+        </div>
+
+        <!-- Scrollable Screen Content -->
+        <div class="screen-scroll">
+          <div class="screen-content">
+
+            <!-- ═══ PREMIUM HEADER (teacher-style) ═══ -->
+            <div class="premium-header">
+              <div class="header-top-row">
+                <span class="wordmark">Enroll+</span>
+                <button class="bell-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  <span class="bell-dot"></span>
+                </button>
+              </div>
+              <div class="header-eyebrow">Hi Rajesh</div>
+              <div class="header-greeting">
+                <span class="lead">here's</span>
+                <span class="accent"> your overview</span>
+              </div>
+              <div class="search-bar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search students, staff, classes…" />
+              </div>
+            </div>
+
+            <!-- ═══ HERO CARD (rebuilt) ═══ -->
+            <div class="hero-card">
+              <div class="hero-school-row">
+                <div class="hero-school-info">
+                  <div class="hero-school-name">Greenwood International</div>
+                  <div class="hero-school-meta">AY 2025–26 · Semester 1</div>
+                </div>
+                <div class="hero-live-pill">
+                  <span class="hero-live-dot"></span>
+                  87% present
+                </div>
+              </div>
+              <div class="hero-metrics">
+                <div class="hero-metric">
+                  <div class="hero-metric-value">1,247</div>
+                  <div class="hero-metric-label">Students</div>
+                </div>
+                <div class="hero-metric">
+                  <div class="hero-metric-value">86</div>
+                  <div class="hero-metric-label">Staff</div>
+                </div>
+                <div class="hero-metric">
+                  <div class="hero-metric-value">42</div>
+                  <div class="hero-metric-label">Classes</div>
+                </div>
+                <div class="hero-metric">
+                  <div class="hero-metric-value">12</div>
+                  <div class="hero-metric-label">Pending</div>
+                </div>
+              </div>
+              <div class="hero-collection-row">
+                <div class="hero-collection-header">
+                  <span class="hero-collection-label">Fee collection</span>
+                  <span class="hero-collection-amount">₹18.2L <span class="muted">/ ₹26L</span></span>
+                </div>
+                <div class="hero-progress-bar">
+                  <div class="hero-progress-fill" style="width: 70%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ KPI GRID ═══ -->
+            <div class="section-header">
+              <span class="section-title">Key Metrics</span>
+              <span class="section-action">This month</span>
+            </div>
+            <div class="kpi-grid">
+
+              <!-- Fee Collection — progress bar -->
+              <div class="kpi-card">
+                <div class="kpi-row1">
+                  <div class="kpi-icon" style="background: var(--violet);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                  </div>
+                  <span class="kpi-label">Fee Collection</span>
+                </div>
+                <div class="kpi-row2">
+                  <span class="kpi-value">₹18.2L</span>
+                  <div class="kpi-progress">
+                    <div class="kpi-progress-track">
+                      <div class="kpi-progress-fill" style="width: 70%; background: var(--violet);"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kpi-sub">70% of ₹26L target</div>
+              </div>
+
+              <!-- Attendance — mini ring -->
+              <div class="kpi-card">
+                <div class="kpi-row1">
+                  <div class="kpi-icon" style="background: var(--mint);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <span class="kpi-label">Attendance</span>
+                </div>
+                <div class="kpi-row2">
+                  <span class="kpi-value">91.3%</span>
+                  <div class="kpi-ring">
+                    <svg width="26" height="26" viewBox="0 0 26 26">
+                      <circle cx="13" cy="13" r="10" fill="none" stroke="var(--line-soft)" stroke-width="2.5"/>
+                      <circle cx="13" cy="13" r="10" fill="none" stroke="var(--mint)" stroke-width="2.5"
+                        stroke-dasharray="62.8" stroke-dashoffset="5.7" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="kpi-sub">1,139 of 1,247 present</div>
+              </div>
+
+              <!-- Admissions — premium trend sparkline -->
+              <div class="kpi-card">
+                <div class="kpi-row1">
+                  <div class="kpi-icon" style="background: var(--sky);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  </div>
+                  <span class="kpi-label">Admissions</span>
+                </div>
+                <div class="kpi-row2">
+                  <span class="kpi-value">34</span>
+                  <svg class="kpi-spark" viewBox="0 0 70 24" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="sparkSky" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--sky)" stop-opacity="0.3"/>
+                        <stop offset="100%" stop-color="var(--sky)" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,18 Q10,16 15,14 T30,10 T45,7 T60,4 L70,2 L70,24 L0,24 Z"
+                      fill="url(#sparkSky)" stroke="none"/>
+                    <path d="M0,18 Q10,16 15,14 T30,10 T45,7 T60,4 L70,2"
+                      fill="none" stroke="var(--sky)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="70" cy="2" r="2" fill="var(--sky)"/>
+                    <circle cx="70" cy="2" r="3.5" fill="none" stroke="var(--sky)" stroke-width="0.5" opacity="0.4"/>
+                  </svg>
+                </div>
+                <div class="kpi-sub">55% of quarterly goal</div>
+              </div>
+
+              <!-- Staff & Teachers — dual bars -->
+              <div class="kpi-card">
+                <div class="kpi-row1">
+                  <div class="kpi-icon" style="background: var(--gold);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <span class="kpi-label">Staff & Teachers</span>
+                </div>
+                <div class="kpi-row2">
+                  <span class="kpi-value">96%</span>
+                  <div class="kpi-dual-bars">
+                    <div class="kpi-dual-bar-track">
+                      <div class="kpi-dual-bar-fill" style="width: 95%; background: var(--mint);"></div>
+                    </div>
+                    <div class="kpi-dual-bar-track">
+                      <div class="kpi-dual-bar-fill" style="width: 100%; background: var(--sky);"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kpi-sub">82 T · 22 S present today</div>
+              </div>
+            </div>
+
+            <!-- ═══ OPERATIONS DASHBOARD ═══ -->
+            <div class="section-header">
+              <span class="section-title">Operations</span>
+            </div>
+            <div class="ops-card">
+
+              <!-- Alert rows -->
+              <div class="ops-head">
+                <span class="ops-head-title">Priority Alerts</span>
+                <span class="ops-head-action">View all</span>
+              </div>
+              <div class="ops-alerts">
+
+                <div class="ops-alert">
+                  <div class="ops-alert-icon" style="background: var(--violet);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  </div>
+                  <div class="ops-alert-info">
+                    <div class="ops-alert-title">Fee Overdue</div>
+                    <div class="ops-alert-sub">47 students · Q4 tuition</div>
+                  </div>
+                  <div class="ops-alert-right">
+                    <span class="ops-alert-value">₹2.4L</span>
+                    <span class="ops-alert-badge" style="background: var(--violet);">Urgent</span>
+                  </div>
+                </div>
+
+                <div class="ops-alert">
+                  <div class="ops-alert-icon" style="background: var(--coral);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  </div>
+                  <div class="ops-alert-info">
+                    <div class="ops-alert-title">Pending Tasks</div>
+                    <div class="ops-alert-sub">4 approvals · 8 queries</div>
+                  </div>
+                  <div class="ops-alert-right">
+                    <span class="ops-alert-value">12</span>
+                    <span class="ops-alert-badge" style="background: var(--coral);">Review</span>
+                  </div>
+                </div>
+
+                <div class="ops-alert">
+                  <div class="ops-alert-icon" style="background: var(--gold);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  <div class="ops-alert-info">
+                    <div class="ops-alert-title">Exam Prep</div>
+                    <div class="ops-alert-sub">Mid-term in 12 days</div>
+                  </div>
+                  <div class="ops-alert-right">
+                    <span class="ops-alert-value">12d</span>
+                    <span class="ops-alert-badge" style="background: var(--gold);">Plan</span>
+                  </div>
+                </div>
+
+                <div class="ops-alert">
+                  <div class="ops-alert-icon" style="background: var(--sky);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  </div>
+                  <div class="ops-alert-info">
+                    <div class="ops-alert-title">Admissions Review</div>
+                    <div class="ops-alert-sub">8 pending applications</div>
+                  </div>
+                  <div class="ops-alert-right">
+                    <span class="ops-alert-value">8</span>
+                    <span class="ops-alert-badge" style="background: var(--sky);">Review</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Divider -->
+              <div class="ops-divider"></div>
+
+              <!-- Enrollment chart -->
+              <div class="ops-chart-section">
+                <div class="ops-chart-head">
+                  <div>
+                    <div class="ops-chart-stat">1,247</div>
+                    <div class="ops-chart-label">Total enrolled students</div>
+                  </div>
+                  <div class="ops-chart-delta">
+                    <div class="ops-chart-delta-val">+14.2%</div>
+                    <div class="ops-chart-delta-sub">vs last year</div>
+                  </div>
+                </div>
+                <div class="ops-chart">
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 45%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Jan</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 52%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Feb</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 48%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Mar</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 60%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Apr</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 70%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">May</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 65%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Jun</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 78%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Jul</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 85%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Aug</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 72%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Sep</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 90%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Oct</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 82%; background: var(--violet-soft);"></div>
+                    <div class="ops-chart-bar-label">Nov</div>
+                  </div>
+                  <div class="ops-chart-bar-group">
+                    <div class="ops-chart-bar" style="height: 100%; background: var(--violet);"></div>
+                    <div class="ops-chart-bar-label">Dec</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ QUICK ACTIONS GRID ═══ -->
+            <div class="section-header">
+              <span class="section-title">Quick Actions</span>
+              <span class="section-action">All tools</span>
+            </div>
+            <div class="quick-grid">
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--violet);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Add Student</div>
+                  <div class="quick-tile-sub">New admission</div>
+                </div>
+              </div>
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--mint);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Add Staff</div>
+                  <div class="quick-tile-sub">Hire & onboard</div>
+                </div>
+              </div>
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--gold);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Collect Fees</div>
+                  <div class="quick-tile-sub">Payments & receipts</div>
+                </div>
+              </div>
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--coral);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Announce</div>
+                  <div class="quick-tile-sub">Broadcast notice</div>
+                </div>
+              </div>
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--sky);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Transport</div>
+                  <div class="quick-tile-sub">Routes & tracking</div>
+                </div>
+              </div>
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--violet);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Reports</div>
+                  <div class="quick-tile-sub">Generate & export</div>
+                </div>
+              </div>
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--mint);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H1v12h8V11zM23 11h-8v12h8V11zM9 1H1v8h8V1zM23 1h-8v8h8V1z"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Timetable</div>
+                  <div class="quick-tile-sub">Schedule classes</div>
+                </div>
+              </div>
+              <div class="quick-tile">
+                <div class="quick-tile-icon" style="background: var(--gold);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <div class="quick-tile-text">
+                  <div class="quick-tile-label">Analytics</div>
+                  <div class="quick-tile-sub">Insights & trends</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ RECENT ACTIVITY FEED ═══ -->
+            <div class="section-header">
+              <span class="section-title">Recent Activity</span>
+              <span class="section-action">View all</span>
+            </div>
+            <div class="surface-card">
+              <div class="activity-list">
+                <div class="activity-row">
+                  <div class="activity-avatar" style="background: var(--violet);">PS</div>
+                  <div class="activity-info">
+                    <div class="activity-text">Priya Sharma paid ₹45,000 (Q4 tuition)</div>
+                    <div class="activity-time">2 min ago</div>
+                  </div>
+                </div>
+                <div class="activity-row">
+                  <div class="activity-avatar" style="background: var(--mint);">AK</div>
+                  <div class="activity-info">
+                    <div class="activity-text">Arun Kumar submitted leave request</div>
+                    <div class="activity-time">15 min ago</div>
+                  </div>
+                </div>
+                <div class="activity-row">
+                  <div class="activity-avatar" style="background: var(--sky);">NM</div>
+                  <div class="activity-info">
+                    <div class="activity-text">New admission: Neha Menon (Grade 6-B)</div>
+                    <div class="activity-time">1 hour ago</div>
+                  </div>
+                </div>
+                <div class="activity-row">
+                  <div class="activity-avatar" style="background: var(--gold);">RV</div>
+                  <div class="activity-info">
+                    <div class="activity-text">Ravi Verma published mid-term results</div>
+                    <div class="activity-time">3 hours ago</div>
+                  </div>
+                </div>
+                <div class="activity-row">
+                  <div class="activity-avatar" style="background: var(--coral);">SG</div>
+                  <div class="activity-info">
+                    <div class="activity-text">School event "Annual Day" scheduled</div>
+                    <div class="activity-time">5 hours ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ CLASS PERFORMANCE BREAKDOWN ═══ -->
+            <div class="section-header">
+              <span class="section-title">Class Performance</span>
+              <span class="section-action">Details</span>
+            </div>
+            <div class="surface-card">
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Class row with progress bar -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--ink);">Grade 10-A</span>
+                    <span style="font-size: 13px; font-weight: 700; color: var(--violet);">94%</span>
+                  </div>
+                  <div style="height: 6px; background: var(--line-soft); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="height: 100%; width: 94%; background: var(--violet); border-radius: var(--radius-full);"></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--ink);">Grade 9-B</span>
+                    <span style="font-size: 13px; font-weight: 700; color: var(--mint);">88%</span>
+                  </div>
+                  <div style="height: 6px; background: var(--line-soft); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="height: 100%; width: 88%; background: var(--mint); border-radius: var(--radius-full);"></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--ink);">Grade 8-A</span>
+                    <span style="font-size: 13px; font-weight: 700; color: var(--sky);">82%</span>
+                  </div>
+                  <div style="height: 6px; background: var(--line-soft); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="height: 100%; width: 82%; background: var(--sky); border-radius: var(--radius-full);"></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--ink);">Grade 7-C</span>
+                    <span style="font-size: 13px; font-weight: 700; color: var(--gold);">76%</span>
+                  </div>
+                  <div style="height: 6px; background: var(--line-soft); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="height: 100%; width: 76%; background: var(--gold); border-radius: var(--radius-full);"></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--ink);">Grade 6-B</span>
+                    <span style="font-size: 13px; font-weight: 700; color: var(--coral);">68%</span>
+                  </div>
+                  <div style="height: 6px; background: var(--line-soft); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="height: 100%; width: 68%; background: var(--coral); border-radius: var(--radius-full);"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══ NEW NAV BAR (Figma-exact) ═══ -->
+        <div class="bottom-nav">
+          <div class="nav-pill" id="nav-pill"></div>
+          <div class="nav-tabs">
+            <div class="nav-item active" data-index="0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item" data-index="1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              <span class="nav-label">Classes</span>
+            </div>
+            <div class="nav-item" data-index="2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="nav-label">Messages</span>
+            </div>
+            <div class="nav-item" data-index="3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="nav-label">Profile</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ ANALYTICS OVERLAY ═══ -->
+        <div class="analytics-overlay" id="analytics-overlay">
+          <div class="analytics-sheet" id="analytics-sheet">
+            <div class="analytics-handle"></div>
+            <div class="analytics-sheet-inner">
+
+              <!-- Top bar -->
+              <div class="analytics-topbar">
+                <span class="analytics-title" id="analytics-title">Fee Analytics</span>
+                <div class="analytics-close" id="analytics-close">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+              </div>
+
+              <!-- Filters -->
+              <div class="analytics-filters">
+                <div class="analytics-filter active">All Classes</div>
+                <div class="analytics-filter">Grade 6</div>
+                <div class="analytics-filter">Grade 7</div>
+                <div class="analytics-filter">Grade 8</div>
+                <div class="analytics-filter">Grade 9</div>
+                <div class="analytics-filter">Grade 10</div>
+                <div class="analytics-filter">Section A</div>
+                <div class="analytics-filter">Section B</div>
+              </div>
+
+              <!-- ═══ FEE ANALYTICS ═══ -->
+              <div class="analytics-content active" id="analytics-fee">
+                <div class="bento-grid">
+
+                <!-- Card 1: Primary stat -->
+                <div class="bento-card">
+                  <div class="bento-stat-head">
+                    <div class="bento-stat-icon" style="background: var(--violet);">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                    </div>
+                    <span class="bento-stat-label">Collected</span>
+                  </div>
+                  <div class="bento-stat-value">₹18.2L</div>
+                  <div class="bento-stat-delta up">↑ 12.4% vs last month</div>
+                </div>
+
+                <!-- Card 2: Pending stat -->
+                <div class="bento-card">
+                  <div class="bento-stat-head">
+                    <div class="bento-stat-icon" style="background: var(--coral);">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <span class="bento-stat-label">Outstanding</span>
+                  </div>
+                  <div class="bento-stat-value">₹7.8L</div>
+                  <div class="bento-stat-delta down">↓ 3.1% vs last month</div>
+                </div>
+
+                <!-- Card 3: Donut — payment status -->
+                <div class="bento-card full">
+                  <div class="bento-label">Payment Status Breakdown</div>
+                  <div class="bento-donut-wrap">
+                    <div class="bento-donut">
+                      <svg width="70" height="70" viewBox="0 0 70 70">
+                        <circle cx="35" cy="35" r="28" fill="none" stroke="var(--line-soft)" stroke-width="8"/>
+                        <circle cx="35" cy="35" r="28" fill="none" stroke="var(--success)" stroke-width="8"
+                          stroke-dasharray="176" stroke-dashoffset="53" stroke-linecap="round"/>
+                        <circle cx="35" cy="35" r="28" fill="none" stroke="var(--gold)" stroke-width="8"
+                          stroke-dasharray="176" stroke-dashoffset="141" stroke-linecap="round"
+                          style="transform: rotate(210deg); transform-origin: 35px 35px;"/>
+                        <circle cx="35" cy="35" r="28" fill="none" stroke="var(--coral)" stroke-width="8"
+                          stroke-dasharray="176" stroke-dashoffset="155" stroke-linecap="round"
+                          style="transform: rotate(330deg); transform-origin: 35px 35px;"/>
+                      </svg>
+                      <div class="bento-donut-center">
+                        <div class="bento-donut-num">70%</div>
+                        <div class="bento-donut-unit">paid</div>
+                      </div>
+                    </div>
+                    <div class="bento-legend">
+                      <div class="bento-legend-row">
+                        <span class="bento-legend-dot" style="background: var(--success);"></span>
+                        Fully Paid
+                        <span class="bento-legend-val">873</span>
+                      </div>
+                      <div class="bento-legend-row">
+                        <span class="bento-legend-dot" style="background: var(--gold);"></span>
+                        Partial
+                        <span class="bento-legend-val">327</span>
+                      </div>
+                      <div class="bento-legend-row">
+                        <span class="bento-legend-dot" style="background: var(--coral);"></span>
+                        Overdue
+                        <span class="bento-legend-val">47</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 4: Monthly bars -->
+                <div class="bento-card full">
+                  <div class="bento-label">Monthly Collection (₹ Lakhs)</div>
+                  <div class="bento-bars">
+                    <div class="bento-bar-col"><div class="bento-bar" style="height: 40%; background: var(--violet-soft);"></div><div class="bento-bar-label">Jul</div></div>
+                    <div class="bento-bar-col"><div class="bento-bar" style="height: 55%; background: var(--violet-soft);"></div><div class="bento-bar-label">Aug</div></div>
+                    <div class="bento-bar-col"><div class="bento-bar" style="height: 48%; background: var(--violet-soft);"></div><div class="bento-bar-label">Sep</div></div>
+                    <div class="bento-bar-col"><div class="bento-bar" style="height: 62%; background: var(--violet-soft);"></div><div class="bento-bar-label">Oct</div></div>
+                    <div class="bento-bar-col"><div class="bento-bar" style="height: 70%; background: var(--violet-soft);"></div><div class="bento-bar-label">Nov</div></div>
+                    <div class="bento-bar-col"><div class="bento-bar" style="height: 85%; background: var(--violet);"></div><div class="bento-bar-label">Dec</div></div>
+                  </div>
+                </div>
+
+                <!-- Card 5: Trend sparkline -->
+                <div class="bento-card">
+                  <div class="bento-stat-head">
+                    <div class="bento-stat-icon" style="background: var(--mint);">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <span class="bento-stat-label">Trend</span>
+                  </div>
+                  <svg class="bento-trend-chart" viewBox="0 0 140 50" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="bentoTrendGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--mint)" stop-opacity="0.25"/>
+                        <stop offset="100%" stop-color="var(--mint)" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,38 Q20,35 35,30 T70,20 T105,12 T140,5 L140,50 L0,50 Z" fill="url(#bentoTrendGrad)"/>
+                    <path d="M0,38 Q20,35 35,30 T70,20 T105,12 T140,5" fill="none" stroke="var(--mint)" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="140" cy="5" r="2.5" fill="var(--mint)"/>
+                  </svg>
+                </div>
+
+                <!-- Card 6: Avg per student -->
+                <div class="bento-card">
+                  <div class="bento-stat-head">
+                    <div class="bento-stat-icon" style="background: var(--sky);">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    </div>
+                    <span class="bento-stat-label">Avg / Student</span>
+                  </div>
+                  <div class="bento-stat-value">₹14,595</div>
+                  <div class="bento-stat-delta up">↑ 4.2% vs last term</div>
+                </div>
+
+                <!-- Card 7: Class-wise breakdown -->
+                <div class="bento-card full">
+                  <div class="bento-label">Class-wise Collection Rate</div>
+                  <div class="bento-progress-list">
+                    <div class="bento-progress-row">
+                      <div class="bento-progress-head">
+                        <span class="bento-progress-name">Grade 10-A</span>
+                        <span class="bento-progress-val">94%</span>
+                      </div>
+                      <div class="bento-progress-track">
+                        <div class="bento-progress-fill" style="width: 94%; background: var(--success);"></div>
+                      </div>
+                    </div>
+                    <div class="bento-progress-row">
+                      <div class="bento-progress-head">
+                        <span class="bento-progress-name">Grade 9-B</span>
+                        <span class="bento-progress-val">88%</span>
+                      </div>
+                      <div class="bento-progress-track">
+                        <div class="bento-progress-fill" style="width: 88%; background: var(--mint);"></div>
+                      </div>
+                    </div>
+                    <div class="bento-progress-row">
+                      <div class="bento-progress-head">
+                        <span class="bento-progress-name">Grade 8-A</span>
+                        <span class="bento-progress-val">76%</span>
+                      </div>
+                      <div class="bento-progress-track">
+                        <div class="bento-progress-fill" style="width: 76%; background: var(--violet);"></div>
+                      </div>
+                    </div>
+                    <div class="bento-progress-row">
+                      <div class="bento-progress-head">
+                        <span class="bento-progress-name">Grade 7-B</span>
+                        <span class="bento-progress-val">61%</span>
+                      </div>
+                      <div class="bento-progress-track">
+                        <div class="bento-progress-fill" style="width: 61%; background: var(--gold);"></div>
+                      </div>
+                    </div>
+                    <div class="bento-progress-row">
+                      <div class="bento-progress-head">
+                        <span class="bento-progress-name">Grade 6-A</span>
+                        <span class="bento-progress-val">52%</span>
+                      </div>
+                      <div class="bento-progress-track">
+                        <div class="bento-progress-fill" style="width: 52%; background: var(--coral);"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                </div>
+              </div>
+
+              <!-- ═══ ATTENDANCE ANALYTICS ═══ -->
+              <div class="analytics-content" id="analytics-attendance">
+                <div class="bento-grid">
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--mint);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Present Today</span>
+                    </div>
+                    <div class="bento-stat-value">1,139</div>
+                    <div class="bento-stat-delta up">↑ 91.3% attendance</div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--coral);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Absent</span>
+                    </div>
+                    <div class="bento-stat-value">108</div>
+                    <div class="bento-stat-delta down">↓ 2.1% vs yesterday</div>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Attendance Distribution</div>
+                    <div class="bento-donut-wrap">
+                      <div class="bento-donut">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--line-soft)" stroke-width="8"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--mint)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="15" stroke-linecap="round"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--gold)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="161" stroke-linecap="round" style="transform: rotate(327deg); transform-origin: 35px 35px;"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--coral)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="161" stroke-linecap="round" style="transform: rotate(349deg); transform-origin: 35px 35px;"/>
+                        </svg>
+                        <div class="bento-donut-center"><div class="bento-donut-num">91%</div><div class="bento-donut-unit">present</div></div>
+                      </div>
+                      <div class="bento-legend">
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--mint);"></span>Present<span class="bento-legend-val">1,139</span></div>
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--gold);"></span>Late Arrival<span class="bento-legend-val">63</span></div>
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--coral);"></span>Absent<span class="bento-legend-val">45</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Weekly Attendance (Mon–Sat)</div>
+                    <div class="bento-bars">
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 88%; background: var(--mint-soft);"></div><div class="bento-bar-label">Mon</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 92%; background: var(--mint-soft);"></div><div class="bento-bar-label">Tue</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 85%; background: var(--mint-soft);"></div><div class="bento-bar-label">Wed</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 90%; background: var(--mint-soft);"></div><div class="bento-bar-label">Thu</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 87%; background: var(--mint-soft);"></div><div class="bento-bar-label">Fri</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 95%; background: var(--mint);"></div><div class="bento-bar-label">Sat</div></div>
+                    </div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--violet);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Avg Late</span>
+                    </div>
+                    <div class="bento-stat-value">8 min</div>
+                    <div class="bento-stat-delta down">↓ 1 min vs avg</div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--sky);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Trend</span>
+                    </div>
+                    <svg class="bento-trend-chart" viewBox="0 0 140 50" preserveAspectRatio="none">
+                      <defs><linearGradient id="attTrendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--mint)" stop-opacity="0.25"/><stop offset="100%" stop-color="var(--mint)" stop-opacity="0"/></linearGradient></defs>
+                      <path d="M0,30 Q20,28 35,22 T70,15 T105,10 T140,8 L140,50 L0,50 Z" fill="url(#attTrendGrad)"/>
+                      <path d="M0,30 Q20,28 35,22 T70,15 T105,10 T140,8" fill="none" stroke="var(--mint)" stroke-width="1.5" stroke-linecap="round"/>
+                      <circle cx="140" cy="8" r="2.5" fill="var(--mint)"/>
+                    </svg>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Class-wise Attendance</div>
+                    <div class="bento-progress-list">
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 10-A</span><span class="bento-progress-val">96%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 96%; background: var(--success);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 9-B</span><span class="bento-progress-val">93%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 93%; background: var(--mint);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 8-A</span><span class="bento-progress-val">89%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 89%; background: var(--violet);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 7-B</span><span class="bento-progress-val">85%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 85%; background: var(--gold);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 6-A</span><span class="bento-progress-val">82%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 82%; background: var(--coral);"></div></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ═══ ADMISSIONS ANALYTICS ═══ -->
+              <div class="analytics-content" id="analytics-admissions">
+                <div class="bento-grid">
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--sky);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                      </div>
+                      <span class="bento-stat-label">New Admissions</span>
+                    </div>
+                    <div class="bento-stat-value">34</div>
+                    <div class="bento-stat-delta up">↑ 55% of quarterly goal</div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--gold);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Pending Review</span>
+                    </div>
+                    <div class="bento-stat-value">8</div>
+                    <div class="bento-stat-delta down">↓ 2 since yesterday</div>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Application Status</div>
+                    <div class="bento-donut-wrap">
+                      <div class="bento-donut">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--line-soft)" stroke-width="8"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--success)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="70" stroke-linecap="round"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--gold)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="141" stroke-linecap="round" style="transform: rotate(233deg); transform-origin: 35px 35px;"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--coral)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="158" stroke-linecap="round" style="transform: rotate(314deg); transform-origin: 35px 35px;"/>
+                        </svg>
+                        <div class="bento-donut-center"><div class="bento-donut-num">60%</div><div class="bento-donut-unit">approved</div></div>
+                      </div>
+                      <div class="bento-legend">
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--success);"></span>Approved<span class="bento-legend-val">21</span></div>
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--gold);"></span>Pending<span class="bento-legend-val">8</span></div>
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--coral);"></span>Rejected<span class="bento-legend-val">5</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Monthly Admissions</div>
+                    <div class="bento-bars">
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 30%; background: var(--sky-soft);"></div><div class="bento-bar-label">Jul</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 45%; background: var(--sky-soft);"></div><div class="bento-bar-label">Aug</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 38%; background: var(--sky-soft);"></div><div class="bento-bar-label">Sep</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 55%; background: var(--sky-soft);"></div><div class="bento-bar-label">Oct</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 65%; background: var(--sky-soft);"></div><div class="bento-bar-label">Nov</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 80%; background: var(--sky);"></div><div class="bento-bar-label">Dec</div></div>
+                    </div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--violet);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Conversion</span>
+                    </div>
+                    <div class="bento-stat-value">68%</div>
+                    <div class="bento-stat-delta up">↑ 5% vs last quarter</div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--mint);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Trend</span>
+                    </div>
+                    <svg class="bento-trend-chart" viewBox="0 0 140 50" preserveAspectRatio="none">
+                      <defs><linearGradient id="admTrendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--sky)" stop-opacity="0.25"/><stop offset="100%" stop-color="var(--sky)" stop-opacity="0"/></linearGradient></defs>
+                      <path d="M0,40 Q20,38 35,32 T70,22 T105,14 T140,6 L140,50 L0,50 Z" fill="url(#admTrendGrad)"/>
+                      <path d="M0,40 Q20,38 35,32 T70,22 T105,14 T140,6" fill="none" stroke="var(--sky)" stroke-width="1.5" stroke-linecap="round"/>
+                      <circle cx="140" cy="6" r="2.5" fill="var(--sky)"/>
+                    </svg>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Grade-wise Admissions</div>
+                    <div class="bento-progress-list">
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 6</span><span class="bento-progress-val">12</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 100%; background: var(--sky);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 7</span><span class="bento-progress-val">8</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 67%; background: var(--mint);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 8</span><span class="bento-progress-val">6</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 50%; background: var(--violet);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 9</span><span class="bento-progress-val">5</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 42%; background: var(--gold);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Grade 10</span><span class="bento-progress-val">3</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 25%; background: var(--coral);"></div></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ═══ STAFF ANALYTICS ═══ -->
+              <div class="analytics-content" id="analytics-staff">
+                <div class="bento-grid">
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--mint);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Teachers Present</span>
+                    </div>
+                    <div class="bento-stat-value">82</div>
+                    <div class="bento-stat-delta up">↑ 95.3% today</div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--sky);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Staff Present</span>
+                    </div>
+                    <div class="bento-stat-value">22</div>
+                    <div class="bento-stat-delta up">↑ 100% today</div>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Workforce Status</div>
+                    <div class="bento-donut-wrap">
+                      <div class="bento-donut">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--line-soft)" stroke-width="8"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--mint)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="11" stroke-linecap="round"/>
+                          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--gold)" stroke-width="8" stroke-dasharray="176" stroke-dashoffset="165" stroke-linecap="round" style="transform: rotate(338deg); transform-origin: 35px 35px;"/>
+                        </svg>
+                        <div class="bento-donut-center"><div class="bento-donut-num">96%</div><div class="bento-donut-unit">present</div></div>
+                      </div>
+                      <div class="bento-legend">
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--mint);"></span>Present<span class="bento-legend-val">104</span></div>
+                        <div class="bento-legend-row"><span class="bento-legend-dot" style="background: var(--gold);"></span>On Leave<span class="bento-legend-val">4</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Weekly Staff Attendance</div>
+                    <div class="bento-bars">
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 94%; background: var(--mint-soft);"></div><div class="bento-bar-label">Mon</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 97%; background: var(--mint-soft);"></div><div class="bento-bar-label">Tue</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 92%; background: var(--mint-soft);"></div><div class="bento-bar-label">Wed</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 95%; background: var(--mint-soft);"></div><div class="bento-bar-label">Thu</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 93%; background: var(--mint-soft);"></div><div class="bento-bar-label">Fri</div></div>
+                      <div class="bento-bar-col"><div class="bento-bar" style="height: 96%; background: var(--mint);"></div><div class="bento-bar-label">Sat</div></div>
+                    </div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--violet);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      </div>
+                      <span class="bento-stat-label">On Leave</span>
+                    </div>
+                    <div class="bento-stat-value">4</div>
+                    <div class="bento-stat-delta down">↓ 1 vs yesterday</div>
+                  </div>
+                  <div class="bento-card">
+                    <div class="bento-stat-head">
+                      <div class="bento-stat-icon" style="background: var(--gold);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      </div>
+                      <span class="bento-stat-label">Trend</span>
+                    </div>
+                    <svg class="bento-trend-chart" viewBox="0 0 140 50" preserveAspectRatio="none">
+                      <defs><linearGradient id="staffTrendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--gold)" stop-opacity="0.25"/><stop offset="100%" stop-color="var(--gold)" stop-opacity="0"/></linearGradient></defs>
+                      <path d="M0,20 Q20,18 35,15 T70,12 T105,8 T140,5 L140,50 L0,50 Z" fill="url(#staffTrendGrad)"/>
+                      <path d="M0,20 Q20,18 35,15 T70,12 T105,8 T140,5" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round"/>
+                      <circle cx="140" cy="5" r="2.5" fill="var(--gold)"/>
+                    </svg>
+                  </div>
+                  <div class="bento-card full">
+                    <div class="bento-label">Department-wise Attendance</div>
+                    <div class="bento-progress-list">
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Science</span><span class="bento-progress-val">98%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 98%; background: var(--success);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Mathematics</span><span class="bento-progress-val">96%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 96%; background: var(--mint);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Languages</span><span class="bento-progress-val">94%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 94%; background: var(--violet);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Administration</span><span class="bento-progress-val">100%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 100%; background: var(--sky);"></div></div></div>
+                      <div class="bento-progress-row"><div class="bento-progress-head"><span class="bento-progress-name">Support</span><span class="bento-progress-val">90%</span></div><div class="bento-progress-track"><div class="bento-progress-fill" style="width: 90%; background: var(--gold);"></div></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Right Panel (Design Inspector) ── -->
+  <div class="inspector-panel">
+    <div class="inspector-section">
+      <div class="inspector-label">Frame</div>
+      <div class="inspector-row">
+        <span class="inspector-field">Device</span>
+        <span class="inspector-value">iPhone 15 Pro</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">Width</span>
+        <span class="inspector-value">393 px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">Height</span>
+        <span class="inspector-value">852 px</span>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-label">Color Tokens</div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #FBF8F4;"></span>cream</span>
+        <span class="inspector-value">#FBF8F4</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #5B41D5;"></span>violet</span>
+        <span class="inspector-value">#5B41D5</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #4A30C4;"></span>violetHover</span>
+        <span class="inspector-value">#4A30C4</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #16006E;"></span>violetInk</span>
+        <span class="inspector-value">#16006E</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #EEE8FB;"></span>violetSoft</span>
+        <span class="inspector-value">#EEE8FB</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #1A1614;"></span>ink</span>
+        <span class="inspector-value">#1A1614</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #5C544E;"></span>ink2</span>
+        <span class="inspector-value">#5C544E</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #E8E0D6;"></span>line</span>
+        <span class="inspector-value">#E8E0D6</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #2DCE89;"></span>mint</span>
+        <span class="inspector-value">#2DCE89</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #FCB400;"></span>gold</span>
+        <span class="inspector-value">#FCB400</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #F82B60;"></span>coral</span>
+        <span class="inspector-value">#F82B60</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field"><span class="color-swatch" style="background: #18BFFF;"></span>sky</span>
+        <span class="inspector-value">#18BFFF</span>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-label">Typography</div>
+      <div class="inspector-row">
+        <span class="inspector-field">Font</span>
+        <span class="inspector-value">Inter</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">wordmark</span>
+        <span class="inspector-value">17px / 800</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">h2 (greeting)</span>
+        <span class="inspector-value">26.4px / 800</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">h3 (section)</span>
+        <span class="inspector-value">20px / 800</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">body</span>
+        <span class="inspector-value">14px / 400</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">caption</span>
+        <span class="inspector-value">12px / 400</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">eyebrow</span>
+        <span class="inspector-value">15.4px / 600</span>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-label">Shape Tokens</div>
+      <div class="inspector-row">
+        <span class="inspector-field">sm</span>
+        <span class="inspector-value">6px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">md</span>
+        <span class="inspector-value">10px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">lg</span>
+        <span class="inspector-value">14px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">xl</span>
+        <span class="inspector-value">20px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">xxl</span>
+        <span class="inspector-value">28px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">full</span>
+        <span class="inspector-value">9999px</span>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-label">Spacing</div>
+      <div class="inspector-row">
+        <span class="inspector-field">horizontal</span>
+        <span class="inspector-value">24px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">card padding</span>
+        <span class="inspector-value">18-20px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">section gap</span>
+        <span class="inspector-value">24px</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">card gap</span>
+        <span class="inspector-value">12px</span>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <div class="inspector-label">Components</div>
+      <div class="inspector-row">
+        <span class="inspector-field">PremiumHeader</span>
+        <span class="inspector-value">shared</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">HeroCard</span>
+        <span class="inspector-value">gradient</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">KpiCard</span>
+        <span class="inspector-value">×4</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">PriorityCard</span>
+        <span class="inspector-value">×4</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">QuickTile</span>
+        <span class="inspector-value">×8</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">SurfaceCard</span>
+        <span class="inspector-value">×3</span>
+      </div>
+      <div class="inspector-row">
+        <span class="inspector-field">BottomNav</span>
+        <span class="inspector-value">5 tabs</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Filter chip interaction ──
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+// ── Analytics overlay ──
+const analyticsOverlay = document.getElementById('analytics-overlay');
+const analyticsClose = document.getElementById('analytics-close');
+const analyticsTitle = document.getElementById('analytics-title');
+
+const kpiMap = {
+  'Fee Collection':      { title: 'Fee Analytics',         id: 'analytics-fee' },
+  'Attendance':          { title: 'Attendance Analytics',   id: 'analytics-attendance' },
+  'Admissions':          { title: 'Admissions Analytics',   id: 'analytics-admissions' },
+  'Staff & Teachers':    { title: 'Staff Analytics',        id: 'analytics-staff' }
+};
+
+function showAnalytics(contentId, title) {
+  analyticsTitle.textContent = title;
+  document.querySelectorAll('.analytics-content').forEach(c => c.classList.remove('active'));
+  const target = document.getElementById(contentId);
+  if (target) target.classList.add('active');
+  analyticsOverlay.classList.add('active');
+  // Animate bento bars in the visible section
+  setTimeout(() => {
+    if (target) {
+      target.querySelectorAll('.bento-bar').forEach(bar => {
+        const h = bar.style.height;
+        bar.style.height = '0';
+        requestAnimationFrame(() => {
+          setTimeout(() => bar.style.height = h, 50);
+        });
+      });
+    }
+  }, 350);
+}
+
+document.querySelectorAll('.kpi-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const label = card.querySelector('.kpi-label');
+    if (label) {
+      const key = label.textContent.trim();
+      const info = kpiMap[key];
+      if (info) {
+        showAnalytics(info.id, info.title);
+        return;
+      }
+    }
+    // Fallback
+    showAnalytics('analytics-fee', 'Fee Analytics');
+  });
+});
+
+function closeAnalytics() {
+  analyticsOverlay.classList.remove('active');
+}
+analyticsClose.addEventListener('click', closeAnalytics);
+analyticsOverlay.addEventListener('click', (e) => {
+  if (e.target === analyticsOverlay) closeAnalytics();
+});
+
+// Analytics filter chips
+document.querySelectorAll('.analytics-filter').forEach(filter => {
+  filter.addEventListener('click', () => {
+    document.querySelectorAll('.analytics-filter').forEach(f => f.classList.remove('active'));
+    filter.classList.add('active');
+  });
+});
+
+// ── Bottom nav — sliding pill animation ──
+const navPill = document.getElementById('nav-pill');
+const navItems = document.querySelectorAll('.nav-item');
+
+function movePill(index) {
+  // Tab widths: active=96, inactive=71, gap=2
+  // Offset = sum of preceding tab widths + gaps
+  let offset = 0;
+  for (let i = 0; i < index; i++) {
+    offset += 71 + 2; // inactive width + gap
+  }
+  navPill.style.transform = `translateX(${offset}px)`;
+}
+
+// Initialize pill at active tab
+const initialActive = document.querySelector('.nav-item.active');
+if (initialActive) {
+  movePill(parseInt(initialActive.dataset.index) || 0);
+}
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    navItems.forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const index = parseInt(item.dataset.index) || 0;
+    movePill(index);
+  });
+});
+
+// ── Layer item selection ──
+document.querySelectorAll('.layer-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.layer-item').forEach(l => l.classList.remove('selected'));
+    item.classList.add('selected');
+  });
+});
+
+// ── Animate bars on load ──
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.mini-bar, .enrollment-bar').forEach(bar => {
+      const h = bar.style.height;
+      bar.style.height = '0';
+      requestAnimationFrame(() => {
+        setTimeout(() => bar.style.height = h, 50);
+      });
+    });
+  }, 100);
+});
+</script>
+
+</body>
+</html>
