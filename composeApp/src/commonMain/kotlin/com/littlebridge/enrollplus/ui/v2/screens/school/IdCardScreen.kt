@@ -1,8 +1,11 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -88,7 +91,10 @@ fun IdCardScreen(
 
         AnimatedContent(
             targetState = activeTab,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            transitionSpec = {
+                fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 20 } togetherWith
+                    fadeOut(tween(150)) + slideOutVertically(tween(200)) { -it / 20 }
+            },
             label = "idcard-tab",
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) { tab ->

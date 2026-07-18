@@ -19,6 +19,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardSummary
+import com.littlebridge.enrollplus.feature.admin.domain.model.AdminHomeAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.DailyDigest
 import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceSnapshotsResponse
 import com.littlebridge.enrollplus.feature.teacher.domain.model.PaceAlertsResponse
@@ -57,6 +58,17 @@ class AdminDashboardApi(
         token: String
     ): NetworkResult<ApiResponse<AdminDashboardActivity>> = safeApiCall {
         client.get(getUrl("api/admin/dashboard/activity"))
+    }
+
+    suspend fun getHomeAnalytics(
+        token: String,
+        dashboard: String,
+        filter: String = "all",
+    ): NetworkResult<ApiResponse<AdminHomeAnalytics>> = safeApiCall {
+        client.get(getUrl("api/admin/dashboard/home-analytics")) {
+            parameter("dashboard", dashboard)
+            parameter("filter", filter)
+        }
     }
 
     /**

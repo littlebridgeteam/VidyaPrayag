@@ -34,8 +34,10 @@ import com.littlebridge.enrollplus.db.AdmissionEnquiriesTable
 import com.littlebridge.enrollplus.db.AnnouncementsTable
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.AttendanceRecordsTable
+import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.ExamResultsTable
+import com.littlebridge.enrollplus.db.ExamTimetableEntriesTable
 import com.littlebridge.enrollplus.db.FacultyTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import com.littlebridge.enrollplus.db.NotificationsTable
@@ -243,6 +245,46 @@ data class DashActivityResponse(
     val activities: List<DashActivityDto>
 )
 
+@Serializable
+data class HomeAnalyticsStatDto(
+    val label: String,
+    val value: String,
+    val supportingText: String,
+    val direction: String = "flat"
+)
+
+@Serializable
+data class HomeAnalyticsPointDto(val label: String, val value: Double)
+
+@Serializable
+data class HomeAnalyticsBreakdownDto(
+    val id: String,
+    val label: String,
+    val value: Double,
+    val displayValue: String
+)
+
+@Serializable
+data class HomeAnalyticsFilterDto(val id: String, val label: String)
+
+@Serializable
+data class HomeAnalyticsResponse(
+    val type: String,
+    val title: String,
+    val filterLabel: String,
+    val selectedFilter: String,
+    val filters: List<HomeAnalyticsFilterDto>,
+    val stats: List<HomeAnalyticsStatDto>,
+    val distributionTitle: String,
+    val distributionCenter: String,
+    val distributionUnit: String,
+    val distribution: List<HomeAnalyticsBreakdownDto>,
+    val trendTitle: String,
+    val trend: List<HomeAnalyticsPointDto>,
+    val breakdownTitle: String,
+    val breakdown: List<HomeAnalyticsBreakdownDto>
+)
+
 // =====================================================================
 // internal helpers
 // =====================================================================
@@ -280,6 +322,16 @@ private fun directionOf(delta: Double): String = when {
 /** Round a Double to one decimal place. */
 private fun round1(v: Double): Double = kotlin.math.round(v * 10) / 10.0
 
+private fun dashboardMoney(value: Double): String = when {
+    value >= 10_000_000 -> "₹${round1(value / 10_000_000)}Cr"
+    value >= 100_000 -> "₹${round1(value / 100_000)}L"
+    value >= 1_000 -> "₹${round1(value / 1_000)}K"
+    else -> "₹${value.toInt()}"
+}
+
+private fun percent(part: Int, total: Int): Int =
+    if (total <= 0) 0 else ((part.toDouble() / total) * 100).toInt().coerceIn(0, 100)
+
 /**
  * Present-rate (%) over a list of (date, status) attendance rows. PRESENT and
  * LATE both count toward "in attendance". Returns null when the list is empty.
@@ -311,10 +363,14 @@ private fun parseExamScore(raw: String?): Double? {
 
 /** Built-in admin quick actions (static — these are app capabilities, not data). */
 private val QUICK_ACTIONS = listOf(
-    DashQuickActionDto("ADD_TEACHER", "Add Teacher", "Create staff profile", true, "teacher.create"),
     DashQuickActionDto("ADD_STUDENT", "Add Student", "New admission", true, "student.create"),
-    DashQuickActionDto("CREATE_CLASS", "Create Class", "Setup classroom", true, "class.create"),
-    DashQuickActionDto("REPORTS", "Reports", "View analytics", true, "report.view")
+    DashQuickActionDto("ADD_STAFF", "Add Staff", "Hire & onboard", true, "teacher.create"),
+    DashQuickActionDto("COLLECT_FEES", "Collect Fees", "Payments & receipts", true, "fee.manage"),
+    DashQuickActionDto("ANNOUNCE", "Announce", "Broadcast notice", true, "announcement.create"),
+    DashQuickActionDto("TRANSPORT", "Transport", "Routes & tracking", true, "transport.view"),
+    DashQuickActionDto("REPORTS", "Reports", "Generate & export", true, "report.view"),
+    DashQuickActionDto("TIMETABLE", "Timetable", "Schedule classes", true, "timetable.manage"),
+    DashQuickActionDto("ANALYTICS", "Analytics", "Insights & trends", true, "analytics.view")
 )
 
 // =====================================================================
@@ -635,6 +691,230 @@ fun Route.adminDashboardRouting() {
             }
 
             // ============================================================
+            // GET /home-analytics?dashboard=fee|attendance|admissions|staff&filter=<id>
+            // The filter list is dashboard-specific: class filters for student
+            // dashboards and department filters for workforce analytics.
+            // ============================================================
+            get("/home-analytics") {
+                val ctx = call.requireSchoolContext() ?: return@get
+                val schoolId = ctx.schoolId
+                val requestedType = call.request.queryParameters["dashboard"]
+                    ?.lowercase()?.takeIf { it in setOf("fee", "attendance", "admissions", "staff") }
+                    ?: "fee"
+                val requestedFilter = call.request.queryParameters["filter"]?.takeIf { it.isNotBlank() } ?: "all"
+                val today = LocalDate.now()
+
+                val payload = dbQuery {
+                    val students = StudentsTable.selectAll()
+                        .where { StudentsTable.schoolId eq schoolId }.toList()
+                    val faculty = FacultyTable.selectAll()
+                        .where { (FacultyTable.schoolId eq schoolId) and (FacultyTable.isActive eq true) }.toList()
+                    val children = ChildrenTable.selectAll()
+                        .where { ChildrenTable.schoolId eq schoolId }.toList()
+                    val childGrade = children.associate {
+                        it[ChildrenTable.id].value to it[ChildrenTable.currentGrade].orEmpty()
+                    }
+                    val classNames = (students.map { it[StudentsTable.className] } +
+                        children.mapNotNull { it[ChildrenTable.currentGrade] })
+                        .filter { it.isNotBlank() }.distinct().sorted()
+                    val departments = faculty.mapNotNull { it[FacultyTable.department] }
+                        .filter { it.isNotBlank() }.distinct().sorted()
+                    val availableFilters = if (requestedType == "staff") departments else classNames
+                    val selectedFilter = requestedFilter.takeIf { it == "all" || it in availableFilters } ?: "all"
+                    val filters = listOf(HomeAnalyticsFilterDto("all", if (requestedType == "staff") "All Staff" else "All Classes")) +
+                        availableFilters.map { HomeAnalyticsFilterDto(it, it) }
+
+                    when (requestedType) {
+                        "attendance" -> {
+                            val allRows = AttendanceRecordsTable.selectAll().where {
+                                (AttendanceRecordsTable.schoolId eq schoolId) and
+                                    (AttendanceRecordsTable.type eq "student")
+                            }.toList()
+                            val rows = if (selectedFilter == "all") allRows
+                                else allRows.filter { it[AttendanceRecordsTable.grade] == selectedFilter }
+                            val latest = rows.maxOfOrNull { it[AttendanceRecordsTable.date] }
+                            val todayRows = latest?.let { day -> rows.filter { it[AttendanceRecordsTable.date] == day } }.orEmpty()
+                            val present = todayRows.count { it[AttendanceRecordsTable.status].equals("present", true) }
+                            val late = todayRows.count { it[AttendanceRecordsTable.status].equals("late", true) }
+                            val absent = (todayRows.size - present - late).coerceAtLeast(0)
+                            val attended = present + late
+                            val rate = percent(attended, todayRows.size)
+                            val weekly = (5 downTo 0).map { back ->
+                                val day = today.minusDays(back.toLong())
+                                val dayRows = rows.filter { it[AttendanceRecordsTable.date] == day }
+                                val inCount = dayRows.count {
+                                    val s = it[AttendanceRecordsTable.status]
+                                    s.equals("present", true) || s.equals("late", true)
+                                }
+                                HomeAnalyticsPointDto(day.dayOfWeek.name.take(3), percent(inCount, dayRows.size).toDouble())
+                            }
+                            val classBreakdown = allRows.groupBy { it[AttendanceRecordsTable.grade].orEmpty() }
+                                .filterKeys { it.isNotBlank() }
+                                .map { (grade, gradeRows) ->
+                                    val gradeLatest = gradeRows.maxOfOrNull { it[AttendanceRecordsTable.date] }
+                                    val pool = gradeLatest?.let { d -> gradeRows.filter { it[AttendanceRecordsTable.date] == d } }.orEmpty()
+                                    val count = pool.count {
+                                        val s = it[AttendanceRecordsTable.status]
+                                        s.equals("present", true) || s.equals("late", true)
+                                    }
+                                    val value = percent(count, pool.size)
+                                    HomeAnalyticsBreakdownDto(grade, grade, value.toDouble(), "$value%")
+                                }.sortedByDescending { it.value }.take(6)
+                            HomeAnalyticsResponse(
+                                type = "attendance", title = "Attendance Analytics", filterLabel = "Class",
+                                selectedFilter = selectedFilter, filters = filters,
+                                stats = listOf(
+                                    HomeAnalyticsStatDto("Present Today", attended.toString(), "$rate% attendance", "up"),
+                                    HomeAnalyticsStatDto("Absent", absent.toString(), "${percent(absent, todayRows.size)}% of marked students", "down")
+                                ),
+                                distributionTitle = "Attendance Distribution", distributionCenter = "$rate%",
+                                distributionUnit = "present", distribution = listOf(
+                                    HomeAnalyticsBreakdownDto("present", "Present", attended.toDouble(), attended.toString()),
+                                    HomeAnalyticsBreakdownDto("late", "Late Arrival", late.toDouble(), late.toString()),
+                                    HomeAnalyticsBreakdownDto("absent", "Absent", absent.toDouble(), absent.toString())
+                                ), trendTitle = "Weekly Attendance (Mon–Sat)", trend = weekly,
+                                breakdownTitle = "Class-wise Attendance", breakdown = classBreakdown
+                            )
+                        }
+                        "admissions" -> {
+                            val allRows = AdmissionEnquiriesTable.selectAll()
+                                .where { AdmissionEnquiriesTable.schoolId eq schoolId }.toList()
+                            val rows = if (selectedFilter == "all") allRows
+                                else allRows.filter { it[AdmissionEnquiriesTable.className] == selectedFilter }
+                            val approved = rows.count { it[AdmissionEnquiriesTable.status].lowercase() in setOf("approved", "admitted", "converted") }
+                            val pending = rows.count { it[AdmissionEnquiriesTable.status].lowercase() in setOf("new", "pending", "review") }
+                            val rejected = rows.count { it[AdmissionEnquiriesTable.status].equals("rejected", true) }
+                            val conversion = percent(approved, rows.size)
+                            val monthly = (5 downTo 0).map { back ->
+                                val month = today.minusMonths(back.toLong())
+                                val count = rows.count {
+                                    val d = parseDate(it[AdmissionEnquiriesTable.date])
+                                    d?.year == month.year && d.monthValue == month.monthValue
+                                }
+                                HomeAnalyticsPointDto(MONTH_NAMES[month.monthValue - 1], count.toDouble())
+                            }
+                            val gradeCounts = allRows.groupingBy { it[AdmissionEnquiriesTable.className] }.eachCount()
+                                .filterKeys { it.isNotBlank() }
+                                .map { (grade, count) -> HomeAnalyticsBreakdownDto(grade, grade, count.toDouble(), count.toString()) }
+                                .sortedByDescending { it.value }.take(6)
+                            HomeAnalyticsResponse(
+                                type = "admissions", title = "Admissions Analytics", filterLabel = "Class",
+                                selectedFilter = selectedFilter, filters = filters,
+                                stats = listOf(
+                                    HomeAnalyticsStatDto("New Admissions", rows.size.toString(), "Current application cohort", "up"),
+                                    HomeAnalyticsStatDto("Pending Review", pending.toString(), "Awaiting admin decision", if (pending > 0) "down" else "flat")
+                                ), distributionTitle = "Application Status", distributionCenter = "$conversion%",
+                                distributionUnit = "approved", distribution = listOf(
+                                    HomeAnalyticsBreakdownDto("approved", "Approved", approved.toDouble(), approved.toString()),
+                                    HomeAnalyticsBreakdownDto("pending", "Pending", pending.toDouble(), pending.toString()),
+                                    HomeAnalyticsBreakdownDto("rejected", "Rejected", rejected.toDouble(), rejected.toString())
+                                ), trendTitle = "Monthly Admissions", trend = monthly,
+                                breakdownTitle = "Grade-wise Admissions", breakdown = gradeCounts
+                            )
+                        }
+                        "staff" -> {
+                            val filteredFaculty = if (selectedFilter == "all") faculty
+                                else faculty.filter { it[FacultyTable.department] == selectedFilter }
+                            val facultyUserIds = filteredFaculty.mapNotNull { it[FacultyTable.userId] }.toSet()
+                            val attendance = AttendanceRecordsTable.selectAll().where {
+                                (AttendanceRecordsTable.schoolId eq schoolId) and
+                                    (AttendanceRecordsTable.type eq "faculty")
+                            }.toList().filter { selectedFilter == "all" || it[AttendanceRecordsTable.facultyId] in facultyUserIds }
+                            val latest = attendance.maxOfOrNull { it[AttendanceRecordsTable.date] }
+                            val todayRows = latest?.let { d -> attendance.filter { it[AttendanceRecordsTable.date] == d } }.orEmpty()
+                            val present = todayRows.count {
+                                val s = it[AttendanceRecordsTable.status]
+                                s.equals("present", true) || s.equals("late", true)
+                            }
+                            val leave = todayRows.count { it[AttendanceRecordsTable.status].equals("leave", true) }
+                            val total = filteredFaculty.size
+                            val rate = percent(present, total)
+                            val weekly = (5 downTo 0).map { back ->
+                                val day = today.minusDays(back.toLong())
+                                val pool = attendance.filter { it[AttendanceRecordsTable.date] == day }
+                                val inCount = pool.count {
+                                    val s = it[AttendanceRecordsTable.status]
+                                    s.equals("present", true) || s.equals("late", true)
+                                }
+                                HomeAnalyticsPointDto(day.dayOfWeek.name.take(3), percent(inCount, total).toDouble())
+                            }
+                            val allFacultyAttendance = AttendanceRecordsTable.selectAll().where {
+                                (AttendanceRecordsTable.schoolId eq schoolId) and
+                                    (AttendanceRecordsTable.type eq "faculty")
+                            }.toList()
+                            val latestAll = allFacultyAttendance.maxOfOrNull { it[AttendanceRecordsTable.date] }
+                            val latestRows = latestAll?.let { d -> allFacultyAttendance.filter { it[AttendanceRecordsTable.date] == d } }.orEmpty()
+                            val deptBreakdown = departments.map { department ->
+                                val users = faculty.filter { it[FacultyTable.department] == department }.mapNotNull { it[FacultyTable.userId] }.toSet()
+                                val marked = latestRows.filter { it[AttendanceRecordsTable.facultyId] in users }
+                                val inCount = marked.count {
+                                    val s = it[AttendanceRecordsTable.status]
+                                    s.equals("present", true) || s.equals("late", true)
+                                }
+                                val value = percent(inCount, users.size)
+                                HomeAnalyticsBreakdownDto(department, department, value.toDouble(), "$value%")
+                            }.sortedByDescending { it.value }.take(6)
+                            HomeAnalyticsResponse(
+                                type = "staff", title = "Staff Analytics", filterLabel = "Department",
+                                selectedFilter = selectedFilter, filters = filters,
+                                stats = listOf(
+                                    HomeAnalyticsStatDto("Staff Present", present.toString(), "$rate% today", "up"),
+                                    HomeAnalyticsStatDto("On Leave", leave.toString(), "Recorded leave today", if (leave > 0) "down" else "flat")
+                                ), distributionTitle = "Workforce Status", distributionCenter = "$rate%",
+                                distributionUnit = "present", distribution = listOf(
+                                    HomeAnalyticsBreakdownDto("present", "Present", present.toDouble(), present.toString()),
+                                    HomeAnalyticsBreakdownDto("leave", "On Leave", leave.toDouble(), leave.toString()),
+                                    HomeAnalyticsBreakdownDto("unmarked", "Unmarked / Absent", (total - present - leave).coerceAtLeast(0).toDouble(), (total - present - leave).coerceAtLeast(0).toString())
+                                ), trendTitle = "Weekly Staff Attendance", trend = weekly,
+                                breakdownTitle = "Department-wise Attendance", breakdown = deptBreakdown
+                            )
+                        }
+                        else -> {
+                            val allFees = FeeRecordsTable.selectAll().where { FeeRecordsTable.schoolId eq schoolId }.toList()
+                            val fees = if (selectedFilter == "all") allFees else allFees.filter {
+                                it[FeeRecordsTable.childId]?.let(childGrade::get) == selectedFilter
+                            }
+                            val collected = fees.filter { it[FeeRecordsTable.status].equals("paid", true) }.sumOf { it[FeeRecordsTable.amount] }
+                            val overdue = fees.filter { it[FeeRecordsTable.status].equals("overdue", true) }
+                            val due = fees.filter { it[FeeRecordsTable.status].equals("due", true) }
+                            val outstanding = (overdue + due).sumOf { it[FeeRecordsTable.amount] }
+                            val rate = if (collected + outstanding <= 0) 0 else ((collected / (collected + outstanding)) * 100).toInt()
+                            val monthly = (5 downTo 0).map { back ->
+                                val month = today.minusMonths(back.toLong())
+                                val value = fees.filter {
+                                    val d = it[FeeRecordsTable.createdAt].atZone(java.time.ZoneOffset.UTC).toLocalDate()
+                                    d.year == month.year && d.monthValue == month.monthValue && it[FeeRecordsTable.status].equals("paid", true)
+                                }.sumOf { it[FeeRecordsTable.amount] } / 100_000.0
+                                HomeAnalyticsPointDto(MONTH_NAMES[month.monthValue - 1], round1(value))
+                            }
+                            val gradeBreakdown = classNames.map { grade ->
+                                val pool = allFees.filter { it[FeeRecordsTable.childId]?.let(childGrade::get) == grade }
+                                val paid = pool.filter { it[FeeRecordsTable.status].equals("paid", true) }.sumOf { it[FeeRecordsTable.amount] }
+                                val pending = pool.filter { !it[FeeRecordsTable.status].equals("paid", true) }.sumOf { it[FeeRecordsTable.amount] }
+                                val value = if (paid + pending <= 0) 0 else ((paid / (paid + pending)) * 100).toInt()
+                                HomeAnalyticsBreakdownDto(grade, grade, value.toDouble(), "$value%")
+                            }.filter { it.value > 0 }.sortedByDescending { it.value }.take(6)
+                            HomeAnalyticsResponse(
+                                type = "fee", title = "Fee Analytics", filterLabel = "Class",
+                                selectedFilter = selectedFilter, filters = filters,
+                                stats = listOf(
+                                    HomeAnalyticsStatDto("Collected", dashboardMoney(collected), "$rate% of assessed fees", "up"),
+                                    HomeAnalyticsStatDto("Outstanding", dashboardMoney(outstanding), "${overdue.size} overdue records", if (outstanding > 0) "down" else "flat")
+                                ), distributionTitle = "Payment Status Breakdown", distributionCenter = "$rate%",
+                                distributionUnit = "paid", distribution = listOf(
+                                    HomeAnalyticsBreakdownDto("paid", "Fully Paid", fees.count { it[FeeRecordsTable.status].equals("paid", true) }.toDouble(), fees.count { it[FeeRecordsTable.status].equals("paid", true) }.toString()),
+                                    HomeAnalyticsBreakdownDto("due", "Due", due.size.toDouble(), due.size.toString()),
+                                    HomeAnalyticsBreakdownDto("overdue", "Overdue", overdue.size.toDouble(), overdue.size.toString())
+                                ), trendTitle = "Monthly Collection (₹ Lakhs)", trend = monthly,
+                                breakdownTitle = "Class-wise Collection Rate", breakdown = gradeBreakdown
+                            )
+                        }
+                    }
+                }
+                call.ok(payload, message = "Home analytics fetched successfully")
+            }
+
+            // ============================================================
             // GET /activity
             // ============================================================
             get("/activity") {
@@ -688,6 +968,47 @@ fun Route.adminDashboardRouting() {
                             priority = "MEDIUM",
                             action = "VIEW_ADMISSIONS",
                             createdAt = LocalDate.now().toString()
+                        )
+                    }
+
+                    // Alert 3: school-scoped overdue fee records.
+                    val overdueFees = FeeRecordsTable.selectAll()
+                        .where { FeeRecordsTable.schoolId eq schoolId }
+                        .toList()
+                        .filter { it[FeeRecordsTable.status].equals("overdue", ignoreCase = true) }
+                    if (overdueFees.isNotEmpty()) {
+                        val overdueAmount = overdueFees.sumOf { it[FeeRecordsTable.amount] }
+                        alerts += DashAlertDto(
+                            id = "alert_overdue_fees",
+                            type = "CRITICAL",
+                            title = "${overdueFees.size} overdue fee record${if (overdueFees.size == 1) "" else "s"}",
+                            description = "${dashboardMoney(overdueAmount)} requires collection follow-up",
+                            priority = "HIGH",
+                            action = "VIEW_FEES",
+                            createdAt = LocalDate.now().toString()
+                        )
+                    }
+
+                    // Alert 4: published/scheduled exam entries in the next two weeks.
+                    val today = LocalDate.now()
+                    val preparationDeadline = today.plusDays(14)
+                    val upcomingExams = ExamTimetableEntriesTable.selectAll()
+                        .where { ExamTimetableEntriesTable.schoolId eq schoolId }
+                        .toList()
+                        .filter {
+                            val examDate = it[ExamTimetableEntriesTable.examDate]
+                            !examDate.isBefore(today) && !examDate.isAfter(preparationDeadline)
+                        }
+                    if (upcomingExams.isNotEmpty()) {
+                        val nextExamDate = upcomingExams.minOf { it[ExamTimetableEntriesTable.examDate] }
+                        alerts += DashAlertDto(
+                            id = "alert_upcoming_exams",
+                            type = "INFO",
+                            title = "${upcomingExams.size} upcoming exam${if (upcomingExams.size == 1) "" else "s"}",
+                            description = "Preparation window starts for $nextExamDate",
+                            priority = "MEDIUM",
+                            action = "VIEW_EXAMS",
+                            createdAt = today.toString()
                         )
                     }
 

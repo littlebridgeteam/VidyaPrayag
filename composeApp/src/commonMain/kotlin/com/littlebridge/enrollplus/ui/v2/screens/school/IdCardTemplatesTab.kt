@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -39,7 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -58,6 +61,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VEmptyState
+import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VProgressRing
 import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.tokens.VColors
@@ -78,7 +82,7 @@ internal fun IdCardStatsBanner(
     staffCards: Int,
     onBadgeClick: () -> Unit = {},
 ) {
-        val milestoneLabel = when {
+    val milestoneLabel = when {
         totalCards >= 500 -> appString(StringKeys.IDCARD_MILESTONE_MASTER)
         totalCards >= 100 -> appString(StringKeys.IDCARD_MILESTONE_CENTURY)
         totalCards >= 50 -> appString(StringKeys.IDCARD_MILESTONE_HALF)
@@ -179,7 +183,7 @@ internal fun IdCardStatsBanner(
 
 @Composable
 private fun StatRow(label: String, count: Int, color: Color) {
-        Row(
+    Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -197,7 +201,14 @@ private fun StatRow(label: String, count: Int, color: Color) {
 // TEMPLATES TAB — Visual template builder
 // ════════════════════════════════════════════════════════════════════════════
 
-private val AVAILABLE_FIELDS = listOf("name", "role", "class", "school", "photo", "qrOnFront", "emergencyContact", "bloodGroup")
+private val AVAILABLE_FIELDS = listOf(
+    "school", "photo", "qrOnFront",
+    "name", "role", "class",
+    "idNumber", "rollNumber",
+    "dateOfBirth", "bloodGroup",
+    "emergencyContact", "address",
+    "email",
+)
 
 @Composable
 private fun fieldLabel(field: String): String = when (field) {
@@ -209,16 +220,46 @@ private fun fieldLabel(field: String): String = when (field) {
     "qrOnFront" -> appString(StringKeys.IDCARD_FIELD_QR)
     "emergencyContact" -> appString(StringKeys.IDCARD_FIELD_EMERGENCY)
     "bloodGroup" -> appString(StringKeys.IDCARD_FIELD_BLOOD)
+    "idNumber" -> "ID Number"
+    "rollNumber" -> "Roll Number"
+    "dateOfBirth" -> "Date of Birth"
+    "address" -> "Address"
+    "email" -> "Email"
     else -> field
+}
+
+private fun fieldIcon(field: String): ImageVector = when (field) {
+    "school" -> VIcons.School
+    "photo" -> VIcons.Camera
+    "qrOnFront" -> VIcons.CheckCircle
+    "name" -> VIcons.User
+    "role" -> VIcons.Star
+    "class" -> VIcons.BookOpen
+    "idNumber" -> VIcons.IdCard
+    "rollNumber" -> VIcons.ListChecks
+    "dateOfBirth" -> VIcons.Calendar
+    "bloodGroup" -> VIcons.Heart
+    "emergencyContact" -> VIcons.Phone
+    "address" -> VIcons.MapPin
+    "email" -> VIcons.Mail
+    else -> VIcons.User
 }
 
 private val PRESET_COLORS = listOf(
     0xFF6C5CE0.toInt() to "Lavender",
-    0xFF006A60.toInt() to "Teal",
+    0xFF00B4D8.toInt() to "Teal",
     0xFF1A2422.toInt() to "Ink",
     0xFFB3261E.toInt() to "Red",
     0xFF1F7A4D.toInt() to "Green",
-    0xFFB3651A.toInt() to "Amber",
+    0xFFE67E22.toInt() to "Orange",
+    0xFF9B59B6.toInt() to "Rainbow",
+)
+
+private val BACKGROUND_STYLES = listOf(
+    "gradient" to "Gradient",
+    "waves" to "Waves",
+    "minimal" to "Minimal",
+    "pattern" to "Pattern",
 )
 
 @Composable
@@ -228,10 +269,11 @@ internal fun TemplatesTab(
     scrollState: ScrollState = rememberScrollState(),
     branding: SchoolBranding? = null,
 ) {
-        var templateName by remember { mutableStateOf("") }
+    var templateName by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("student") }
-    var selectedFields by remember { mutableStateOf(setOf("name", "role", "class", "school")) }
+    var selectedFields by remember { mutableStateOf(setOf("school", "photo", "qrOnFront", "name", "role", "class")) }
     var accentColorArgb by remember { mutableStateOf(0xFF6C5CE0.toInt()) }
+    var selectedBgStyle by remember { mutableStateOf("gradient") }
 
     Column(
         modifier = Modifier
@@ -294,14 +336,10 @@ internal fun TemplatesTab(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = appString(StringKeys.IDCARD_CREATE_NEW),
-            style = VTypography.label.copy(color = VColors.ink3),
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-
+        // ── CREATE NEW TEMPLATE ──
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+
+            // Template Name
             OutlinedTextField(
                 value = templateName,
                 onValueChange = { templateName = it },
@@ -309,48 +347,72 @@ internal fun TemplatesTab(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Text(appString(StringKeys.IDCARD_CARD_TYPE), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("student" to appString(StringKeys.IDCARD_STUDENT), "teacher" to appString(StringKeys.IDCARD_TEACHER_ROLE), "staff" to appString(StringKeys.IDCARD_STAFF_ROLE)).forEach { (role, label) ->
-                    VTag(
-                        text = label,
-                        active = selectedRole == role,
-                        onClick = { selectedRole = role },
-                        accentActive = true,
+            // ── Card Type ──
+            SectionHeader(
+                title = appString(StringKeys.IDCARD_CARD_TYPE),
+                subtitle = "Select who this template is for",
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                CardTypeChip(
+                    label = appString(StringKeys.IDCARD_STUDENT),
+                    icon = VIcons.User,
+                    iconColor = Color(0xFF4CAF50),
+                    selected = selectedRole == "student",
+                    onClick = { selectedRole = "student" },
+                )
+                CardTypeChip(
+                    label = appString(StringKeys.IDCARD_TEACHER_ROLE),
+                    icon = VIcons.User,
+                    iconColor = Color(0xFFE67E22),
+                    selected = selectedRole == "teacher",
+                    onClick = { selectedRole = "teacher" },
+                )
+                CardTypeChip(
+                    label = appString(StringKeys.IDCARD_STAFF_ROLE),
+                    icon = VIcons.User,
+                    iconColor = Color(0xFFE67E22),
+                    selected = selectedRole == "staff",
+                    onClick = { selectedRole = "staff" },
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ── Fields to Display ──
+            SectionHeader(
+                title = appString(StringKeys.IDCARD_FIELDS_DISPLAY),
+                subtitle = "Choose information to show on the ID card",
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AVAILABLE_FIELDS.forEach { field ->
+                    FieldChip(
+                        label = fieldLabel(field),
+                        icon = fieldIcon(field),
+                        selected = field in selectedFields,
+                        onClick = {
+                            selectedFields = if (field in selectedFields) selectedFields - field else selectedFields + field
+                        },
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Text(appString(StringKeys.IDCARD_FIELDS_DISPLAY), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-            Spacer(modifier = Modifier.height(6.dp))
-            AVAILABLE_FIELDS.chunked(3).forEach { rowFields ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    rowFields.forEach { field ->
-                        VTag(
-                            text = fieldLabel(field),
-                            active = field in selectedFields,
-                            onClick = {
-                                selectedFields = if (field in selectedFields) selectedFields - field else selectedFields + field
-                            },
-                            accentActive = true,
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(appString(StringKeys.IDCARD_ACCENT_COLOR), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PRESET_COLORS.forEach { (argb, name) ->
-                    ColorSwatch(
+            // ── Accent Color ──
+            SectionHeader(
+                title = appString(StringKeys.IDCARD_ACCENT_COLOR),
+                subtitle = "Choose your primary color",
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                PRESET_COLORS.forEach { (argb, _) ->
+                    AccentColorSwatch(
                         argb = argb,
-                        label = name,
                         selected = accentColorArgb == argb,
                         onClick = { accentColorArgb = argb },
                     )
@@ -358,7 +420,30 @@ internal fun TemplatesTab(
             }
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(appString(StringKeys.IDCARD_LIVE_PREVIEW), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
+            // ── Background Style ──
+            SectionHeader(
+                title = "Background Style",
+                subtitle = "Choose card background",
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                BACKGROUND_STYLES.forEach { (key, label) ->
+                    BackgroundStyleOption(
+                        label = label,
+                        style = key,
+                        accentArgb = accentColorArgb,
+                        selected = selectedBgStyle == key,
+                        onClick = { selectedBgStyle = key },
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ── Live Preview ──
+            SectionHeader(
+                title = appString(StringKeys.IDCARD_LIVE_PREVIEW),
+                subtitle = "See how your card looks",
+            )
             Spacer(modifier = Modifier.height(8.dp))
             LiveCardPreview(
                 templateName = templateName.ifBlank { appString(StringKeys.IDCARD_PREVIEW) },
@@ -369,6 +454,7 @@ internal fun TemplatesTab(
                 schoolName = branding?.schoolName,
                 brandingPrimaryHex = branding?.primaryColor,
                 brandingAccentHex = branding?.accentColor,
+                bgStyle = selectedBgStyle,
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -391,14 +477,199 @@ internal fun TemplatesTab(
     }
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section header — bold title + subtitle
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun ColorSwatch(
-    argb: Int,
+private fun SectionHeader(title: String, subtitle: String) {
+    Column {
+        Text(
+            text = title,
+            style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+            color = VColors.ink,
+        )
+        Text(
+            text = subtitle,
+            style = VTypography.caption.copy(fontSize = 12.sp),
+            color = VColors.ink3,
+        )
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card Type chip — icon + text, colored border when selected
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CardTypeChip(
     label: String,
+    icon: ImageVector,
+    iconColor: Color,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-        val color = Color(argb)
+    val borderColor = if (selected) Color(0xFF6C5CE0) else VColors.line
+    val bgColor = if (selected) Color(0xFF6C5CE0).copy(alpha = 0.06f) else VColors.surfaceCard
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = label,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+            color = VColors.ink,
+        )
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Field chip — icon + text + checkmark when selected
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun FieldChip(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (selected) Color(0xFF6C5CE0) else VColors.line
+    val bgColor = if (selected) Color(0xFF6C5CE0).copy(alpha = 0.06f) else VColors.surfaceCard
+    val iconTint = if (selected) Color(0xFF6C5CE0) else VColors.ink3
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            text = label,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
+            color = VColors.ink,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF6C5CE0)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(12.dp),
+                )
+            }
+        }
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Accent color swatch — circle with checkmark overlay when selected
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun AccentColorSwatch(
+    argb: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val color = Color(argb)
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(color)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(3.dp, Color(0xFF6C5CE0), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF6C5CE0)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Background style option — thumbnail with label
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun BackgroundStyleOption(
+    label: String,
+    style: String,
+    accentArgb: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val accent = Color(accentArgb)
+    val borderColor = if (selected) Color(0xFF6C5CE0) else VColors.line
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable(
@@ -408,22 +679,100 @@ private fun ColorSwatch(
         ),
     ) {
         Box(
-            Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(color)
-                .then(
-                    if (selected) Modifier.border(3.dp, VColors.ink, CircleShape)
-                    else Modifier.border(1.dp, VColors.line, CircleShape)
-                ),
-        )
+            modifier = Modifier
+                .size(72.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(VColors.surfaceCard)
+                .border(2.dp, borderColor, RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            when (style) {
+                "gradient" -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(accent, accent.copy(alpha = 0.5f), Color.White)
+                                )
+                            ),
+                    )
+                }
+                "waves" -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(VColors.cream),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .offset(y = 16.dp)
+                                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                                .background(accent.copy(alpha = 0.15f)),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(16.dp)
+                                .offset(y = 30.dp)
+                                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                                .background(accent.copy(alpha = 0.08f)),
+                        )
+                    }
+                }
+                "minimal" -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White),
+                    )
+                }
+                "pattern" -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(VColors.cream),
+                    ) {
+                        for (row in 0..3) {
+                            for (col in 0..3) {
+                                Box(
+                                    modifier = Modifier
+                                        .offset(
+                                            x = (12 + col * 16).dp,
+                                            y = (12 + row * 16).dp,
+                                        )
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(accent.copy(alpha = 0.2f)),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
-            style = VTypography.caption.copy(color = if (selected) VColors.ink else VColors.ink3),
-            fontSize = 9.sp,
+            style = VTypography.caption.copy(
+                fontSize = 11.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
+            color = if (selected) Color(0xFF6C5CE0) else VColors.ink3,
         )
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Live Preview — real-time card preview
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun LiveCardPreview(
@@ -435,6 +784,7 @@ private fun LiveCardPreview(
     schoolName: String? = null,
     brandingPrimaryHex: String? = null,
     brandingAccentHex: String? = null,
+    bgStyle: String = "gradient",
 ) {
     val brandPrimary = brandingPrimaryHex?.let { BrandingColorMapper.parseHex(it) }
     val brandAccent = brandingAccentHex?.let { BrandingColorMapper.parseHex(it) }
@@ -444,7 +794,7 @@ private fun LiveCardPreview(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 8.dp)
             .aspectRatio(54f / 86f)
             .clip(RoundedCornerShape(16.dp))
             .background(VColors.surfaceCard)
@@ -453,21 +803,22 @@ private fun LiveCardPreview(
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            // Header band — real logo + school name when the school field is selected.
+            // Header band
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
-                    .background(accent),
-                contentAlignment = Alignment.CenterStart,
+                    .weight(0.30f)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(accent, accent.copy(alpha = 0.7f))
+                        )
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
                 if ("school" in fields) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         if (!logoUrl.isNullOrBlank()) {
                             AsyncImage(
@@ -475,107 +826,166 @@ private fun LiveCardPreview(
                                 contentDescription = displaySchoolName,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(Color.White),
                             )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(VIcons.School, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
                         }
                         Text(
                             text = displaySchoolName,
-                            style = VTypography.caption.copy(color = Color.White).copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.weight(1f),
+                            style = VTypography.caption.copy(color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "Excellence in Education",
+                            style = VTypography.caption.copy(color = Color.White.copy(alpha = 0.8f), fontSize = 7.sp),
+                        )
+                    }
+                }
+            }
+
+            // Body — photo overlapping header, then details
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.62f),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .padding(top = 28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    // Photo — overlapping the header
+                    if ("photo" in fields) {
+                        Box(
+                            Modifier
+                                .offset(y = (-20).dp)
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(accent.copy(alpha = 0.15f))
+                                .border(2.5.dp, accent.copy(alpha = 0.3f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.Person, contentDescription = null, tint = accent, modifier = Modifier.size(30.dp))
+                        }
+                    }
+
+                    // Name
+                    if ("name" in fields) {
+                        Text(
+                            text = templateName,
+                            style = VTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp, color = VColors.ink),
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         )
                     }
-                } else {
-                    Text(
-                        text = appString(StringKeys.IDCARD_ID_CARD),
-                        style = VTypography.caption.copy(color = Color.White),
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                    )
-                }
-            }
 
-            // Body
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                // Left: photo + QR
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if ("photo" in fields) {
+                    // Role badge
+                    if ("role" in fields) {
                         Box(
-                            Modifier
-                                .size(56.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(accent.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(accent.copy(alpha = 0.12f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
                         ) {
-                            Icon(Icons.Filled.Person, contentDescription = null, tint = accent, modifier = Modifier.size(32.dp))
+                            Text(
+                                text = roleType.replaceFirstChar { it.uppercase() },
+                                style = VTypography.caption.copy(color = accent, fontWeight = FontWeight.Bold, fontSize = 9.sp),
+                            )
                         }
                     }
-                    if ("qrOnFront" in fields) {
-                        QrGridPreview(
-                            size = 52.dp,
-                            color = VColors.ink,
-                        )
-                    }
-                }
 
-                // Right: text fields
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if ("name" in fields) {
-                        Text(
-                            text = templateName,
-                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink),
-                            maxLines = 2,
-                        )
-                    }
-                    if ("role" in fields) {
-                        Text(
-                            text = roleType.replaceFirstChar { it.uppercase() },
-                            style = VTypography.caption.copy(color = accent).copy(fontWeight = FontWeight.Bold),
-                        )
-                    }
+                    // Class
                     if ("class" in fields) {
-                        Text("Class 10-A", style = VTypography.caption.copy(color = VColors.ink2))
+                        Text("Class 10-A", style = VTypography.caption.copy(color = VColors.ink2, fontSize = 9.sp))
                     }
-                    if ("bloodGroup" in fields) {
-                        Text("Blood: B+", style = VTypography.caption.copy(color = VColors.ink2))
-                    }
-                    if ("emergencyContact" in fields) {
-                        Text("Emergency: +91 98765 43210", style = VTypography.caption.copy(color = VColors.ink2), maxLines = 2)
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Details + QR row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            if ("idNumber" in fields) {
+                                DetailRow(label = "ID No.", value = "VP20261001")
+                            }
+                            if ("rollNumber" in fields) {
+                                DetailRow(label = "Roll No.", value = "23")
+                            }
+                            if ("bloodGroup" in fields) {
+                                DetailRow(label = "Blood Group", value = "B+")
+                            }
+                            if ("emergencyContact" in fields) {
+                                DetailRow(label = "Emergency", value = "9876543210")
+                            }
+                            if ("address" in fields) {
+                                DetailRow(label = "Address", value = "Delhi, India")
+                            }
+                            if ("email" in fields) {
+                                DetailRow(label = "Email", value = "aarav@school.in")
+                            }
+                        }
+                        if ("qrOnFront" in fields) {
+                            QrGridPreview(
+                                size = 48.dp,
+                                color = VColors.ink,
+                            )
+                        }
                     }
                 }
             }
+        }
 
-            // Footer band
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp)
-                    .background(accent),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Text(
-                    text = appString(StringKeys.IDCARD_SCAN_QR),
-                    style = VTypography.caption.copy(color = Color.White).copy(fontSize = 8.sp),
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-            }
+        // Footer band — absolute overlay at bottom
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .align(Alignment.BottomCenter)
+                .background(accent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = appString(StringKeys.IDCARD_SCAN_QR),
+                style = VTypography.caption.copy(color = Color.White, fontSize = 7.sp),
+            )
         }
     }
 }
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = "$label:",
+            style = VTypography.caption.copy(color = VColors.ink3, fontSize = 7.sp),
+        )
+        Text(
+            text = value,
+            style = VTypography.caption.copy(color = VColors.ink, fontWeight = FontWeight.SemiBold, fontSize = 7.sp),
+        )
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QR grid preview
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun QrGridPreview(
@@ -591,13 +1001,13 @@ private fun QrGridPreview(
             .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
     ) {
         val pattern = listOf(
-            listOf(1,1,1,0,1,0,1),
-            listOf(1,0,1,1,0,1,1),
-            listOf(1,1,1,0,1,1,0),
-            listOf(0,1,0,1,0,0,1),
-            listOf(1,0,1,1,1,1,0),
-            listOf(1,1,0,0,1,0,1),
-            listOf(0,1,1,1,0,1,1),
+            listOf(1, 1, 1, 0, 1, 0, 1),
+            listOf(1, 0, 1, 1, 0, 1, 1),
+            listOf(1, 1, 1, 0, 1, 1, 0),
+            listOf(0, 1, 0, 1, 0, 0, 1),
+            listOf(1, 0, 1, 1, 1, 1, 0),
+            listOf(1, 1, 0, 0, 1, 0, 1),
+            listOf(0, 1, 1, 1, 0, 1, 1),
         )
         pattern.forEachIndexed { row, cols ->
             cols.forEachIndexed { col, cell ->
@@ -611,7 +1021,6 @@ private fun QrGridPreview(
                 }
             }
         }
-        // Finder squares (3 corner markers with white center)
         val corners = listOf(0 to 0, 4 to 0, 0 to 4)
         corners.forEach { (col, row) ->
             Box(
@@ -643,7 +1052,7 @@ private fun TemplateCard(
     onDeactivate: () -> Unit,
     enabled: Boolean = true,
 ) {
-        VCard(
+    VCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),

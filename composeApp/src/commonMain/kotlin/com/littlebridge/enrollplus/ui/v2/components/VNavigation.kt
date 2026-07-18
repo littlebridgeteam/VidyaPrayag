@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.ui.v2.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -970,16 +971,7 @@ private fun RoutePinButton(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VCreamBottomNav — premium floating dock navigation (v2, +10% size)
-//
-// Design DNA:
-//   • VColors.surfaceCard bar (pure white) — floats above cream background
-//   • 1dp VColors.line border, 24dp rounded corners
-//   • Active: icon in a filled violet circle (36dp) + violet label
-//   • Inactive: plain icon in ink3 + ink3 label
-//   • Badge: coral dot on top-right of icon (no text, just a dot)
-//   • Clean tween animations, no springs
-//   • 62dp height — 10% larger, premium
+// VCreamBottomNav — premium floating navigation with a sliding violet pill
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -989,95 +981,141 @@ fun VCreamBottomNav(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
+    val itemXs = remember { mutableStateMapOf<String, Dp>() }
+    val itemWidths = remember { mutableStateMapOf<String, Dp>() }
+    val motion = tween<Dp>(
+        durationMillis = 400,
+        easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f),
+    )
+    val pillX by animateDpAsState(
+        targetValue = itemXs[selected] ?: 0.dp,
+        animationSpec = motion,
+        label = "premiumNavPillX",
+    )
+    val pillWidth by animateDpAsState(
+        targetValue = itemWidths[selected] ?: 0.dp,
+        animationSpec = motion,
+        label = "premiumNavPillWidth",
+    )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 11.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .height(62.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, RoundedCornerShape(24.dp))
+                .height(60.dp)
+                .shadow(12.dp, RoundedCornerShape(32.dp), clip = false)
+                .clip(RoundedCornerShape(32.dp))
+                .background(Color.White.copy(alpha = 0.988f))
+                .border(1.dp, Color(0x0F26234D), RoundedCornerShape(32.dp))
                 .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center,
         ) {
+            if (pillWidth > 0.dp) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(x = pillX)
+                        .width(pillWidth)
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF6C5CE5), Color(0xFF544AB8)),
+                            ),
+                        ),
+                )
+            }
+
             Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 items.forEach { item ->
                     val active = item.id == selected
-                    val iconTint = if (active) VColors.violet else VColors.ink3
-                    val labelColor = if (active) VColors.violet else VColors.ink3
+                    val itemWidth by animateDpAsState(
+                        targetValue = if (active) 96.dp else 56.dp,
+                        animationSpec = motion,
+                        label = "premiumNavItemWidth_${item.id}",
+                    )
+                    val tint by animateColorAsState(
+                        targetValue = if (active) Color.White else Color(0xFF6D7A77),
+                        animationSpec = tween(220),
+                        label = "premiumNavTint_${item.id}",
+                    )
                     val interaction = remember { MutableInteractionSource() }
 
-                    Column(
+                    Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(18.dp))
+                            .width(itemWidth)
+                            .height(46.dp)
+                            .onGloballyPositioned { coordinates ->
+                                itemXs[item.id] = with(density) {
+                                    coordinates.boundsInParent().left.toDp()
+                                }
+                                itemWidths[item.id] = with(density) {
+                                    coordinates.size.width.toDp()
+                                }
+                            }
+                            .clip(RoundedCornerShape(999.dp))
                             .clickable(interactionSource = interaction, indication = null) {
                                 if (!active) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 }
                                 onSelect(item.id)
                             },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(contentAlignment = Alignment.TopEnd) {
-                            if (active) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(VColors.violetSoft),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.label,
-                                        tint = iconTint,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Box(contentAlignment = Alignment.TopEnd) {
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = item.label,
-                                    tint = iconTint,
+                                    tint = tint,
                                     modifier = Modifier.size(22.dp),
                                 )
+                                if (item.badge > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(x = 7.dp, y = (-5).dp)
+                                            .size(8.dp)
+                                            .clip(CircleShape)
+                                            .background(VColors.coral)
+                                            .border(1.5.dp, Color.White, CircleShape),
+                                    )
+                                }
                             }
-                            if (item.badge > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .offset(x = 7.dp, y = (-2).dp)
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(VColors.coral)
-                                        .border(1.5.dp, VColors.surfaceCard, CircleShape),
-                                )
+                            AnimatedVisibility(
+                                visible = active,
+                                enter = fadeIn(tween(180, delayMillis = 100)),
+                                exit = fadeOut(tween(100)),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Spacer(Modifier.width(7.dp))
+                                    Text(
+                                        text = item.label,
+                                        style = VTypography.caption.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            letterSpacing = TextUnit.Unspecified,
+                                        ),
+                                        color = Color.White,
+                                        maxLines = 1,
+                                    )
+                                }
                             }
                         }
-
-                        Spacer(Modifier.height(4.dp))
-
-                        Text(
-                            text = item.label,
-                            style = VTypography.caption.copy(
-                                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                            ),
-                            color = labelColor,
-                        )
                     }
                 }
             }
