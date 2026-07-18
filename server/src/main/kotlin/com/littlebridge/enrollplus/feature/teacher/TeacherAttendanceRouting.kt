@@ -258,7 +258,7 @@ fun Route.teacherAttendanceRouting() {
                             rollNo = s.rollNumber?.toString() ?: "",
                             status = savedStatus ?: if (isLeaveDefault) "leave" else "present",
                             source = savedSource ?: if (isLeaveDefault) SOURCE_LEAVE_AUTO else null,
-                            enrollmentId = s.enrollmentId.toString(),
+                            enrollmentId = s.enrollmentId?.toString(),
                         )
                     }
                     val leaveDefaults = roster
@@ -367,7 +367,9 @@ fun Route.teacherAttendanceRouting() {
                                 it[AttendanceRecordsTable.attSource] = SOURCE_MANUAL
                                 it[AttendanceRecordsTable.markedBy] = ctx.userId
                                 it[AttendanceRecordsTable.markedAt] = now
-                                it[AttendanceRecordsTable.enrollmentId] = enrolled.enrollmentId
+                                if (enrolled.enrollmentId != null) {
+                                    it[AttendanceRecordsTable.enrollmentId] = enrolled.enrollmentId
+                                }
                             }
                         } else {
                             AttendanceRecordsTable.insert {
@@ -376,7 +378,9 @@ fun Route.teacherAttendanceRouting() {
                                 it[AttendanceRecordsTable.date] = date
                                 it[type] = "student"
                                 it[studentId] = sid
-                                it[enrollmentId] = enrolled.enrollmentId
+                                if (enrolled.enrollmentId != null) {
+                                    it[enrollmentId] = enrolled.enrollmentId
+                                }
                                 it[assignmentId] = assignment.assignmentId
                                 it[AttendanceRecordsTable.status] = status
                                 it[attSource] = SOURCE_MANUAL

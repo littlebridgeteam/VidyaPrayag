@@ -39,6 +39,7 @@ import com.littlebridge.enrollplus.db.AssessmentMarksTable
 import com.littlebridge.enrollplus.db.AssessmentsTable
 import com.littlebridge.enrollplus.db.AttendanceRecordsTable
 import com.littlebridge.enrollplus.db.ChildrenTable
+import com.littlebridge.enrollplus.db.EnrollmentsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.ExamResultsTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
@@ -904,6 +905,33 @@ fun Route.schoolStudentsRouting() {
                         it[createdAt] = Instant.now()
                     } get StudentsTable.id
 
+                    // ── Enrollment creation ─────────────────────────────────────
+                    // Create an active enrollment row so enrollmentsFor() finds this
+                    // student with a REAL enrollment_id. Without this, the fallback
+                    // roster sets enrollmentId = null, and attendance inserts can't
+                    // link to a valid enrollment row.
+                    val classId = SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.schoolId eq ctx.schoolId }
+                        .firstOrNull {
+                            ClassNaming.classKey(it[SchoolClassesTable.name]) == ClassNaming.classKey(resolvedClass)
+                        }?.get(SchoolClassesTable.id)?.value
+
+                    if (classId != null) {
+                        val rollInt = req.rollNumber.trim().toIntOrNull()
+                        EnrollmentsTable.insert {
+                            it[EnrollmentsTable.schoolId] = ctx.schoolId
+                            it[EnrollmentsTable.studentId] = newId
+                            it[EnrollmentsTable.classId] = classId
+                            it[EnrollmentsTable.section] = resolvedSection
+                            if (rollInt != null) it[EnrollmentsTable.rollNumber] = rollInt
+                            it[status] = "active"
+                            it[EnrollmentsTable.startDate] = req.admissionDate?.let { d ->
+                                runCatching { LocalDate.parse(d) }.getOrNull()
+                            } ?: LocalDate.now()
+                            it[EnrollmentsTable.createdAt] = Instant.now()
+                        }
+                    }
+
                     // RA-SP: student joined a class → recompute the live student
                     // counts for every teacher assigned to that class+section, so
                     // teacher workload/metrics never go stale. No manual updates.
@@ -973,6 +1001,48 @@ fun Route.schoolStudentsRouting() {
                     val moved = !oldClass.equals(newClass, ignoreCase = true) ||
                         !oldSection.equals(newSection, ignoreCase = true)
                     if (moved) {
+                        // ── Enrollment sync ──────────────────────────────────────
+                        // When a student moves class/section, EnrollmentsTable must
+                        // be updated so enrollmentsFor() finds the student in the
+                        // NEW class with a REAL enrollment_id. Without this, the
+                        // fallback roster uses the student's UUID as a fake
+                        // enrollment_id, causing fk_att_enrollment violations on
+                        // attendance insert.
+                        //
+                        // Pattern (mirrors StudentTransferService.approveTransfer):
+                        //   1. Resolve the new classId from SchoolClassesTable.
+                        //   2. Mark the student's current active enrollment(s) as
+                        //      "transferred" with endDate = today (preserves
+                        //      historical data and keeps old attendance FK refs valid).
+                        //   3. Insert a new "active" enrollment for the new class+section.
+                        val newClassId = SchoolClassesTable.selectAll()
+                            .where { SchoolClassesTable.schoolId eq ctx.schoolId }
+                            .firstOrNull {
+                                ClassNaming.classKey(it[SchoolClassesTable.name]) == ClassNaming.classKey(newClass)
+                            }?.get(SchoolClassesTable.id)?.value
+
+                        if (newClassId != null) {
+                            EnrollmentsTable.update({
+                                (EnrollmentsTable.studentId eq id) and
+                                    (EnrollmentsTable.status eq "active")
+                            }) {
+                                it[status] = "transferred"
+                                it[endDate] = LocalDate.now()
+                            }
+
+                            val rollInt = newRoll?.toIntOrNull()
+                            EnrollmentsTable.insert {
+                                it[EnrollmentsTable.schoolId] = ctx.schoolId
+                                it[EnrollmentsTable.studentId] = id
+                                it[EnrollmentsTable.classId] = newClassId
+                                it[EnrollmentsTable.section] = newSection
+                                if (rollInt != null) it[EnrollmentsTable.rollNumber] = rollInt
+                                it[status] = "active"
+                                it[EnrollmentsTable.startDate] = LocalDate.now()
+                                it[EnrollmentsTable.createdAt] = Instant.now()
+                            }
+                        }
+
                         StudentAggregationService.recalcTeacherStudentCountsForMove(
                             ctx.schoolId, oldClass, oldSection, newClass, newSection
                         )
@@ -1026,6 +1096,14 @@ fun Route.schoolStudentsRouting() {
                             )
                         }.toSet()
 
+                    // Pre-build a classKey → classId map so we can create enrollment
+                    // rows without re-querying SchoolClassesTable per student.
+                    val classIdByKey = SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.schoolId eq ctx.schoolId }
+                        .associate { row ->
+                            ClassNaming.classKey(row[SchoolClassesTable.name]) to row[SchoolClassesTable.id].value
+                        }
+
                     rows.forEachIndexed { index, r ->
                         val rowNo = index + 1
                         if (r.fullName.isBlank() || r.className.isBlank() || r.rollNumber.isBlank()) {
@@ -1062,7 +1140,7 @@ fun Route.schoolStudentsRouting() {
                         // (bulk import stays lenient — phone is optional here).
                         val canonPhone = r.parentPhone?.takeIf { PhoneNormalizer.isValid(it) }
                             ?.let { PhoneNormalizer.canonical(it) }
-                        StudentsTable.insert {
+                        val newId = StudentsTable.insert {
                             it[schoolId] = ctx.schoolId
                             it[studentCode] = code
                             it[fullName] = r.fullName.trim()
@@ -1072,6 +1150,23 @@ fun Route.schoolStudentsRouting() {
                             it[parentPhone] = canonPhone
                             it[isActive] = true
                             it[createdAt] = Instant.now()
+                        } get StudentsTable.id
+
+                        // Create active enrollment so enrollmentsFor() finds this
+                        // student with a real enrollment_id.
+                        val resolvedClassId = classIdByKey[ClassNaming.classKey(resolvedClass)]
+                        if (resolvedClassId != null) {
+                            val rollInt = r.rollNumber.trim().toIntOrNull()
+                            EnrollmentsTable.insert {
+                                it[EnrollmentsTable.schoolId] = ctx.schoolId
+                                it[EnrollmentsTable.studentId] = newId
+                                it[EnrollmentsTable.classId] = resolvedClassId
+                                it[EnrollmentsTable.section] = resolvedSection
+                                if (rollInt != null) it[EnrollmentsTable.rollNumber] = rollInt
+                                it[status] = "active"
+                                it[EnrollmentsTable.startDate] = LocalDate.now()
+                                it[EnrollmentsTable.createdAt] = Instant.now()
+                            }
                         }
                         touchedClasses += resolvedClass to resolvedSection
                         inserted++
