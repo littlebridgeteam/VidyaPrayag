@@ -1,6 +1,7 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,26 +10,28 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,23 +41,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosState
 import com.littlebridge.enrollplus.feature.admin.presentation.BrandingPhotosViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileState
 import com.littlebridge.enrollplus.feature.admin.presentation.InstitutionalProfileViewModel
-import coil3.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
@@ -75,50 +72,26 @@ import com.littlebridge.enrollplus.util.AnalyticsTracker
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonList
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VMotion
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * SchoolSettingsScreenV2 — `Admin.tsx → SettingsScreen`, wired to the real
- * [InstitutionalProfileViewModel] (`UserProfileApi` → `GET /api/v1/user/profile`).
- *
- * The institutional-profile health card (completion %, storage usage, public/private
- * visibility) is rendered from live VM state. The remaining static admin settings rows
- * (academic year, fee structure, notifications, data export) have no dedicated backend
- * endpoint of their own yet, so they keep their descriptive copy and are clearly marked
- * "Coming Soon" rather than fabricating data (LAW 6). No MockV2 in production; the three
- * UI states come from [VStateHost].
- */
 @Composable
 fun SchoolSettingsScreenV2(
     onLogout: () -> Unit = {},
     onOpenTeachers: () -> Unit = {},
-    // RA-47 — open the editable institutional-profile (schools row) screen.
     onOpenProfile: () -> Unit = {},
-    // VP-CAL — open the real Academic Year management screen.
     onOpenAcademicYear: () -> Unit = {},
-    // Transport Management — routes, vehicles, student assignments.
     onOpenTransport: () -> Unit = {},
-    // Scholarship Management — schemes, applications & renewals.
     onOpenScholarships: () -> Unit = {},
-    // School Branding Kit — colors, logo, subdomain.
     onOpenBranding: () -> Unit = {},
-    // ID Card Generation — templates, card generation, PDF export.
     onOpenIdCards: () -> Unit = {},
-    // Library Management — catalog, issues, returns, fines.
     onOpenLibrary: () -> Unit = {},
-    // Classes & Subjects — consolidated management (classes, subjects, bell schedule, timetable).
     onOpenClassesSubjects: () -> Unit = {},
-    // Gamification Management — feature flags, badges, rewards, leaderboard, redemptions, boosts.
     onOpenGamification: () -> Unit = {},
-    // Fee & Salary Management — fee structures, payment tracking, reminder config, salary records.
     onOpenFeeSalary: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: InstitutionalProfileViewModel = koinViewModel(),
@@ -137,6 +110,7 @@ fun SchoolSettingsScreenV2(
         themeMode = themeMode,
         customThemeId = customThemeId,
         currentLocale = currentLocale,
+        brandingState = brandingState,
         onLanguageSelect = { lang -> localeManager.setLocale(lang) },
         onThemeSelect = { mode, customId ->
             AnalyticsTracker.event("vp_admin_theme_change", mapOf("theme" to mode))
@@ -146,7 +120,6 @@ fun SchoolSettingsScreenV2(
             }
         },
         onLogout = onLogout,
-        onOpenTeachers = onOpenTeachers,
         onOpenProfile = onOpenProfile,
         onOpenAcademicYear = onOpenAcademicYear,
         onOpenTransport = onOpenTransport,
@@ -158,11 +131,13 @@ fun SchoolSettingsScreenV2(
         onOpenGamification = onOpenGamification,
         onOpenFeeSalary = onOpenFeeSalary,
         onRetry = viewModel::load,
-        modifier = modifier.statusBarsPadding()
-            .imePadding(),
-        brandingState = brandingState,
+        modifier = modifier.statusBarsPadding().imePadding(),
     )
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Telegram-style settings content — collapsing header + sticky toolbar
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SchoolSettingsContent(
@@ -171,10 +146,18 @@ private fun SchoolSettingsContent(
     themeMode: String,
     customThemeId: String?,
     currentLocale: String,
+    brandingSummaryText: String = run {
+        val items = listOfNotNull(
+            "Logo".takeIf { brandingState.schoolLogoUrl.isNotBlank() },
+            "Cover".takeIf { brandingState.coverImageUrl.isNotBlank() },
+            "Photo".takeIf { brandingState.adminProfilePicUrl.isNotBlank() },
+            "Gallery (${brandingState.galleryPhotos.size})".takeIf { brandingState.galleryPhotos.isNotEmpty() },
+        )
+        items.joinToString(" \u00B7 ").ifBlank { "Logo, cover, gallery & profile picture" }
+    },
     onLanguageSelect: (String) -> Unit,
     onThemeSelect: (String, String?) -> Unit,
     onLogout: () -> Unit,
-    onOpenTeachers: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenAcademicYear: () -> Unit,
     onOpenTransport: () -> Unit,
@@ -192,18 +175,6 @@ private fun SchoolSettingsContent(
     var showLogoutConfirm by remember { mutableStateOf(false) }
     var showLanguageSheet by remember { mutableStateOf(false) }
     var showAppearanceSheet by remember { mutableStateOf(false) }
-
-    // Stagger entrance
-    val headerAlpha = remember { Animatable(0f) }
-    val headerOffset = remember { Animatable(20f) }
-    LaunchedEffect(Unit) {
-        headerAlpha.snapTo(0f); headerOffset.snapTo(20f)
-        launch {
-            delay(100)
-            headerAlpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease))
-            headerOffset.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease))
-        }
-    }
 
     VConfirmDialog(
         visible = showLogoutConfirm,
@@ -228,157 +199,170 @@ private fun SchoolSettingsContent(
         onRefresh = { isRefreshing = true; onRetry() },
         modifier = modifier.fillMaxSize(),
     ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .imePadding()
-                .navigationBarsPadding()
-                .padding(top = 16.dp, bottom = 140.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-        // Premium header
-        Column(
-            modifier = Modifier
-                .graphicsLayer(translationY = headerOffset.value)
-                .alpha(headerAlpha.value),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-            ) {
-                Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
-                Text(appString(StringKeys.SETTINGS_TITLE), style = VTypography.accentLabel, color = VColors.violet)
+        val listState = rememberLazyListState()
+
+        val collapsedFraction by remember {
+            derivedStateOf {
+                val firstItem = listState.layoutInfo.visibleItemsInfo.firstOrNull()
+                if (firstItem != null && firstItem.index == 0) {
+                    val scrolled = (-firstItem.offset).toFloat() / firstItem.size.toFloat()
+                    scrolled.coerceIn(0f, 1f)
+                } else {
+                    1f
+                }
             }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
-                        append("Settings")
-                    }
-                    withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
-                        append(" & Setup")
-                    }
-                },
-                style = VTypography.h2,
-            )
         }
+        val showToolbar by remember {
+            derivedStateOf {
+                collapsedFraction > 0.85f
+            }
+        }
+        val toolbarAlpha by animateFloatAsState(
+            targetValue = if (showToolbar) 1f else 0f,
+            animationSpec = tween(150),
+        )
 
-        VStateHost(
-            loading = state.isLoading,
-            error = state.errorMessage,
-            isEmpty = false,
-            onRetry = onRetry,
-            skeleton = { SkeletonList(rows = 6) },
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            BrandingSummaryCard(state = brandingState, onClick = onOpenBranding)
-            InstitutionalProfileHealthCard(state = state, brandingState = brandingState, onClick = onOpenProfile)
-
-            val rows = listOf(
-                SettingRow(VIcons.Calendar, "Academic year", "Manage term dates & holidays", false, onClick = onOpenAcademicYear),
-                SettingRow(VIcons.BookOpen, "Classes & subjects", "Classes, subjects, bell schedule & timetable", false, onClick = onOpenClassesSubjects),
-                SettingRow(VIcons.MapPin, "Transport Management", "Routes, vehicles & student assignments", false, onClick = onOpenTransport),
-                SettingRow(VIcons.Sparkles, "Scholarship Management", "Schemes, applications & renewals", false, onClick = onOpenScholarships),
-                SettingRow(VIcons.School, "Branding & Photos", "Logo, cover, gallery & your profile picture", false, onClick = onOpenBranding),
-                SettingRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", false, onClick = onOpenIdCards),
-                SettingRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", false, onClick = onOpenLibrary),
-                SettingRow(VIcons.Sparkles, "Gamification", "Feature flags, badges, rewards, boosts & analytics", false, onClick = onOpenGamification),
-                SettingRow(VIcons.Wallet, "Fee & Salary", "Fee structures, payment tracking, reminders & salary", false, onClick = onOpenFeeSalary),
-                SettingRow(VIcons.Bell, "Notifications", "Channels & quiet hours", true),
-                SettingRow(VIcons.Download, "Data export", "CSV / PDF / UDISE", true),
-                SettingRow(
-                    VIcons.Chat,
-                    "Help & support",
-                    "Email support@vidyaprayag.in",
-                    false,
-                    onClick = {
-                        runCatching {
-                            uriHandler.openUri(
-                                "mailto:support@vidyaprayag.in" +
-                                    "?subject=VidyaSetu%20Support",
-                            )
-                        }
-                    },
-                ),
-                SettingRow(VIcons.Settings, appString(StringKeys.AUTH_LOGOUT), "Sign out of the admin console", false, onClick = { showLogoutConfirm = true }),
-            )
-            rows.forEachIndexed { idx, row ->
-                SettingsCreamCard(
-                    onClick = if (row.isComingSoon) null else row.onClick,
-                    modifier = Modifier.staggeredItemEntrance(idx, true),
+        Box(Modifier.fillMaxSize()) {
+            VStateHost(
+                loading = state.isLoading,
+                error = state.errorMessage,
+                isEmpty = false,
+                onRetry = onRetry,
+                skeleton = { SkeletonList(rows = 6) },
+            ) {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(bottom = 100.dp),
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VColors.violetSoft),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(row.icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-                            }
-                            Column(Modifier.weight(1f).fillMaxWidth()) {
-                                Text(
-                                    row.title,
-                                    style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                                    color = VColors.ink,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    row.sub,
-                                    style = VTypography.caption.copy(fontSize = 11.sp),
-                                    color = VColors.ink3,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                            if (row.isComingSoon) {
-                                Text(
-                                    text = "Coming soon",
-                                    style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-                                    color = VColors.ink3,
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(50))
-                                        .background(VColors.creamDeep)
-                                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                                )
-                            } else {
-                                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
-                            }
-                        }
+                    // ── Profile header (collapses on scroll) ──
+                    item(key = "profile") {
+                        ProfileHeader(
+                            state = state,
+                            brandingState = brandingState,
+                            collapseFraction = collapsedFraction,
+                            onClick = onOpenProfile,
+                        )
                     }
+
+                    // ── ACCOUNT ──
+                    item(key = "sec_account") { SettingsSectionHeader("ACCOUNT") }
+                    item(key = "row_edit_profile") {
+                        TelegramRow(VIcons.User, "Edit Profile", "School details, contact & address", onClick = onOpenProfile)
+                    }
+                    item(key = "row_branding") {
+                        TelegramRow(VIcons.School, "Branding & Photos", brandingSummaryText, onClick = onOpenBranding)
+                    }
+
+                    // ── SCHOOL MANAGEMENT ──
+                    item(key = "sec_school") { SettingsSectionHeader("SCHOOL MANAGEMENT") }
+                    item(key = "row_academic") {
+                        TelegramRow(VIcons.Calendar, "Academic Year", "Manage term dates & holidays", onClick = onOpenAcademicYear)
+                    }
+                    item(key = "row_classes") {
+                        TelegramRow(VIcons.BookOpen, "Classes & Subjects", "Classes, subjects, bell schedule & timetable", onClick = onOpenClassesSubjects)
+                    }
+                    item(key = "row_transport") {
+                        TelegramRow(VIcons.MapPin, "Transport Management", "Routes, vehicles & student assignments", onClick = onOpenTransport)
+                    }
+                    item(key = "row_scholarships") {
+                        TelegramRow(VIcons.Sparkles, "Scholarship Management", "Schemes, applications & renewals", onClick = onOpenScholarships)
+                    }
+
+                    // ── TOOLS ──
+                    item(key = "sec_tools") { SettingsSectionHeader("TOOLS") }
+                    item(key = "row_idcards") {
+                        TelegramRow(VIcons.IdCard, "ID Cards", "Templates, generation & PDF export", onClick = onOpenIdCards)
+                    }
+                    item(key = "row_library") {
+                        TelegramRow(VIcons.BookOpen, "Library Management", "Catalog, issues, returns & fines", onClick = onOpenLibrary)
+                    }
+                    item(key = "row_gamification") {
+                        TelegramRow(VIcons.Sparkles, "Gamification", "Badges, rewards, boosts & analytics", onClick = onOpenGamification)
+                    }
+                    item(key = "row_fee") {
+                        TelegramRow(VIcons.Wallet, "Fee & Salary", "Fee structures, payment tracking & salary", onClick = onOpenFeeSalary)
+                    }
+
+                    // ── PREFERENCES ──
+                    item(key = "sec_prefs") { SettingsSectionHeader("PREFERENCES") }
+                    item(key = "row_language") {
+                        val selected = SUPPORTED_LANGUAGES.find { it.code == currentLocale } ?: SUPPORTED_LANGUAGES.first()
+                        TelegramRow(
+                            VIcons.Chat,
+                            appString(StringKeys.SETTINGS_LANGUAGE),
+                            "${selected.nativeName} \u00B7 ${selected.englishName}",
+                            onClick = { showLanguageSheet = true },
+                        )
+                    }
+                    item(key = "row_appearance") {
+                        val label = when (themeMode) {
+                            "system" -> "System"
+                            "light" -> "Light"
+                            "dark" -> "Dark"
+                            "custom" -> VThemeRegistry.allThemes.find { it.id == customThemeId }?.displayName ?: "Custom"
+                            else -> "System"
+                        }
+                        TelegramRow(
+                            VIcons.Settings,
+                            appString(StringKeys.SETTINGS_THEME),
+                            label,
+                            onClick = { showAppearanceSheet = true },
+                        )
+                    }
+                    item(key = "row_notifications") {
+                        TelegramRow(VIcons.Bell, "Notifications", "Channels & quiet hours", isComingSoon = true)
+                    }
+                    item(key = "row_export") {
+                        TelegramRow(VIcons.Download, "Data Export", "CSV / PDF / UDISE", isComingSoon = true)
+                    }
+
+                    // ── SUPPORT ──
+                    item(key = "sec_support") { SettingsSectionHeader("SUPPORT") }
+                    item(key = "row_help") {
+                        TelegramRow(
+                            VIcons.Chat,
+                            "Help & Support",
+                            "Email support@vidyaprayag.in",
+                            onClick = {
+                                runCatching {
+                                    uriHandler.openUri("mailto:support@vidyaprayag.in?subject=VidyaSetu%20Support")
+                                }
+                            },
+                        )
+                    }
+
+                    // ── Logout ──
+                    item(key = "spacer_logout") { Spacer(Modifier.height(8.dp)) }
+                    item(key = "row_logout") {
+                        LogoutRow(onClick = { showLogoutConfirm = true })
+                    }
+                }
             }
 
-            // Language card — opens bottom sheet
-            LanguageSettingCard(
-                currentLocale = currentLocale,
-                onClick = { showLanguageSheet = true },
-            )
-
-            // Appearance card — opens bottom sheet
-            AppearanceSettingCard(
-                currentMode = themeMode,
-                currentCustomId = customThemeId,
-                onClick = { showAppearanceSheet = true },
-            )
+            // ── Sticky toolbar (fades in when header is collapsed) ──
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(toolbarAlpha)
+                    .background(VColors.surfaceCard.copy(alpha = toolbarAlpha.coerceAtLeast(0.9f)))
+                    .statusBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
+                    .align(Alignment.TopCenter),
+            ) {
+                Text(
+                    text = appString(StringKeys.SETTINGS_TITLE),
+                    style = VTypography.h3.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink,
+                )
             }
         }
     }
 
+    // ── Bottom sheets ──
     if (showLanguageSheet) {
-        VBottomSheet(
-            visible = showLanguageSheet,
-            onDismiss = { showLanguageSheet = false },
-        ) {
-            VBottomSheetHeader(
-                title = appString(StringKeys.SETTINGS_LANGUAGE),
-                onClose = { showLanguageSheet = false },
-            )
+        VBottomSheet(visible = showLanguageSheet, onDismiss = { showLanguageSheet = false }) {
+            VBottomSheetHeader(title = appString(StringKeys.SETTINGS_LANGUAGE), onClose = { showLanguageSheet = false })
             Spacer(Modifier.height(16.dp))
             VLanguagePicker(
                 currentLang = currentLocale,
@@ -391,14 +375,8 @@ private fun SchoolSettingsContent(
     }
 
     if (showAppearanceSheet) {
-        VBottomSheet(
-            visible = showAppearanceSheet,
-            onDismiss = { showAppearanceSheet = false },
-        ) {
-            VBottomSheetHeader(
-                title = appString(StringKeys.SETTINGS_THEME),
-                onClose = { showAppearanceSheet = false },
-            )
+        VBottomSheet(visible = showAppearanceSheet, onDismiss = { showAppearanceSheet = false }) {
+            VBottomSheetHeader(title = appString(StringKeys.SETTINGS_THEME), onClose = { showAppearanceSheet = false })
             Spacer(Modifier.height(16.dp))
             VThemePicker(
                 currentMode = themeMode,
@@ -410,330 +388,266 @@ private fun SchoolSettingsContent(
             )
         }
     }
-    }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Profile Header — large avatar, school name, completion badges
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun InstitutionalProfileHealthCard(
+private fun ProfileHeader(
     state: InstitutionalProfileState,
     brandingState: BrandingPhotosState,
+    collapseFraction: Float,
     onClick: () -> Unit,
 ) {
     val completionTone = if (state.profileCompletion < 60) VBadgeTone.Warning else VBadgeTone.Success
-    val storagePercent = (state.storageUsage * 100f).coerceIn(0f, 100f)
     val visibilityTone = if (state.isPublic) VBadgeTone.Success else VBadgeTone.Neutral
-    val visibilityLabel = if (state.isPublic) "Public profile" else "Private profile"
-    val profileTitle = state.schoolName.ifBlank { "Institutional profile" }
-    val nextStep = when {
-        state.profileCompletion >= 90 -> "Profile is ready for families to discover."
-        state.profileCompletion >= 60 -> "Add media and details to make it stand out."
-        else -> "Complete the essentials to improve trust and discovery."
-    }
+    val visibilityLabel = if (state.isPublic) "Public" else "Private"
+
+    val avatarSize = lerp(96f, 40f, collapseFraction).dp
+    val coverHeight = lerp(180f, 0f, collapseFraction).dp
+    val titleSize = lerp(22f, 16f, collapseFraction).sp
+    val badgesVisible = collapseFraction < 0.6f
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .clickable {
-                AnalyticsTracker.event("vp_settings_profile_card_tap")
-                onClick()
-            },
-    ) {
-        // Header section with violetSoft tint
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .background(VColors.violetSoft.copy(alpha = 0.4f))
-                .padding(16.dp),
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(
-                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(VColors.violetSoft),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (brandingState.schoolLogoUrl.isNotBlank()) {
-                        AsyncImage(
-                            model = brandingState.schoolLogoUrl,
-                            contentDescription = state.schoolName,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(22.dp))
-                    }
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(profileTitle, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                    Text(nextStep, style = VTypography.caption, color = VColors.ink3)
-                }
-                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VBadge(
-                    text = visibilityLabel,
-                    tone = visibilityTone,
-                    leadingIcon = if (state.isPublic) VIcons.Check else VIcons.Lock,
-                )
-                if (state.activeTourName.isNotBlank()) {
-                    VBadge(text = "Tour live", tone = VBadgeTone.Arctic, leadingIcon = VIcons.Eye)
-                }
-            }
-        }
-
-        // Body section
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                VProgressRing(
-                    value = state.profileCompletion.toFloat(),
-                    size = 72.dp,
-                    strokeWidth = 8.dp,
-                    tone = completionTone,
-                    label = "${state.profileCompletion}%",
-                )
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("Profile completion", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                        Text("${state.profileCompletion}%", style = VTypography.caption, color = VColors.ink2)
-                    }
-                    VProgressBar(value = state.profileCompletion.toFloat(), tone = completionTone, height = 8.dp)
-                    Text("School details, visibility, gallery and tour media.", style = VTypography.caption, color = VColors.ink3)
-                }
-            }
-
-            Box(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(VColors.creamDeep).padding(12.dp),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-                            Text("Media storage", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                        }
-                        Text("${state.storageUsedHuman} / ${state.totalStorageHuman}", style = VTypography.caption, color = VColors.ink2)
-                    }
-                    VProgressBar(value = storagePercent, tone = VBadgeTone.Arctic, height = 7.dp)
-                }
-            }
-
-            if (state.learningModel.isNotBlank() || state.primaryLanguage.isNotBlank()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (state.learningModel.isNotBlank()) {
-                        VBadge(text = state.learningModel, tone = VBadgeTone.Neutral, leadingIcon = VIcons.BookOpen)
-                    }
-                    if (state.primaryLanguage.isNotBlank()) {
-                        VBadge(text = state.primaryLanguage, tone = VBadgeTone.Neutral, leadingIcon = VIcons.Chat)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BrandingSummaryCard(
-    state: BrandingPhotosState,
-    onClick: () -> Unit,
-) {
-    val configuredItems = listOfNotNull(
-        "Logo".takeIf { state.schoolLogoUrl.isNotBlank() },
-        "Cover".takeIf { state.coverImageUrl.isNotBlank() },
-        "Admin photo".takeIf { state.adminProfilePicUrl.isNotBlank() },
-        "Gallery (${state.galleryPhotos.size})".takeIf { state.galleryPhotos.isNotEmpty() },
-    )
-
-    SettingsCreamCard(
-        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+        // ── Cover image (full width) ──
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(coverHeight)
+                .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                .background(VColors.violetSoft),
+        ) {
+            if (brandingState.coverImageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = brandingState.coverImageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
+        // ── Overlapping avatar + info ──
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Circular avatar overlapping the cover image
+            Box(
+                modifier = Modifier
+                    .offset(y = -(avatarSize / 2))
+                    .size(avatarSize)
+                    .align(Alignment.TopCenter)
+                    .clip(CircleShape)
+                    .background(VColors.surfaceCard)
+                    .border(3.dp, VColors.surfaceCard, CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClick,
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(VColors.cream)
-                        .border(1.dp, VColors.line, RoundedCornerShape(14.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (state.schoolLogoUrl.isNotBlank()) {
-                        AsyncImage(
-                            model = state.schoolLogoUrl,
-                            contentDescription = "School logo",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(24.dp))
-                    }
+                if (brandingState.schoolLogoUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = brandingState.schoolLogoUrl,
+                        contentDescription = state.schoolName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    )
+                } else {
+                    Icon(VIcons.School, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(avatarSize * 0.45f))
                 }
-                Column(Modifier.weight(1f)) {
-                    Text("Branding & Photos", style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+            }
+
+            // Content below the avatar
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .offset(y = avatarSize / 2)
+                    .padding(top = lerp(12f, 4f, collapseFraction).dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // School name
+                Text(
+                    text = state.schoolName.ifBlank { "Your School" },
+                    style = VTypography.h3.copy(fontWeight = FontWeight.Bold, fontSize = titleSize),
+                    color = VColors.ink,
+                )
+
+                if (collapseFraction < 0.3f) {
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        text = configuredItems.joinToString(" · ").ifBlank { "Logo, cover, gallery & profile picture" },
-                        style = VTypography.caption,
+                        text = "Admin account",
+                        style = VTypography.body,
                         color = VColors.ink3,
                     )
                 }
-                Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+
+                if (badgesVisible) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        VBadge(text = "${state.profileCompletion}% complete", tone = completionTone)
+                        VBadge(
+                            text = visibilityLabel,
+                            tone = visibilityTone,
+                            leadingIcon = if (state.isPublic) VIcons.Check else VIcons.Lock,
+                        )
+                        if (state.activeTourName.isNotBlank()) {
+                            VBadge(text = "Tour live", tone = VBadgeTone.Arctic, leadingIcon = VIcons.Eye)
+                        }
+                    }
+                }
             }
-            if (state.coverImageUrl.isNotBlank()) {
-                AsyncImage(
-                    model = state.coverImageUrl,
-                    contentDescription = "Campus cover",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(12.dp)),
+        }
+
+        Spacer(Modifier.height(lerp(0f, 8f, collapseFraction).dp))
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section header — small uppercase label
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SettingsSectionHeader(title: String) {
+    Text(
+        text = title,
+        style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+        color = VColors.ink3,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp),
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Telegram-style setting row — icon circle, title, subtitle, chevron
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun TelegramRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: (() -> Unit)? = null,
+    isComingSoon: Boolean = false,
+) {
+    val clickable = onClick != null && !isComingSoon
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .then(
+                if (clickable) Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick!!,
+                ) else Modifier
+            )
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(VColors.violetSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.ink,
+                maxLines = 1,
+            )
+            if (subtitle.isNotBlank()) {
+                Text(
+                    text = subtitle,
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                    maxLines = 1,
                 )
             }
         }
-    }
-}
 
-private data class SettingRow(
-    val icon: ImageVector,
-    val title: String,
-    val sub: String,
-    val isComingSoon: Boolean,
-    val onClick: (() -> Unit)? = null,
-)
-
-// ── Premium shared primitives ─────────────────────────────────────────────────
-
-@Composable
-private fun LanguageSettingCard(
-    currentLocale: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val selected = SUPPORTED_LANGUAGES.find { it.code == currentLocale } ?: SUPPORTED_LANGUAGES.first()
-    SummarySettingCard(
-        icon = VIcons.Chat,
-        title = appString(StringKeys.SETTINGS_LANGUAGE),
-        value = selected.nativeName,
-        caption = selected.englishName,
-        onClick = onClick,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun AppearanceSettingCard(
-    currentMode: String,
-    currentCustomId: String?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val label = when (currentMode) {
-        "system" -> "System"
-        "light" -> "Light"
-        "dark" -> "Dark"
-        "custom" -> VThemeRegistry.allThemes.find { it.id == currentCustomId }?.displayName ?: "Custom"
-        else -> "System"
-    }
-    SummarySettingCard(
-        icon = VIcons.Settings,
-        title = appString(StringKeys.SETTINGS_THEME),
-        value = label,
-        caption = "Tap to change theme",
-        onClick = onClick,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun SummarySettingCard(
-    icon: ImageVector,
-    title: String,
-    value: String,
-    caption: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    SettingsCreamCard(
-        onClick = onClick,
-        modifier = modifier,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
+        if (isComingSoon) {
+            Text(
+                text = "Coming soon",
+                style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                color = VColors.ink3,
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(VColors.violetSoft),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(title, style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-                Text(value, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.violet)
-                Text(caption, style = VTypography.caption.copy(fontSize = 11.sp), color = VColors.ink3)
-            }
+                    .clip(RoundedCornerShape(50))
+                    .background(VColors.creamDeep)
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+            )
+        } else if (clickable) {
             Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
         }
     }
+    TelegramDivider()
 }
 
 @Composable
-private fun SettingsCreamCard(
-    onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(VShapes.lg)
-            .background(VColors.surfaceCard)
-            .border(1.dp, VColors.line, VShapes.lg)
-            .then(
-                if (onClick != null) Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { onClick() } else Modifier
-            )
-            .padding(16.dp),
-    ) { content() }
-}
-
-@Composable
-private fun SettingsStaggeredItem(index: Int, content: @Composable () -> Unit) {
-    val alpha = remember { Animatable(0f) }
-    val offsetY = remember { Animatable(24f) }
-    LaunchedEffect(Unit) {
-        delay(220 + index * 60L)
-        launch { alpha.animateTo(1f, tween(VMotion.durSlower, easing = VMotion.ease)) }
-        launch { offsetY.animateTo(0f, tween(VMotion.durSlower, easing = VMotion.ease)) }
-    }
+private fun TelegramDivider() {
     Box(
         modifier = Modifier
-            .graphicsLayer(translationY = offsetY.value)
-            .alpha(alpha.value),
-    ) { content() }
+            .fillMaxWidth()
+            .padding(start = 68.dp)
+            .height(0.5.dp)
+            .background(VColors.line),
+    )
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Logout row — danger/red styled
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun LogoutRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .clip(VShapes.lg)
+            .background(VColors.surfaceCard)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(VColors.coralSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(VIcons.Settings, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(18.dp))
+        }
+        Text(
+            text = appString(StringKeys.AUTH_LOGOUT),
+            style = VTypography.body.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.coral,
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+private fun lerp(start: Float, stop: Float, fraction: Float): Float =
+    start + (stop - start) * fraction.coerceIn(0f, 1f)

@@ -627,6 +627,30 @@ object VIcons {
             moveTo(9f, 9f); lineTo(15f, 15f)
         }
     }
+
+    /** Scan (lucide) — viewfinder corners for QR/barcode scanning. */
+    val Scan: ImageVector by lazy {
+        materialStroke("v_scan") {
+            moveTo(3f, 7f); lineTo(3f, 3f); lineTo(7f, 3f)
+            moveTo(17f, 3f); lineTo(21f, 3f); lineTo(21f, 7f)
+            moveTo(21f, 17f); lineTo(21f, 21f); lineTo(17f, 21f)
+            moveTo(7f, 21f); lineTo(3f, 21f); lineTo(3f, 17f)
+            moveTo(7f, 12f); lineTo(17f, 12f)
+        }
+    }
+
+    /** Shield (lucide) — shield outline without checkmark. */
+    val Shield: ImageVector by lazy {
+        materialStroke("v_shield") {
+            moveTo(12f, 2f)
+            lineTo(4f, 5f)
+            lineTo(4f, 11f)
+            curveTo(4f, 16f, 7.4f, 20.5f, 12f, 22f)
+            curveTo(16.6f, 20.5f, 20f, 16f, 20f, 11f)
+            lineTo(20f, 5f)
+            close()
+        }
+    }
 }
 
 // ── Builders ───────────────────────────────────────────────────────────────────

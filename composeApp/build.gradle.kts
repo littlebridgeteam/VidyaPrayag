@@ -3,6 +3,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -147,6 +148,12 @@ kotlin {
     }
 }
 
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.littlebridge.enrollplus"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -155,8 +162,8 @@ android {
         applicationId = "com.littlebridge.enrollplus"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.0.0"
     }
     
     buildFeatures {
@@ -190,9 +197,29 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        create("release") {
+            if (keystoreProperties.isNotEmpty()) {
+                storeFile = file(keystoreProperties.getProperty("releaseStoreFile"))
+                storePassword = keystoreProperties.getProperty("releaseStorePassword")
+                keyAlias = keystoreProperties.getProperty("releaseKeyAlias")
+                keyPassword = keystoreProperties.getProperty("releaseKeyPassword")
+            }
+        }
+        getByName("debug") {
+            if (keystoreProperties.isNotEmpty()) {
+                storeFile = file(keystoreProperties.getProperty("debugStoreFile"))
+                storePassword = keystoreProperties.getProperty("debugStorePassword")
+                keyAlias = keystoreProperties.getProperty("debugKeyAlias")
+                keyPassword = keystoreProperties.getProperty("debugKeyPassword")
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
             // Firebase Crashlytics — explicitly enable for debug builds.
             // The manifest flag + runtime call handle collection, but this
             // ensures the Crashlytics Gradle plugin processes debug variants
@@ -200,6 +227,7 @@ android {
         }
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

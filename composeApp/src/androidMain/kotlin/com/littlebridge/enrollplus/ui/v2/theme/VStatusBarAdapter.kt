@@ -35,7 +35,7 @@ actual fun VStatusBarAdapter(isDark: Boolean) {
                 SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             } else {
                 SystemBarStyle.light(
-                    creamScrim,
+                    android.graphics.Color.TRANSPARENT,
                     android.graphics.Color.TRANSPARENT,
                 )
             },
