@@ -121,6 +121,8 @@ fun SchoolPortalV2(
     // Track which screen launched the create-event wizard so onCreated returns there.
     var createEventOrigin by remember { mutableStateOf(SchoolOverlay.AcademicCalendarPlatform) }
     var createEventInitialType by remember { mutableStateOf<String?>(null) }
+    var peopleDeepLinkDestination by remember { mutableStateOf<String?>(null) }
+    var classesSubjectsDeepLinkDestination by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
     val alumniRepo = koinInject<AlumniRepository>()
@@ -146,7 +148,10 @@ fun SchoolPortalV2(
                     "scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
                     "branding" -> overlay = SchoolOverlay.BrandingKit
                     "id-cards" -> overlay = SchoolOverlay.IdCards
-                    "classes", "classes-subjects" -> overlay = SchoolOverlay.ClassesSubjects
+                    "classes", "classes-subjects" -> {
+                        classesSubjectsDeepLinkDestination = "classes"
+                        overlay = SchoolOverlay.ClassesSubjects
+                    }
                     "scheduled-messages" -> overlay = SchoolOverlay.ScheduledMessages
                     "ptm" -> overlay = SchoolOverlay.SchedulePTM
                     "link-requests" -> overlay = SchoolOverlay.LinkRequests
@@ -169,7 +174,10 @@ fun SchoolPortalV2(
                     "fees" -> { tab = "records"; overlay = SchoolOverlay.None }
                     "fee-salary", "fee_salary" -> overlay = SchoolOverlay.FeeSalaryManagement
                     "tutor" -> { tab = "home"; overlay = SchoolOverlay.None }
-                    "timetable" -> overlay = SchoolOverlay.ClassesSubjects
+                    "timetable" -> {
+                        classesSubjectsDeepLinkDestination = "timetable"
+                        overlay = SchoolOverlay.ClassesSubjects
+                    }
                     "timetable-requests" -> overlay = SchoolOverlay.ClassesSubjects
                     "pace-alerts", "pace" -> { tab = "home"; overlay = SchoolOverlay.None }
                     // Valid bottom-nav tabs
@@ -199,7 +207,10 @@ fun SchoolPortalV2(
                     pathOnly.startsWith("admissions") -> overlay = SchoolOverlay.AdmissionsCRM
                     pathOnly.startsWith("calendar") -> overlay = SchoolOverlay.AcademicCalendarPlatform
                     pathOnly.startsWith("timetable-requests") -> overlay = SchoolOverlay.ClassesSubjects
-                    pathOnly.startsWith("timetable") -> overlay = SchoolOverlay.ClassesSubjects
+                    pathOnly.startsWith("timetable") -> {
+                        classesSubjectsDeepLinkDestination = "timetable"
+                        overlay = SchoolOverlay.ClassesSubjects
+                    }
                     pathOnly.startsWith("report-card") -> overlay = SchoolOverlay.ReportPublish
                     pathOnly.startsWith("tutor") -> { tab = "home"; overlay = SchoolOverlay.None }
                     pathOnly.startsWith("ptm") -> overlay = SchoolOverlay.SchedulePTM
@@ -595,12 +606,17 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.ClassesSubjects -> {
                 ClassesSubjectsScreenV2(
-                    onBack = { overlay = SchoolOverlay.None },
+                    onBack = {
+                        classesSubjectsDeepLinkDestination = null
+                        overlay = SchoolOverlay.None
+                    },
                     onOpenClassDetail = { cls ->
                         selectedClassId = cls.id
                         selectedClassName = cls.name
                         overlay = SchoolOverlay.ClassDetail
                     },
+                    deepLinkDestination = classesSubjectsDeepLinkDestination,
+                    onDeepLinkConsumed = { classesSubjectsDeepLinkDestination = null },
                     modifier = modifier,
                 )
                 return
@@ -671,6 +687,28 @@ fun SchoolPortalV2(
                 routeId == "overlay_id_cards" -> overlay = SchoolOverlay.IdCards
                 routeId == "overlay_library" -> overlay = SchoolOverlay.Library
                 routeId == "overlay_classes_subjects" -> overlay = SchoolOverlay.ClassesSubjects
+                routeId == "setup_add_teachers" -> {
+                    peopleDeepLinkDestination = "add_teachers"
+                    overlay = SchoolOverlay.None
+                    tab = "people"
+                }
+                routeId == "setup_add_students" -> {
+                    peopleDeepLinkDestination = "add_students"
+                    overlay = SchoolOverlay.None
+                    tab = "people"
+                }
+                routeId == "setup_add_subjects" -> {
+                    classesSubjectsDeepLinkDestination = "add_subjects"
+                    overlay = SchoolOverlay.ClassesSubjects
+                }
+                routeId == "setup_create_classes" -> {
+                    classesSubjectsDeepLinkDestination = "create_classes"
+                    overlay = SchoolOverlay.ClassesSubjects
+                }
+                routeId == "setup_create_timetable" -> {
+                    classesSubjectsDeepLinkDestination = "create_timetable"
+                    overlay = SchoolOverlay.ClassesSubjects
+                }
                 routeId == "overlay_scholarships" -> overlay = SchoolOverlay.ScholarshipManagement
                 routeId == "overlay_alumni" -> overlay = SchoolOverlay.Alumni
                 routeId == "overlay_transport" -> overlay = SchoolOverlay.TransportManagement
@@ -759,6 +797,8 @@ fun SchoolPortalV2(
                         onGraduateStudents = { studentIds, year ->
                             graduateStudents(studentIds, year)
                         },
+                        deepLinkDestination = peopleDeepLinkDestination,
+                        onDeepLinkConsumed = { peopleDeepLinkDestination = null },
                     )
                     "records" -> SchoolRecordsScreenV2()
                     "comms" -> SchoolCommsScreenV2(
