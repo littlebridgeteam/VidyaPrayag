@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Admin People Tab Prototype V2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#FBF8F4;--cream-deep:#F5F0E8;--white:#FFF;--surface:#FBF8F4;--surface-card:#FFF;--surface-tint:#F8F4EF;--surface-warm:#FFF6EE;--ink:#1A1614;--ink2:#5C544E;--ink3:#8A8078;--line:#E8E0D6;--line-soft:#F0EAE0;--violet:#5B41D5;--violet-hover:#4A30C4;--violet-soft:#EEE8FB;--violet-ink:#16006E;--coral:#F82B60;--coral-soft:#FFE4EC;--gold:#FCB400;--gold-soft:#FFF4D1;--sky:#18BFFF;--sky-soft:#E0F6FF;--mint:#2DCE89;--mint-soft:#DCF5E8;--success:#2D7A4A;--success-soft:#D4EDDB;--error:#BA1A1A;--error-soft:#FFDAD6;--radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:20px;--radius-xxl:28px;--radius-full:9999px;--font-family:'Inter',-apple-system,sans-serif;--font-jakarta:'Plus Jakarta Sans',sans-serif;--dur:250ms;--ease:cubic-bezier(0.32,0.72,0,1);--shadow-1:0 1px 3px rgba(26,22,20,.04),0 1px 2px rgba(26,22,20,.02);--shadow-2:0 4px 16px -2px rgba(26,22,20,.08),0 1px 3px rgba(26,22,20,.03);--shadow-3:0 8px 28px -6px rgba(26,22,20,.12),0 2px 8px rgba(26,22,20,.04)}
+*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%}body{font-family:var(--font-family);background:#1a1a2e;color:var(--ink);overflow:hidden;display:flex;align-items:center;justify-content:center;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.phone{width:390px;height:844px;background:#000;border-radius:50px;padding:8px;box-shadow:0 0 0 1.5px rgba(255,255,255,.04),0 0 0 6px rgba(0,0,0,.3),0 40px 100px rgba(0,0,0,.6),0 15px 40px rgba(0,0,0,.3);flex-shrink:0;position:relative;transform:scale(var(--phone-scale,1));transform-origin:center}
+.screen-area{width:100%;height:100%;background:var(--cream);border-radius:42px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:124px;height:34px;background:#000;border-radius:20px;z-index:100}
+.home-bar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;z-index:100;background:rgba(26,22,20,.25)}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 32px 4px;font-size:14px;font-weight:600;flex-shrink:0;z-index:10;color:var(--ink)}.statusbar .icons{display:flex;align-items:center;gap:5px}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+.people-header{padding:4px 24px 2px;flex-shrink:0}.people-eyebrow{display:flex;align-items:center;gap:6px}.people-eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--violet)}.people-eyebrow-text{font-size:11px;font-weight:700;color:var(--violet);letter-spacing:.3px;text-transform:uppercase}
+.people-title{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.5px;margin-top:2px}.people-title .light{font-weight:400;color:var(--ink2)}
+.subtabs{display:flex;align-items:center;gap:6px;padding:4px 24px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}.subtabs::-webkit-scrollbar{display:none}
+.subtab-pill{padding:8px 18px;border-radius:var(--radius-full);font-size:13px;font-weight:600;border:none;cursor:pointer;white-space:nowrap;transition:all 220ms var(--ease);background:transparent;color:var(--ink3)}.subtab-pill.active{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;font-weight:700;box-shadow:0 2px 10px -2px rgba(91,65,213,.4)}
+.subtab-add-btn{display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border-radius:var(--radius-full);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease);background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 8px -2px rgba(91,65,213,.35);flex-shrink:0;margin-left:auto}.subtab-add-btn:hover{transform:translateY(-1px)}.subtab-add-btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}
+.tab-content{display:none;flex:1;flex-direction:column;overflow:hidden}.tab-content.active{display:flex}
+.search-row{padding:2px 24px 2px}.search-input{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-1);border:1.5px solid transparent;transition:all var(--dur) var(--ease)}.search-input:focus-within{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}.search-input svg{width:18px;height:18px;stroke:var(--ink3);stroke-width:2;fill:none;flex-shrink:0}.search-input input{flex:1;border:none;outline:none;font-size:15px;color:var(--ink);background:transparent}.search-input input::placeholder{color:var(--ink3)}
+.filter-row{display:flex;align-items:center;gap:6px;padding:4px 24px 2px;overflow-x:auto;scrollbar-width:none}.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-full);font-size:12px;font-weight:600;border:1.5px solid var(--line);background:var(--white);color:var(--ink2);cursor:pointer;white-space:nowrap;transition:all var(--dur) var(--ease);position:relative}.filter-chip:hover{border-color:var(--violet)}.filter-chip.active{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;border-color:transparent;box-shadow:0 2px 8px -2px rgba(91,65,213,.35)}.filter-chip svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none}
+.filter-dropdown{position:absolute;top:100%;left:0;margin-top:6px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-3);padding:6px;min-width:160px;max-height:240px;overflow-y:auto;z-index:50;display:none;scrollbar-width:none}.filter-dropdown::-webkit-scrollbar{display:none}.filter-dropdown.open{display:block}
+.filter-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;transition:background 150ms}.filter-option:hover{background:var(--surface-tint)}.filter-option.selected{color:var(--violet);font-weight:700}.filter-option .check{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;transition:all 150ms}.filter-option.selected .check{border-color:var(--violet);background:var(--violet)}
+.active-filters{display:flex;gap:6px;padding:0 24px 2px;flex-wrap:wrap;min-height:0;overflow:hidden}.active-filter-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:var(--violet-soft);color:var(--violet);cursor:pointer;transition:all 150ms}.active-filter-chip:hover{background:var(--coral-soft);color:var(--coral)}.active-filter-chip svg{width:10px;height:10px;stroke:currentColor;stroke-width:2.5;fill:none}.clear-filters{font-size:11px;font-weight:600;color:var(--coral);cursor:pointer;padding:4px 8px}
+.sort-dropdown{position:relative;flex-shrink:0;margin-left:auto}.sort-btn{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:600;background:var(--surface-tint);color:var(--ink2);border:none;cursor:pointer;transition:all 150ms;white-space:nowrap}.sort-btn:hover{background:var(--line-soft)}.sort-btn svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none}
+.sort-menu{position:absolute;top:100%;right:0;margin-top:4px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-3);padding:4px;min-width:140px;z-index:50;display:none}.sort-menu.open{display:block}.sort-option{padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;transition:background 150ms}.sort-option:hover{background:var(--surface-tint)}.sort-option.selected{color:var(--violet);font-weight:700}
+.bulk-toggle{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:600;background:var(--white);color:var(--ink2);border:1.5px solid var(--line);cursor:pointer;transition:all var(--dur) var(--ease);white-space:nowrap}.bulk-toggle.active{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;border-color:transparent;box-shadow:0 2px 8px -2px rgba(91,65,213,.3)}.bulk-toggle svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+.link-banner{margin:4px 24px 8px;padding:12px 16px;background:var(--violet-soft);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all var(--dur) var(--ease);border:1px solid transparent}.link-banner:hover{border-color:var(--violet);transform:translateY(-1px);box-shadow:var(--shadow-1)}.link-banner-left{display:flex;align-items:center;gap:10px}.link-banner-icon{width:34px;height:34px;border-radius:var(--radius-sm);background:linear-gradient(135deg,#7B61E5,#5B41D5);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px -2px rgba(91,65,213,.35)}.link-banner-icon svg{width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none}.link-banner-text{font-size:13px;font-weight:700;color:var(--violet)}.link-banner-sub{font-size:11px;font-weight:500;color:var(--violet-ink);opacity:.7;margin-top:1px}.link-banner-arrow{width:16px;height:16px;stroke:var(--violet);stroke-width:2;fill:none;flex-shrink:0}
+.cards-container{padding:0 24px 16px;display:flex;flex-direction:column;gap:10px}
+.teacher-card{background:var(--white);border-radius:var(--radius-lg);position:relative;overflow:hidden;transition:all var(--dur) var(--ease);cursor:pointer;box-shadow:var(--shadow-1);border:1px solid var(--line-soft)}.teacher-card:hover{box-shadow:0 8px 28px -6px rgba(91,65,213,.12),0 2px 8px rgba(26,22,20,.06);transform:translateY(-2px);border-color:var(--violet-soft)}.teacher-card.selected{background:var(--violet-soft);border-color:var(--violet)}.teacher-card.bulk-mode{padding-left:12px}
+.teacher-accent{position:absolute;top:0;left:0;right:0;height:3px;transition:height 200ms var(--ease)}.teacher-card:hover .teacher-accent{height:4px}
+.bento-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft);border-radius:0 0 var(--radius-lg) var(--radius-lg);overflow:hidden}.bento-cell{background:var(--white);padding:12px 14px;display:flex;flex-direction:column;gap:4px;transition:background 150ms}.bento-cell:hover{background:var(--surface-tint)}.bento-cell.full{grid-column:1/-1}.bento-cell-label{font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:4px}.bento-cell-label svg{width:10px;height:10px;stroke:currentColor;stroke-width:2;fill:none}.bento-cell-val{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1}.bento-cell-sub{font-size:11px;font-weight:500;color:var(--ink3)}
+.bento-header{display:flex;align-items:center;gap:10px;padding:14px 14px 12px}.bento-header .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px;background:linear-gradient(135deg,#7B61E5,#5B41D5);box-shadow:0 2px 8px -2px rgba(91,65,213,.35),inset 0 1px 0 rgba(255,255,255,.15)}
+.avatar.coral{background:linear-gradient(135deg,#FF5C85,#F82B60);box-shadow:0 2px 8px -2px rgba(248,43,96,.3),inset 0 1px 0 rgba(255,255,255,.15)}.avatar.gold{background:linear-gradient(135deg,#FFD040,#FCB400);box-shadow:0 2px 8px -2px rgba(252,180,0,.3),inset 0 1px 0 rgba(255,255,255,.2)}.avatar.mint{background:linear-gradient(135deg,#4EE6A0,#2DCE89);box-shadow:0 2px 8px -2px rgba(45,206,137,.3),inset 0 1px 0 rgba(255,255,255,.15)}.avatar.sky{background:linear-gradient(135deg,#42CCFF,#18BFFF);box-shadow:0 2px 8px -2px rgba(24,191,255,.3),inset 0 1px 0 rgba(255,255,255,.15)}
+.bento-header-info{flex:1;min-width:0}.bento-header-name{display:flex;align-items:center;gap:5px}.bento-header-name .card-name{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crown-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0;color:var(--gold);filter:drop-shadow(0 1px 2px rgba(252,180,0,.3))}.crown-badge svg{width:14px;height:14px}
+.avail-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:var(--radius-full);font-size:10.5px;font-weight:700;letter-spacing:.3px;flex-shrink:0}.avail-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}.avail-teaching{background:linear-gradient(135deg,#DCF5E8,#B8EBCC);color:var(--success)}.avail-teaching .avail-dot{background:var(--success);box-shadow:0 0 0 3px rgba(45,206,137,.2);animation:pulseDot 2s infinite}.avail-break{background:linear-gradient(135deg,#FFF4D1,#FFEAB8);color:var(--gold)}.avail-break .avail-dot{background:var(--gold)}.avail-meeting{background:linear-gradient(135deg,#E0F0FF,#C8E4FF);color:var(--sky)}.avail-meeting .avail-dot{background:var(--sky)}.avail-leave{background:linear-gradient(135deg,#FFE4EC,#FFD0DA);color:var(--coral)}.avail-leave .avail-dot{background:var(--coral)}
+.workload-bar{height:6px;border-radius:var(--radius-full);background:var(--surface-tint);overflow:hidden;margin-top:4px}.workload-fill{height:100%;border-radius:var(--radius-full);transition:width 600ms var(--ease)}.workload-row{display:flex;align-items:center;justify-content:space-between;margin-top:2px}.workload-pct{font-size:11px;font-weight:700;color:var(--ink2)}
+.bento-subjects{display:flex;gap:5px;flex-wrap:wrap}.subject-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px 3px 6px;border-radius:var(--radius-full);font-size:10px;font-weight:600;letter-spacing:.2px;transition:transform 150ms}.subject-pill:hover{transform:scale(1.03)}.subject-pill svg{width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;flex-shrink:0}.grade-pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:var(--radius-full);font-size:10px;font-weight:700;letter-spacing:.3px;background:var(--surface-tint);color:var(--ink2);border:1px solid var(--line-soft)}
+.bento-schedule{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink2)}.bento-schedule svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}
+.bento-stat-icon{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.bento-stat-icon svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}.bento-stat-row{display:flex;align-items:center;gap:8px}
+.btn-profile{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius-full);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease);background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 10px -2px rgba(91,65,213,.35)}.btn-profile:hover{transform:translateY(-1px)}.btn-profile svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}
+.student-enriched{background:var(--white);border-radius:var(--radius-md);padding:16px;box-shadow:var(--shadow-1);transition:all var(--dur) var(--ease);cursor:pointer;position:relative;overflow:hidden}.student-enriched:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}.student-enriched.selected{background:var(--violet-soft);border:1px solid var(--violet)}.student-enriched.bulk-mode{padding-left:12px}
+.se-header{display:flex;align-items:flex-start;gap:12px}.se-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px;background:linear-gradient(135deg,#7B61E5,#5B41D5);box-shadow:0 2px 8px -2px rgba(91,65,213,.35),inset 0 1px 0 rgba(255,255,255,.15)}.se-avatar.coral{background:linear-gradient(135deg,#FF5C85,#F82B60)}.se-avatar.gold{background:linear-gradient(135deg,#FFD040,#FCB400)}.se-avatar.mint{background:linear-gradient(135deg,#4EE6A0,#2DCE89)}.se-avatar.sky{background:linear-gradient(135deg,#42CCFF,#18BFFF)}
+.se-id{flex:1;min-width:0}.se-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.se-name{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.se-class-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--radius-full);letter-spacing:.3px;flex-shrink:0;background:var(--violet-soft);color:var(--violet)}.se-roll-row{display:flex;align-items:center;gap:12px;margin-top:4px}.se-roll{font-size:11px;font-weight:500;color:var(--ink3)}.se-adm{font-size:11px;font-weight:500;color:var(--ink3)}
+.se-parent{display:flex;align-items:center;gap:16px;margin-top:10px}.se-parent-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--ink2)}.se-parent-item svg{width:13px;height:13px;stroke:var(--ink3);stroke-width:2;fill:none;flex-shrink:0}
+.se-divider{height:1px;background:var(--line-soft);margin:12px 0}
+.se-alerts{display:flex;gap:14px;flex-wrap:wrap;align-items:center}.se-alert{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink2)}.se-alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}.se-alert-dot.green{background:var(--mint);box-shadow:0 0 0 3px rgba(45,206,137,.18)}.se-alert-dot.yellow{background:var(--gold);box-shadow:0 0 0 3px rgba(252,180,0,.18)}.se-alert-dot.orange{background:#FF8800;box-shadow:0 0 0 3px rgba(255,136,0,.18)}.se-alert-dot.red{background:var(--coral);box-shadow:0 0 0 3px rgba(248,43,96,.18)}.se-alert-dot.blue{background:var(--sky);box-shadow:0 0 0 3px rgba(24,191,255,.18)}.se-alert-dot.violet{background:var(--violet);box-shadow:0 0 0 3px rgba(91,65,213,.18)}
+.se-viz-row{display:flex;gap:12px;margin-top:12px}.se-viz{flex:1;min-width:0}.se-viz-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}.se-viz-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px}.se-viz-value{font-size:13px;font-weight:700;color:var(--ink)}.se-viz-bar{height:6px;border-radius:var(--radius-full);background:var(--surface-tint);overflow:hidden}.se-viz-fill{height:100%;border-radius:var(--radius-full);transition:width 600ms var(--ease)}.se-viz-fill.green{background:linear-gradient(90deg,#4EE6A0,#2DCE89)}.se-viz-fill.yellow{background:linear-gradient(90deg,#FFD040,#FCB400)}.se-viz-fill.red{background:linear-gradient(90deg,#FF5C85,#F82B60)}.se-viz-fill.violet{background:linear-gradient(90deg,#7B61E5,#5B41D5)}.se-viz-fill.sky{background:linear-gradient(90deg,#42CCFF,#18BFFF)}
+.se-today{margin-top:12px;padding:10px 12px;background:var(--surface-tint);border-radius:var(--radius-sm)}.se-today-header{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.se-today-header svg{width:14px;height:14px;stroke:var(--ink3);stroke-width:2;fill:none}.se-today-list{display:flex;flex-direction:column;gap:4px}.se-today-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--ink2)}.se-today-item .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}.se-today-item .dot.green{background:var(--mint)}.se-today-item .dot.yellow{background:var(--gold)}.se-today-item .dot.sky{background:var(--sky)}.se-today-item .dot.red{background:var(--coral)}
+.se-actions{display:flex;gap:6px;margin-top:12px}.se-action-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 4px;border-radius:var(--radius-sm);background:var(--surface-tint);border:none;cursor:pointer;transition:all 150ms}.se-action-btn:hover{background:var(--violet-soft)}.se-action-btn svg{width:17px;height:17px;stroke:var(--violet);stroke-width:2;fill:none}.se-action-btn span{font-size:10px;font-weight:600;color:var(--ink2)}
+.overflow-wrap{position:relative}.overflow-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms}.overflow-btn:hover{background:var(--surface-tint)}.overflow-btn svg{width:18px;height:18px;stroke:var(--ink3);stroke-width:2.5;fill:none}.overflow-menu{position:absolute;top:100%;right:0;margin-top:4px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-3);padding:4px;min-width:150px;z-index:50;display:none}.overflow-menu.open{display:block}.overflow-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;transition:background 150ms}.overflow-item:hover{background:var(--surface-tint)}.overflow-item.danger{color:var(--coral)}.overflow-item.danger:hover{background:var(--coral-soft)}.overflow-item svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+.bulk-checkbox{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;transition:all 200ms var(--ease);display:flex;align-items:center;justify-content:center}.bulk-checkbox svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none;opacity:0;transition:opacity 150ms}.teacher-card.selected .bulk-checkbox,.student-enriched.selected .bulk-checkbox{background:var(--violet);border-color:var(--violet)}.teacher-card.selected .bulk-checkbox svg,.student-enriched.selected .bulk-checkbox svg{opacity:1}
+.bulk-bar{position:absolute;bottom:90px;left:16px;right:16px;background:linear-gradient(135deg,#2A2520,#1A1614);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 28px -6px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.2);z-index:40;transform:translateY(200%);transition:transform 300ms var(--ease)}.bulk-bar.active{transform:translateY(0)}.bulk-bar-count{font-size:13px;font-weight:700;color:#fff}.bulk-bar-actions{display:flex;gap:6px}.bulk-bar-actions .btn{padding:7px 14px;font-size:12px;border-radius:var(--radius-full);border:none;cursor:pointer;font-weight:600;transition:all 150ms}.bulk-bar-actions .btn-grad{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff}.bulk-bar-actions .btn-destructive{background:var(--coral-soft);color:var(--coral)}.bulk-bar-actions .btn-cancel{background:transparent;color:rgba(255,255,255,.6)}.bulk-bar-actions .btn-cancel:hover{color:#fff}
+.load-more{padding:8px 24px 16px}.load-more-btn{width:100%;padding:12px;border-radius:var(--radius-md);font-size:14px;font-weight:600;background:transparent;border:1.5px solid var(--line);color:var(--ink2);cursor:pointer;transition:all var(--dur) var(--ease)}.load-more-btn:hover{border-color:var(--violet);color:var(--violet)}
+.empty-state{padding:32px 24px;text-align:center}.empty-icon{width:56px;height:56px;border-radius:50%;background:var(--surface-tint);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}.empty-icon svg{width:24px;height:24px;stroke:var(--ink3);stroke-width:2;fill:none}.empty-title{font-size:16px;font-weight:700;color:var(--ink)}.empty-body{font-size:13px;font-weight:500;color:var(--ink3);margin-top:6px;line-height:1.5}
+.tab-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:100px}.tab-scroll::-webkit-scrollbar{display:none}
+.bottom-nav{position:absolute;bottom:12px;left:16px;right:16px;height:60px;background:rgba(255,255,255,0.988);border:1px solid rgba(38,35,77,0.06);border-radius:32px;box-shadow:0 8px 24px rgba(38,35,77,0.09);display:flex;align-items:center;padding:7px;z-index:40;overflow:hidden}
+.nav-pill{position:absolute;top:7px;left:7px;width:96px;height:46px;border-radius:999px;background:linear-gradient(135deg,#6C5CE5,#544AB8);transition:transform .4s cubic-bezier(0.32,0.72,0,1);z-index:1}
+.nav-tabs{display:flex;align-items:center;gap:2px;position:relative;z-index:2;width:100%}.nav-item{display:flex;align-items:center;justify-content:center;gap:7px;height:46px;cursor:pointer;transition:width .4s cubic-bezier(0.32,0.72,0,1);overflow:hidden;flex-shrink:0;border-radius:999px}.nav-item.active{width:96px}.nav-item:not(.active){width:71px}.nav-item svg{width:22px;height:22px;flex-shrink:0;transition:color .3s ease}.nav-item.active svg{color:#FFF}.nav-item:not(.active) svg{color:#6D7A77}.nav-item .nav-label{font-size:12px;font-weight:700;font-family:var(--font-jakarta);color:#FFF;white-space:nowrap;opacity:0;max-width:0;transition:opacity .25s ease .1s,max-width .4s ease}.nav-item.active .nav-label{opacity:1;max-width:60px}
+.profile-overlay{position:absolute;inset:0;z-index:200;background:rgba(26,22,20,.45);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 300ms var(--ease)}.profile-overlay.active{opacity:1;pointer-events:auto}
+.profile-sheet{width:100%;background:var(--cream);border-radius:var(--radius-xxl) var(--radius-xxl) 0 0;max-height:88%;overflow-y:auto;scrollbar-width:none;transform:translateY(100%);transition:transform 350ms var(--ease);padding-bottom:100px}.profile-overlay.active .profile-sheet{transform:translateY(0)}.profile-sheet::-webkit-scrollbar{display:none}.profile-handle{width:40px;height:4px;border-radius:2px;background:var(--line);margin:12px auto 0}.profile-sheet-inner{padding:8px 24px 0}
+.profile-hero{display:flex;align-items:center;gap:14px;padding:16px 0 20px}.profile-hero-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px;background:linear-gradient(135deg,#7B61E5,#5B41D5);box-shadow:0 4px 14px -2px rgba(91,65,213,.4),inset 0 1px 0 rgba(255,255,255,.15)}.profile-hero-avatar.coral{background:linear-gradient(135deg,#FF5C85,#F82B60)}.profile-hero-avatar.gold{background:linear-gradient(135deg,#FFD040,#FCB400)}.profile-hero-avatar.mint{background:linear-gradient(135deg,#4EE6A0,#2DCE89)}.profile-hero-avatar.sky{background:linear-gradient(135deg,#42CCFF,#18BFFF)}
+.profile-hero-info{flex:1;min-width:0}.profile-hero-name{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px}.profile-hero-role{font-size:13px;font-weight:500;color:var(--ink3);margin-top:2px}
+.profile-close-btn{width:36px;height:36px;border-radius:50%;background:var(--surface-tint);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms;flex-shrink:0}.profile-close-btn:hover{background:var(--line-soft)}.profile-close-btn svg{width:18px;height:18px;stroke:var(--ink2);stroke-width:2;fill:none}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}.profile-stat-card{background:var(--white);border-radius:var(--radius-md);padding:12px;box-shadow:var(--shadow-1);display:flex;flex-direction:column;gap:2px}.profile-stat-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}.profile-stat-icon svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none}.profile-stat-val{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.3px;line-height:1}.profile-stat-label{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:4px}
+.profile-section{background:var(--white);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-1);margin-bottom:10px}.profile-section-title{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}.profile-section-title svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+.profile-info-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line-soft)}.profile-info-row:last-child{border-bottom:none}.profile-info-label{font-size:13px;font-weight:500;color:var(--ink2);display:flex;align-items:center;gap:8px}.profile-info-label svg{width:15px;height:15px;stroke:var(--ink3);stroke-width:2;fill:none}.profile-info-value{font-size:13px;font-weight:600;color:var(--ink)}
+.profile-actions{display:flex;gap:8px;margin-top:16px}.profile-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-radius:var(--radius-md);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease)}.profile-action-btn.primary{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 10px -2px rgba(91,65,213,.35)}.profile-action-btn.primary:hover{transform:translateY(-1px)}.profile-action-btn.secondary{background:var(--surface-tint);color:var(--ink2)}.profile-action-btn.secondary:hover{background:var(--line-soft)}.profile-action-btn svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none}
+.dialog-overlay{position:absolute;inset:0;z-index:210;background:rgba(26,22,20,.45);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 300ms var(--ease)}.dialog-overlay.active{opacity:1;pointer-events:auto}
+.dialog-card{width:100%;background:var(--cream);border-radius:var(--radius-xxl) var(--radius-xxl) 0 0;padding:0 24px 100px;max-height:80%;overflow-y:auto;scrollbar-width:none;transform:translateY(100%);transition:transform 350ms var(--ease)}.dialog-overlay.active .dialog-card{transform:translateY(0)}.dialog-card::-webkit-scrollbar{display:none}.dialog-handle{width:40px;height:4px;border-radius:2px;background:var(--line);margin:12px auto 0}.dialog-title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px;margin:16px 0 16px}.dialog-field{margin-bottom:12px}.dialog-label{font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px;display:block}.dialog-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius-md);font-size:15px;color:var(--ink);background:var(--white);outline:none;transition:all var(--dur) var(--ease)}.dialog-input:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}.dialog-input::placeholder{color:var(--ink3)}.dialog-hint{font-size:12px;font-weight:500;color:var(--ink3);margin-top:4px}.dialog-actions{display:flex;gap:8px;margin-top:16px}.dialog-btn{flex:1;padding:13px;border-radius:var(--radius-md);font-size:15px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease)}.dialog-btn.primary{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 10px -2px rgba(91,65,213,.35)}.dialog-btn.outline{background:transparent;border:1.5px solid var(--line);color:var(--ink2)}.dialog-btn.outline:hover{border-color:var(--violet);color:var(--violet)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(45,206,137,.5)}50%{box-shadow:0 0 0 5px rgba(45,206,137,0)}}
+.teacher-card,.student-enriched{animation:fadeIn 300ms var(--ease) both}.teacher-card:nth-child(1),.student-enriched:nth-child(1){animation-delay:50ms}.teacher-card:nth-child(2),.student-enriched:nth-child(2){animation-delay:100ms}.teacher-card:nth-child(3),.student-enriched:nth-child(3){animation-delay:150ms}.teacher-card:nth-child(4),.student-enriched:nth-child(4){animation-delay:200ms}.teacher-card:nth-child(5),.student-enriched:nth-child(5){animation-delay:250ms}.teacher-card:nth-child(6),.student-enriched:nth-child(6){animation-delay:300ms}.teacher-card:nth-child(7),.student-enriched:nth-child(7){animation-delay:350ms}
+</style>
+</head>
+<body>
+<div class="phone"><div class="screen-area"><div class="island"></div>
+<div class="statusbar"><span>9:41</span><span class="icons"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M1 7h2v3H1zM5 5h2v5H5zM9 3h2v7H9zM13 1h2v9h-2z" opacity=".9"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1.5 4.5C3 3 5 2 7.5 2s4.5 1 6 2.5" opacity=".7"/><path d="M3.5 6.5C4.5 5.5 6 5 7.5 5s3 .5 4 1.5" opacity=".85"/><circle cx="7.5" cy="8.5" r="1" fill="currentColor" stroke="none"/></svg><svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x="1" y="1" width="20" height="9" rx="2.5" stroke="currentColor" stroke-width="1" opacity=".4"/><rect x="3" y="3" width="14" height="5" rx="1" fill="currentColor"/><rect x="22" y="4" width="1.5" height="3" rx=".5" fill="currentColor" opacity=".4"/></svg></span></div>
+
+<div class="people-header"><div class="people-eyebrow"><div class="people-eyebrow-dot"></div><span class="people-eyebrow-text">PEOPLE</span></div><div class="people-title">People <span class="light">Directory</span></div></div>
+
+<div class="subtabs">
+<button class="subtab-pill active" data-subtab="teachers">Teachers</button>
+<button class="subtab-pill" data-subtab="students">Students</button>
+<button class="subtab-pill" data-subtab="staff">Staff</button>
+<button class="subtab-add-btn" id="subtab-add-btn"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
+</div>
+
+<!-- TEACHERS TAB -->
+<div class="tab-content active" id="tab-teachers">
+<div class="search-row"><div class="search-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search teachers…" data-search="teachers"></div></div>
+<div class="filter-row">
+<div class="filter-chip" data-filter="subject" data-tab="teachers">All Subjects<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg><div class="filter-dropdown" id="dd-subject"><div class="filter-option" data-value="Mathematics"><div class="check"></div>Mathematics</div><div class="filter-option" data-value="Science"><div class="check"></div>Science</div><div class="filter-option" data-value="English"><div class="check"></div>English</div><div class="filter-option" data-value="Social Studies"><div class="check"></div>Social Studies</div><div class="filter-option" data-value="Hindi"><div class="check"></div>Hindi</div><div class="filter-option" data-value="Computer Science"><div class="check"></div>Computer Science</div></div></div>
+<div class="filter-chip" data-filter="grade" data-tab="teachers">All Grades<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg><div class="filter-dropdown" id="dd-grade"><div class="filter-option" data-value="6"><div class="check"></div>Grade 6</div><div class="filter-option" data-value="7"><div class="check"></div>Grade 7</div><div class="filter-option" data-value="8"><div class="check"></div>Grade 8</div><div class="filter-option" data-value="9"><div class="check"></div>Grade 9</div><div class="filter-option" data-value="10"><div class="check"></div>Grade 10</div></div></div>
+<div class="sort-dropdown"><button class="sort-btn" data-sort-toggle="teachers"><svg viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4"/></svg>Sort: Name</button><div class="sort-menu" id="sort-menu-teachers"><div class="sort-option selected" data-sort="name">Name (A-Z)</div><div class="sort-option" data-sort="students">Students (High→Low)</div><div class="sort-option" data-sort="active">Last Active</div></div></div>
+<button class="bulk-toggle" data-bulk-toggle="teachers"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Bulk</button>
+</div>
+<div class="active-filters" id="active-filters-teachers"></div>
+<div class="tab-scroll"><div class="cards-container" id="teachers-list"></div><div class="load-more"><button class="load-more-btn">Load More</button></div></div>
+<div class="bulk-bar" id="bulk-bar-teachers"><span class="bulk-bar-count" id="bulk-count-teachers">0 selected</span><div class="bulk-bar-actions"><button class="btn btn-grad btn-sm">Assign Classes</button><button class="btn btn-destructive btn-sm">Deactivate</button><button class="btn btn-cancel btn-sm" data-bulk-cancel="teachers">Cancel</button></div></div>
+</div>
+
+<!-- STUDENTS TAB -->
+<div class="tab-content" id="tab-students">
+<div class="link-banner" id="link-banner"><div class="link-banner-left"><div class="link-banner-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div><div class="link-banner-text">3 pending link requests</div><div class="link-banner-sub">Tap to review parent→child approvals</div></div></div><svg class="link-banner-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+<div class="search-row"><div class="search-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search students…" data-search="students"></div></div>
+<div class="filter-row">
+<div class="filter-chip" data-filter="class" data-tab="students">All Classes<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg><div class="filter-dropdown" id="dd-class"><div class="filter-option" data-value="6"><div class="check"></div>Class 6</div><div class="filter-option" data-value="7"><div class="check"></div>Class 7</div><div class="filter-option" data-value="8"><div class="check"></div>Class 8</div><div class="filter-option" data-value="9"><div class="check"></div>Class 9</div><div class="filter-option" data-value="10"><div class="check"></div>Class 10</div></div></div>
+<div class="filter-chip" data-filter="section" data-tab="students">All Sections<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg><div class="filter-dropdown" id="dd-section"><div class="filter-option" data-value="A"><div class="check"></div>Section A</div><div class="filter-option" data-value="B"><div class="check"></div>Section B</div><div class="filter-option" data-value="C"><div class="check"></div>Section C</div></div></div>
+<div class="sort-dropdown"><button class="sort-btn" data-sort-toggle="students"><svg viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4"/></svg>Sort: Name</button><div class="sort-menu" id="sort-menu-students"><div class="sort-option selected" data-sort="name">Name (A-Z)</div><div class="sort-option" data-sort="roll">Roll Number</div><div class="sort-option" data-sort="class">Class</div></div></div>
+<button class="bulk-toggle" data-bulk-toggle="students"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Bulk</button>
+</div>
+<div class="active-filters" id="active-filters-students"></div>
+<div class="tab-scroll"><div class="cards-container" id="students-list"></div></div>
+<div class="bulk-bar" id="bulk-bar-students"><span class="bulk-bar-count" id="bulk-count-students">0 selected</span><div class="bulk-bar-actions"><button class="btn btn-grad btn-sm">Graduate</button><button class="btn btn-grad btn-sm">Transfer</button><button class="btn btn-cancel btn-sm" data-bulk-cancel="students">Cancel</button></div></div>
+</div>
+
+<!-- STAFF TAB -->
+<div class="tab-content" id="tab-staff">
+<div class="search-row"><div class="search-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search staff…" data-search="staff"></div></div>
+<div class="filter-row">
+<div class="filter-chip" data-filter="department" data-tab="staff">All Departments<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg><div class="filter-dropdown" id="dd-department"><div class="filter-option" data-value="Administration"><div class="check"></div>Administration</div><div class="filter-option" data-value="Finance"><div class="check"></div>Finance</div><div class="filter-option" data-value="Transport"><div class="check"></div>Transport</div><div class="filter-option" data-value="Maintenance"><div class="check"></div>Maintenance</div><div class="filter-option" data-value="Library"><div class="check"></div>Library</div><div class="filter-option" data-value="Security"><div class="check"></div>Security</div></div></div>
+<div class="filter-chip" data-filter="role" data-tab="staff">All Roles<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg><div class="filter-dropdown" id="dd-role"><div class="filter-option" data-value="Accountant"><div class="check"></div>Accountant</div><div class="filter-option" data-value="Librarian"><div class="check"></div>Librarian</div><div class="filter-option" data-value="Driver"><div class="check"></div>Driver</div><div class="filter-option" data-value="Receptionist"><div class="check"></div>Receptionist</div><div class="filter-option" data-value="Custodian"><div class="check"></div>Custodian</div><div class="filter-option" data-value="Security Guard"><div class="check"></div>Security Guard</div></div></div>
+<div class="sort-dropdown"><button class="sort-btn" data-sort-toggle="staff"><svg viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4"/></svg>Sort: Name</button><div class="sort-menu" id="sort-menu-staff"><div class="sort-option selected" data-sort="name">Name (A-Z)</div><div class="sort-option" data-sort="department">Department</div></div></div>
+</div>
+<div class="active-filters" id="active-filters-staff"></div>
+<div class="tab-scroll"><div class="cards-container" id="staff-list"></div></div>
+</div>
+
+<!-- NAV BAR -->
+<div class="bottom-nav"><div class="nav-pill" id="nav-pill"></div><div class="nav-tabs">
+<div class="nav-item" data-index="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></div>
+<div class="nav-item active" data-index="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">People</span></div>
+<div class="nav-item" data-index="2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span class="nav-label">Records</span></div>
+<div class="nav-item" data-index="3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-label">Comms</span></div>
+<div class="nav-item" data-index="4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></div>
+</div></div>
+
+<!-- PROFILE OVERLAY -->
+<div class="profile-overlay" id="profile-overlay"><div class="profile-sheet" id="profile-sheet"><div class="profile-handle"></div><div class="profile-sheet-inner" id="profile-content"></div></div></div>
+
+<!-- DIALOGS -->
+<div class="dialog-overlay" id="dialog-add-teacher"><div class="dialog-card"><div class="dialog-handle"></div><div class="dialog-title">Add Teacher</div><div class="dialog-field"><label class="dialog-label">Full Name</label><input class="dialog-input" type="text" placeholder="e.g. Priya Sharma"></div><div class="dialog-field"><label class="dialog-label">Email or Phone</label><input class="dialog-input" type="text" placeholder="teacher@school.edu or +91…"></div><div class="dialog-field"><label class="dialog-label">Initial Password</label><input class="dialog-input" type="password" placeholder="••••••••"><div class="dialog-hint">Required when using email. OTP is sent automatically for phone.</div></div><div class="dialog-actions"><button class="dialog-btn outline" data-dialog-close>Cancel</button><button class="dialog-btn primary" data-dialog-close>Add Teacher</button></div></div></div>
+<div class="dialog-overlay" id="dialog-add-student"><div class="dialog-card"><div class="dialog-handle"></div><div class="dialog-title">Add Student</div><div class="dialog-field"><label class="dialog-label">Full Name</label><input class="dialog-input" type="text" placeholder="e.g. Aarav Patel"></div><div class="dialog-field"><label class="dialog-label">Class</label><input class="dialog-input" type="text" placeholder="e.g. 8"></div><div class="dialog-field"><label class="dialog-label">Section</label><input class="dialog-input" type="text" placeholder="e.g. A"></div><div class="dialog-field"><label class="dialog-label">Roll Number</label><input class="dialog-input" type="text" placeholder="e.g. 12"></div><div class="dialog-field"><label class="dialog-label">Parent Phone (optional)</label><input class="dialog-input" type="tel" placeholder="+91…"></div><div class="dialog-actions"><button class="dialog-btn outline" data-dialog-close>Cancel</button><button class="dialog-btn primary" data-dialog-close>Add Student</button></div></div></div>
+<div class="dialog-overlay" id="dialog-add-staff"><div class="dialog-card"><div class="dialog-handle"></div><div class="dialog-title">Add Staff Member</div><div class="dialog-field"><label class="dialog-label">Full Name</label><input class="dialog-input" type="text" placeholder="e.g. Rajesh Kumar"></div><div class="dialog-field"><label class="dialog-label">Role</label><input class="dialog-input" type="text" placeholder="e.g. Accountant"></div><div class="dialog-field"><label class="dialog-label">Department (optional)</label><input class="dialog-input" type="text" placeholder="e.g. Finance"></div><div class="dialog-field"><label class="dialog-label">Phone (optional)</label><input class="dialog-input" type="tel" placeholder="+91…"></div><div class="dialog-field"><label class="dialog-label">Email (optional)</label><input class="dialog-input" type="email" placeholder="staff@school.edu"></div><div class="dialog-actions"><button class="dialog-btn outline" data-dialog-close>Cancel</button><button class="dialog-btn primary" data-dialog-close>Add Staff</button></div></div></div>
+<div class="dialog-overlay" id="dialog-import-students"><div class="dialog-card"><div class="dialog-handle"></div><div class="dialog-title">Import Students (CSV)</div><div class="dialog-hint" style="margin-bottom:12px">Paste CSV with headers: full_name, class_name, section, roll_number</div><div class="dialog-field"><label class="dialog-label">CSV Content</label><textarea class="dialog-input" rows="6" style="resize:none;font-family:monospace;font-size:13px">full_name,class_name,section,roll_number
+Aarav Patel,8,A,12
+Diya Singh,8,A,13</textarea></div><div class="dialog-actions"><button class="dialog-btn outline" data-dialog-close>Cancel</button><button class="dialog-btn primary" data-dialog-close>Import</button></div></div></div>
+
+<div class="home-bar"></div></div></div>
+<script>
+// ═══ MOCK DATA ═══
+const subjectIcons = {
+  'Mathematics': {icon:'<svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6"/></svg>', grad:'linear-gradient(135deg,#7B61E5,#5B41D5)', soft:'#EEE8FB', ink:'#5B41D5'},
+  'Science': {icon:'<svg viewBox="0 0 24 24"><path d="M9 3h6v3l-2 4 3 7a3 3 0 0 1-3 4h-1a3 3 0 0 1-3-4l3-7-2-4V3z"/></svg>', grad:'linear-gradient(135deg,#4EE6A0,#2DCE89)', soft:'#DCF5E8', ink:'#2D7A4A'},
+  'English': {icon:'<svg viewBox="0 0 24 24"><path d="M4 19h6M4 5h6M6 5v14M14 5h6M14 12h6M14 19h6M16 5v5M16 14v5"/></svg>', grad:'linear-gradient(135deg,#42CCFF,#18BFFF)', soft:'#E0F6FF', ink:'#0B7AB8'},
+  'Social Studies': {icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>', grad:'linear-gradient(135deg,#FF5C85,#F82B60)', soft:'#FFE4EC', ink:'#D11A4A'},
+  'Hindi': {icon:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></svg>', grad:'linear-gradient(135deg,#FFD040,#FCB400)', soft:'#FFF4D1', ink:'#B07500'},
+  'Computer Science': {icon:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>', grad:'linear-gradient(135deg,#A78BFA,#7C3AED)', soft:'#EDE9FE', ink:'#5B21B6'},
+};
+
+const teachers = [
+  { id:'t1', name:'Priya Sharma', role:'Senior Teacher', active:true, classTeacher:true, grades:['8','9','10'], subjects:['Mathematics','Science'], classes:5, students:142, attendance:94, rating:4.8, experience:'12 yrs', lastActive:'2h ago', color:'violet', availability:'teaching', workload:72, schedule:'3 classes today', email:'priya@school.edu', phone:'+91 98765 43210' },
+  { id:'t2', name:'Rajesh Verma', role:'Teacher', active:true, classTeacher:false, grades:['6','7'], subjects:['English','Social Studies'], classes:4, students:98, attendance:91, rating:4.5, experience:'8 yrs', lastActive:'1d ago', color:'sky', availability:'break', workload:55, schedule:'2 classes today', email:'rajesh@school.edu', phone:'+91 98123 45678' },
+  { id:'t3', name:'Anjali Gupta', role:'Teacher', active:true, classTeacher:true, grades:['9','10'], subjects:['Hindi'], classes:3, students:76, attendance:88, rating:4.3, experience:'6 yrs', lastActive:'3h ago', color:'coral', availability:'meeting', workload:40, schedule:'1 class today', email:'anjali@school.edu', phone:'+91 98000 22222' },
+  { id:'t4', name:'Vikram Singh', role:'Teacher', active:true, classTeacher:false, grades:['7','8'], subjects:['Computer Science','Mathematics'], classes:6, students:124, attendance:96, rating:4.9, experience:'10 yrs', lastActive:'30m ago', color:'mint', availability:'teaching', workload:85, schedule:'4 classes today', email:'vikram@school.edu', phone:'+91 98444 33333' },
+  { id:'t5', name:'Meera Iyer', role:'Senior Teacher', active:false, classTeacher:false, grades:['6'], subjects:['Science'], classes:2, students:48, attendance:0, rating:4.1, experience:'15 yrs', lastActive:'2w ago', color:'gold', availability:'leave', workload:0, schedule:'On leave', email:'meera@school.edu', phone:'+91 98555 44444' },
+];
+
+const students = [
+  { id:'s1', name:'Aarav Patel', class:'8', section:'A', roll:'21', admission:'24105', active:true, attendance:96, homework:92, behaviour:'😊', parentName:'Rahul Patel', parentPhone:'+91 XXXXXXX234', parents:2, color:'violet', alerts:[{c:'green',l:'Healthy'}], today:[{c:'green',t:'Present'},{c:'yellow',t:'Math Homework Due'},{c:'sky',t:'Bus Route B12'}] },
+  { id:'s2', name:'Diya Singh', class:'8', section:'A', roll:'13', admission:'24108', active:true, attendance:91, homework:68, behaviour:'😊', parentName:'Meera Singh', parentPhone:'+91 XXXXXXX567', parents:1, color:'coral', alerts:[{c:'yellow',l:'Homework Due'}], today:[{c:'green',t:'Present'},{c:'yellow',t:'English Essay Due'}] },
+  { id:'s3', name:'Arjun Reddy', class:'9', section:'B', roll:'05', admission:'24112', active:true, attendance:72, homework:45, behaviour:'😐', parentName:'Suresh Reddy', parentPhone:'+91 XXXXXXX890', parents:1, color:'sky', alerts:[{c:'red',l:'Low Attendance'},{c:'yellow',l:'Homework Due'}], today:[{c:'red',t:'Absent'},{c:'yellow',t:'3 Assignments Pending'}] },
+  { id:'s4', name:'Saanvi Kumar', class:'7', section:'A', roll:'22', admission:'24120', active:true, attendance:96, homework:88, behaviour:'😊', parentName:'Amit Kumar', parentPhone:'+91 XXXXXXX345', parents:2, color:'mint', alerts:[{c:'green',l:'Healthy'}], today:[{c:'green',t:'Present'},{c:'sky',t:'Bus Route B07'}] },
+  { id:'s5', name:'Vivaan Mehta', class:'10', section:'C', roll:'03', admission:'24098', active:true, attendance:85, homework:75, behaviour:'😐', parentName:'Nikhil Mehta', parentPhone:'+91 XXXXXXX678', parents:1, color:'gold', alerts:[{c:'orange',l:'Fees Pending'}], today:[{c:'green',t:'Present'},{c:'yellow',t:'Science Lab Due'}] },
+  { id:'s6', name:'Ananya Joshi', class:'8', section:'B', roll:'08', admission:'24115', active:true, attendance:89, homework:95, behaviour:'😊', parentName:'Sneha Joshi', parentPhone:'+91 XXXXXXX901', parents:2, color:'violet', alerts:[{c:'green',l:'Healthy'},{c:'blue',l:'Parent Meeting'}], today:[{c:'green',t:'Present'},{c:'green',t:'All Homework Done'}] },
+  { id:'s7', name:'Reyansh Das', class:'9', section:'A', roll:'15', admission:'24103', active:false, attendance:62, homework:30, behaviour:'😟', parentName:'Prakash Das', parentPhone:'+91 XXXXXXX123', parents:0, color:'coral', alerts:[{c:'red',l:'Low Attendance'},{c:'orange',l:'Fees Pending'}], today:[{c:'red',t:'Absent'},{c:'yellow',t:'5 Assignments Pending'}] },
+];
+
+const staff = [
+  { id:'st1', name:'Rajesh Kumar', role:'Accountant', dept:'Finance', active:true, phone:'+91 98765 43210', email:'rajesh@school.edu', empId:'EMP-001', shift:'9:00 AM – 5:00 PM', joined:'2019', color:'violet', alerts:[{c:'green',l:'On Duty'}], today:[{c:'green',t:'Checked in 9:02 AM'},{c:'sky',t:'Fee Collection — 12 receipts'}] },
+  { id:'st2', name:'Sunita Devi', role:'Librarian', dept:'Library', active:true, phone:'+91 98123 45678', email:'sunita@school.edu', empId:'EMP-014', shift:'8:30 AM – 4:30 PM', joined:'2021', color:'sky', alerts:[{c:'green',l:'On Duty'}], today:[{c:'green',t:'Checked in 8:28 AM'},{c:'yellow',t:'3 Books Overdue Return'}] },
+  { id:'st3', name:'Mahesh Yadav', role:'Driver', dept:'Transport', active:true, phone:'+91 98000 11111', email:'', empId:'EMP-027', shift:'6:00 AM – 2:00 PM', joined:'2020', color:'mint', alerts:[{c:'green',l:'On Route'}], today:[{c:'green',t:'Bus B12 — Morning route done'},{c:'sky',t:'Afternoon route at 2:00 PM'}] },
+  { id:'st4', name:'Geeta Rao', role:'Receptionist', dept:'Administration', active:true, phone:'+91 98765 99999', email:'geeta@school.edu', empId:'EMP-003', shift:'9:00 AM – 5:00 PM', joined:'2018', color:'coral', alerts:[{c:'green',l:'On Duty'}], today:[{c:'green',t:'Checked in 8:55 AM'},{c:'yellow',t:'2 Pending Visitor Logs'}] },
+  { id:'st5', name:'Ram Prasad', role:'Security Guard', dept:'Security', active:false, phone:'+91 98444 55555', email:'', empId:'EMP-031', shift:'Night Shift', joined:'2022', color:'gold', alerts:[{c:'red',l:'Off Duty'}], today:[{c:'red',t:'Not checked in'},{c:'yellow',t:'Leave request pending'}] },
+];
+
+// ═══ STATE ═══
+const state = {
+  activeTab: 'teachers',
+  search: { teachers:'', students:'', staff:'' },
+  filters: { teachers:{}, students:{}, staff:{} },
+  sort: { teachers:'name', students:'name', staff:'name' },
+  bulk: { teachers:false, students:false },
+  selected: { teachers:new Set(), students:new Set() },
+};
+
+// ═══ HELPERS ═══
+function initials(name) { return name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase(); }
+function emptyState(title, body) {
+  return `<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div><div class="empty-title">${title}</div><div class="empty-body">${body}</div></div>`;
+}
+
+// ═══ RENDER: TEACHER CARDS ═══
+function renderTeachers() {
+  const list = document.getElementById('teachers-list');
+  let filtered = teachers.filter(t => {
+    const q = state.search.teachers.toLowerCase();
+    if (q && !t.name.toLowerCase().includes(q) && !t.role.toLowerCase().includes(q) && !t.subjects.some(s => s.toLowerCase().includes(q)) && !t.grades.some(g => g.includes(q))) return false;
+    const sf = state.filters.teachers.subject; if (sf && sf.length && !sf.some(s => t.subjects.includes(s))) return false;
+    const gf = state.filters.teachers.grade; if (gf && gf.length && !gf.some(g => t.grades.includes(g))) return false;
+    return true;
+  });
+  if (state.sort.teachers === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+  if (state.sort.teachers === 'students') filtered.sort((a,b) => b.students - a.students);
+  if (state.sort.teachers === 'active') filtered.sort((a,b) => a.lastActive.localeCompare(b.lastActive));
+  if (filtered.length === 0) { list.innerHTML = emptyState('No teachers found','Try adjusting your search or filters'); return; }
+  const bm = state.bulk.teachers;
+  const am = { teaching:{cls:'avail-teaching',label:'Teaching'}, break:{cls:'avail-break',label:'On Break'}, meeting:{cls:'avail-meeting',label:'In Meeting'}, leave:{cls:'avail-leave',label:'On Leave'} };
+  const wlC = wl => wl>=80?'linear-gradient(90deg,#FF5C85,#F82B60)':wl>=60?'linear-gradient(90deg,#FFD040,#FCB400)':wl>0?'linear-gradient(90deg,#4EE6A0,#2DCE89)':'var(--line)';
+  list.innerHTML = filtered.map(t => {
+    const si = subjectIcons[t.subjects[0]] || subjectIcons['Mathematics'];
+    const av = am[t.availability] || am.break;
+    return `<div class="teacher-card ${bm?'bulk-mode':''} ${state.selected.teachers.has(t.id)?'selected':''}" data-id="${t.id}" data-type="teachers" data-profile="teacher">
+      <div class="teacher-accent" style="background:${si.grad}"></div>
+      ${bm?`<div style="padding:10px 14px 0;display:flex;align-items:center;gap:8px"><div class="bulk-checkbox"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div></div>`:''}
+      <div class="bento-header">
+        <div class="avatar ${t.color}">${initials(t.name)}</div>
+        <div class="bento-header-info">
+          <div class="bento-header-name"><span class="card-name">${t.name}</span>${t.classTeacher?`<span class="crown-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18l2-9 4 4 3-6 3 6 4-4 2 9H3z"/></svg></span>`:''}</div>
+          <div style="font-size:11px;font-weight:500;color:var(--ink3);margin-top:2px">${t.role} · ${t.experience}</div>
+        </div>
+        <span class="avail-pill ${av.cls}"><span class="avail-dot"></span>${av.label}</span>
+      </div>
+      <div class="bento-grid">
+        <div class="bento-cell"><div class="bento-cell-label"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Classes</div><div class="bento-stat-row"><div class="bento-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></div><div><div class="bento-cell-val">${t.classes}</div><div class="bento-cell-sub">active</div></div></div></div>
+        <div class="bento-cell"><div class="bento-cell-label"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg>Students</div><div class="bento-stat-row"><div class="bento-stat-icon" style="background:var(--sky-soft);color:var(--sky)"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg></div><div><div class="bento-cell-val">${t.students}</div><div class="bento-cell-sub">enrolled</div></div></div></div>
+        <div class="bento-cell"><div class="bento-cell-label"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Attendance</div><div class="bento-stat-row"><div class="bento-stat-icon" style="background:${t.attendance>=95?'var(--mint-soft)':t.attendance>=85?'var(--gold-soft)':'var(--coral-soft)'};color:${t.attendance>=95?'var(--success)':t.attendance>=85?'var(--gold)':'var(--coral)'}"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div><div class="bento-cell-val">${t.attendance>0?t.attendance+'%':'—'}</div><div class="bento-cell-sub">avg rate</div></div></div></div>
+        <div class="bento-cell"><div class="bento-cell-label"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>Workload</div><div class="workload-bar"><div class="workload-fill" style="width:${t.workload}%;background:${wlC(t.workload)}"></div></div><div class="workload-row"><span class="bento-cell-sub">Weekly capacity</span><span class="workload-pct" style="color:${t.workload>=80?'var(--coral)':t.workload>=60?'var(--gold)':'var(--success)'}">${t.workload}%</span></div></div>
+        <div class="bento-cell full"><div class="bento-cell-label"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Subjects & Grades</div><div class="bento-subjects">${t.subjects.map(s=>{const s2=subjectIcons[s]||subjectIcons['Mathematics'];return `<span class="subject-pill" style="background:${s2.soft};color:${s2.ink}">${s2.icon}${s}</span>`;}).join('')}${t.grades.map(g=>`<span class="grade-pill">Gr ${g}</span>`).join('')}</div></div>
+        <div class="bento-cell full" style="flex-direction:row;align-items:center;justify-content:space-between"><div class="bento-schedule"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${t.schedule}</div>${!bm?`<div style="display:flex;align-items:center;gap:6px"><button class="btn-profile" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button><div class="overflow-wrap"><button class="overflow-btn" data-overflow><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button><div class="overflow-menu"><div class="overflow-item"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Assign Classes</div><div class="overflow-item"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit Details</div><div class="overflow-item"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Reset Password</div><div class="overflow-item danger"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Deactivate</div></div></div></div>`:''}</div>
+      </div></div>`;
+  }).join('');
+}
+
+// ═══ RENDER: STUDENT CARDS ═══
+function renderStudents() {
+  const list = document.getElementById('students-list');
+  let filtered = students.filter(s => {
+    const q = state.search.students.toLowerCase();
+    if (q && !s.name.toLowerCase().includes(q) && !s.roll.includes(q) && !s.class.includes(q) && !s.section.toLowerCase().includes(q) && !s.admission.includes(q) && !s.parentName.toLowerCase().includes(q)) return false;
+    const cf = state.filters.students.class; if (cf && cf.length && !cf.includes(s.class)) return false;
+    const sf = state.filters.students.section; if (sf && sf.length && !sf.includes(s.section)) return false;
+    return true;
+  });
+  if (state.sort.students === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+  if (state.sort.students === 'roll') filtered.sort((a,b) => parseInt(a.roll) - parseInt(b.roll));
+  if (state.sort.students === 'class') filtered.sort((a,b) => parseInt(a.class) - parseInt(b.class) || a.section.localeCompare(b.section));
+  if (filtered.length === 0) { list.innerHTML = emptyState('No students found','Try adjusting your search or filters'); return; }
+  const bm = state.bulk.students;
+  const attC = p => p>=85?'green':p>=75?'yellow':p>0?'red':'violet';
+  const hwC = p => p>=80?'green':p>=50?'yellow':'red';
+  list.innerHTML = filtered.map(s => `<div class="student-enriched ${bm?'bulk-mode':''} ${state.selected.students.has(s.id)?'selected':''}" data-id="${s.id}" data-type="students" data-profile="student" style="${bm?'padding-left:12px':''}">
+    ${bm?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div class="bulk-checkbox"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div></div>`:''}
+    <div class="se-header"><div class="se-avatar ${s.color}">${initials(s.name)}</div><div class="se-id"><div class="se-name-row"><span class="se-name">${s.name}</span><span class="se-class-badge">Class ${s.class}-${s.section}</span></div><div class="se-roll-row"><span class="se-roll">Roll #${s.roll}</span><span class="se-adm">Admission #${s.admission}</span></div></div>${!bm?`<div class="overflow-wrap"><button class="overflow-btn" data-overflow><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button><div class="overflow-menu"><div class="overflow-item"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Link to Parent</div><div class="overflow-item"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</div><div class="overflow-item"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Promote</div><div class="overflow-item danger"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Remove</div></div></div>`:''}</div>
+    <div class="se-parent"><div class="se-parent-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${s.parentName||'—'}</div><div class="se-parent-item"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${s.parentPhone||'—'}</div></div>
+    <div class="se-divider"></div>
+    <div class="se-alerts">${s.alerts.map(a=>`<span class="se-alert"><span class="se-alert-dot ${a.c}"></span>${a.l}</span>`).join('')}</div>
+    <div class="se-viz-row"><div class="se-viz"><div class="se-viz-label-row"><span class="se-viz-label">Attendance</span><span class="se-viz-value">${s.attendance>0?s.attendance+'%':'—'}</span></div><div class="se-viz-bar"><div class="se-viz-fill ${attC(s.attendance)}" style="width:${s.attendance}%"></div></div></div><div class="se-viz"><div class="se-viz-label-row"><span class="se-viz-label">Homework</span><span class="se-viz-value">${s.homework>0?s.homework+'%':'—'}</span></div><div class="se-viz-bar"><div class="se-viz-fill ${hwC(s.homework)}" style="width:${s.homework}%"></div></div></div></div>
+    <div class="se-today"><div class="se-today-header"><span>Today</span><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div><div class="se-today-list">${s.today.map(t=>`<div class="se-today-item"><span class="dot ${t.c}"></span>${t.t}</div>`).join('')}</div></div>
+    ${!bm?`<div class="se-actions"><button class="se-action-btn" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></button><button class="se-action-btn" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>Call</span></button><button class="se-action-btn" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Message</span></button></div>`:''}
+  </div>`).join('');
+}
+
+// ═══ RENDER: STAFF CARDS ═══
+function renderStaff() {
+  const list = document.getElementById('staff-list');
+  let filtered = staff.filter(s => {
+    const q = state.search.staff.toLowerCase();
+    if (q && !s.name.toLowerCase().includes(q) && !s.role.toLowerCase().includes(q) && !s.dept.toLowerCase().includes(q) && !s.empId.toLowerCase().includes(q)) return false;
+    const df = state.filters.staff.department; if (df && df.length && !df.includes(s.dept)) return false;
+    const rf = state.filters.staff.role; if (rf && rf.length && !rf.includes(s.role)) return false;
+    return true;
+  });
+  if (state.sort.staff === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+  if (state.sort.staff === 'department') filtered.sort((a,b) => a.dept.localeCompare(b.dept));
+  if (filtered.length === 0) { list.innerHTML = emptyState('No staff found','Try adjusting your search or filters'); return; }
+  list.innerHTML = filtered.map(s => `<div class="student-enriched" data-id="${s.id}" data-type="staff" data-profile="staff">
+    <div class="se-header"><div class="se-avatar ${s.color}">${initials(s.name)}</div><div class="se-id"><div class="se-name-row"><span class="se-name">${s.name}</span><span class="se-class-badge" style="background:var(--mint-soft);color:var(--success)">${s.dept}</span></div><div class="se-roll-row"><span class="se-roll">${s.role}</span><span class="se-adm">${s.empId}</span></div></div><div class="overflow-wrap"><button class="overflow-btn" data-overflow><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button><div class="overflow-menu"><div class="overflow-item"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</div><div class="overflow-item"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Assign Shift</div><div class="overflow-item danger"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Remove</div></div></div></div>
+    <div class="se-parent"><div class="se-parent-item"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${s.phone||'—'}</div><div class="se-parent-item"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22 6 12 13 2 6"/></svg>${s.email||'—'}</div><div class="se-parent-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${s.shift}</div></div>
+    <div class="se-divider"></div>
+    <div class="se-alerts">${s.alerts.map(a=>`<span class="se-alert"><span class="se-alert-dot ${a.c}"></span>${a.l}</span>`).join('')}<span class="se-alert"><span class="se-alert-dot violet"></span>Since ${s.joined}</span></div>
+    <div class="se-today"><div class="se-today-header"><span>Today</span><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div><div class="se-today-list">${s.today.map(t=>`<div class="se-today-item"><span class="dot ${t.c}"></span>${t.t}</div>`).join('')}</div></div>
+    <div class="se-actions"><button class="se-action-btn" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></button><button class="se-action-btn" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>Call</span></button><button class="se-action-btn" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Message</span></button></div>
+  </div>`).join('');
+}
+
+// ═══ PROFILE OVERLAY ═══
+function openProfile(type, id) {
+  const overlay = document.getElementById('profile-overlay');
+  const content = document.getElementById('profile-content');
+  let person;
+  if (type === 'teacher') person = teachers.find(t => t.id === id);
+  else if (type === 'student') person = students.find(s => s.id === id);
+  else if (type === 'staff') person = staff.find(s => s.id === id);
+  if (!person) return;
+
+  if (type === 'teacher') {
+    const si = subjectIcons[person.subjects[0]] || subjectIcons['Mathematics'];
+    content.innerHTML = `
+      <div class="profile-hero">
+        <div class="profile-hero-avatar ${person.color}">${initials(person.name)}</div>
+        <div class="profile-hero-info">
+          <div class="profile-hero-name">${person.name}</div>
+          <div class="profile-hero-role">${person.role} · ${person.experience}</div>
+        </div>
+        <button class="profile-close-btn" id="profile-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></div><div class="profile-stat-val">${person.classes}</div><div class="profile-stat-label">Classes</div></div>
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--sky-soft);color:var(--sky)"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg></div><div class="profile-stat-val">${person.students}</div><div class="profile-stat-label">Students</div></div>
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:${person.attendance>=95?'var(--mint-soft)':'var(--gold-soft)'};color:${person.attendance>=95?'var(--success)':'var(--gold)'}"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="profile-stat-val">${person.attendance>0?person.attendance+'%':'—'}</div><div class="profile-stat-label">Attendance</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Contact Information</div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22 6 12 13 2 6"/></svg>Email</div><div class="profile-info-value">${person.email||'—'}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Phone</div><div class="profile-info-value">${person.phone||'—'}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Last Active</div><div class="profile-info-value">${person.lastActive}</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Subjects & Grades</div>
+        <div class="bento-subjects">${person.subjects.map(s=>{const s2=subjectIcons[s]||subjectIcons['Mathematics'];return `<span class="subject-pill" style="background:${s2.soft};color:${s2.ink}">${s2.icon}${s}</span>`;}).join('')}${person.grades.map(g=>`<span class="grade-pill">Gr ${g}</span>`).join('')}</div>
+      </div>
+      <div class="profile-actions">
+        <button class="profile-action-btn primary"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit Profile</button>
+        <button class="profile-action-btn secondary"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+      </div>`;
+  } else if (type === 'student') {
+    content.innerHTML = `
+      <div class="profile-hero">
+        <div class="profile-hero-avatar ${person.color}">${initials(person.name)}</div>
+        <div class="profile-hero-info">
+          <div class="profile-hero-name">${person.name}</div>
+          <div class="profile-hero-role">Class ${person.class}-${person.section} · Roll #${person.roll}</div>
+        </div>
+        <button class="profile-close-btn" id="profile-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:${person.attendance>=85?'var(--mint-soft)':'var(--coral-soft)'};color:${person.attendance>=85?'var(--success)':'var(--coral)'}"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="profile-stat-val">${person.attendance>0?person.attendance+'%':'—'}</div><div class="profile-stat-label">Attendance</div></div>
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--sky-soft);color:var(--sky)"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="profile-stat-val">${person.homework}%</div><div class="profile-stat-label">Homework</div></div>
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg></div><div class="profile-stat-val">${person.parents}</div><div class="profile-stat-label">Parents</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Parent Information</div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Parent Name</div><div class="profile-info-value">${person.parentName||'—'}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Parent Phone</div><div class="profile-info-value">${person.parentPhone||'—'}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Admission #</div><div class="profile-info-value">${person.admission}</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Today's Summary</div>
+        <div class="se-today-list">${person.today.map(t=>`<div class="se-today-item"><span class="dot ${t.c}"></span>${t.t}</div>`).join('')}</div>
+      </div>
+      <div class="profile-actions">
+        <button class="profile-action-btn primary"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</button>
+        <button class="profile-action-btn secondary"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call Parent</button>
+      </div>`;
+  } else {
+    content.innerHTML = `
+      <div class="profile-hero">
+        <div class="profile-hero-avatar ${person.color}">${initials(person.name)}</div>
+        <div class="profile-hero-info">
+          <div class="profile-hero-name">${person.name}</div>
+          <div class="profile-hero-role">${person.role} · ${person.dept}</div>
+        </div>
+        <button class="profile-close-btn" id="profile-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21v-2a7 7 0 0 0-7-7H4a7 7 0 0 0-7 7v2"/></svg></div><div class="profile-stat-val">${person.empId}</div><div class="profile-stat-label">Emp ID</div></div>
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--mint-soft);color:var(--success)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="profile-stat-val" style="font-size:13px">${person.shift}</div><div class="profile-stat-label">Shift</div></div>
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--gold-soft);color:var(--gold)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div><div class="profile-stat-val">${person.joined}</div><div class="profile-stat-label">Joined</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Contact Information</div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Phone</div><div class="profile-info-value">${person.phone||'—'}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22 6 12 13 2 6"/></svg>Email</div><div class="profile-info-value">${person.email||'—'}</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Today's Summary</div>
+        <div class="se-today-list">${person.today.map(t=>`<div class="se-today-item"><span class="dot ${t.c}"></span>${t.t}</div>`).join('')}</div>
+      </div>
+      <div class="profile-actions">
+        <button class="profile-action-btn primary"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</button>
+        <button class="profile-action-btn secondary"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+      </div>`;
+  }
+  overlay.classList.add('active');
+  document.getElementById('profile-close').addEventListener('click', () => overlay.classList.remove('active'));
+}
+
+// ═══ ACTIVE FILTERS ═══
+function renderActiveFilters(tab) {
+  const c = document.getElementById(`active-filters-${tab}`);
+  const filters = state.filters[tab];
+  let html = '';
+  for (const [type, values] of Object.entries(filters)) {
+    if (values && values.length) {
+      values.forEach(v => {
+        const label = type==='grade'?`Grade ${v}`:type==='class'?`Class ${v}`:type==='section'?`Sec ${v}`:v;
+        html += `<span class="active-filter-chip" data-remove-filter="${tab}:${type}:${v}">${label} <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`;
+      });
+    }
+  }
+  if (html) html += '<span class="clear-filters" data-clear-filters="' + tab + '">Clear all</span>';
+  c.innerHTML = html;
+}
+
+function renderAll() {
+  renderTeachers(); renderStudents(); renderStaff();
+  renderActiveFilters('teachers'); renderActiveFilters('students'); renderActiveFilters('staff');
+  updateBulkBar('teachers'); updateBulkBar('students');
+}
+
+function updateBulkBar(tab) {
+  const bar = document.getElementById(`bulk-bar-${tab}`);
+  const count = document.getElementById(`bulk-count-${tab}`);
+  if (!bar || !count) return;
+  const n = state.selected[tab].size;
+  count.textContent = `${n} selected`;
+  bar.classList.toggle('active', state.bulk[tab] && n > 0);
+}
+
+// ═══ SUB-TAB SWITCHING ═══
+document.addEventListener('click', e => {
+  const pill = e.target.closest('.subtab-pill');
+  if (!pill) return;
+  const tab = pill.getAttribute('data-subtab');
+  state.activeTab = tab;
+  document.querySelectorAll('.subtab-pill').forEach(p => p.classList.toggle('active', p === pill));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tab}`));
+});
+
+// ═══ ADD BUTTON — context-aware dialog ═══
+document.getElementById('subtab-add-btn').addEventListener('click', () => {
+  const tab = state.activeTab;
+  const dialogId = tab === 'teachers' ? 'add-teacher' : tab === 'students' ? 'add-student' : 'add-staff';
+  const dialog = document.getElementById('dialog-' + dialogId);
+  if (dialog) dialog.classList.add('active');
+});
+
+// ═══ SEARCH ═══
+document.querySelectorAll('[data-search]').forEach(input => {
+  input.addEventListener('input', e => {
+    const tab = e.target.getAttribute('data-search');
+    state.search[tab] = e.target.value;
+    if (tab === 'teachers') renderTeachers();
+    if (tab === 'students') renderStudents();
+    if (tab === 'staff') renderStaff();
+  });
+});
+
+// ═══ FILTER CHIPS ═══
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.filter-chip');
+  if (chip) { const dd = chip.querySelector('.filter-dropdown'); if (dd) { document.querySelectorAll('.filter-dropdown.open').forEach(d => { if (d !== dd) d.classList.remove('open'); }); dd.classList.toggle('open'); } return; }
+  if (!e.target.closest('.filter-dropdown') && !e.target.closest('.filter-chip')) { document.querySelectorAll('.filter-dropdown.open').forEach(d => d.classList.remove('open')); }
+});
+
+document.addEventListener('click', e => {
+  const opt = e.target.closest('.filter-option');
+  if (!opt) return;
+  e.stopPropagation();
+  const dd = opt.closest('.filter-dropdown');
+  const chip = dd.closest('.filter-chip');
+  const filterType = chip.getAttribute('data-filter');
+  const tab = chip.getAttribute('data-tab');
+  const value = opt.getAttribute('data-value');
+  if (!state.filters[tab][filterType]) state.filters[tab][filterType] = [];
+  const idx = state.filters[tab][filterType].indexOf(value);
+  if (idx >= 0) { state.filters[tab][filterType].splice(idx, 1); opt.classList.remove('selected'); }
+  else { state.filters[tab][filterType].push(value); opt.classList.add('selected'); }
+  const count = state.filters[tab][filterType].length;
+  const labels = { subject:'Subjects', grade:'Grades', class:'Classes', section:'Sections', department:'Departments', role:'Roles' };
+  if (count === 0) { chip.childNodes[0].textContent = `All ${labels[filterType]}`; chip.classList.remove('active'); }
+  else { chip.childNodes[0].textContent = `${count} ${labels[filterType].slice(0,-1)}${count > 1 ? 's' : ''}`; chip.classList.add('active'); }
+  renderAll();
+});
+
+// Remove active filter
+document.addEventListener('click', e => {
+  const chip = e.target.closest('[data-remove-filter]');
+  if (!chip) return;
+  const [tab, type, value] = chip.getAttribute('data-remove-filter').split(':');
+  const idx = state.filters[tab][type].indexOf(value);
+  if (idx >= 0) state.filters[tab][type].splice(idx, 1);
+  const fc = document.querySelector(`.filter-chip[data-filter="${type}"][data-tab="${tab}"]`);
+  if (fc) {
+    const count = state.filters[tab][type].length;
+    const labels = { subject:'Subjects', grade:'Grades', class:'Classes', section:'Sections', department:'Departments', role:'Roles' };
+    if (count === 0) { fc.childNodes[0].textContent = `All ${labels[type]}`; fc.classList.remove('active'); }
+    else { fc.childNodes[0].textContent = `${count} ${labels[type].slice(0,-1)}${count > 1 ? 's' : ''}`; }
+    const opt = fc.querySelector(`.filter-option[data-value="${value}"]`);
+    if (opt) opt.classList.remove('selected');
+  }
+  renderAll();
+});
+
+// Clear all filters
+document.addEventListener('click', e => {
+  const clear = e.target.closest('[data-clear-filters]');
+  if (!clear) return;
+  const tab = clear.getAttribute('data-clear-filters');
+  state.filters[tab] = {};
+  document.querySelectorAll(`.filter-chip[data-tab="${tab}"]`).forEach(chip => {
+    const type = chip.getAttribute('data-filter');
+    const labels = { subject:'Subjects', grade:'Grades', class:'Classes', section:'Sections', department:'Departments', role:'Roles' };
+    chip.childNodes[0].textContent = `All ${labels[type]}`;
+    chip.classList.remove('active');
+    chip.querySelectorAll('.filter-option.selected').forEach(o => o.classList.remove('selected'));
+  });
+  renderAll();
+});
+
+// ═══ SORT DROPDOWN ═══
+document.addEventListener('click', e => {
+  const sortBtn = e.target.closest('[data-sort-toggle]');
+  if (sortBtn) { const tab = sortBtn.getAttribute('data-sort-toggle'); const menu = document.getElementById(`sort-menu-${tab}`); document.querySelectorAll('.sort-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); }); menu.classList.toggle('open'); e.stopPropagation(); return; }
+  if (!e.target.closest('.sort-menu') && !e.target.closest('.sort-btn')) { document.querySelectorAll('.sort-menu.open').forEach(m => m.classList.remove('open')); }
+});
+
+document.addEventListener('click', e => {
+  const opt = e.target.closest('.sort-option');
+  if (!opt) return;
+  const menu = opt.closest('.sort-menu');
+  const tab = menu.id.replace('sort-menu-','');
+  menu.querySelectorAll('.sort-option').forEach(o => o.classList.remove('selected'));
+  opt.classList.add('selected');
+  state.sort[tab] = opt.getAttribute('data-sort');
+  const btn = document.querySelector(`[data-sort-toggle="${tab}"]`);
+  btn.lastChild.textContent = ` Sort: ${opt.textContent.split(' ')[0]}`;
+  menu.classList.remove('open');
+  renderAll();
+});
+
+// ═══ OVERFLOW MENU ═══
+document.addEventListener('click', e => {
+  const ob = e.target.closest('[data-overflow]');
+  if (ob) { e.stopPropagation(); const menu = ob.nextElementSibling; document.querySelectorAll('.overflow-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); }); menu.classList.toggle('open'); return; }
+  if (!e.target.closest('.overflow-menu')) { document.querySelectorAll('.overflow-menu.open').forEach(m => m.classList.remove('open')); }
+});
+
+// ═══ BULK MODE ═══
+document.addEventListener('click', e => {
+  const bb = e.target.closest('[data-bulk-toggle]');
+  if (!bb) return;
+  const tab = bb.getAttribute('data-bulk-toggle');
+  state.bulk[tab] = !state.bulk[tab];
+  if (!state.bulk[tab]) state.selected[tab].clear();
+  bb.classList.toggle('active', state.bulk[tab]);
+  if (tab === 'teachers') renderTeachers();
+  if (tab === 'students') renderStudents();
+  updateBulkBar(tab);
+});
+
+document.addEventListener('click', e => {
+  const cancel = e.target.closest('[data-bulk-cancel]');
+  if (!cancel) return;
+  const tab = cancel.getAttribute('data-bulk-cancel');
+  state.bulk[tab] = false;
+  state.selected[tab].clear();
+  document.querySelector(`[data-bulk-toggle="${tab}"]`).classList.remove('active');
+  if (tab === 'teachers') renderTeachers();
+  if (tab === 'students') renderStudents();
+  updateBulkBar(tab);
+});
+
+// Card click in bulk mode
+document.addEventListener('click', e => {
+  const card = e.target.closest('.teacher-card.bulk-mode, .student-enriched.bulk-mode');
+  if (!card) return;
+  if (e.target.closest('.overflow-btn') || e.target.closest('.overflow-menu') || e.target.closest('.btn')) return;
+  e.stopPropagation();
+  const id = card.getAttribute('data-id');
+  const tab = card.getAttribute('data-type');
+  if (state.selected[tab].has(id)) { state.selected[tab].delete(id); card.classList.remove('selected'); }
+  else { state.selected[tab].add(id); card.classList.add('selected'); }
+  updateBulkBar(tab);
+});
+
+// ═══ PROFILE OVERLAY — open on card click (non-bulk) ═══
+document.addEventListener('click', e => {
+  const card = e.target.closest('[data-profile]');
+  if (!card) return;
+  if (card.classList.contains('bulk-mode')) return;
+  if (e.target.closest('.overflow-btn') || e.target.closest('.overflow-menu') || e.target.closest('.btn-profile') || e.target.closest('.se-action-btn')) return;
+  const type = card.getAttribute('data-profile');
+  const id = card.getAttribute('data-id');
+  openProfile(type, id);
+});
+
+// Close profile on overlay backdrop click
+document.getElementById('profile-overlay').addEventListener('click', e => {
+  if (e.target.id === 'profile-overlay') e.target.classList.remove('active');
+});
+
+// ═══ DIALOGS ═══
+document.addEventListener('click', e => {
+  const trigger = e.target.closest('[data-dialog]');
+  if (trigger) { const id = trigger.getAttribute('data-dialog'); const d = document.getElementById('dialog-' + id); if (d) d.classList.add('active'); return; }
+  const closer = e.target.closest('[data-dialog-close]');
+  if (closer) { closer.closest('.dialog-overlay').classList.remove('active'); return; }
+  if (e.target.classList.contains('dialog-overlay')) e.target.classList.remove('active');
+});
+
+// ═══ LINK BANNER ═══
+document.getElementById('link-banner').addEventListener('click', () => {
+  const b = document.getElementById('link-banner');
+  b.style.transform = 'scale(0.98)';
+  setTimeout(() => { b.style.transform = ''; }, 150);
+});
+
+// ═══ NAV BAR — sliding pill ═══
+function updateNavPill() {
+  const items = document.querySelectorAll('.nav-item');
+  const active = document.querySelector('.nav-item.active');
+  if (!active) return;
+  const idx = parseInt(active.getAttribute('data-index'));
+  const inactiveW = 71, activeW = 96, gap = 2, padding = 7;
+  let offset = padding;
+  for (let i = 0; i < idx; i++) offset += inactiveW + gap;
+  document.getElementById('nav-pill').style.transform = `translateX(${offset - padding}px)`;
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    updateNavPill();
+  });
+});
+
+// ═══ INIT ═══
+renderAll();
+requestAnimationFrame(() => updateNavPill());
+</script>
+</body>
+</html>
