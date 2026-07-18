@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -286,7 +287,10 @@ private fun KpiCarousel(p: TeacherProfileDto) {
     )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_OVERVIEW))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyRow(
+            contentPadding = PaddingValues(end = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             items(kpis) { kpi -> KpiCard(kpi) }
         }
     }
@@ -360,7 +364,10 @@ private fun TeachingPortfolio(assignments: List<TeacherAssignmentDto>) {
         if (assignments.isEmpty()) {
             EmptyCard(VIcons.BookOpen, appString(StringKeys.SCH_NO_ASSIGNMENTS_YET))
         } else {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyRow(
+                contentPadding = PaddingValues(end = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 items(assignments) { a -> PortfolioCard(a) }
             }
         }
@@ -480,7 +487,10 @@ private fun AchievementsCarousel(achievements: List<TeacherAchievementDto>) {
         if (achievements.isEmpty()) {
             EmptyCard(VIcons.Star, appString(StringKeys.SCH_NO_ACHIEVEMENTS))
         } else {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyRow(
+                contentPadding = PaddingValues(end = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 itemsIndexed(achievements) { index, item -> AchievementCard(item, index) }
             }
         }

@@ -71,6 +71,8 @@ import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewM
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
+import com.littlebridge.enrollplus.ui.v2.theme.VElevationLevel
+import com.littlebridge.enrollplus.ui.v2.theme.vElevation
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VTopTabs — horizontally scrollable underline tab bar
@@ -970,16 +972,15 @@ private fun RoutePinButton(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VCreamBottomNav — premium floating dock navigation (v2, +10% size)
+// VCreamBottomNav — premium floating dock navigation
 //
 // Design DNA:
-//   • VColors.surfaceCard bar (pure white) — floats above cream background
-//   • 1dp VColors.line border, 24dp rounded corners
-//   • Active: icon in a filled violet circle (36dp) + violet label
-//   • Inactive: plain icon in ink3 + ink3 label
-//   • Badge: coral dot on top-right of icon (no text, just a dot)
-//   • Clean tween animations, no springs
-//   • 62dp height — 10% larger, premium
+//   • Floating capsule (32dp radius) with hairline border and raised shadow
+//   • Solid violet gradient pill glides horizontally under the active tab
+//   • Active icon + label sit ON the pill in white
+//   • Inactive tabs are quiet grey glyphs (no label)
+//   • Badge: coral dot on inactive, white pill on active
+//   • Spring physics for pill slide + icon scale
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -989,95 +990,164 @@ fun VCreamBottomNav(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
+    val accent = VColors.violet
+
+    val itemXs = remember { mutableStateMapOf<String, Dp>() }
+    val itemWidths = remember { mutableStateMapOf<String, Dp>() }
+    val targetX = itemXs[selected] ?: 0.dp
+    val targetW = itemWidths[selected] ?: 0.dp
+    val pillX by animateDpAsState(
+        targetValue = targetX,
+        animationSpec = spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow),
+        label = "creamPillX",
+    )
+    val pillW by animateDpAsState(
+        targetValue = targetW,
+        animationSpec = spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow),
+        label = "creamPillW",
+    )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    0f to VColors.cream.copy(alpha = 0f),
+                    0.45f to VColors.cream,
+                    1f to VColors.cream,
+                ),
+            )
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 11.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .height(62.dp)
+            Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(VColors.surfaceCard)
-                .border(1.dp, VColors.line, RoundedCornerShape(24.dp))
-                .padding(horizontal = 8.dp),
+                .vElevation(VElevationLevel.Raised, radius = 32.dp)
+                .clip(RoundedCornerShape(32.dp))
+                .background(VColors.white)
+                .drawBehind {
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            listOf(Color.White.copy(alpha = 0.7f), Color.Transparent),
+                            endY = size.height * 0.55f,
+                        ),
+                    )
+                }
+                .border(1.dp, VColors.line, RoundedCornerShape(32.dp))
+                .padding(horizontal = 7.dp, vertical = 7.dp),
         ) {
+            if (pillW > 0.dp) {
+                Box(
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(x = pillX)
+                        .width(pillW)
+                        .height(46.dp)
+                        .vElevation(VElevationLevel.Raised, radius = 999.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(
+                            Brush.horizontalGradient(listOf(accent, accent)),
+                        ),
+                )
+            }
             Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 items.forEach { item ->
                     val active = item.id == selected
-                    val iconTint = if (active) VColors.violet else VColors.ink3
-                    val labelColor = if (active) VColors.violet else VColors.ink3
+                    val tint = if (active) Color.White else VColors.ink3
                     val interaction = remember { MutableInteractionSource() }
 
-                    Column(
+                    val iconScale by animateFloatAsState(
+                        targetValue = if (active) 1.08f else 1f,
+                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessLow),
+                        label = "creamIconScale",
+                    )
+                    val iconLift by animateFloatAsState(
+                        targetValue = if (active) -1.5f else 0f,
+                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessLow),
+                        label = "creamIconLift",
+                    )
+                    val labelAlpha by animateFloatAsState(
+                        targetValue = if (active) 1f else 0f,
+                        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                        label = "creamLabelAlpha",
+                    )
+
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(18.dp))
+                            .weight(if (active) 1.35f else 1f)
+                            .height(44.dp)
+                            .padding(horizontal = 12.dp)
+                            .onGloballyPositioned { coords ->
+                                itemXs[item.id] = with(density) { coords.boundsInParent().left.toDp() }
+                                itemWidths[item.id] = with(density) { coords.size.width.toDp() }
+                            }
                             .clickable(interactionSource = interaction, indication = null) {
                                 if (!active) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onSelect(item.id)
                                 }
-                                onSelect(item.id)
                             },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
                     ) {
-                        Box(contentAlignment = Alignment.TopEnd) {
-                            if (active) {
+                        Box {
+                            Icon(
+                                item.icon,
+                                contentDescription = item.label,
+                                tint = tint,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .graphicsLayer {
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                        translationY = iconLift * this.density
+                                    },
+                            )
+                            if (item.badge > 0) {
+                                val badgeBg = if (active) Color.White else VColors.error
+                                val badgeRing = if (active) accent else VColors.surfaceCard
+                                val badgeFg = if (active) accent else Color.White
                                 Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
+                                    Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 7.dp, y = (-3).dp)
                                         .clip(CircleShape)
-                                        .background(VColors.violetSoft),
-                                    contentAlignment = Alignment.Center,
+                                        .background(badgeBg)
+                                        .border(1.5.dp, badgeRing, CircleShape)
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
                                 ) {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.label,
-                                        tint = iconTint,
-                                        modifier = Modifier.size(20.dp),
+                                    Text(
+                                        if (item.badge > 9) "9+" else item.badge.toString(),
+                                        style = VTypography.label.copy(
+                                            color = badgeFg,
+                                            fontSize = 8.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        ),
                                     )
                                 }
-                            } else {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label,
-                                    tint = iconTint,
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
-                            if (item.badge > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .offset(x = 7.dp, y = (-2).dp)
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(VColors.coral)
-                                        .border(1.5.dp, VColors.surfaceCard, CircleShape),
-                                )
                             }
                         }
-
-                        Spacer(Modifier.height(4.dp))
-
-                        Text(
-                            text = item.label,
-                            style = VTypography.caption.copy(
-                                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                            ),
-                            color = labelColor,
-                        )
+                        if (active && labelAlpha > 0.01f) {
+                            Spacer(Modifier.width(7.dp))
+                            Text(
+                                item.label,
+                                maxLines = 1,
+                                style = VTypography.label.copy(
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                ),
+                                modifier = Modifier.graphicsLayer { alpha = labelAlpha },
+                            )
+                        }
                     }
                 }
             }

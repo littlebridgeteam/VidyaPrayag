@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Google Play Store Graphics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #E8E6F0; padding: 40px; }
+  h1 { font-size: 28px; font-weight: 800; color: #1A1838; margin-bottom: 8px; }
+  h2 { font-size: 18px; font-weight: 700; color: #544AB8; margin-bottom: 4px; }
+  .section-label { font-size: 13px; font-weight: 600; color: #8B7EE8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 16px; }
+  .specs { font-size: 12px; color: #666; margin-bottom: 24px; font-family: monospace; }
+  .graphic-wrapper { margin-bottom: 60px; }
+  canvas { display: block; border: 1px dashed #ccc; margin-bottom: 8px; }
+
+  /* ============================================================
+     APP ICON — 512 x 512
+     ============================================================ */
+  #icon-section canvas { width: 256px; height: 256px; }
+
+  /* ============================================================
+     FEATURE GRAPHIC — 1024 x 500
+     ============================================================ */
+  #feature-section canvas { width: 100%; max-width: 1024px; height: auto; }
+
+  /* ============================================================
+     PHONE SCREENSHOTS — 1080 x 1920 (9:16)
+     ============================================================ */
+  .phone-grid { display: flex; flex-wrap: wrap; gap: 24px; }
+  .phone-grid canvas { width: 270px; height: 480px; }
+
+  /* ============================================================
+     TABLET SCREENSHOTS — 1920 x 1080 (16:9)
+     ============================================================ */
+  .tablet-grid { display: flex; flex-wrap: wrap; gap: 24px; }
+  .tablet-grid canvas { width: 640px; height: 360px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     APP ICON
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="graphic-wrapper" id="icon-section">
+  <div class="section-label">App Icon</div>
+  <div class="specs">512 × 512 px &middot; PNG &middot; up to 1 MB</div>
+  <canvas id="appIcon" width="512" height="512"></canvas>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE GRAPHIC
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="graphic-wrapper" id="feature-section">
+  <div class="section-label">Feature Graphic</div>
+  <div class="specs">1024 × 500 px &middot; PNG &middot; up to 15 MB</div>
+  <canvas id="featureGraphic" width="1024" height="500"></canvas>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHONE SCREENSHOTS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="graphic-wrapper" id="phone-section">
+  <div class="section-label">Phone Screenshots</div>
+  <div class="specs">1080 × 1920 px (9:16) &middot; 2–8 screenshots &middot; PNG &middot; up to 8 MB each</div>
+  <div class="phone-grid">
+    <canvas id="phone1" width="1080" height="1920"></canvas>
+    <canvas id="phone2" width="1080" height="1920"></canvas>
+    <canvas id="phone3" width="1080" height="1920"></canvas>
+    <canvas id="phone4" width="1080" height="1920"></canvas>
+    <canvas id="phone5" width="1080" height="1920"></canvas>
+    <canvas id="phone6" width="1080" height="1920"></canvas>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     7-INCH TABLET SCREENSHOTS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="graphic-wrapper" id="tablet7-section">
+  <div class="section-label">7-inch Tablet Screenshots</div>
+  <div class="specs">1920 × 1080 px (16:9) &middot; up to 8 screenshots &middot; PNG &middot; up to 8 MB each</div>
+  <div class="tablet-grid">
+    <canvas id="tablet7_1" width="1920" height="1080"></canvas>
+    <canvas id="tablet7_2" width="1920" height="1080"></canvas>
+    <canvas id="tablet7_3" width="1920" height="1080"></canvas>
+    <canvas id="tablet7_4" width="1920" height="1080"></canvas>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     10-INCH TABLET SCREENSHOTS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="graphic-wrapper" id="tablet10-section">
+  <div class="section-label">10-inch Tablet Screenshots</div>
+  <div class="specs">1920 × 1080 px (16:9) &middot; up to 8 screenshots &middot; PNG &middot; up to 8 MB each</div>
+  <div class="tablet-grid">
+    <canvas id="tablet10_1" width="1920" height="1080"></canvas>
+    <canvas id="tablet10_2" width="1920" height="1080"></canvas>
+    <canvas id="tablet10_3" width="1920" height="1080"></canvas>
+    <canvas id="tablet10_4" width="1920" height="1080"></canvas>
+  </div>
+</div>
+
+<script>
+// ─── Brand Tokens ───────────────────────────────────────────────
+const VIOLET      = '#6C5CE0';
+const VIOLET_DEEP = '#544AB8';
+const NAVY        = '#26234D';
+const NAVY_DEEP   = '#1A1838';
+const CREAM       = '#FBF8F4';
+const CARD        = '#FFFFFF';
+const INK         = '#1A1838';
+const INK2        = '#5A5672';
+const INK3        = '#8B879E';
+const TEAL        = '#0D9488';
+const TEAL_DEEP   = '#0A7A70';
+const SUCCESS     = '#16A34A';
+const WARNING     = '#F59E0B';
+const DANGER      = '#EF4444';
+const HAIRLINE    = '#E5E3EA';
+const LAVENDER    = '#EAE6FA';
+
+const FONT = '"Plus Jakarta Sans", sans-serif';
+
+// ─── Helpers ────────────────────────────────────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function pill(ctx, x, y, w, h, color) {
+  roundRect(ctx, x, y, w, h, h / 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function drawBridgeMark(ctx, cx, cy, size, color) {
+  const s = size / 56;
+  ctx.save();
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(s, s);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.8;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // deck
+  ctx.beginPath();
+  ctx.moveTo(6, 34);
+  ctx.lineTo(50, 34);
+  ctx.stroke();
+  // arch
+  ctx.beginPath();
+  ctx.moveTo(6, 34);
+  ctx.quadraticCurveTo(28, 12, 50, 34);
+  ctx.stroke();
+  // cables
+  [16, 28, 40].forEach(xp => {
+    const archY = 34 + (12 - 34) * 4 * (xp / 56) * (1 - xp / 56);
+    ctx.beginPath();
+    ctx.moveTo(xp, 34);
+    ctx.lineTo(xp, archY + 6);
+    ctx.stroke();
+  });
+  // pillar caps
+  ctx.fillStyle = color;
+  ctx.fillRect(3, 30, 6, 4);
+  ctx.fillRect(47, 30, 6, 4);
+  // center node
+  ctx.beginPath();
+  ctx.arc(28, 20, 3.5, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  APP ICON — 512 × 512
+// ═══════════════════════════════════════════════════════════════
+(function() {
+  const c = document.getElementById('appIcon');
+  const ctx = c.getContext('2d');
+  // gradient background
+  const grad = ctx.createLinearGradient(0, 0, 512, 512);
+  grad.addColorStop(0, '#6C5CE0');
+  grad.addColorStop(1, '#544AB8');
+  roundRect(ctx, 0, 0, 512, 512, 96);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  // bridge mark
+  drawBridgeMark(ctx, 256, 230, 180, '#FFFFFF');
+  // wordmark
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '800 52px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll', 238, 350);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '800 52px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('+', 338, 350);
+  // subtitle
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '500 20px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('School Management', 256, 390);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  FEATURE GRAPHIC — 1024 × 500
+// ═══════════════════════════════════════════════════════════════
+(function() {
+  const c = document.getElementById('featureGraphic');
+  const ctx = c.getContext('2d');
+  // bg gradient
+  const grad = ctx.createLinearGradient(0, 0, 1024, 500);
+  grad.addColorStop(0, '#6C5CE0');
+  grad.addColorStop(0.5, '#544AB8');
+  grad.addColorStop(1, '#3B2FA0');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1024, 500);
+  // decorative circles
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath(); ctx.arc(150, 100, 200, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(880, 420, 160, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(500, -50, 250, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+  // bridge mark (left)
+  drawBridgeMark(ctx, 200, 220, 120, 'rgba(255,255,255,0.9)');
+  // wordmark
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '800 72px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Enroll+', 360, 210);
+  // tagline
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = '600 28px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('Run your entire school from one screen.', 360, 265);
+  // sub-features
+  const features = ['Attendance', 'Fees', 'Report Cards', 'Messages', 'Library', 'Transport'];
+  let fx = 360;
+  features.forEach((f, i) => {
+    const tw = ctx.measureText(f).width;
+    pill(ctx, fx, 300, tw + 28, 36, 'rgba(255,255,255,0.15)');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '500 18px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(f, fx + 14, 324);
+    fx += tw + 40;
+  });
+  // bottom text
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '500 16px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Available on Android, iOS, Desktop & Web', 512, 460);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  PHONE SCREENSHOT HELPERS
+// ═══════════════════════════════════════════════════════════════
+function drawStatusBar(ctx, w, dark) {
+  const fg = dark ? '#FFFFFF' : INK;
+  ctx.fillStyle = fg;
+  ctx.font = '500 28px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('9:41', 60, 58);
+  // signal / wifi / battery icons (simplified)
+  ctx.textAlign = 'right';
+  ctx.font = '500 24px ' + FONT;
+  ctx.fillText('100%', w - 60, 58);
+  ctx.fillRect(w - 54, 44, 10, 6);
+  ctx.fillRect(w - 40, 40, 8, 14);
+}
+
+function drawBottomNav(ctx, w, h, items, selected) {
+  const navH = 120;
+  const y = h - navH;
+  ctx.fillStyle = CARD;
+  ctx.fillRect(0, y, w, navH);
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  const itemW = w / items.length;
+  items.forEach((item, i) => {
+    const cx = itemW * i + itemW / 2;
+    const active = i === selected;
+    if (active) {
+      pill(ctx, cx - 36, y + 16, 72, 72, LAVENDER);
+      ctx.fillStyle = VIOLET;
+      ctx.beginPath();
+      ctx.arc(cx, y + 52, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = VIOLET;
+    } else {
+      ctx.fillStyle = INK3;
+    }
+    ctx.font = '500 20px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(item, cx, y + 100);
+  });
+}
+
+function drawCard(ctx, x, y, w, h, r) {
+  roundRect(ctx, x, y, w, h, r || 20);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  ctx.shadowColor = 'rgba(0,0,0,0.06)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 4;
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+}
+
+function drawAvatar(ctx, cx, cy, r, initials, color) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 ' + (r * 0.85) + 'px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(initials, cx, cy + 2);
+  ctx.textBaseline = 'alphabetic';
+}
+
+// ─── Phone 1: Splash / Landing ────────────────────────────────
+(function() {
+  const c = document.getElementById('phone1');
+  const ctx = c.getContext('2d');
+  const W = 1080, H = 1920;
+  // bg
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(0, 0, W, H);
+  drawStatusBar(ctx, W, false);
+  // top gradient accent
+  const g = ctx.createLinearGradient(0, 200, 0, 600);
+  g.addColorStop(0, VIOLET);
+  g.addColorStop(1, 'transparent');
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, 600);
+  ctx.globalAlpha = 1;
+  // bridge mark
+  drawBridgeMark(ctx, 540, 520, 200, VIOLET);
+  // Enroll+ wordmark
+  ctx.fillStyle = INK;
+  ctx.font = '800 80px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll', 498, 680);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText('+', 660, 680);
+  // tagline
+  ctx.fillStyle = INK2;
+  ctx.font = '500 30px ' + FONT;
+  ctx.fillText('Every step of your child\'s journey,', 540, 770);
+  ctx.fillText('in your pocket.', 540, 812);
+  // parent card
+  drawCard(ctx, 80, 920, W - 160, 200, 24);
+  drawAvatar(ctx, 170, 1020, 40, 'P', TEAL);
+  ctx.fillStyle = INK;
+  ctx.font = '700 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('For Parents', 230, 1005);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 24px ' + FONT;
+  ctx.fillText('Attendance, fees, progress reports', 230, 1048);
+  ctx.fillText('and direct messages.', 230, 1082);
+  // school card
+  drawCard(ctx, 80, 1160, W - 160, 200, 24);
+  drawAvatar(ctx, 170, 1260, 40, 'S', VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '700 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('For Schools', 230, 1245);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 24px ' + FONT;
+  ctx.fillText('Students, staff, attendance, fees', 230, 1288);
+  ctx.fillText('and communication.', 230, 1322);
+  // CTA buttons
+  pill(ctx, 80, 1440, W - 160, 90, VIOLET);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 30px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Continue as Parent', 540, 1496);
+  pill(ctx, 80, 1560, W - 160, 90, CARD);
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 2;
+  roundRect(ctx, 80, 1560, W - 160, 90, 45);
+  ctx.stroke();
+  ctx.fillStyle = INK2;
+  ctx.font = '600 28px ' + FONT;
+  ctx.fillText('Continue as School Staff', 540, 1616);
+  // footer
+  ctx.fillStyle = INK3;
+  ctx.font = '400 20px ' + FONT;
+  ctx.fillText('By continuing you agree to our Terms & Privacy Policy', 540, 1740);
+})();
+
+// ─── Phone 2: Login ──────────────────────────────────────────
+(function() {
+  const c = document.getElementById('phone2');
+  const ctx = c.getContext('2d');
+  const W = 1080, H = 1920;
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(0, 0, W, H);
+  drawStatusBar(ctx, W, false);
+  // back button
+  roundRect(ctx, 60, 120, 56, 56, 12);
+  ctx.fillStyle = LAVENDER;
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.font = '400 36px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('\u2190', 88, 160);
+  // title
+  ctx.fillStyle = INK;
+  ctx.font = '800 56px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Staff Sign In', 540, 300);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 26px ' + FONT;
+  ctx.fillText('Access your school management console', 540, 350);
+  // email input
+  drawCard(ctx, 80, 440, W - 160, 110, 16);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('EMAIL ADDRESS', 120, 485);
+  ctx.fillStyle = INK;
+  ctx.font = '500 28px ' + FONT;
+  ctx.fillText('principal@school.edu.in', 120, 525);
+  // password input
+  drawCard(ctx, 80, 580, W - 160, 110, 16);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('PASSWORD', 120, 625);
+  ctx.fillStyle = INK;
+  ctx.font = '500 28px ' + FONT;
+  ctx.fillText('\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', 120, 665);
+  // forgot password
+  ctx.fillStyle = VIOLET;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'right';
+  ctx.fillText('Forgot password?', W - 80, 740);
+  // sign in button
+  pill(ctx, 80, 800, W - 160, 96, VIOLET);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 30px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Sign In  \u2192', 540, 860);
+  // divider
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(200, 980); ctx.lineTo(W - 200, 980); ctx.stroke();
+  // footer
+  ctx.fillStyle = INK3;
+  ctx.font = '500 24px ' + FONT;
+  ctx.fillText("Don't have an account?", 540, 1060);
+  pill(ctx, 80, 1100, W - 160, 80, CARD);
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 2;
+  roundRect(ctx, 80, 1100, W - 160, 80, 40);
+  ctx.stroke();
+  ctx.fillStyle = INK2;
+  ctx.font = '600 26px ' + FONT;
+  ctx.fillText('Register your school', 540, 1150);
+  // features at bottom
+  const feats = ['150+ Tables', 'JWT Auth', 'Role-Based', 'Multi-Platform'];
+  feats.forEach((f, i) => {
+    const fx = 160 + (i % 2) * 420;
+    const fy = 1280 + Math.floor(i / 2) * 80;
+    ctx.fillStyle = INK3;
+    ctx.font = '500 22px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText('\u2713  ' + f, fx, fy);
+  });
+})();
+
+// ─── Phone 3: School Dashboard ───────────────────────────────
+(function() {
+  const c = document.getElementById('phone3');
+  const ctx = c.getContext('2d');
+  const W = 1080, H = 1920;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  drawStatusBar(ctx, W, false);
+  // header
+  ctx.fillStyle = INK;
+  ctx.font = '700 40px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Good Morning', 80, 140);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 26px ' + FONT;
+  ctx.fillText('Delhi Public School', 80, 180);
+  // bell icon
+  roundRect(ctx, W - 140, 110, 56, 56, 28);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.font = '400 32px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('\uD83D\uDD14', W - 112, 148);
+  // avatar
+  drawAvatar(ctx, W - 80, 138, 28, 'A', VIOLET);
+  // search bar
+  drawCard(ctx, 60, 230, W - 120, 72, 36);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\uD83D\uDD0D  Search students, teachers, fees...', 100, 276);
+  // today overview card
+  roundRect(ctx, 60, 340, W - 120, 240, 24);
+  const tg = ctx.createLinearGradient(60, 340, 60, 580);
+  tg.addColorStop(0, VIOLET);
+  tg.addColorStop(1, VIOLET_DEEP);
+  ctx.fillStyle = tg;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 30px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Today\'s Overview', 100, 400);
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillText('8 tasks pending  \u2022  3 urgent', 100, 440);
+  // task pills
+  pill(ctx, 100, 470, 220, 44, 'rgba(255,255,255,0.2)');
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '600 20px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Mark Attendance', 210, 500);
+  pill(ctx, 340, 470, 200, 44, 'rgba(255,255,255,0.2)');
+  ctx.fillText('Send Notice', 440, 500);
+  pill(ctx, 560, 470, 180, 44, 'rgba(255,255,255,0.2)');
+  ctx.fillText('View Tasks', 650, 500);
+  // stats row
+  drawCard(ctx, 60, 620, 460, 160, 20);
+  ctx.fillStyle = VIOLET;
+  ctx.font = '800 48px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('1,247', 100, 690);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('Total Students', 100, 730);
+  ctx.fillStyle = SUCCESS;
+  ctx.font = '600 20px ' + FONT;
+  ctx.fillText('\u25B2 12% this month', 100, 762);
+
+  drawCard(ctx, 560, 620, 460, 160, 20);
+  ctx.fillStyle = TEAL;
+  ctx.font = '800 48px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('89', 600, 690);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('Teachers', 600, 730);
+  ctx.fillStyle = SUCCESS;
+  ctx.font = '600 20px ' + FONT;
+  ctx.fillText('\u25B2 3 new', 600, 762);
+  // attendance & fees row
+  drawCard(ctx, 60, 820, 460, 200, 20);
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Attendance', 100, 875);
+  // circular progress
+  ctx.beginPath();
+  ctx.arc(290, 960, 55, 0, Math.PI * 2);
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 12;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(290, 960, 55, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.87);
+  ctx.strokeStyle = SUCCESS;
+  ctx.lineWidth = 12;
+  ctx.stroke();
+  ctx.fillStyle = INK;
+  ctx.font = '800 32px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('87%', 290, 970);
+
+  drawCard(ctx, 560, 820, 460, 200, 20);
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Fee Collection', 600, 875);
+  ctx.beginPath();
+  ctx.arc(790, 960, 55, 0, Math.PI * 2);
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 12;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(790, 960, 55, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.73);
+  ctx.strokeStyle = VIOLET;
+  ctx.lineWidth = 12;
+  ctx.stroke();
+  ctx.fillStyle = INK;
+  ctx.font = '800 32px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('73%', 790, 970);
+
+  // PEWS attention section
+  drawCard(ctx, 60, 1060, W - 120, 200, 20);
+  ctx.fillStyle = DANGER;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\u26A0  PEWS — Attention Needed', 100, 1110);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('12 students flagged for low attendance', 100, 1155);
+  ctx.fillText('5 students need academic support', 100, 1195);
+  pill(ctx, 100, 1220, 280, 44, DANGER);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '600 20px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('View PEWS Cohort', 240, 1250);
+
+  // quick actions grid
+  ctx.fillStyle = INK;
+  ctx.font = '700 28px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Quick Actions', 80, 1340);
+  const actions = [
+    { icon: '\uD83D\uDCE2', label: 'Announce', color: VIOLET },
+    { icon: '\uD83D\uDCC5', label: 'Add Event', color: TEAL },
+    { icon: '\uD83D\uDCCA', label: 'Reports', color: '#E08A3C' },
+    { icon: '\uD83D\uDCCB', label: 'Calendar', color: '#C14A6A' },
+  ];
+  actions.forEach((a, i) => {
+    const ax = 60 + (i % 2) * 500;
+    const ay = 1380 + Math.floor(i / 2) * 140;
+    drawCard(ctx, ax, ay, 460, 120, 16);
+    ctx.fillStyle = a.color;
+    ctx.font = '400 36px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(a.icon, ax + 24, ay + 55);
+    ctx.fillStyle = INK;
+    ctx.font = '600 26px ' + FONT;
+    ctx.fillText(a.label, ax + 80, ay + 72);
+  });
+
+  drawBottomNav(ctx, W, H, ['Home', 'People', 'Records', 'Comms', 'Settings'], 0);
+})();
+
+// ─── Phone 4: Student Roster ────────────────────────────────
+(function() {
+  const c = document.getElementById('phone4');
+  const ctx = c.getContext('2d');
+  const W = 1080, H = 1920;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  drawStatusBar(ctx, W, false);
+  // header
+  ctx.fillStyle = INK;
+  ctx.font = '800 40px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Student Roster', 80, 140);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 24px ' + FONT;
+  ctx.fillText('1,247 students  \u2022  Class 10-A', 80, 182);
+  // search
+  drawCard(ctx, 60, 230, W - 120, 64, 32);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\uD83D\uDD0D  Search by name, roll number...', 100, 270);
+  // student cards
+  const students = [
+    { name: 'Aarav Sharma', roll: 'Roll #1', grade: 'A+', pct: '95%', avatar: 'AS', color: VIOLET },
+    { name: 'Priya Patel', roll: 'Roll #2', grade: 'A', pct: '92%', avatar: 'PP', color: TEAL },
+    { name: 'Rohan Gupta', roll: 'Roll #3', grade: 'B+', pct: '85%', avatar: 'RG', color: '#E08A3C' },
+    { name: 'Sneha Reddy', roll: 'Roll #4', grade: 'A+', pct: '97%', avatar: 'SR', color: '#C14A6A' },
+    { name: 'Karan Singh', roll: 'Roll #5', grade: 'B', pct: '81%', avatar: 'KS', color: '#2F9B7A' },
+    { name: 'Ananya Das', roll: 'Roll #6', grade: 'A', pct: '90%', avatar: 'AD', color: '#A88B5C' },
+  ];
+  students.forEach((s, i) => {
+    const sy = 340 + i * 190;
+    drawCard(ctx, 60, sy, W - 120, 170, 20);
+    drawAvatar(ctx, 150, sy + 85, 36, s.avatar, s.color);
+    ctx.fillStyle = INK;
+    ctx.font = '700 28px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.name, 210, sy + 65);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 22px ' + FONT;
+    ctx.fillText(s.roll, 210, sy + 100);
+    // grade pill
+    pill(ctx, W - 220, sy + 50, 120, 44, LAVENDER);
+    ctx.fillStyle = VIOLET;
+    ctx.font = '700 24px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(s.grade, W - 160, sy + 80);
+    // percentage
+    ctx.fillStyle = INK2;
+    ctx.font = '600 22px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText(s.pct, W - 100, sy + 140);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 18px ' + FONT;
+    ctx.fillText('avg marks', W - 100, sy + 165);
+  });
+  drawBottomNav(ctx, W, H, ['Home', 'People', 'Records', 'Comms', 'Settings'], 1);
+})();
+
+// ─── Phone 5: Parent Portal — Attendance ─────────────────────
+(function() {
+  const c = document.getElementById('phone5');
+  const ctx = c.getContext('2d');
+  const W = 1080, H = 1920;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  drawStatusBar(ctx, W, false);
+  // header
+  ctx.fillStyle = INK;
+  ctx.font = '800 40px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Attendance', 80, 140);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 24px ' + FONT;
+  ctx.fillText('Aarav Sharma  \u2022  Class 10-A', 80, 182);
+  // overall stat card
+  roundRect(ctx, 60, 240, W - 120, 220, 24);
+  const tg = ctx.createLinearGradient(60, 240, 60, 460);
+  tg.addColorStop(0, TEAL);
+  tg.addColorStop(1, TEAL_DEEP);
+  ctx.fillStyle = tg;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '500 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Overall Attendance', 100, 300);
+  ctx.font = '800 64px ' + FONT;
+  ctx.fillText('92%', 100, 390);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '500 20px ' + FONT;
+  ctx.fillText('Present: 165 / 180 days', 100, 430);
+  // bar chart
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Monthly Breakdown', 80, 530);
+  const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
+  const values = [88, 91, 85, 94, 90, 92];
+  months.forEach((m, i) => {
+    const bx = 120 + i * 150;
+    const bh = values[i] * 2.5;
+    // bar
+    roundRect(ctx, bx, 780 - bh, 80, bh, 8);
+    ctx.fillStyle = values[i] >= 90 ? SUCCESS : values[i] >= 80 ? WARNING : DANGER;
+    ctx.fill();
+    // label
+    ctx.fillStyle = INK3;
+    ctx.font = '500 20px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(m, bx + 40, 815);
+    ctx.fillStyle = INK;
+    ctx.font = '600 18px ' + FONT;
+    ctx.fillText(values[i] + '%', bx + 40, 770 - bh);
+  });
+  // recent entries
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Recent Entries', 80, 890);
+  const entries = [
+    { date: 'Jul 15, 2026', status: 'Present', color: SUCCESS },
+    { date: 'Jul 14, 2026', status: 'Present', color: SUCCESS },
+    { date: 'Jul 13, 2026', status: 'Absent', color: DANGER },
+    { date: 'Jul 12, 2026', status: 'Present', color: SUCCESS },
+    { date: 'Jul 11, 2026', status: 'Late', color: WARNING },
+  ];
+  entries.forEach((e, i) => {
+    const ey = 940 + i * 100;
+    drawCard(ctx, 60, ey, W - 120, 80, 16);
+    ctx.fillStyle = INK;
+    ctx.font = '500 24px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(e.date, 100, ey + 50);
+    pill(ctx, W - 260, ey + 20, 140, 40, e.color + '18');
+    ctx.fillStyle = e.color;
+    ctx.font = '600 22px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(e.status, W - 190, ey + 48);
+  });
+  drawBottomNav(ctx, W, H, ['Home', 'Academics', 'Fees', 'Chat', 'Profile'], 1);
+})();
+
+// ─── Phone 6: Fees ──────────────────────────────────────────
+(function() {
+  const c = document.getElementById('phone6');
+  const ctx = c.getContext('2d');
+  const W = 1080, H = 1920;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  drawStatusBar(ctx, W, false);
+  // header
+  ctx.fillStyle = INK;
+  ctx.font = '800 40px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Fee Dashboard', 80, 140);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 24px ' + FONT;
+  ctx.fillText('Academic Year 2025\u201326', 80, 182);
+  // total collected card
+  roundRect(ctx, 60, 240, W - 120, 200, 24);
+  const tg = ctx.createLinearGradient(60, 240, 60, 440);
+  tg.addColorStop(0, VIOLET);
+  tg.addColorStop(1, VIOLET_DEEP);
+  ctx.fillStyle = tg;
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '500 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Total Collected', 100, 300);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '800 56px ' + FONT;
+  ctx.fillText('\u20B948,50,000', 100, 375);
+  // stats row
+  drawCard(ctx, 60, 480, 460, 140, 20);
+  ctx.fillStyle = SUCCESS;
+  ctx.font = '800 36px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\u20B938,20,000', 100, 540);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('Received (79%)', 100, 585);
+
+  drawCard(ctx, 560, 480, 460, 140, 20);
+  ctx.fillStyle = WARNING;
+  ctx.font = '800 36px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\u20B910,30,000', 600, 540);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('Pending (21%)', 600, 585);
+  // collection trend
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Collection Trend', 80, 690);
+  // line chart
+  const pts = [30, 55, 42, 68, 72, 79, 85];
+  const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+  const chartX = 120, chartW = W - 280, chartY = 720, chartH = 180;
+  // grid lines
+  for (let i = 0; i <= 4; i++) {
+    const gy = chartY + (chartH / 4) * i;
+    ctx.strokeStyle = HAIRLINE;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(chartX, gy); ctx.lineTo(chartX + chartW, gy); ctx.stroke();
+  }
+  // line
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const px = chartX + (chartW / (pts.length - 1)) * i;
+    const py = chartY + chartH - (p / 100) * chartH;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.strokeStyle = VIOLET;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  // dots + labels
+  pts.forEach((p, i) => {
+    const px = chartX + (chartW / (pts.length - 1)) * i;
+    const py = chartY + chartH - (p / 100) * chartH;
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI * 2);
+    ctx.fillStyle = VIOLET;
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK3;
+    ctx.font = '500 18px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(labels[i], px, chartY + chartH + 30);
+  });
+  // pending fees list
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Pending Dues', 80, 1000);
+  const dues = [
+    { name: 'Class 10-A', amount: '\u20B92,40,000', count: '24 students' },
+    { name: 'Class 9-B', amount: '\u20B91,80,000', count: '18 students' },
+    { name: 'Class 8-A', amount: '\u20B93,10,000', count: '31 students' },
+  ];
+  dues.forEach((d, i) => {
+    const dy = 1050 + i * 130;
+    drawCard(ctx, 60, dy, W - 120, 110, 16);
+    ctx.fillStyle = INK;
+    ctx.font = '700 26px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(d.name, 100, dy + 45);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 20px ' + FONT;
+    ctx.fillText(d.count, 100, dy + 80);
+    ctx.fillStyle = DANGER;
+    ctx.font = '700 26px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText(d.amount, W - 100, dy + 65);
+  });
+  drawBottomNav(ctx, W, H, ['Home', 'Academics', 'Fees', 'Chat', 'Profile'], 2);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  7-INCH TABLET SCREENSHOTS — 1920 × 1080 (16:9)
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Tablet 7" 1: Dashboard Overview ────────────────────────
+(function() {
+  const c = document.getElementById('tablet7_1');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // sidebar
+  roundRect(ctx, 0, 0, 280, H, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(280, 0); ctx.lineTo(280, H); ctx.stroke();
+  // sidebar brand
+  drawBridgeMark(ctx, 140, 60, 50, VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '800 26px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+', 140, 105);
+  // sidebar items
+  const sideItems = ['Dashboard', 'People', 'Records', 'Comms', 'Settings'];
+  sideItems.forEach((item, i) => {
+    const sy = 160 + i * 60;
+    if (i === 0) {
+      pill(ctx, 20, sy - 10, 240, 44, LAVENDER);
+      ctx.fillStyle = VIOLET;
+    } else {
+      ctx.fillStyle = INK2;
+    }
+    ctx.font = '500 22px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(item, 60, sy + 18);
+  });
+  // main content area
+  const mx = 340;
+  ctx.fillStyle = INK;
+  ctx.font = '800 36px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Good Morning, Admin', mx, 70);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('Delhi Public School  \u2022  Today, July 15', mx, 105);
+  // stats row
+  const stats = [
+    { label: 'Students', value: '1,247', sub: '+12% this month', color: VIOLET },
+    { label: 'Teachers', value: '89', sub: '+3 new', color: TEAL },
+    { label: 'Attendance', value: '87%', sub: 'present today', color: SUCCESS },
+    { label: 'Fee Collection', value: '73%', sub: '\u20B948.5L collected', color: '#E08A3C' },
+  ];
+  stats.forEach((s, i) => {
+    const sx = mx + i * 380;
+    drawCard(ctx, sx, 150, 350, 160, 16);
+    ctx.fillStyle = s.color;
+    ctx.font = '800 44px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.value, sx + 24, 220);
+    ctx.fillStyle = INK;
+    ctx.font = '600 22px ' + FONT;
+    ctx.fillText(s.label, sx + 24, 260);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 18px ' + FONT;
+    ctx.fillText(s.sub, sx + 24, 290);
+  });
+  // today overview
+  drawCard(ctx, mx, 350, 820, 260, 16);
+  roundRect(ctx, mx, 350, 820, 260, 16);
+  const tg = ctx.createLinearGradient(mx, 350, mx, 610);
+  tg.addColorStop(0, VIOLET);
+  tg.addColorStop(1, VIOLET_DEEP);
+  ctx.fillStyle = tg;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 28px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Today\'s Overview', mx + 30, 400);
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillText('8 tasks pending  \u2022  3 urgent  \u2022  2 meetings', mx + 30, 440);
+  const tActions = ['Mark Attendance', 'Send Notice', 'View Tasks', 'Schedule PTM'];
+  tActions.forEach((a, i) => {
+    pill(ctx, mx + 30 + i * 190, 475, 175, 40, 'rgba(255,255,255,0.2)');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '600 18px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(a, mx + 30 + i * 190 + 87, 502);
+  });
+  // PEWS
+  drawCard(ctx, mx + 860, 350, 500, 260, 16);
+  ctx.fillStyle = DANGER;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\u26A0  PEWS Alerts', mx + 890, 400);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 20px ' + FONT;
+  ctx.fillText('12 students: low attendance', mx + 890, 445);
+  ctx.fillText('5 students: academic decline', mx + 890, 480);
+  ctx.fillText('3 students: behavioral flags', mx + 890, 515);
+  pill(ctx, mx + 890, 545, 200, 40, DANGER);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '600 18px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('View Cohort', mx + 990, 572);
+  // recent activity
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Recent Activity', mx, 660);
+  const acts = [
+    { time: '10:30 AM', text: 'Class 10-A attendance marked by Mr. Verma', color: SUCCESS },
+    { time: '11:15 AM', text: 'Fee payment received — Aarav Sharma, \u20B912,000', color: VIOLET },
+    { time: '12:00 PM', text: 'PTM scheduled for July 20 by Principal', color: TEAL },
+    { time: '2:30 PM', text: 'Report cards generated for Class 9', color: '#E08A3C' },
+  ];
+  acts.forEach((a, i) => {
+    const ay = 710 + i * 70;
+    ctx.fillStyle = a.color;
+    ctx.beginPath();
+    ctx.arc(mx + 12, ay - 6, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK3;
+    ctx.font = '500 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(a.time, mx + 30, ay);
+    ctx.fillStyle = INK;
+    ctx.font = '500 20px ' + FONT;
+    ctx.fillText(a.text, mx + 160, ay);
+  });
+  // right column: upcoming events
+  drawCard(ctx, mx + 860, 650, 500, 310, 16);
+  ctx.fillStyle = INK;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Upcoming Events', mx + 890, 700);
+  const events = [
+    { date: 'Jul 20', name: 'Parent-Teacher Meeting', tag: 'PTM' },
+    { date: 'Jul 25', name: 'Annual Day Rehearsal', tag: 'Event' },
+    { date: 'Aug 1', name: 'Exam Week Begins', tag: 'Exam' },
+    { date: 'Aug 15', name: 'Independence Day', tag: 'Holiday' },
+  ];
+  events.forEach((e, i) => {
+    const ey = 740 + i * 56;
+    ctx.fillStyle = INK;
+    ctx.font = '500 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(e.date, mx + 890, ey);
+    ctx.fillText(e.name, mx + 990, ey);
+    pill(ctx, mx + 1300, ey - 18, 50, 28, LAVENDER);
+    ctx.fillStyle = VIOLET;
+    ctx.font = '600 14px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(e.tag, mx + 1325, ey);
+  });
+})();
+
+// ─── Tablet 7" 2: Student Management ───────────────────────
+(function() {
+  const c = document.getElementById('tablet7_2');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // sidebar
+  roundRect(ctx, 0, 0, 280, H, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  drawBridgeMark(ctx, 140, 60, 50, VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '800 26px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+', 140, 105);
+  const sideItems = ['Dashboard', 'People', 'Records', 'Comms', 'Settings'];
+  sideItems.forEach((item, i) => {
+    const sy = 160 + i * 60;
+    if (i === 1) { pill(ctx, 20, sy - 10, 240, 44, LAVENDER); ctx.fillStyle = VIOLET; }
+    else ctx.fillStyle = INK2;
+    ctx.font = '500 22px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(item, 60, sy + 18);
+  });
+  const mx = 340;
+  // header
+  ctx.fillStyle = INK;
+  ctx.font = '800 36px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Student Roster', mx, 70);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 22px ' + FONT;
+  ctx.fillText('1,247 students across 24 classes', mx, 105);
+  // search + filter row
+  drawCard(ctx, mx, 130, 700, 56, 28);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 20px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\uD83D\uDD0D  Search students...', mx + 24, 166);
+  pill(ctx, mx + 740, 130, 140, 56, LAVENDER);
+  ctx.fillStyle = VIOLET;
+  ctx.font = '600 20px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Filter', mx + 810, 166);
+  // table
+  const cols = ['Name', 'Class', 'Roll', 'Attendance', 'Avg Marks', 'Status'];
+  const colX = [mx, mx + 280, mx + 500, mx + 620, mx + 840, mx + 1060];
+  // header row
+  roundRect(ctx, mx, 210, 1120, 48, 8);
+  ctx.fillStyle = NAVY;
+  ctx.fill();
+  cols.forEach((col, i) => {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '600 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(col, colX[i] + 16, 240);
+  });
+  // data rows
+  const rows = [
+    { name: 'Aarav Sharma', cls: '10-A', roll: '1', att: '95%', avg: '92', status: 'Active' },
+    { name: 'Priya Patel', cls: '10-A', roll: '2', att: '91%', avg: '89', status: 'Active' },
+    { name: 'Rohan Gupta', cls: '10-B', roll: '3', att: '85%', avg: '78', status: 'At Risk' },
+    { name: 'Sneha Reddy', cls: '9-A', roll: '4', att: '97%', avg: '95', status: 'Active' },
+    { name: 'Karan Singh', cls: '9-A', roll: '5', att: '81%', avg: '72', status: 'At Risk' },
+    { name: 'Ananya Das', cls: '9-B', roll: '6', att: '90%', avg: '85', status: 'Active' },
+    { name: 'Vikram Joshi', cls: '8-A', roll: '7', att: '88%', avg: '80', status: 'Active' },
+    { name: 'Meera Nair', cls: '8-A', roll: '8', att: '93%', avg: '91', status: 'Active' },
+    { name: 'Arjun Mehta', cls: '8-B', roll: '9', att: '76%', avg: '65', status: 'At Risk' },
+  ];
+  rows.forEach((r, i) => {
+    const ry = 270 + i * 68;
+    if (i % 2 === 0) {
+      roundRect(ctx, mx, ry, 1120, 64, 0);
+      ctx.fillStyle = '#FAFAFA';
+      ctx.fill();
+    }
+    ctx.fillStyle = INK;
+    ctx.font = '500 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(r.name, colX[0] + 16, ry + 40);
+    ctx.fillText(r.cls, colX[1] + 16, ry + 40);
+    ctx.fillText(r.roll, colX[2] + 16, ry + 40);
+    // attendance color
+    const attVal = parseInt(r.att);
+    ctx.fillStyle = attVal >= 90 ? SUCCESS : attVal >= 80 ? WARNING : DANGER;
+    ctx.fillText(r.att, colX[3] + 16, ry + 40);
+    ctx.fillStyle = INK;
+    ctx.fillText(r.avg, colX[4] + 16, ry + 40);
+    // status pill
+    const stColor = r.status === 'Active' ? SUCCESS : DANGER;
+    pill(ctx, colX[5] + 16, ry + 18, 90, 32, stColor + '18');
+    ctx.fillStyle = stColor;
+    ctx.font = '600 16px ' + FONT;
+    ctx.fillText(r.status, colX[5] + 28, ry + 40);
+  });
+  // right panel
+  drawCard(ctx, mx + 1180, 130, 460, 800, 16);
+  ctx.fillStyle = INK;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Student Profile', mx + 1210, 180);
+  drawAvatar(ctx, mx + 1410, 260, 50, 'AS', VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Aarav Sharma', mx + 1410, 340);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 20px ' + FONT;
+  ctx.fillText('Class 10-A  \u2022  Roll #1', mx + 1410, 372);
+  // stats
+  const pStats = [
+    { label: 'Attendance', value: '95%' },
+    { label: 'Avg Marks', value: '92%' },
+    { label: 'Rank', value: '#3' },
+  ];
+  pStats.forEach((ps, i) => {
+    const px = mx + 1210 + i * 150;
+    ctx.fillStyle = INK3;
+    ctx.font = '500 16px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(ps.label, px, 430);
+    ctx.fillStyle = INK;
+    ctx.font = '800 28px ' + FONT;
+    ctx.fillText(ps.value, px, 465);
+  });
+  // actions
+  const pActions = ['View Report Card', 'Send Message', 'Fee History', 'Health Records'];
+  pActions.forEach((a, i) => {
+    const ay = 520 + i * 60;
+    drawCard(ctx, mx + 1210, ay, 400, 48, 12);
+    ctx.fillStyle = VIOLET;
+    ctx.font = '500 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText('\u2192  ' + a, mx + 1230, ay + 32);
+  });
+})();
+
+// ─── Tablet 7" 3: Attendance Screen ────────────────────────
+(function() {
+  const c = document.getElementById('tablet7_3');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // header bar
+  roundRect(ctx, 0, 0, W, 100, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.font = '800 32px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Attendance — Class 10-A  \u2022  July 15, 2026', 60, 62);
+  pill(ctx, W - 400, 25, 160, 50, SUCCESS);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 20px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Save Attendance', W - 320, 57);
+  // class selector
+  const classes = ['10-A', '10-B', '9-A', '9-B', '8-A'];
+  classes.forEach((cls, i) => {
+    const bx = 60 + i * 160;
+    pill(ctx, bx, 130, 140, 44, i === 0 ? VIOLET : CARD);
+    ctx.fillStyle = i === 0 ? '#FFFFFF' : INK2;
+    ctx.font = '600 20px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(cls, bx + 70, 158);
+  });
+  // stats bar
+  drawCard(ctx, 60, 200, W - 120, 80, 12);
+  const attStats = [
+    { label: 'Present', value: '38', color: SUCCESS },
+    { label: 'Absent', value: '3', color: DANGER },
+    { label: 'Late', value: '1', color: WARNING },
+    { label: 'Total', value: '42', color: INK },
+  ];
+  attStats.forEach((s, i) => {
+    const sx = 120 + i * 280;
+    ctx.fillStyle = s.color;
+    ctx.font = '800 28px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.value, sx, 235);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 18px ' + FONT;
+    ctx.fillText(s.label, sx + 50, 235);
+  });
+  // student grid (4 columns)
+  const stuList = [
+    'Aarav Sharma', 'Priya Patel', 'Rohan Gupta', 'Sneha Reddy',
+    'Karan Singh', 'Ananya Das', 'Vikram Joshi', 'Meera Nair',
+    'Arjun Mehta', 'Nisha Verma', 'Raj Kapoor', 'Pooja Singh',
+    'Amit Kumar', 'Sonia Rai', 'Deepak Joshi', 'Kavita Das',
+    'Manoj Tiwari', 'Rina Bose', 'Suresh Patel', 'Geeta Devi',
+  ];
+  stuList.forEach((name, i) => {
+    const col = i % 4;
+    const row = Math.floor(i / 4);
+    const sx = 60 + col * 460;
+    const sy = 320 + row * 140;
+    const present = i !== 3 && i !== 9 && i !== 14;
+    const late = i === 5;
+    const statusColor = late ? WARNING : present ? SUCCESS : DANGER;
+    const statusText = late ? 'Late' : present ? 'Present' : 'Absent';
+    drawCard(ctx, sx, sy, 430, 120, 12);
+    drawAvatar(ctx, sx + 50, sy + 60, 28, name.split(' ').map(n => n[0]).join(''), present ? VIOLET : INK3);
+    ctx.fillStyle = INK;
+    ctx.font = '600 20px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(name, sx + 90, sy + 50);
+    ctx.fillStyle = INK3;
+    ctx.font = '400 16px ' + FONT;
+    ctx.fillText('Roll #' + (i + 1), sx + 90, sy + 80);
+    pill(ctx, sx + 300, sy + 38, 110, 36, statusColor + '18');
+    ctx.fillStyle = statusColor;
+    ctx.font = '600 16px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(statusText, sx + 355, sy + 63);
+  });
+})();
+
+// ─── Tablet 7" 4: Fee Management ───────────────────────────
+(function() {
+  const c = document.getElementById('tablet7_4');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // sidebar
+  roundRect(ctx, 0, 0, 280, H, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  drawBridgeMark(ctx, 140, 60, 50, VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '800 26px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+', 140, 105);
+  const sideItems = ['Dashboard', 'People', 'Records', 'Comms', 'Settings'];
+  sideItems.forEach((item, i) => {
+    const sy = 160 + i * 60;
+    if (i === 2) { pill(ctx, 20, sy - 10, 240, 44, LAVENDER); ctx.fillStyle = VIOLET; }
+    else ctx.fillStyle = INK2;
+    ctx.font = '500 22px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(item, 60, sy + 18);
+  });
+  const mx = 340;
+  ctx.fillStyle = INK;
+  ctx.font = '800 36px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Fee Management', mx, 70);
+  // collected card
+  roundRect(ctx, mx, 110, 520, 160, 16);
+  const g1 = ctx.createLinearGradient(mx, 110, mx + 520, 270);
+  g1.addColorStop(0, SUCCESS);
+  g1.addColorStop(1, '#138A3A');
+  ctx.fillStyle = g1;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '500 20px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Collected', mx + 24, 155);
+  ctx.font = '800 44px ' + FONT;
+  ctx.fillText('\u20B938,20,000', mx + 24, 210);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '500 18px ' + FONT;
+  ctx.fillText('79% of total', mx + 24, 245);
+  // pending card
+  roundRect(ctx, mx + 560, 110, 520, 160, 16);
+  const g2 = ctx.createLinearGradient(mx + 560, 110, mx + 1080, 270);
+  g2.addColorStop(0, WARNING);
+  g2.addColorStop(1, '#D4850A');
+  ctx.fillStyle = g2;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '500 20px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Pending', mx + 584, 155);
+  ctx.font = '800 44px ' + FONT;
+  ctx.fillText('\u20B910,30,000', mx + 584, 210);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '500 18px ' + FONT;
+  ctx.fillText('21% of total', mx + 584, 245);
+  // chart area
+  drawCard(ctx, mx, 300, 700, 400, 16);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Monthly Collection', mx + 24, 345);
+  const mLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+  const collected = [80, 75, 85, 70, 88, 82, 79];
+  const pending = [20, 25, 15, 30, 12, 18, 21];
+  const chartX2 = mx + 60, chartW2 = 580, chartY2 = 380, chartH2 = 280;
+  // grid
+  for (let i = 0; i <= 4; i++) {
+    const gy = chartY2 + (chartH2 / 4) * i;
+    ctx.strokeStyle = HAIRLINE;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(chartX2, gy); ctx.lineTo(chartX2 + chartW2, gy); ctx.stroke();
+    ctx.fillStyle = INK3;
+    ctx.font = '400 14px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText((100 - i * 25) + '%', chartX2 - 8, gy + 5);
+  }
+  // bars
+  mLabels.forEach((m, i) => {
+    const bx = chartX2 + 30 + i * 80;
+    const cw = collected[i] * 2.5;
+    const pw = pending[i] * 2.5;
+    roundRect(ctx, bx, chartY2 + chartH2 - cw - pw, 40, cw, 4);
+    ctx.fillStyle = SUCCESS;
+    ctx.fill();
+    roundRect(ctx, bx, chartY2 + chartH2 - pw, 40, pw, 4);
+    ctx.fillStyle = WARNING;
+    ctx.fill();
+    ctx.fillStyle = INK3;
+    ctx.font = '500 16px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(m, bx + 20, chartY2 + chartH2 + 25);
+  });
+  // legend
+  ctx.fillStyle = SUCCESS;
+  ctx.fillRect(mx + 24, chartY2 + chartH2 + 40, 16, 16);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 16px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Collected', mx + 50, chartY2 + chartH2 + 54);
+  ctx.fillStyle = WARNING;
+  ctx.fillRect(mx + 160, chartY2 + chartH2 + 40, 16, 16);
+  ctx.fillStyle = INK2;
+  ctx.fillText('Pending', mx + 186, chartY2 + chartH2 + 54);
+  // pending dues table
+  drawCard(ctx, mx + 740, 300, 540, 400, 16);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Pending Dues by Class', mx + 764, 345);
+  const dues = [
+    { cls: 'Class 10-A', amt: '\u20B92,40,000', n: '24' },
+    { cls: 'Class 9-B', amt: '\u20B91,80,000', n: '18' },
+    { cls: 'Class 8-A', amt: '\u20B93,10,000', n: '31' },
+    { cls: 'Class 7-B', amt: '\u20B91,20,000', n: '12' },
+    { cls: 'Class 6-A', amt: '\u20B91,80,000', n: '18' },
+  ];
+  dues.forEach((d, i) => {
+    const dy = 380 + i * 60;
+    if (i % 2 === 0) {
+      roundRect(ctx, mx + 764, dy - 10, 490, 50, 0);
+      ctx.fillStyle = '#FAFAFA';
+      ctx.fill();
+    }
+    ctx.fillStyle = INK;
+    ctx.font = '500 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(d.cls, mx + 780, dy + 20);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 16px ' + FONT;
+    ctx.fillText(d.n + ' students', mx + 940, dy + 20);
+    ctx.fillStyle = DANGER;
+    ctx.font = '600 18px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText(d.amt, mx + 1260, dy + 20);
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  10-INCH TABLET SCREENSHOTS — 1920 × 1080 (16:9)
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Tablet 10" 1: Full Dashboard ───────────────────────────
+(function() {
+  const c = document.getElementById('tablet10_1');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // sidebar
+  roundRect(ctx, 0, 0, 300, H, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  drawBridgeMark(ctx, 150, 55, 50, VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '800 28px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+', 150, 100);
+  const sideItems = [
+    { icon: '\u2302', label: 'Dashboard', active: true },
+    { icon: '\u263A', label: 'People' },
+    { icon: '\u2611', label: 'Records' },
+    { icon: '\u2709', label: 'Comms' },
+    { icon: '\u2699', label: 'Settings' },
+  ];
+  sideItems.forEach((item, i) => {
+    const sy = 150 + i * 56;
+    if (item.active) { pill(ctx, 16, sy - 8, 268, 44, LAVENDER); ctx.fillStyle = VIOLET; }
+    else ctx.fillStyle = INK2;
+    ctx.font = '500 20px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(item.icon + '  ' + item.label, 40, sy + 20);
+  });
+  const mx = 360;
+  // header
+  ctx.fillStyle = INK;
+  ctx.font = '800 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Good Morning, Admin  \u2022  Delhi Public School', mx, 65);
+  // notification bell
+  roundRect(ctx, W - 120, 30, 56, 56, 28);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.font = '400 28px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('\uD83D\uDD14', W - 92, 68);
+  drawAvatar(ctx, W - 50, 58, 24, 'A', VIOLET);
+  // stats cards — 4 across
+  const stats = [
+    { label: 'Total Students', value: '1,247', sub: '+12% this month', color: VIOLET, icon: '\uD83C\uDF93' },
+    { label: 'Teachers', value: '89', sub: '+3 new this term', color: TEAL, icon: '\uD83D\uDC68\u200D\uD83C\uDFEB' },
+    { label: 'Attendance', value: '87%', sub: 'present today', color: SUCCESS, icon: '\u2713' },
+    { label: 'Fee Collection', value: '73%', sub: '\u20B948.5L of 66.5L', color: '#E08A3C', icon: '\uD83D\uDCB0' },
+  ];
+  stats.forEach((s, i) => {
+    const sx = mx + i * 390;
+    drawCard(ctx, sx, 95, 360, 130, 14);
+    ctx.fillStyle = s.color;
+    ctx.font = '800 40px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.value, sx + 20, 165);
+    ctx.fillStyle = INK;
+    ctx.font = '600 20px ' + FONT;
+    ctx.fillText(s.label, sx + 20, 198);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 16px ' + FONT;
+    ctx.fillText(s.sub, sx + 20, 218);
+  });
+  // today overview + PEWS (2 columns)
+  drawCard(ctx, mx, 255, 680, 240, 14);
+  roundRect(ctx, mx, 255, 680, 240, 14);
+  const tg = ctx.createLinearGradient(mx, 255, mx, 495);
+  tg.addColorStop(0, VIOLET);
+  tg.addColorStop(1, VIOLET_DEEP);
+  ctx.fillStyle = tg;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText("Today's Overview", mx + 24, 305);
+  ctx.font = '500 20px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillText('8 tasks pending  \u2022  3 urgent  \u2022  2 meetings', mx + 24, 340);
+  const tActions = ['Mark Attendance', 'Send Notice', 'View Tasks', 'Schedule PTM'];
+  tActions.forEach((a, i) => {
+    pill(ctx, mx + 24 + i * 160, 375, 148, 38, 'rgba(255,255,255,0.2)');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '600 17px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(a, mx + 24 + i * 160 + 74, 400);
+  });
+  // PEWS card
+  drawCard(ctx, mx + 720, 255, 540, 240, 14);
+  ctx.fillStyle = DANGER;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\u26A0  PEWS Alerts', mx + 744, 305);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 18px ' + FONT;
+  ctx.fillText('12 students: low attendance', mx + 744, 345);
+  ctx.fillText('5 students: academic decline', mx + 744, 380);
+  ctx.fillText('3 students: behavioral flags', mx + 744, 415);
+  pill(ctx, mx + 744, 445, 180, 36, DANGER);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '600 16px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('View Cohort', mx + 834, 470);
+  // recent activity (left)
+  ctx.fillStyle = INK;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Recent Activity', mx, 540);
+  const acts = [
+    { time: '10:30 AM', text: 'Class 10-A attendance marked by Mr. Verma', color: SUCCESS },
+    { time: '11:15 AM', text: 'Fee payment received \u2014 Aarav Sharma, \u20B912,000', color: VIOLET },
+    { time: '12:00 PM', text: 'PTM scheduled for July 20 by Principal', color: TEAL },
+    { time: '2:30 PM', text: 'Report cards generated for Class 9', color: '#E08A3C' },
+    { time: '3:15 PM', text: 'New student admission \u2014 Class 7-A', color: SUCCESS },
+  ];
+  acts.forEach((a, i) => {
+    const ay = 578 + i * 52;
+    ctx.fillStyle = a.color;
+    ctx.beginPath();
+    ctx.arc(mx + 10, ay - 5, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK3;
+    ctx.font = '500 16px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(a.time, mx + 24, ay);
+    ctx.fillStyle = INK;
+    ctx.font = '500 18px ' + FONT;
+    ctx.fillText(a.text, mx + 140, ay);
+  });
+  // right: events + announcements
+  drawCard(ctx, mx + 720, 530, 540, 180, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Upcoming Events', mx + 744, 570);
+  const events = [
+    { date: 'Jul 20', name: 'Parent-Teacher Meeting' },
+    { date: 'Jul 25', name: 'Annual Day Rehearsal' },
+    { date: 'Aug 1', name: 'Exam Week Begins' },
+  ];
+  events.forEach((e, i) => {
+    const ey = 610 + i * 36;
+    ctx.fillStyle = INK2;
+    ctx.font = '500 16px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(e.date, mx + 744, ey);
+    ctx.fillStyle = INK;
+    ctx.fillText(e.name, mx + 840, ey);
+  });
+  drawCard(ctx, mx + 720, 730, 540, 140, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Announcements', mx + 744, 770);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 16px ' + FONT;
+  ctx.fillText('School closed on Aug 15 for Independence Day', mx + 744, 810);
+  ctx.fillText('Annual sports day scheduled for Sept 5', mx + 744, 840);
+  // bottom nav
+  ctx.fillStyle = CARD;
+  ctx.fillRect(0, H - 60, W, 60);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 16px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+ v1.0  \u2022  vidyaprayag.com  \u2022  Made with \u2764\uFE0F for Indian Schools', W / 2, H - 25);
+})();
+
+// ─── Tablet 10" 2: Exam Results ────────────────────────────
+(function() {
+  const c = document.getElementById('tablet10_2');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // sidebar
+  roundRect(ctx, 0, 0, 300, H, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  drawBridgeMark(ctx, 150, 55, 50, VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '800 28px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+', 150, 100);
+  ['Dashboard', 'People', 'Records', 'Comms', 'Settings'].forEach((item, i) => {
+    const sy = 150 + i * 56;
+    if (i === 2) { pill(ctx, 16, sy - 8, 268, 44, LAVENDER); ctx.fillStyle = VIOLET; }
+    else ctx.fillStyle = INK2;
+    ctx.font = '500 20px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(item, 40, sy + 20);
+  });
+  const mx = 360;
+  ctx.fillStyle = INK;
+  ctx.font = '800 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Exam Results  \u2022  Class 10  \u2022  Mid-Term 2025-26', mx, 65);
+  // summary cards
+  const examStats = [
+    { label: 'Highest', value: '98%', student: 'Sneha Reddy', color: SUCCESS },
+    { label: 'Class Average', value: '76%', student: '42 students', color: VIOLET },
+    { label: 'Pass Rate', value: '95%', student: '40 of 42', color: TEAL },
+    { label: 'Top Performer', value: '98%', student: 'Sneha Reddy', color: '#E08A3C' },
+  ];
+  examStats.forEach((s, i) => {
+    const sx = mx + i * 390;
+    drawCard(ctx, sx, 95, 360, 110, 14);
+    ctx.fillStyle = s.color;
+    ctx.font = '800 36px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.value, sx + 20, 155);
+    ctx.fillStyle = INK;
+    ctx.font = '600 18px ' + FONT;
+    ctx.fillText(s.label, sx + 20, 185);
+    ctx.fillStyle = INK3;
+    ctx.font = '500 16px ' + FONT;
+    ctx.fillText(s.student, sx + 20, 205);
+  });
+  // subject-wise table
+  drawCard(ctx, mx, 230, 800, 500, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Subject-wise Performance', mx + 24, 275);
+  const subjects = ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science', 'Computer Science'];
+  const subHeaders = ['Subject', 'Highest', 'Average', 'Lowest', 'Pass %'];
+  const subColX = [mx + 24, mx + 300, mx + 430, mx + 560, mx + 690];
+  // header
+  roundRect(ctx, mx + 24, 300, 752, 40, 8);
+  ctx.fillStyle = NAVY;
+  ctx.fill();
+  subHeaders.forEach((h, i) => {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '600 16px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(h, subColX[i] + 8, 326);
+  });
+  subjects.forEach((s, i) => {
+    const ry = 355 + i * 56;
+    if (i % 2 === 0) {
+      roundRect(ctx, mx + 24, ry, 752, 52, 0);
+      ctx.fillStyle = '#FAFAFA';
+      ctx.fill();
+    }
+    const highest = 95 - i * 2;
+    const average = 75 - i * 3;
+    const lowest = 35 + i * 5;
+    const pass = 98 - i * 2;
+    ctx.fillStyle = INK;
+    ctx.font = '500 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s, subColX[0] + 8, ry + 33);
+    ctx.fillStyle = SUCCESS;
+    ctx.font = '600 18px ' + FONT;
+    ctx.fillText(highest + '%', subColX[1] + 8, ry + 33);
+    ctx.fillStyle = INK;
+    ctx.fillText(average + '%', subColX[2] + 8, ry + 33);
+    ctx.fillStyle = DANGER;
+    ctx.fillText(lowest + '%', subColX[3] + 8, ry + 33);
+    ctx.fillStyle = INK;
+    ctx.fillText(pass + '%', subColX[4] + 8, ry + 33);
+  });
+  // right panel: grade distribution
+  drawCard(ctx, mx + 840, 230, 420, 500, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Grade Distribution', mx + 864, 275);
+  const grades = [
+    { grade: 'A+', count: 8, pct: 19, color: SUCCESS },
+    { grade: 'A', count: 14, pct: 33, color: TEAL },
+    { grade: 'B+', count: 10, pct: 24, color: VIOLET },
+    { grade: 'B', count: 6, pct: 14, color: '#E08A3C' },
+    { grade: 'C', count: 3, pct: 7, color: WARNING },
+    { grade: 'F', count: 1, pct: 2, color: DANGER },
+  ];
+  grades.forEach((g, i) => {
+    const gy = 320 + i * 64;
+    ctx.fillStyle = INK;
+    ctx.font = '700 22px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(g.grade, mx + 864, gy + 15);
+    // bar
+    const barW = (g.pct / 33) * 280;
+    roundRect(ctx, mx + 920, gy - 2, 280, 28, 6);
+    ctx.fillStyle = HAIRLINE;
+    ctx.fill();
+    roundRect(ctx, mx + 920, gy - 2, barW, 28, 6);
+    ctx.fillStyle = g.color;
+    ctx.fill();
+    ctx.fillStyle = INK2;
+    ctx.font = '500 16px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText(g.count + ' (' + g.pct + '%)', mx + 1230, gy + 18);
+  });
+  // AI insight
+  drawCard(ctx, mx + 840, 760, 420, 120, 14);
+  roundRect(ctx, mx + 840, 760, 420, 120, 14);
+  const ig = ctx.createLinearGradient(mx + 840, 760, mx + 1260, 880);
+  ig.addColorStop(0, VIOLET);
+  ig.addColorStop(1, VIOLET_DEEP);
+  ctx.fillStyle = ig;
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 18px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('\u2728  AI Insight', mx + 864, 800);
+  ctx.font = '500 16px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText('Math scores improved 8% from last exam.', mx + 864, 835);
+  ctx.fillText('Science needs attention \u2014 3 students below 40%.', mx + 864, 860);
+})();
+
+// ─── Tablet 10" 3: Library ─────────────────────────────────
+(function() {
+  const c = document.getElementById('tablet10_3');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // sidebar
+  roundRect(ctx, 0, 0, 300, H, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  drawBridgeMark(ctx, 150, 55, 50, VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '800 28px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+', 150, 100);
+  ['Dashboard', 'People', 'Records', 'Comms', 'Settings'].forEach((item, i) => {
+    const sy = 150 + i * 56;
+    ctx.fillStyle = INK2;
+    ctx.font = '500 20px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(item, 40, sy + 20);
+  });
+  const mx = 360;
+  ctx.fillStyle = INK;
+  ctx.font = '800 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Library Management', mx, 65);
+  // stats
+  const libStats = [
+    { label: 'Total Books', value: '4,280', color: VIOLET },
+    { label: 'Issued', value: '1,847', color: TEAL },
+    { label: 'Available', value: '2,433', color: SUCCESS },
+    { label: 'Overdue', value: '38', color: DANGER },
+  ];
+  libStats.forEach((s, i) => {
+    const sx = mx + i * 390;
+    drawCard(ctx, sx, 95, 360, 100, 14);
+    ctx.fillStyle = s.color;
+    ctx.font = '800 36px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.value, sx + 20, 148);
+    ctx.fillStyle = INK2;
+    ctx.font = '500 18px ' + FONT;
+    ctx.fillText(s.label, sx + 20, 180);
+  });
+  // book grid
+  ctx.fillStyle = INK;
+  ctx.font = '700 24px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Popular Books', mx, 240);
+  const books = [
+    { title: 'NCERT Mathematics', author: 'R.D. Sharma', status: 'Available', color: SUCCESS },
+    { title: 'Science for Class 10', author: 'Lakhmir Singh', status: 'Issued', color: TEAL },
+    { title: 'English Reader', author: 'Honeydew', status: 'Available', color: SUCCESS },
+    { title: 'Hindi Kshitij', author: 'NCERT', status: 'Overdue', color: DANGER },
+    { title: 'Social Studies', author: 'NCERT', status: 'Available', color: SUCCESS },
+    { title: 'Computer Basics', author: 'Sumita Arora', status: 'Issued', color: TEAL },
+  ];
+  books.forEach((b, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const bx = mx + col * 400;
+    const by = 270 + row * 200;
+    drawCard(ctx, bx, by, 370, 180, 14);
+    // book cover placeholder
+    roundRect(ctx, bx + 16, by + 16, 60, 80, 6);
+    const bookColors = [VIOLET, TEAL, '#E08A3C', DANGER, SUCCESS, '#C14A6A'];
+    ctx.fillStyle = bookColors[i];
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 14px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText('BOOK', bx + 46, by + 62);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = INK;
+    ctx.font = '600 20px ' + FONT;
+    ctx.fillText(b.title, bx + 90, by + 45);
+    ctx.fillStyle = INK3;
+    ctx.font = '400 16px ' + FONT;
+    ctx.fillText(b.author, bx + 90, by + 72);
+    pill(ctx, bx + 90, by + 95, 90, 30, b.color + '18');
+    ctx.fillStyle = b.color;
+    ctx.font = '600 14px ' + FONT;
+    ctx.fillText(b.status, bx + 102, by + 116);
+  });
+  // recent issues
+  drawCard(ctx, mx, 700, 800, 160, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Recent Issues & Returns', mx + 24, 740);
+  const issues = [
+    { student: 'Aarav Sharma', book: 'Mathematics', action: 'Issued', date: 'Jul 15' },
+    { student: 'Priya Patel', book: 'Science', action: 'Returned', date: 'Jul 14' },
+    { student: 'Rohan Gupta', book: 'English', action: 'Issued', date: 'Jul 13' },
+  ];
+  issues.forEach((is, i) => {
+    const ix = mx + 24 + i * 260;
+    ctx.fillStyle = INK;
+    ctx.font = '500 16px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(is.student, ix, 780);
+    ctx.fillStyle = INK3;
+    ctx.font = '400 14px ' + FONT;
+    ctx.fillText(is.book + '  \u2022  ' + is.date, ix, 805);
+    const ac = is.action === 'Issued' ? TEAL : SUCCESS;
+    pill(ctx, ix, 820, 80, 26, ac + '18');
+    ctx.fillStyle = ac;
+    ctx.font = '600 12px ' + FONT;
+    ctx.fillText(is.action, ix + 10, 838);
+  });
+})();
+
+// ─── Tablet 10" 4: Parent Portal ───────────────────────────
+(function() {
+  const c = document.getElementById('tablet10_4');
+  const ctx = c.getContext('2d');
+  const W = 1920, H = 1080;
+  ctx.fillStyle = '#F4F3FA';
+  ctx.fillRect(0, 0, W, H);
+  // sidebar
+  roundRect(ctx, 0, 0, 300, H, 0);
+  ctx.fillStyle = CARD;
+  ctx.fill();
+  drawBridgeMark(ctx, 150, 55, 50, VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '800 28px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+', 150, 100);
+  ['Home', 'Academics', 'Fees', 'Conversations', 'Profile'].forEach((item, i) => {
+    const sy = 150 + i * 56;
+    if (i === 1) { pill(ctx, 16, sy - 8, 268, 44, LAVENDER); ctx.fillStyle = VIOLET; }
+    else ctx.fillStyle = INK2;
+    ctx.font = '500 20px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(item, 40, sy + 20);
+  });
+  const mx = 360;
+  // header
+  ctx.fillStyle = INK;
+  ctx.font = '800 34px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Parent Portal  \u2022  Aarav Sharma', mx, 65);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 20px ' + FONT;
+  ctx.fillText('Class 10-A  \u2022  Delhi Public School', mx, 100);
+  // child profile card
+  drawCard(ctx, mx, 125, 400, 160, 14);
+  drawAvatar(ctx, mx + 80, 205, 45, 'AS', VIOLET);
+  ctx.fillStyle = INK;
+  ctx.font = '700 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Aarav Sharma', mx + 145, 190);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 18px ' + FONT;
+  ctx.fillText('Class 10-A  \u2022  Roll #1', mx + 145, 220);
+  ctx.fillText('Rank: #3 in class', mx + 145, 248);
+  // attendance overview
+  drawCard(ctx, mx + 440, 125, 400, 160, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 20px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Attendance', mx + 464, 170);
+  // donut
+  ctx.beginPath();
+  ctx.arc(mx + 640, 230, 45, 0, Math.PI * 2);
+  ctx.strokeStyle = HAIRLINE;
+  ctx.lineWidth = 14;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(mx + 640, 230, 45, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.92);
+  ctx.strokeStyle = SUCCESS;
+  ctx.lineWidth = 14;
+  ctx.stroke();
+  ctx.fillStyle = INK;
+  ctx.font = '800 24px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('92%', mx + 640, 237);
+  // fee status
+  drawCard(ctx, mx + 880, 125, 400, 160, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 20px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Fee Status', mx + 904, 170);
+  ctx.fillStyle = SUCCESS;
+  ctx.font = '800 36px ' + FONT;
+  ctx.fillText('\u20B945,000', mx + 904, 230);
+  ctx.fillStyle = INK2;
+  ctx.font = '500 16px ' + FONT;
+  ctx.fillText('Paid  \u2022  3 of 4 installments', mx + 904, 260);
+  // subject cards (row)
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Recent Marks', mx, 330);
+  const subjects = [
+    { sub: 'Mathematics', marks: 92, grade: 'A+', color: VIOLET },
+    { sub: 'Science', marks: 88, grade: 'A', color: TEAL },
+    { sub: 'English', marks: 85, grade: 'B+', color: '#E08A3C' },
+    { sub: 'Hindi', marks: 90, grade: 'A', color: SUCCESS },
+    { sub: 'Social Science', marks: 78, grade: 'B', color: '#C14A6A' },
+    { sub: 'Computer', marks: 95, grade: 'A+', color: '#2F9B7A' },
+  ];
+  subjects.forEach((s, i) => {
+    const sx = mx + i * 260;
+    drawCard(ctx, sx, 360, 240, 120, 14);
+    ctx.fillStyle = INK;
+    ctx.font = '600 18px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.sub, sx + 16, 405);
+    ctx.fillStyle = s.color;
+    ctx.font = '800 32px ' + FONT;
+    ctx.fillText(s.marks + '%', sx + 16, 455);
+    pill(ctx, sx + 160, 420, 60, 32, s.color + '18');
+    ctx.fillStyle = s.color;
+    ctx.font = '700 16px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText(s.grade, sx + 190, 442);
+  });
+  // timetable preview
+  drawCard(ctx, mx, 520, 620, 300, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText("Today's Schedule", mx + 24, 565);
+  const schedule = [
+    { time: '8:00 AM', subject: 'Mathematics', teacher: 'Mr. Verma' },
+    { time: '9:00 AM', subject: 'Science', teacher: 'Mrs. Gupta' },
+    { time: '10:00 AM', subject: 'English', teacher: 'Ms. Sharma' },
+    { time: '11:00 AM', subject: 'Hindi', teacher: 'Mr. Singh' },
+    { time: '12:00 PM', subject: 'Lunch Break', teacher: '' },
+    { time: '1:00 PM', subject: 'Social Science', teacher: 'Mrs. Reddy' },
+  ];
+  schedule.forEach((s, i) => {
+    const sy = 595 + i * 36;
+    const isBreak = s.subject === 'Lunch Break';
+    ctx.fillStyle = isBreak ? INK3 : INK;
+    ctx.font = (isBreak ? '400' : '500') + ' 16px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.time, mx + 24, sy);
+    ctx.fillText(s.subject, mx + 140, sy);
+    if (s.teacher) {
+      ctx.fillStyle = INK3;
+      ctx.fillText(s.teacher, mx + 400, sy);
+    }
+  });
+  // messages preview
+  drawCard(ctx, mx + 660, 520, 620, 300, 14);
+  ctx.fillStyle = INK;
+  ctx.font = '700 22px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('Recent Messages', mx + 684, 565);
+  const msgs = [
+    { from: 'Mr. Verma (Math)', msg: 'Homework assigned: Chapter 5 exercises', time: '2h ago' },
+    { from: 'Principal', msg: 'PTM scheduled for July 20', time: '5h ago' },
+    { from: 'Library', msg: 'Book return reminder: 2 days overdue', time: '1d ago' },
+  ];
+  msgs.forEach((m, i) => {
+    const my = 600 + i * 70;
+    drawAvatar(ctx, mx + 704, my + 10, 20, m.from[0], VIOLET);
+    ctx.fillStyle = INK;
+    ctx.font = '600 16px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.fillText(m.from, mx + 736, my + 5);
+    ctx.fillStyle = INK2;
+    ctx.font = '400 14px ' + FONT;
+    ctx.fillText(m.msg, mx + 736, my + 28);
+    ctx.fillStyle = INK3;
+    ctx.font = '400 12px ' + FONT;
+    ctx.textAlign = 'right';
+    ctx.fillText(m.time, mx + 1260, my + 5);
+  });
+  // bottom
+  ctx.fillStyle = CARD;
+  ctx.fillRect(0, H - 60, W, 60);
+  ctx.fillStyle = INK3;
+  ctx.font = '500 16px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillText('Enroll+ v1.0  \u2022  vidyaprayag.com  \u2022  Made with \u2764\uFE0F for Indian Schools', W / 2, H - 25);
+})();
+</script>
+</body>
+</html>
