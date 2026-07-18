@@ -14,8 +14,10 @@
 .home-bar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;z-index:100;background:rgba(26,22,20,.25)}
 .statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 32px 4px;font-size:14px;font-weight:600;flex-shrink:0;z-index:10;color:var(--ink)}.statusbar .icons{display:flex;align-items:center;gap:5px}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
-.people-header{padding:4px 24px 2px;flex-shrink:0}.people-eyebrow{display:flex;align-items:center;gap:6px}.people-eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--violet)}.people-eyebrow-text{font-size:11px;font-weight:700;color:var(--violet);letter-spacing:.3px;text-transform:uppercase}
+.people-header{padding:4px 24px 2px;flex-shrink:0;position:relative}.people-eyebrow{display:flex;align-items:center;gap:6px}.people-eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}.people-eyebrow-text{font-size:11px;font-weight:700;color:var(--violet);letter-spacing:.3px;text-transform:uppercase}
 .people-title{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.5px;margin-top:2px}.people-title .light{font-weight:400;color:var(--ink2)}
+.people-summary{display:flex;gap:16px;padding:6px 24px 2px;flex-shrink:0}.people-summary-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink2)}.people-summary-dot{width:8px;height:8px;border-radius:50%}.people-summary-dot.violet{background:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}.people-summary-dot.coral{background:var(--coral);box-shadow:0 0 0 3px var(--coral-soft)}.people-summary-dot.mint{background:var(--mint);box-shadow:0 0 0 3px var(--mint-soft)}.people-summary-num{font-weight:800;color:var(--ink);font-size:13px}
+.subtab-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;font-size:10px;font-weight:700;padding:0 5px;margin-left:4px}.subtab-pill.active .subtab-count{background:rgba(255,255,255,.25);color:#fff}.subtab-pill:not(.active) .subtab-count{background:var(--surface-tint);color:var(--ink3)}
 .subtabs{display:flex;align-items:center;gap:6px;padding:4px 24px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}.subtabs::-webkit-scrollbar{display:none}
 .subtab-pill{padding:8px 18px;border-radius:var(--radius-full);font-size:13px;font-weight:600;border:none;cursor:pointer;white-space:nowrap;transition:all 220ms var(--ease);background:transparent;color:var(--ink3)}.subtab-pill.active{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;font-weight:700;box-shadow:0 2px 10px -2px rgba(91,65,213,.4)}
 .subtab-add-btn{display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border-radius:var(--radius-full);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease);background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 8px -2px rgba(91,65,213,.35);flex-shrink:0;margin-left:auto}.subtab-add-btn:hover{transform:translateY(-1px)}.subtab-add-btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}
@@ -31,9 +33,9 @@
 .bulk-toggle{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:600;background:var(--white);color:var(--ink2);border:1.5px solid var(--line);cursor:pointer;transition:all var(--dur) var(--ease);white-space:nowrap}.bulk-toggle.active{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;border-color:transparent;box-shadow:0 2px 8px -2px rgba(91,65,213,.3)}.bulk-toggle svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
 .link-banner{margin:4px 24px 8px;padding:12px 16px;background:var(--violet-soft);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all var(--dur) var(--ease);border:1px solid transparent}.link-banner:hover{border-color:var(--violet);transform:translateY(-1px);box-shadow:var(--shadow-1)}.link-banner-left{display:flex;align-items:center;gap:10px}.link-banner-icon{width:34px;height:34px;border-radius:var(--radius-sm);background:linear-gradient(135deg,#7B61E5,#5B41D5);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px -2px rgba(91,65,213,.35)}.link-banner-icon svg{width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none}.link-banner-text{font-size:13px;font-weight:700;color:var(--violet)}.link-banner-sub{font-size:11px;font-weight:500;color:var(--violet-ink);opacity:.7;margin-top:1px}.link-banner-arrow{width:16px;height:16px;stroke:var(--violet);stroke-width:2;fill:none;flex-shrink:0}
 .cards-container{padding:0 24px 16px;display:flex;flex-direction:column;gap:10px}
-.teacher-card{background:var(--white);border-radius:var(--radius-lg);position:relative;overflow:hidden;transition:all var(--dur) var(--ease);cursor:pointer;box-shadow:var(--shadow-1);border:1px solid var(--line-soft)}.teacher-card:hover{box-shadow:0 8px 28px -6px rgba(91,65,213,.12),0 2px 8px rgba(26,22,20,.06);transform:translateY(-2px);border-color:var(--violet-soft)}.teacher-card.selected{background:var(--violet-soft);border-color:var(--violet)}.teacher-card.bulk-mode{padding-left:12px}
-.teacher-accent{position:absolute;top:0;left:0;right:0;height:3px;transition:height 200ms var(--ease)}.teacher-card:hover .teacher-accent{height:4px}
-.bento-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft);border-radius:0 0 var(--radius-lg) var(--radius-lg);overflow:hidden}.bento-cell{background:var(--white);padding:12px 14px;display:flex;flex-direction:column;gap:4px;transition:background 150ms}.bento-cell:hover{background:var(--surface-tint)}.bento-cell.full{grid-column:1/-1}.bento-cell-label{font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:4px}.bento-cell-label svg{width:10px;height:10px;stroke:currentColor;stroke-width:2;fill:none}.bento-cell-val{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1}.bento-cell-sub{font-size:11px;font-weight:500;color:var(--ink3)}
+.teacher-card{background:var(--white);border-radius:var(--radius-lg);position:relative;transition:all var(--dur) var(--ease);cursor:pointer;box-shadow:var(--shadow-1);border:1px solid var(--line-soft)}.teacher-card:hover{box-shadow:0 8px 28px -6px rgba(91,65,213,.12),0 2px 8px rgba(26,22,20,.06);transform:translateY(-2px);border-color:var(--violet-soft)}.teacher-card.selected{background:var(--violet-soft);border-color:var(--violet)}.teacher-card.bulk-mode{padding-left:12px}
+.teacher-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;transition:height 200ms var(--ease)}.teacher-card:hover .teacher-accent{height:4px}
+.bento-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft);border-radius:0 0 var(--radius-lg) var(--radius-lg)}.bento-cell{background:var(--white);padding:12px 14px;display:flex;flex-direction:column;gap:4px;transition:background 150ms}.bento-cell:hover{background:var(--surface-tint)}.bento-cell.full{grid-column:1/-1}.bento-cell:last-child{border-radius:0 0 var(--radius-lg) 0}.bento-cell:nth-last-child(2):not(.full){border-radius:0 0 0 var(--radius-lg)}.bento-cell.full:last-child{border-radius:0 0 var(--radius-lg) var(--radius-lg)}.bento-cell-label{font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:4px}.bento-cell-label svg{width:10px;height:10px;stroke:currentColor;stroke-width:2;fill:none}.bento-cell-val{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1}.bento-cell-sub{font-size:11px;font-weight:500;color:var(--ink3)}
 .bento-header{display:flex;align-items:center;gap:10px;padding:14px 14px 12px}.bento-header .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px;background:linear-gradient(135deg,#7B61E5,#5B41D5);box-shadow:0 2px 8px -2px rgba(91,65,213,.35),inset 0 1px 0 rgba(255,255,255,.15)}
 .avatar.coral{background:linear-gradient(135deg,#FF5C85,#F82B60);box-shadow:0 2px 8px -2px rgba(248,43,96,.3),inset 0 1px 0 rgba(255,255,255,.15)}.avatar.gold{background:linear-gradient(135deg,#FFD040,#FCB400);box-shadow:0 2px 8px -2px rgba(252,180,0,.3),inset 0 1px 0 rgba(255,255,255,.2)}.avatar.mint{background:linear-gradient(135deg,#4EE6A0,#2DCE89);box-shadow:0 2px 8px -2px rgba(45,206,137,.3),inset 0 1px 0 rgba(255,255,255,.15)}.avatar.sky{background:linear-gradient(135deg,#42CCFF,#18BFFF);box-shadow:0 2px 8px -2px rgba(24,191,255,.3),inset 0 1px 0 rgba(255,255,255,.15)}
 .bento-header-info{flex:1;min-width:0}.bento-header-name{display:flex;align-items:center;gap:5px}.bento-header-name .card-name{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crown-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0;color:var(--gold);filter:drop-shadow(0 1px 2px rgba(252,180,0,.3))}.crown-badge svg{width:14px;height:14px}
@@ -43,7 +45,7 @@
 .bento-schedule{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink2)}.bento-schedule svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}
 .bento-stat-icon{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.bento-stat-icon svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}.bento-stat-row{display:flex;align-items:center;gap:8px}
 .btn-profile{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius-full);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease);background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 10px -2px rgba(91,65,213,.35)}.btn-profile:hover{transform:translateY(-1px)}.btn-profile svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none}
-.student-enriched{background:var(--white);border-radius:var(--radius-md);padding:16px;box-shadow:var(--shadow-1);transition:all var(--dur) var(--ease);cursor:pointer;position:relative;overflow:hidden}.student-enriched:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}.student-enriched.selected{background:var(--violet-soft);border:1px solid var(--violet)}.student-enriched.bulk-mode{padding-left:12px}
+.student-enriched{background:var(--white);border-radius:var(--radius-md);padding:16px;box-shadow:var(--shadow-1);transition:all var(--dur) var(--ease);cursor:pointer;position:relative}.student-enriched:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}.student-enriched.selected{background:var(--violet-soft);border:1px solid var(--violet)}.student-enriched.bulk-mode{padding-left:12px}
 .se-header{display:flex;align-items:flex-start;gap:12px}.se-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px;background:linear-gradient(135deg,#7B61E5,#5B41D5);box-shadow:0 2px 8px -2px rgba(91,65,213,.35),inset 0 1px 0 rgba(255,255,255,.15)}.se-avatar.coral{background:linear-gradient(135deg,#FF5C85,#F82B60)}.se-avatar.gold{background:linear-gradient(135deg,#FFD040,#FCB400)}.se-avatar.mint{background:linear-gradient(135deg,#4EE6A0,#2DCE89)}.se-avatar.sky{background:linear-gradient(135deg,#42CCFF,#18BFFF)}
 .se-id{flex:1;min-width:0}.se-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.se-name{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.se-class-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--radius-full);letter-spacing:.3px;flex-shrink:0;background:var(--violet-soft);color:var(--violet)}.se-roll-row{display:flex;align-items:center;gap:12px;margin-top:4px}.se-roll{font-size:11px;font-weight:500;color:var(--ink3)}.se-adm{font-size:11px;font-weight:500;color:var(--ink3)}
 .se-parent{display:flex;align-items:center;gap:16px;margin-top:10px}.se-parent-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--ink2)}.se-parent-item svg{width:13px;height:13px;stroke:var(--ink3);stroke-width:2;fill:none;flex-shrink:0}
@@ -52,7 +54,7 @@
 .se-viz-row{display:flex;gap:12px;margin-top:12px}.se-viz{flex:1;min-width:0}.se-viz-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}.se-viz-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px}.se-viz-value{font-size:13px;font-weight:700;color:var(--ink)}.se-viz-bar{height:6px;border-radius:var(--radius-full);background:var(--surface-tint);overflow:hidden}.se-viz-fill{height:100%;border-radius:var(--radius-full);transition:width 600ms var(--ease)}.se-viz-fill.green{background:linear-gradient(90deg,#4EE6A0,#2DCE89)}.se-viz-fill.yellow{background:linear-gradient(90deg,#FFD040,#FCB400)}.se-viz-fill.red{background:linear-gradient(90deg,#FF5C85,#F82B60)}.se-viz-fill.violet{background:linear-gradient(90deg,#7B61E5,#5B41D5)}.se-viz-fill.sky{background:linear-gradient(90deg,#42CCFF,#18BFFF)}
 .se-today{margin-top:12px;padding:10px 12px;background:var(--surface-tint);border-radius:var(--radius-sm)}.se-today-header{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.se-today-header svg{width:14px;height:14px;stroke:var(--ink3);stroke-width:2;fill:none}.se-today-list{display:flex;flex-direction:column;gap:4px}.se-today-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--ink2)}.se-today-item .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}.se-today-item .dot.green{background:var(--mint)}.se-today-item .dot.yellow{background:var(--gold)}.se-today-item .dot.sky{background:var(--sky)}.se-today-item .dot.red{background:var(--coral)}
 .se-actions{display:flex;gap:6px;margin-top:12px}.se-action-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 4px;border-radius:var(--radius-sm);background:var(--surface-tint);border:none;cursor:pointer;transition:all 150ms}.se-action-btn:hover{background:var(--violet-soft)}.se-action-btn svg{width:17px;height:17px;stroke:var(--violet);stroke-width:2;fill:none}.se-action-btn span{font-size:10px;font-weight:600;color:var(--ink2)}
-.overflow-wrap{position:relative}.overflow-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms}.overflow-btn:hover{background:var(--surface-tint)}.overflow-btn svg{width:18px;height:18px;stroke:var(--ink3);stroke-width:2.5;fill:none}.overflow-menu{position:absolute;top:100%;right:0;margin-top:4px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-3);padding:4px;min-width:150px;z-index:50;display:none}.overflow-menu.open{display:block}.overflow-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;transition:background 150ms}.overflow-item:hover{background:var(--surface-tint)}.overflow-item.danger{color:var(--coral)}.overflow-item.danger:hover{background:var(--coral-soft)}.overflow-item svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+.overflow-wrap{position:relative;z-index:60}.overflow-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 150ms}.overflow-btn:hover{background:var(--surface-tint)}.overflow-btn svg{width:18px;height:18px;stroke:var(--ink3);stroke-width:2.5;fill:none}.overflow-menu{position:absolute;top:100%;right:0;margin-top:4px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-3);padding:4px;min-width:150px;z-index:50;display:none}.overflow-menu.open{display:block}.overflow-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;transition:background 150ms}.overflow-item:hover{background:var(--surface-tint)}.overflow-item.danger{color:var(--coral)}.overflow-item.danger:hover{background:var(--coral-soft)}.overflow-item svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
 .bulk-checkbox{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;transition:all 200ms var(--ease);display:flex;align-items:center;justify-content:center}.bulk-checkbox svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none;opacity:0;transition:opacity 150ms}.teacher-card.selected .bulk-checkbox,.student-enriched.selected .bulk-checkbox{background:var(--violet);border-color:var(--violet)}.teacher-card.selected .bulk-checkbox svg,.student-enriched.selected .bulk-checkbox svg{opacity:1}
 .bulk-bar{position:absolute;bottom:90px;left:16px;right:16px;background:linear-gradient(135deg,#2A2520,#1A1614);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 28px -6px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.2);z-index:40;transform:translateY(200%);transition:transform 300ms var(--ease)}.bulk-bar.active{transform:translateY(0)}.bulk-bar-count{font-size:13px;font-weight:700;color:#fff}.bulk-bar-actions{display:flex;gap:6px}.bulk-bar-actions .btn{padding:7px 14px;font-size:12px;border-radius:var(--radius-full);border:none;cursor:pointer;font-weight:600;transition:all 150ms}.bulk-bar-actions .btn-grad{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff}.bulk-bar-actions .btn-destructive{background:var(--coral-soft);color:var(--coral)}.bulk-bar-actions .btn-cancel{background:transparent;color:rgba(255,255,255,.6)}.bulk-bar-actions .btn-cancel:hover{color:#fff}
 .load-more{padding:8px 24px 16px}.load-more-btn{width:100%;padding:12px;border-radius:var(--radius-md);font-size:14px;font-weight:600;background:transparent;border:1.5px solid var(--line);color:var(--ink2);cursor:pointer;transition:all var(--dur) var(--ease)}.load-more-btn:hover{border-color:var(--violet);color:var(--violet)}
@@ -70,6 +72,14 @@
 .profile-section{background:var(--white);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-1);margin-bottom:10px}.profile-section-title{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}.profile-section-title svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
 .profile-info-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line-soft)}.profile-info-row:last-child{border-bottom:none}.profile-info-label{font-size:13px;font-weight:500;color:var(--ink2);display:flex;align-items:center;gap:8px}.profile-info-label svg{width:15px;height:15px;stroke:var(--ink3);stroke-width:2;fill:none}.profile-info-value{font-size:13px;font-weight:600;color:var(--ink)}
 .profile-actions{display:flex;gap:8px;margin-top:16px}.profile-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-radius:var(--radius-md);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease)}.profile-action-btn.primary{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 10px -2px rgba(91,65,213,.35)}.profile-action-btn.primary:hover{transform:translateY(-1px)}.profile-action-btn.secondary{background:var(--surface-tint);color:var(--ink2)}.profile-action-btn.secondary:hover{background:var(--line-soft)}.profile-action-btn svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none}
+.profile-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.profile-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;letter-spacing:.3px}.profile-tag.active{background:linear-gradient(135deg,#DCF5E8,#B8EBCC);color:var(--success)}.profile-tag.inactive{background:var(--coral-soft);color:var(--coral)}.profile-tag.class-teacher{background:linear-gradient(135deg,#FFF4D1,#FFEAB8);color:var(--gold)}.profile-tag svg{width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none}
+.profile-rating{display:flex;align-items:center;gap:4px;margin-top:8px}.profile-rating-stars{display:flex;gap:1px}.profile-rating-stars svg{width:14px;height:14px;stroke:var(--gold);stroke-width:1.5;fill:var(--gold)}.profile-rating-stars svg.empty{fill:none;stroke:var(--line)}.profile-rating-val{font-size:13px;font-weight:700;color:var(--gold)}
+.profile-workload{margin-top:10px}.profile-workload-bar{height:8px;border-radius:var(--radius-full);background:var(--surface-tint);overflow:hidden}.profile-workload-fill{height:100%;border-radius:var(--radius-full);transition:width 600ms var(--ease)}.profile-workload-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px}.profile-workload-label{font-size:11px;font-weight:600;color:var(--ink3)}.profile-workload-pct{font-size:13px;font-weight:700;color:var(--ink)}
+.profile-alerts{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}.profile-alert{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:600}.profile-alert.green{background:var(--mint-soft);color:var(--success)}.profile-alert.yellow{background:var(--gold-soft);color:var(--gold)}.profile-alert.orange{background:#FFF0E0;color:#FF8800}.profile-alert.red{background:var(--coral-soft);color:var(--coral)}.profile-alert.blue{background:var(--sky-soft);color:var(--sky)}.profile-alert.violet{background:var(--violet-soft);color:var(--violet)}.profile-alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:currentColor}
+.profile-viz-row{display:flex;gap:12px;margin-top:4px}.profile-viz{flex:1;min-width:0}.profile-viz-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.profile-viz-label{font-size:11px;font-weight:600;color:var(--ink3)}.profile-viz-value{font-size:14px;font-weight:700;color:var(--ink)}.profile-viz-bar{height:8px;border-radius:var(--radius-full);background:var(--surface-tint);overflow:hidden}.profile-viz-fill{height:100%;border-radius:var(--radius-full);transition:width 600ms var(--ease)}.profile-viz-fill.green{background:linear-gradient(90deg,#4EE6A0,#2DCE89)}.profile-viz-fill.yellow{background:linear-gradient(90deg,#FFD040,#FCB400)}.profile-viz-fill.red{background:linear-gradient(90deg,#FF5C85,#F82B60)}.profile-viz-fill.violet{background:linear-gradient(90deg,#7B61E5,#5B41D5)}.profile-viz-fill.sky{background:linear-gradient(90deg,#42CCFF,#18BFFF)}
+.profile-behaviour{display:flex;align-items:center;gap:8px}.profile-behaviour-emoji{font-size:24px}.profile-behaviour-label{font-size:13px;font-weight:600;color:var(--ink2)}
+.profile-schedule-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-soft)}.profile-schedule-item:last-child{border-bottom:none}.profile-schedule-time{font-size:12px;font-weight:700;color:var(--violet);min-width:70px}.profile-schedule-text{font-size:13px;font-weight:500;color:var(--ink2)}
+.se-viz-fill.orange{background:linear-gradient(90deg,#FF8800,#FF6600)}
 .dialog-overlay{position:absolute;inset:0;z-index:210;background:rgba(26,22,20,.45);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 300ms var(--ease)}.dialog-overlay.active{opacity:1;pointer-events:auto}
 .dialog-card{width:100%;background:var(--cream);border-radius:var(--radius-xxl) var(--radius-xxl) 0 0;padding:0 24px 100px;max-height:80%;overflow-y:auto;scrollbar-width:none;transform:translateY(100%);transition:transform 350ms var(--ease)}.dialog-overlay.active .dialog-card{transform:translateY(0)}.dialog-card::-webkit-scrollbar{display:none}.dialog-handle{width:40px;height:4px;border-radius:2px;background:var(--line);margin:12px auto 0}.dialog-title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px;margin:16px 0 16px}.dialog-field{margin-bottom:12px}.dialog-label{font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px;display:block}.dialog-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius-md);font-size:15px;color:var(--ink);background:var(--white);outline:none;transition:all var(--dur) var(--ease)}.dialog-input:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}.dialog-input::placeholder{color:var(--ink3)}.dialog-hint{font-size:12px;font-weight:500;color:var(--ink3);margin-top:4px}.dialog-actions{display:flex;gap:8px;margin-top:16px}.dialog-btn{flex:1;padding:13px;border-radius:var(--radius-md);font-size:15px;font-weight:600;border:none;cursor:pointer;transition:all var(--dur) var(--ease)}.dialog-btn.primary{background:linear-gradient(135deg,#7B61E5,#5B41D5);color:#fff;box-shadow:0 2px 10px -2px rgba(91,65,213,.35)}.dialog-btn.outline{background:transparent;border:1.5px solid var(--line);color:var(--ink2)}.dialog-btn.outline:hover{border-color:var(--violet);color:var(--violet)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(45,206,137,.5)}50%{box-shadow:0 0 0 5px rgba(45,206,137,0)}}
@@ -81,11 +91,12 @@
 <div class="statusbar"><span>9:41</span><span class="icons"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M1 7h2v3H1zM5 5h2v5H5zM9 3h2v7H9zM13 1h2v9h-2z" opacity=".9"/></svg><svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1.5 4.5C3 3 5 2 7.5 2s4.5 1 6 2.5" opacity=".7"/><path d="M3.5 6.5C4.5 5.5 6 5 7.5 5s3 .5 4 1.5" opacity=".85"/><circle cx="7.5" cy="8.5" r="1" fill="currentColor" stroke="none"/></svg><svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x="1" y="1" width="20" height="9" rx="2.5" stroke="currentColor" stroke-width="1" opacity=".4"/><rect x="3" y="3" width="14" height="5" rx="1" fill="currentColor"/><rect x="22" y="4" width="1.5" height="3" rx=".5" fill="currentColor" opacity=".4"/></svg></span></div>
 
 <div class="people-header"><div class="people-eyebrow"><div class="people-eyebrow-dot"></div><span class="people-eyebrow-text">PEOPLE</span></div><div class="people-title">People <span class="light">Directory</span></div></div>
+<div class="people-summary"><div class="people-summary-item"><span class="people-summary-dot violet"></span><span class="people-summary-num">5</span> Teachers</div><div class="people-summary-item"><span class="people-summary-dot coral"></span><span class="people-summary-num">7</span> Students</div><div class="people-summary-item"><span class="people-summary-dot mint"></span><span class="people-summary-num">5</span> Staff</div></div>
 
 <div class="subtabs">
-<button class="subtab-pill active" data-subtab="teachers">Teachers</button>
-<button class="subtab-pill" data-subtab="students">Students</button>
-<button class="subtab-pill" data-subtab="staff">Staff</button>
+<button class="subtab-pill active" data-subtab="teachers">Teachers<span class="subtab-count">5</span></button>
+<button class="subtab-pill" data-subtab="students">Students<span class="subtab-count">7</span></button>
+<button class="subtab-pill" data-subtab="staff">Staff<span class="subtab-count">5</span></button>
 <button class="subtab-add-btn" id="subtab-add-btn"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
 </div>
 
@@ -308,14 +319,26 @@ function openProfile(type, id) {
   else if (type === 'staff') person = staff.find(s => s.id === id);
   if (!person) return;
 
+  const starSvg = '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+  const emptyStarSvg = '<svg class="empty" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+  const ratingStars = (r) => { let h=''; for(let i=1;i<=5;i++){ h+= i<=Math.round(r)?starSvg:emptyStarSvg; } return h; };
+  const wlColor = (wl) => wl>=80?'linear-gradient(90deg,#FF5C85,#F82B60)':wl>=60?'linear-gradient(90deg,#FFD040,#FCB400)':wl>0?'linear-gradient(90deg,#4EE6A0,#2DCE89)':'var(--line)';
+  const wlTextColor = (wl) => wl>=80?'var(--coral)':wl>=60?'var(--gold)':wl>0?'var(--success)':'var(--ink3)';
+  const availMap = { teaching:{cls:'avail-teaching',label:'Teaching'}, break:{cls:'avail-break',label:'On Break'}, meeting:{cls:'avail-meeting',label:'In Meeting'}, leave:{cls:'avail-leave',label:'On Leave'} };
+
   if (type === 'teacher') {
-    const si = subjectIcons[person.subjects[0]] || subjectIcons['Mathematics'];
+    const av = availMap[person.availability] || availMap.break;
     content.innerHTML = `
       <div class="profile-hero">
         <div class="profile-hero-avatar ${person.color}">${initials(person.name)}</div>
         <div class="profile-hero-info">
           <div class="profile-hero-name">${person.name}</div>
           <div class="profile-hero-role">${person.role} · ${person.experience}</div>
+          <div class="profile-badges">
+            <span class="profile-tag ${person.active?'active':'inactive'}"><span class="avail-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>${person.active?'Active':'Inactive'}</span>
+            ${person.classTeacher?'<span class="profile-tag class-teacher"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18l2-9 4 4 3-6 3 6 4-4 2 9H3z"/></svg>Class Teacher</span>':''}
+            <span class="profile-tag" style="background:${av.cls.includes('teaching')?'var(--mint-soft)':av.cls.includes('break')?'var(--gold-soft)':av.cls.includes('meeting')?'var(--sky-soft)':'var(--coral-soft)'};color:inherit"><span class="avail-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>${av.label}</span>
+          </div>
         </div>
         <button class="profile-close-btn" id="profile-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
@@ -323,6 +346,14 @@ function openProfile(type, id) {
         <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></div><div class="profile-stat-val">${person.classes}</div><div class="profile-stat-label">Classes</div></div>
         <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--sky-soft);color:var(--sky)"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg></div><div class="profile-stat-val">${person.students}</div><div class="profile-stat-label">Students</div></div>
         <div class="profile-stat-card"><div class="profile-stat-icon" style="background:${person.attendance>=95?'var(--mint-soft)':'var(--gold-soft)'};color:${person.attendance>=95?'var(--success)':'var(--gold)'}"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="profile-stat-val">${person.attendance>0?person.attendance+'%':'—'}</div><div class="profile-stat-label">Attendance</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Rating & Performance</div>
+        <div class="profile-rating"><div class="profile-rating-stars">${ratingStars(person.rating)}</div><span class="profile-rating-val">${person.rating}</span></div>
+        <div class="profile-workload">
+          <div class="profile-workload-bar"><div class="profile-workload-fill" style="width:${person.workload}%;background:${wlColor(person.workload)}"></div></div>
+          <div class="profile-workload-row"><span class="profile-workload-label">Weekly Workload Capacity</span><span class="profile-workload-pct" style="color:${wlTextColor(person.workload)}">${person.workload}%</span></div>
+        </div>
       </div>
       <div class="profile-section">
         <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Contact Information</div>
@@ -334,17 +365,27 @@ function openProfile(type, id) {
         <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Subjects & Grades</div>
         <div class="bento-subjects">${person.subjects.map(s=>{const s2=subjectIcons[s]||subjectIcons['Mathematics'];return `<span class="subject-pill" style="background:${s2.soft};color:${s2.ink}">${s2.icon}${s}</span>`;}).join('')}${person.grades.map(g=>`<span class="grade-pill">Gr ${g}</span>`).join('')}</div>
       </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Today's Schedule</div>
+        <div class="bento-schedule" style="font-size:13px;padding:4px 0">${person.schedule}</div>
+      </div>
       <div class="profile-actions">
         <button class="profile-action-btn primary"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit Profile</button>
         <button class="profile-action-btn secondary"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
       </div>`;
   } else if (type === 'student') {
+    const attC = person.attendance>=85?'green':person.attendance>=75?'yellow':person.attendance>0?'red':'violet';
+    const hwC = person.homework>=80?'green':person.homework>=50?'yellow':'red';
+    const behaviourLabel = person.behaviour==='😊'?'Excellent':person.behaviour==='😐'?'Average':'Needs Attention';
     content.innerHTML = `
       <div class="profile-hero">
         <div class="profile-hero-avatar ${person.color}">${initials(person.name)}</div>
         <div class="profile-hero-info">
           <div class="profile-hero-name">${person.name}</div>
           <div class="profile-hero-role">Class ${person.class}-${person.section} · Roll #${person.roll}</div>
+          <div class="profile-badges">
+            <span class="profile-tag ${person.active?'active':'inactive'}"><span class="avail-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>${person.active?'Active':'Inactive'}</span>
+          </div>
         </div>
         <button class="profile-close-btn" id="profile-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
@@ -354,10 +395,23 @@ function openProfile(type, id) {
         <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg></div><div class="profile-stat-val">${person.parents}</div><div class="profile-stat-label">Parents</div></div>
       </div>
       <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Performance Overview</div>
+        <div class="profile-viz-row">
+          <div class="profile-viz"><div class="profile-viz-label-row"><span class="profile-viz-label">Attendance</span><span class="profile-viz-value">${person.attendance>0?person.attendance+'%':'—'}</span></div><div class="profile-viz-bar"><div class="profile-viz-fill ${attC}" style="width:${person.attendance}%"></div></div></div>
+          <div class="profile-viz"><div class="profile-viz-label-row"><span class="profile-viz-label">Homework</span><span class="profile-viz-value">${person.homework}%</span></div><div class="profile-viz-bar"><div class="profile-viz-fill ${hwC}" style="width:${person.homework}%"></div></div></div>
+        </div>
+        <div class="profile-behaviour" style="margin-top:12px"><span class="profile-behaviour-emoji">${person.behaviour}</span><span class="profile-behaviour-label">Behaviour: ${behaviourLabel}</span></div>
+      </div>
+      <div class="profile-section">
         <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Parent Information</div>
         <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Parent Name</div><div class="profile-info-value">${person.parentName||'—'}</div></div>
         <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Parent Phone</div><div class="profile-info-value">${person.parentPhone||'—'}</div></div>
         <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Admission #</div><div class="profile-info-value">${person.admission}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Class & Section</div><div class="profile-info-value">Class ${person.class} - ${person.section}</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01"/><circle cx="12" cy="12" r="10"/></svg>Priority Alerts</div>
+        <div class="profile-alerts">${person.alerts.map(a=>`<span class="profile-alert ${a.c}"><span class="profile-alert-dot"></span>${a.l}</span>`).join('')}</div>
       </div>
       <div class="profile-section">
         <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Today's Summary</div>
@@ -374,11 +428,14 @@ function openProfile(type, id) {
         <div class="profile-hero-info">
           <div class="profile-hero-name">${person.name}</div>
           <div class="profile-hero-role">${person.role} · ${person.dept}</div>
+          <div class="profile-badges">
+            <span class="profile-tag ${person.active?'active':'inactive'}"><span class="avail-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>${person.active?'Active':'Inactive'}</span>
+          </div>
         </div>
         <button class="profile-close-btn" id="profile-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="profile-stats">
-        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21v-2a7 7 0 0 0-7-7H4a7 7 0 0 0-7 7v2"/></svg></div><div class="profile-stat-val">${person.empId}</div><div class="profile-stat-label">Emp ID</div></div>
+        <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21v-2a7 7 0 0 0-7-7H4a7 7 0 0 0-7 7v2"/></svg></div><div class="profile-stat-val" style="font-size:14px">${person.empId}</div><div class="profile-stat-label">Emp ID</div></div>
         <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--mint-soft);color:var(--success)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="profile-stat-val" style="font-size:13px">${person.shift}</div><div class="profile-stat-label">Shift</div></div>
         <div class="profile-stat-card"><div class="profile-stat-icon" style="background:var(--gold-soft);color:var(--gold)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div><div class="profile-stat-val">${person.joined}</div><div class="profile-stat-label">Joined</div></div>
       </div>
@@ -386,6 +443,12 @@ function openProfile(type, id) {
         <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Contact Information</div>
         <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Phone</div><div class="profile-info-value">${person.phone||'—'}</div></div>
         <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22 6 12 13 2 6"/></svg>Email</div><div class="profile-info-value">${person.email||'—'}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Department</div><div class="profile-info-value">${person.dept}</div></div>
+        <div class="profile-info-row"><div class="profile-info-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Shift Timing</div><div class="profile-info-value">${person.shift}</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01"/><circle cx="12" cy="12" r="10"/></svg>Status & Alerts</div>
+        <div class="profile-alerts">${person.alerts.map(a=>`<span class="profile-alert ${a.c}"><span class="profile-alert-dot"></span>${a.l}</span>`).join('')}<span class="profile-alert violet"><span class="profile-alert-dot"></span>Since ${person.joined}</span></div>
       </div>
       <div class="profile-section">
         <div class="profile-section-title"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Today's Summary</div>
@@ -397,6 +460,7 @@ function openProfile(type, id) {
       </div>`;
   }
   overlay.classList.add('active');
+  overlay.scrollTop = 0;
   document.getElementById('profile-close').addEventListener('click', () => overlay.classList.remove('active'));
 }
 
@@ -591,10 +655,29 @@ document.addEventListener('click', e => {
 
 // ═══ PROFILE OVERLAY — open on card click (non-bulk) ═══
 document.addEventListener('click', e => {
+  const profileBtn = e.target.closest('.btn-profile');
+  if (profileBtn) {
+    e.stopPropagation();
+    const card = profileBtn.closest('[data-profile]');
+    if (card) openProfile(card.getAttribute('data-profile'), card.getAttribute('data-id'));
+    return;
+  }
+  const seActionBtn = e.target.closest('.se-action-btn');
+  if (seActionBtn) {
+    e.stopPropagation();
+    const card = seActionBtn.closest('[data-profile]');
+    if (card) {
+      const label = seActionBtn.querySelector('span');
+      if (label && label.textContent === 'Profile') {
+        openProfile(card.getAttribute('data-profile'), card.getAttribute('data-id'));
+      }
+    }
+    return;
+  }
   const card = e.target.closest('[data-profile]');
   if (!card) return;
   if (card.classList.contains('bulk-mode')) return;
-  if (e.target.closest('.overflow-btn') || e.target.closest('.overflow-menu') || e.target.closest('.btn-profile') || e.target.closest('.se-action-btn')) return;
+  if (e.target.closest('.overflow-btn') || e.target.closest('.overflow-menu')) return;
   const type = card.getAttribute('data-profile');
   const id = card.getAttribute('data-id');
   openProfile(type, id);
