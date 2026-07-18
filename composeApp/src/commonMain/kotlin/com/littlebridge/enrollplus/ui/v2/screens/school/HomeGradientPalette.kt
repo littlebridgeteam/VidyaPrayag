@@ -50,3 +50,48 @@ fun heroGradient(): Brush {
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
 }
+
+/**
+ * Purple gradient for the Today's Overview hero card.
+ * Deep indigo → violet, matching the reference design's hero section.
+ */
+@Composable
+fun overviewGradient(): Brush {
+    val colors = when {
+        VTheme.colors.isNight -> listOf(
+            Color(0xFF2D1B69),
+            Color(0xFF1A1145),
+        )
+        else -> listOf(
+            Color(0xFF5B3FD9),
+            Color(0xFF3B28CC),
+        )
+    }
+    return Brush.linearGradient(
+        colors = colors,
+        start = Offset(0f, 0f),
+        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+    )
+}
+
+/**
+ * Teal-to-green gradient for the school health status bar.
+ */
+@Composable
+fun healthBarGradient(): Brush {
+    val colors = when {
+        VTheme.colors.isNight -> listOf(
+            Color(0xFF0D3D32),
+            Color(0xFF0A2E26),
+        )
+        else -> listOf(
+            Color(0xFFE8F8F0),
+            Color(0xFFD4F1E4),
+        )
+    }
+    return Brush.linearGradient(
+        colors = colors,
+        start = Offset(0f, 0f),
+        end = Offset(Float.POSITIVE_INFINITY, 0f),
+    )
+}

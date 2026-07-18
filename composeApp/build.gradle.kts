@@ -3,6 +3,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -148,9 +149,9 @@ kotlin {
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
-val keystoreProperties = java.util.Properties()
+val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -161,8 +162,8 @@ android {
         applicationId = "com.littlebridge.enrollplus"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.0.0"
     }
     
     buildFeatures {
@@ -205,7 +206,7 @@ android {
                 keyPassword = keystoreProperties.getProperty("releaseKeyPassword")
             }
         }
-        create("debug") {
+        getByName("debug") {
             if (keystoreProperties.isNotEmpty()) {
                 storeFile = file(keystoreProperties.getProperty("debugStoreFile"))
                 storePassword = keystoreProperties.getProperty("debugStorePassword")
