@@ -8,6 +8,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardActi
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardOverview
 import com.littlebridge.enrollplus.feature.admin.domain.model.AdminDashboardSummary
+import com.littlebridge.enrollplus.feature.admin.domain.model.AdminHomeAnalytics
 import com.littlebridge.enrollplus.feature.admin.domain.model.DailyDigest
 import com.littlebridge.enrollplus.feature.admin.domain.model.OnboardingStep
 import com.littlebridge.enrollplus.feature.admin.domain.repository.AdminDashboardRepository
@@ -70,6 +71,9 @@ data class SchoolDashboardState(
     val digest: DailyDigest? = null,
     val pinnedScreens: List<String> = emptyList(),
     val isDigestLoading: Boolean = false,
+    val homeAnalytics: AdminHomeAnalytics? = null,
+    val isHomeAnalyticsLoading: Boolean = false,
+    val homeAnalyticsError: String? = null,
 )
 
 /**
@@ -196,6 +200,38 @@ class SchoolDashboardViewModel(
             is NetworkResult.Error -> AppLogger.e("SchoolDashboardVM", "getActivity failed: ${r.message}")
             is NetworkResult.ConnectionError -> AppLogger.e("SchoolDashboardVM", "getActivity connection error")
         }
+    }
+
+    fun loadHomeAnalytics(type: String, filter: String = "all") {
+        viewModelScope.launch {
+            _state.update { it.copy(isHomeAnalyticsLoading = true, homeAnalyticsError = null) }
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) {
+                _state.update { it.copy(isHomeAnalyticsLoading = false, homeAnalyticsError = "Authentication required") }
+                return@launch
+            }
+            when (val result = dashboardRepository.getHomeAnalytics(token, type, filter)) {
+                is NetworkResult.Success -> _state.update {
+                    it.copy(
+                        homeAnalytics = result.data.data,
+                        isHomeAnalyticsLoading = false,
+                        homeAnalyticsError = null,
+                        isStale = result.isStale,
+                        isOffline = result.isOffline,
+                    )
+                }
+                is NetworkResult.Error -> _state.update {
+                    it.copy(isHomeAnalyticsLoading = false, homeAnalyticsError = result.message)
+                }
+                is NetworkResult.ConnectionError -> _state.update {
+                    it.copy(isHomeAnalyticsLoading = false, homeAnalyticsError = "Connection error")
+                }
+            }
+        }
+    }
+
+    fun clearHomeAnalytics() {
+        _state.update { it.copy(homeAnalytics = null, homeAnalyticsError = null, isHomeAnalyticsLoading = false) }
     }
 
     private suspend fun loadDigest(token: String) {

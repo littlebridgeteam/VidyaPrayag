@@ -122,6 +122,8 @@ fun SchoolPeopleScreenV2(
     onOpenStaff: (String) -> Unit = {},
     onOpenMessages: (String?) -> Unit = {},
     onGraduateStudents: (List<String>, Int) -> Unit = { _, _ -> },
+    deepLinkDestination: String? = null,
+    onDeepLinkConsumed: () -> Unit = {},
     teachersViewModel: SchoolTeachersViewModel = koinViewModel(),
     studentsViewModel: StudentRosterViewModel = koinViewModel(),
     staffViewModel: StaffViewModel = koinViewModel(),
@@ -173,6 +175,8 @@ fun SchoolPeopleScreenV2(
         onOpenStaff = onOpenStaff,
         onOpenMessages = onOpenMessages,
         onGraduateStudents = onGraduateStudents,
+        deepLinkDestination = deepLinkDestination,
+        onDeepLinkConsumed = onDeepLinkConsumed,
         modifier = modifier,
     )
 }
@@ -204,14 +208,35 @@ private fun SchoolPeopleContent(
     onOpenStaff: (String) -> Unit,
     onOpenMessages: (String?) -> Unit,
     onGraduateStudents: (List<String>, Int) -> Unit,
+    deepLinkDestination: String?,
+    onDeepLinkConsumed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var subTab by remember { mutableStateOf(PeopleSubTab.Teachers) }
+    val initialSubTab = when (deepLinkDestination) {
+        "add_students" -> PeopleSubTab.Students
+        else -> PeopleSubTab.Teachers
+    }
+    var subTab by remember { mutableStateOf(initialSubTab) }
     var showAddTeacher by remember { mutableStateOf(false) }
     var showAddStaff by remember { mutableStateOf(false) }
     var showAddStudent by remember { mutableStateOf(false) }
     var showImportStudents by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(deepLinkDestination) {
+        when (deepLinkDestination) {
+            "add_teachers" -> {
+                subTab = PeopleSubTab.Teachers
+                showAddTeacher = true
+            }
+            "add_students" -> {
+                subTab = PeopleSubTab.Students
+                showAddStudent = true
+            }
+            else -> return@LaunchedEffect
+        }
+        onDeepLinkConsumed()
+    }
 
     val anyLoading = teachersState.isLoading || studentsState.isLoading || staffState.isLoading
     LaunchedEffect(anyLoading) {
@@ -241,7 +266,10 @@ private fun SchoolPeopleContent(
     }
 
     val subTabLabels = PeopleSubTab.entries.map { it.label() }
-    val pagerState = rememberPagerState(pageCount = { PeopleSubTab.entries.size })
+    val pagerState = rememberPagerState(
+        initialPage = initialSubTab.ordinal,
+        pageCount = { PeopleSubTab.entries.size },
+    )
     val scope = rememberCoroutineScope()
 
     // Sync tab taps with pager.

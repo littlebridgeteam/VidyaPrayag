@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -124,11 +125,38 @@ private fun ByteArray.encodeToBase64(): String = Base64.encode(this)
 fun ClassesSubjectsScreenV2(
     onBack: () -> Unit = {},
     onOpenClassDetail: (SchoolClassDto) -> Unit = {},
+    deepLinkDestination: String? = null,
+    onDeepLinkConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ClassesSubjectsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
-    var activeTab by remember { mutableStateOf(ClassesSubjectsTab.Classes) }
+    val initialTab = when (deepLinkDestination) {
+        "add_subjects", "subjects" -> ClassesSubjectsTab.Subjects
+        "create_timetable", "timetable" -> ClassesSubjectsTab.Schedule
+        else -> ClassesSubjectsTab.Classes
+    }
+    var activeTab by remember { mutableStateOf(initialTab) }
+    var createClassRequestKey by remember { mutableIntStateOf(0) }
+    var addSubjectRequestKey by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(deepLinkDestination) {
+        when (deepLinkDestination) {
+            "create_classes" -> {
+                activeTab = ClassesSubjectsTab.Classes
+                createClassRequestKey++
+            }
+            "add_subjects" -> {
+                activeTab = ClassesSubjectsTab.Subjects
+                addSubjectRequestKey++
+            }
+            "classes" -> activeTab = ClassesSubjectsTab.Classes
+            "subjects" -> activeTab = ClassesSubjectsTab.Subjects
+            "create_timetable", "timetable" -> activeTab = ClassesSubjectsTab.Schedule
+            else -> return@LaunchedEffect
+        }
+        onDeepLinkConsumed()
+    }
 
     Column(modifier.fillMaxSize().statusBarsPadding()
         .imePadding()
@@ -145,6 +173,7 @@ fun ClassesSubjectsScreenV2(
                 onCreate = { code, name, sections, onDone -> viewModel.createClass(code, name, sections, onDone) },
                 onUpdate = { id, code, name, sections, onDone -> viewModel.updateClass(id, code, name, sections, onDone) },
                 onDelete = { id -> viewModel.deleteClass(id) },
+                openCreateRequestKey = createClassRequestKey,
             )
             ClassesSubjectsTab.Subjects -> SubjectsTab(
                 state = state,
@@ -152,6 +181,7 @@ fun ClassesSubjectsScreenV2(
                 onCreateSubject = { classId, name, code, onDone -> viewModel.createSubject(classId, name, code, onDone) },
                 onUpdateSubject = { subjectId, classId, name, code, onDone -> viewModel.updateSubject(subjectId, classId, name, code, onDone) },
                 onDeleteSubject = { subjectId, classId -> viewModel.deleteSubject(subjectId, classId) },
+                openCreateRequestKey = addSubjectRequestKey,
             )
             ClassesSubjectsTab.Schedule -> ScheduleTab(
                 state = state,
@@ -192,8 +222,12 @@ private fun ClassesTab(
     onCreate: (code: String, name: String, sections: List<String>, onDone: () -> Unit) -> Unit,
     onUpdate: (id: String, code: String, name: String, sections: List<String>, onDone: () -> Unit) -> Unit,
     onDelete: (id: String) -> Unit,
+    openCreateRequestKey: Int,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(openCreateRequestKey) {
+        if (openCreateRequestKey > 0) showAddDialog = true
+    }
     var editingClass by remember { mutableStateOf<SchoolClassDto?>(null) }
     var deleteTarget by remember { mutableStateOf<SchoolClassDto?>(null) }
 
@@ -388,6 +422,7 @@ private fun SubjectsTab(
     onCreateSubject: (classId: String, name: String, code: String, onDone: () -> Unit) -> Unit,
     onUpdateSubject: (subjectId: String, classId: String, name: String, code: String, onDone: () -> Unit) -> Unit,
     onDeleteSubject: (subjectId: String, classId: String) -> Unit,
+    openCreateRequestKey: Int,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingSubject by remember { mutableStateOf<SchoolSubjectDto?>(null) }
@@ -396,6 +431,10 @@ private fun SubjectsTab(
     val selectedClassId = state.selectedClassId
     val subjects = selectedClassId?.let { state.subjectsByClass[it] } ?: emptyList()
     val selectedClass = state.classes.find { it.id == selectedClassId }
+
+    LaunchedEffect(openCreateRequestKey, selectedClassId) {
+        if (openCreateRequestKey > 0 && selectedClassId != null) showAddDialog = true
+    }
 
     VStateHost(
         loading = state.isLoading,

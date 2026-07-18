@@ -2,6 +2,7 @@ package com.littlebridge.enrollplus.ui.v2.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -71,8 +72,6 @@ import com.littlebridge.enrollplus.feature.admin.presentation.PinnedScreensViewM
 import org.koin.compose.viewmodel.koinViewModel
 import com.littlebridge.enrollplus.ui.tokens.VShapes
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import com.littlebridge.enrollplus.ui.v2.theme.VElevationLevel
-import com.littlebridge.enrollplus.ui.v2.theme.vElevation
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VTopTabs — horizontally scrollable underline tab bar
@@ -972,15 +971,7 @@ private fun RoutePinButton(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VCreamBottomNav — premium floating dock navigation
-//
-// Design DNA:
-//   • Floating capsule (32dp radius) with hairline border and raised shadow
-//   • Solid violet gradient pill glides horizontally under the active tab
-//   • Active icon + label sit ON the pill in white
-//   • Inactive tabs are quiet grey glyphs (no label)
-//   • Badge: coral dot on inactive, white pill on active
-//   • Spring physics for pill slide + icon scale
+// VCreamBottomNav — premium floating navigation with a sliding violet pill
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -992,161 +983,138 @@ fun VCreamBottomNav(
 ) {
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
-    val accent = VColors.violet
-
     val itemXs = remember { mutableStateMapOf<String, Dp>() }
     val itemWidths = remember { mutableStateMapOf<String, Dp>() }
-    val targetX = itemXs[selected] ?: 0.dp
-    val targetW = itemWidths[selected] ?: 0.dp
-    val pillX by animateDpAsState(
-        targetValue = targetX,
-        animationSpec = spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow),
-        label = "creamPillX",
+    val motion = tween<Dp>(
+        durationMillis = 400,
+        easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f),
     )
-    val pillW by animateDpAsState(
-        targetValue = targetW,
-        animationSpec = spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow),
-        label = "creamPillW",
+    val pillX by animateDpAsState(
+        targetValue = itemXs[selected] ?: 0.dp,
+        animationSpec = motion,
+        label = "premiumNavPillX",
+    )
+    val pillWidth by animateDpAsState(
+        targetValue = itemWidths[selected] ?: 0.dp,
+        animationSpec = motion,
+        label = "premiumNavPillWidth",
     )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    0f to VColors.cream.copy(alpha = 0f),
-                    0.45f to VColors.cream,
-                    1f to VColors.cream,
-                ),
-            )
             .navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .vElevation(VElevationLevel.Raised, radius = 32.dp)
+                .height(60.dp)
+                .shadow(12.dp, RoundedCornerShape(32.dp), clip = false)
                 .clip(RoundedCornerShape(32.dp))
-                .background(VColors.white)
-                .drawBehind {
-                    drawRect(
-                        brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.7f), Color.Transparent),
-                            endY = size.height * 0.55f,
-                        ),
-                    )
-                }
-                .border(1.dp, VColors.line, RoundedCornerShape(32.dp))
-                .padding(horizontal = 7.dp, vertical = 7.dp),
+                .background(Color.White.copy(alpha = 0.988f))
+                .border(1.dp, Color(0x0F26234D), RoundedCornerShape(32.dp))
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            if (pillW > 0.dp) {
+            if (pillWidth > 0.dp) {
                 Box(
-                    Modifier
+                    modifier = Modifier
                         .align(Alignment.CenterStart)
                         .offset(x = pillX)
-                        .width(pillW)
+                        .width(pillWidth)
                         .height(46.dp)
-                        .vElevation(VElevationLevel.Raised, radius = 999.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(
-                            Brush.horizontalGradient(listOf(accent, accent)),
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF6C5CE5), Color(0xFF544AB8)),
+                            ),
                         ),
                 )
             }
+
             Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 items.forEach { item ->
                     val active = item.id == selected
-                    val tint = if (active) Color.White else VColors.ink3
+                    val itemWidth by animateDpAsState(
+                        targetValue = if (active) 96.dp else 56.dp,
+                        animationSpec = motion,
+                        label = "premiumNavItemWidth_${item.id}",
+                    )
+                    val tint by animateColorAsState(
+                        targetValue = if (active) Color.White else Color(0xFF6D7A77),
+                        animationSpec = tween(220),
+                        label = "premiumNavTint_${item.id}",
+                    )
                     val interaction = remember { MutableInteractionSource() }
 
-                    val iconScale by animateFloatAsState(
-                        targetValue = if (active) 1.08f else 1f,
-                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessLow),
-                        label = "creamIconScale",
-                    )
-                    val iconLift by animateFloatAsState(
-                        targetValue = if (active) -1.5f else 0f,
-                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessLow),
-                        label = "creamIconLift",
-                    )
-                    val labelAlpha by animateFloatAsState(
-                        targetValue = if (active) 1f else 0f,
-                        animationSpec = spring(stiffness = Spring.StiffnessMedium),
-                        label = "creamLabelAlpha",
-                    )
-
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .weight(if (active) 1.35f else 1f)
-                            .height(44.dp)
-                            .padding(horizontal = 12.dp)
-                            .onGloballyPositioned { coords ->
-                                itemXs[item.id] = with(density) { coords.boundsInParent().left.toDp() }
-                                itemWidths[item.id] = with(density) { coords.size.width.toDp() }
+                            .width(itemWidth)
+                            .height(46.dp)
+                            .onGloballyPositioned { coordinates ->
+                                itemXs[item.id] = with(density) {
+                                    coordinates.boundsInParent().left.toDp()
+                                }
+                                itemWidths[item.id] = with(density) {
+                                    coordinates.size.width.toDp()
+                                }
                             }
+                            .clip(RoundedCornerShape(999.dp))
                             .clickable(interactionSource = interaction, indication = null) {
                                 if (!active) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onSelect(item.id)
                                 }
+                                onSelect(item.id)
                             },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box {
-                            Icon(
-                                item.icon,
-                                contentDescription = item.label,
-                                tint = tint,
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .graphicsLayer {
-                                        scaleX = iconScale
-                                        scaleY = iconScale
-                                        translationY = iconLift * this.density
-                                    },
-                            )
-                            if (item.badge > 0) {
-                                val badgeBg = if (active) Color.White else VColors.error
-                                val badgeRing = if (active) accent else VColors.surfaceCard
-                                val badgeFg = if (active) accent else Color.White
-                                Box(
-                                    Modifier
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = 7.dp, y = (-3).dp)
-                                        .clip(CircleShape)
-                                        .background(badgeBg)
-                                        .border(1.5.dp, badgeRing, CircleShape)
-                                        .padding(horizontal = 4.dp, vertical = 1.dp),
-                                ) {
-                                    Text(
-                                        if (item.badge > 9) "9+" else item.badge.toString(),
-                                        style = VTypography.label.copy(
-                                            color = badgeFg,
-                                            fontSize = 8.5.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        ),
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Box(contentAlignment = Alignment.TopEnd) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label,
+                                    tint = tint,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                                if (item.badge > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(x = 7.dp, y = (-5).dp)
+                                            .size(8.dp)
+                                            .clip(CircleShape)
+                                            .background(VColors.coral)
+                                            .border(1.5.dp, Color.White, CircleShape),
                                     )
                                 }
                             }
-                        }
-                        if (active && labelAlpha > 0.01f) {
-                            Spacer(Modifier.width(7.dp))
-                            Text(
-                                item.label,
-                                maxLines = 1,
-                                style = VTypography.label.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                ),
-                                modifier = Modifier.graphicsLayer { alpha = labelAlpha },
-                            )
+                            AnimatedVisibility(
+                                visible = active,
+                                enter = fadeIn(tween(180, delayMillis = 100)),
+                                exit = fadeOut(tween(100)),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Spacer(Modifier.width(7.dp))
+                                    Text(
+                                        text = item.label,
+                                        style = VTypography.caption.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            letterSpacing = TextUnit.Unspecified,
+                                        ),
+                                        color = Color.White,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
