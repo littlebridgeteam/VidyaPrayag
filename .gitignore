@@ -39,3 +39,8 @@ feature_audit.csv
 
 # Review/audit artifacts — moved to docs/archive/ (FS-012)
 newreviewdocs/
+
+# Release signing — must never be committed
+keystore.properties
+release-keystore.jks
+*.keystore

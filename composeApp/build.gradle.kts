@@ -147,6 +147,12 @@ kotlin {
     }
 }
 
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = java.util.Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.littlebridge.enrollplus"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -190,9 +196,29 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        create("release") {
+            if (keystoreProperties.isNotEmpty()) {
+                storeFile = file(keystoreProperties.getProperty("releaseStoreFile"))
+                storePassword = keystoreProperties.getProperty("releaseStorePassword")
+                keyAlias = keystoreProperties.getProperty("releaseKeyAlias")
+                keyPassword = keystoreProperties.getProperty("releaseKeyPassword")
+            }
+        }
+        create("debug") {
+            if (keystoreProperties.isNotEmpty()) {
+                storeFile = file(keystoreProperties.getProperty("debugStoreFile"))
+                storePassword = keystoreProperties.getProperty("debugStorePassword")
+                keyAlias = keystoreProperties.getProperty("debugKeyAlias")
+                keyPassword = keystoreProperties.getProperty("debugKeyPassword")
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
             // Firebase Crashlytics — explicitly enable for debug builds.
             // The manifest flag + runtime call handle collection, but this
             // ensures the Crashlytics Gradle plugin processes debug variants
@@ -200,6 +226,7 @@ android {
         }
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
