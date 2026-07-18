@@ -920,7 +920,7 @@ fun Route.schoolStudentsRouting() {
                         val rollInt = req.rollNumber.trim().toIntOrNull()
                         EnrollmentsTable.insert {
                             it[EnrollmentsTable.schoolId] = ctx.schoolId
-                            it[EnrollmentsTable.studentId] = newId
+                            it[EnrollmentsTable.studentId] = newId.value
                             it[EnrollmentsTable.classId] = classId
                             it[EnrollmentsTable.section] = resolvedSection
                             if (rollInt != null) it[EnrollmentsTable.rollNumber] = rollInt
@@ -1159,7 +1159,7 @@ fun Route.schoolStudentsRouting() {
                             val rollInt = r.rollNumber.trim().toIntOrNull()
                             EnrollmentsTable.insert {
                                 it[EnrollmentsTable.schoolId] = ctx.schoolId
-                                it[EnrollmentsTable.studentId] = newId
+                                it[EnrollmentsTable.studentId] = newId.value
                                 it[EnrollmentsTable.classId] = resolvedClassId
                                 it[EnrollmentsTable.section] = resolvedSection
                                 if (rollInt != null) it[EnrollmentsTable.rollNumber] = rollInt
