@@ -45,7 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.graphicsLayer
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -248,8 +248,8 @@ internal fun AdminDonut(
 }
 
 @Composable
-private fun AnalyticsStatCard(stat: com.littlebridge.enrollplus.feature.admin.domain.model.HomeAnalyticsStat, color: Color, icon: ImageVector) {
-    AdminPremiumCard(modifier = Modifier.weight(1f), padding = 12) {
+private fun AnalyticsStatCard(stat: com.littlebridge.enrollplus.feature.admin.domain.model.HomeAnalyticsStat, color: Color, icon: ImageVector, modifier: Modifier = Modifier) {
+    AdminPremiumCard(modifier = modifier, padding = 12) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Box(Modifier.size(24.dp).clip(AdminHomeTokens.Sm).background(color), contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = Color.White, modifier = Modifier.size(13.dp))
@@ -355,7 +355,7 @@ private fun AnalyticsDashboardBody(data: AdminHomeAnalytics, loading: Boolean) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             data.stats.take(2).forEachIndexed { index, stat ->
-                AnalyticsStatCard(stat, if (index == 0) palette else AdminHomeTokens.Coral, if (index == 0) Icons.Filled.TrendingUp else Icons.Filled.WarningAmber)
+                AnalyticsStatCard(stat, if (index == 0) palette else AdminHomeTokens.Coral, if (index == 0) Icons.Filled.TrendingUp else Icons.Filled.WarningAmber, Modifier.weight(1f))
             }
         }
         AdminPremiumCard(padding = 14) {
