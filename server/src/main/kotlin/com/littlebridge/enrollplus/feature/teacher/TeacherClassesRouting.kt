@@ -517,7 +517,7 @@ private fun fallbackRosterByClassNaming(a: OwnedAssignment): List<EnrolledStuden
             fullName = s[StudentsTable.fullName],
             rollNumber = s[StudentsTable.rollNumber]?.toIntOrNull(),
             section = a.section,
-            enrollmentId = s[StudentsTable.id].value,
+            enrollmentId = null,
         )
     }.sortedWith(compareBy({ it.rollNumber ?: Int.MAX_VALUE }, { it.fullName }))
 }

@@ -91,7 +91,7 @@ data class EnrolledStudent(
     val fullName: String,
     val rollNumber: Int?,
     val section: String,
-    val enrollmentId: UUID,
+    val enrollmentId: UUID?,
 )
 
 /**
@@ -289,7 +289,7 @@ private suspend fun fallbackRosterByClassNamingInTxn(a: OwnedAssignment): List<E
             fullName = s[StudentsTable.fullName],
             rollNumber = s[StudentsTable.rollNumber]?.toIntOrNull(),
             section = a.section,
-            enrollmentId = s[StudentsTable.id].value,
+            enrollmentId = null,
         )
     }.sortedWith(compareBy({ it.rollNumber ?: Int.MAX_VALUE }, { it.fullName }))
 }
