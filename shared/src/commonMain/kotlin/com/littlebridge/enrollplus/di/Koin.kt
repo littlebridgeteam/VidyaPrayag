@@ -1282,7 +1282,7 @@ val viewModelModule = module {
     factory { SchoolDashboardViewModel(get(), get(), get()) }
     factory { com.littlebridge.enrollplus.feature.admin.presentation.SchoolSetupViewModel(get(), get()) }
     factory { PinnedScreensViewModel(get(), get()) }
-    // Merged registration + onboarding flow (replaces separate AdminSignup + OnboardingV2)
+    // Active school registration and workspace activation flow.
     factory { com.littlebridge.enrollplus.feature.admin.presentation.RegistrationOnboardingViewModel(get(), get(), get()) }
 
     factory { com.littlebridge.enrollplus.feature.admin.presentation.OnboardingGateViewModel(get(), get()) }
