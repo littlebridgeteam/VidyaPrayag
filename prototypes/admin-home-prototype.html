@@ -114,7 +114,7 @@ body {
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -387,7 +387,7 @@ body {
   border-radius: var(--radius-lg);
   padding: 12px 16px;
   margin-top: 12px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .search-bar:focus-within {
   border-color: var(--violet);
@@ -515,7 +515,7 @@ body {
   border-radius: var(--radius-md);
   padding: 11px 6px;
   text-align: center;
-  transition: background 0.2s;
+  transition: background 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
 }
 .hero-metric:hover {
@@ -612,7 +612,7 @@ body {
   font-weight: 600;
   color: var(--violet);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .section-action:hover { opacity: 0.7; }
 
@@ -630,12 +630,12 @@ body {
   border-radius: var(--radius-lg);
   padding: 12px 13px;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 .kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   border-color: var(--violet-soft);
 }
 .kpi-row1 {
@@ -788,9 +788,9 @@ body {
   border-radius: var(--radius-xl);
   padding: 18px;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.priority-card:hover { transform: translateY(-2px); }
+.priority-card:hover { transform: translateY(-3px); }
 .priority-icon {
   width: 44px; height: 44px;
   border-radius: var(--radius-md);
@@ -830,6 +830,111 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   SCHOOL SETUP CHECKLIST — Compact card below hero
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.setup-card {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.setup-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  border-color: var(--violet-soft);
+}
+.setup-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.setup-ring-wrap {
+  position: relative;
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+}
+.setup-ring-bg {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(var(--violet) 72deg, var(--line-soft) 72deg);
+  transition: background 0.6s ease;
+}
+.setup-ring-inner {
+  position: absolute; top: 5px; left: 5px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  display: flex; align-items: center; justify-content: center;
+}
+.setup-ring-text {
+  font-size: 10px; font-weight: 800; color: var(--violet);
+}
+.setup-header-info { flex: 1; min-width: 0; }
+.setup-header-title {
+  font-size: 16px; font-weight: 800; color: var(--ink);
+  letter-spacing: -0.2px; line-height: 1.2;
+}
+.setup-header-sub {
+  font-size: 11px; font-weight: 600; color: var(--ink3);
+  margin-top: 2px;
+}
+.setup-header-arrow {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--surface-tint); display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.setup-header-arrow svg { width: 14px; height: 14px; color: var(--ink3); }
+
+.setup-steps {
+  display: flex; flex-direction: column; gap: 0;
+}
+.setup-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  position: relative;
+  border-radius: var(--radius-md);
+  transition: background 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.setup-step:hover { background: var(--surface-tint); }
+.setup-step-dot {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.setup-step-dot svg { width: 13px; height: 13px; color: white; }
+.setup-step-dot.done {
+  background: var(--mint);
+}
+.setup-step-dot.active {
+  background: var(--gold);
+}
+.setup-step-dot.pending {
+  background: var(--violet);
+}
+.setup-step-dot.locked {
+  background: var(--ink3); }
+.setup-step-line {
+  display: none;
+}
+.setup-step-label {
+  font-size: 12px; font-weight: 700; color: var(--ink);
+  flex: 1;
+}
+.setup-step.done .setup-step-label { color: var(--ink3); }
+.setup-step.pending .setup-step-label { color: var(--ink2); }
+.setup-step-badge {
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: var(--radius-full); flex-shrink: 0;
+}
+.setup-step-badge.done { background: var(--mint-soft); color: var(--mint); }
+.setup-step-badge.active { background: var(--gold-soft); color: var(--gold); }
+.setup-step-badge.pending { background: var(--surface-tint); color: var(--ink3); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    OPERATIONS DASHBOARD — Merged Priority + Enrollment
    ═══════════════════════════════════════════════════════════════════════════════ */
 .ops-card {
@@ -856,7 +961,7 @@ body {
   font-weight: 700;
   color: var(--violet);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .ops-head-action:hover { opacity: 0.7; }
 .ops-alerts {
@@ -873,13 +978,13 @@ body {
   background: var(--surface-tint);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s, transform 0.15s;
+  transition: background 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   border: 1px solid transparent;
 }
 .ops-alert:hover {
   background: var(--surface-warm);
   border-color: var(--line);
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 .ops-alert-icon {
   width: 28px; height: 28px;
@@ -1014,15 +1119,15 @@ body {
   border-radius: var(--radius-lg);
   padding: 11px 12px;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   display: flex;
   align-items: center;
   gap: 10px;
 }
 .quick-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   border-color: var(--violet-soft);
 }
 .quick-tile-icon {
@@ -1206,7 +1311,7 @@ body {
   border: 1px solid var(--line);
   color: var(--ink2);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   white-space: nowrap;
 }
 .analytics-filter:hover { border-color: var(--violet-soft); }
@@ -1734,6 +1839,62 @@ body {
                 </div>
                 <div class="hero-progress-bar">
                   <div class="hero-progress-fill" style="width: 70%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ SCHOOL SETUP CHECKLIST ═══ -->
+            <div class="setup-card" id="setup-card">
+              <div class="setup-card-header">
+                <div class="setup-ring-wrap">
+                  <div class="setup-ring-bg" id="setup-ring"></div>
+                  <div class="setup-ring-inner">
+                    <span class="setup-ring-text" id="setup-ring-text">20%</span>
+                  </div>
+                </div>
+                <div class="setup-header-info">
+                  <div class="setup-header-title">Finish school setup</div>
+                  <div class="setup-header-sub" id="setup-sub">1 of 5 steps done · Tap any step to get started</div>
+                </div>
+                <div class="setup-header-arrow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
+              <div class="setup-steps">
+                <div class="setup-step done">
+                  <div class="setup-step-dot done">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <span class="setup-step-label">Add Teachers</span>
+                  <span class="setup-step-badge done">12 added</span>
+                </div>
+                <div class="setup-step active">
+                  <div class="setup-step-dot active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  </div>
+                  <span class="setup-step-label">Add Students</span>
+                  <span class="setup-step-badge active">45 / 120</span>
+                </div>
+                <div class="setup-step pending">
+                  <div class="setup-step-dot pending">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
+                  <span class="setup-step-label">Add Subjects</span>
+                  <span class="setup-step-badge pending">Not started</span>
+                </div>
+                <div class="setup-step pending">
+                  <div class="setup-step-dot pending">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+                  </div>
+                  <span class="setup-step-label">Create Classes</span>
+                  <span class="setup-step-badge pending">Not started</span>
+                </div>
+                <div class="setup-step pending">
+                  <div class="setup-step-dot pending">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <span class="setup-step-label">Create Timetable</span>
+                  <span class="setup-step-badge pending">Not started</span>
                 </div>
               </div>
             </div>
