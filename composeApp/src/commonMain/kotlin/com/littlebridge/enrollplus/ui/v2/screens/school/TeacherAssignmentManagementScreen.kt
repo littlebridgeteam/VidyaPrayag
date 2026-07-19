@@ -1,9 +1,14 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,11 +20,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -33,48 +37,39 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
+import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherAssignmentOverviewDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherClassAssignmentDto
 import com.littlebridge.enrollplus.feature.admin.presentation.TeacherAssignmentUiState
 import com.littlebridge.enrollplus.feature.admin.presentation.TeacherAssignmentViewModel
+import com.littlebridge.enrollplus.ui.tokens.VColors
+import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.components.VTag
+import com.littlebridge.enrollplus.ui.v2.locale.appString
+import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
-import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
-import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.ui.v2.locale.appString
-import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.tokens.VTypography
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * RA-TAM: TeacherAssignmentManagementScreen — the single reusable assignment
- * experience shared by Teacher Listing, Teacher Profile and (optionally)
- * onboarding. Resource-allocation feel: hero header · KPI carousel · current
- * assignment cards · add-assignment flow (subject → classes → sections →
- * preview → save) · workload insights · distribution visual.
- *
- * [teacherId] is loaded via [TeacherAssignmentViewModel.load] in a
- * LaunchedEffect. Three states via [VStateHost] (LAW 3).
- */
 @Composable
 fun TeacherAssignmentManagementScreen(
     teacherId: String,
@@ -88,11 +83,16 @@ fun TeacherAssignmentManagementScreen(
     Column(
         modifier
             .fillMaxSize()
+            .background(VColors.cream)
             .statusBarsPadding()
             .imePadding()
             .navigationBarsPadding(),
     ) {
-        VBackHeader(title = appString(StringKeys.SCH_ASSIGN_CLASSES), onBack = onBack, pinRouteId = "overlay_teacher_assignments")
+        VBackHeader(
+            title = "Assignment Management",
+            onBack = onBack,
+            pinRouteId = "overlay_teacher_assignments",
+        )
         AssignmentContent(
             state = state,
             onRetry = viewModel::retry,
@@ -121,14 +121,14 @@ private fun AssignmentContent(
     onClearMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-        var pendingRemoveId by remember { mutableStateOf<String?>(null) }
+    var pendingRemoveId by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
-            .padding(top = 16.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+            .padding(top = 4.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         VStateHost(
             loading = state.isLoading,
@@ -141,17 +141,15 @@ private fun AssignmentContent(
             skeleton = { SkeletonDashboard() },
         ) {
             val overview = state.overview ?: return@VStateHost
-            TeacherHeader(overview)                       // 1. Teacher header
-            KpiCarousel(overview)                         // 2. Assignment summary
-            CurrentAssignments(                           // 3. Current assignments
+            TeacherHero(overview)
+            AssignmentKpis(overview)
+            CurrentAssignments(
                 assignments = overview.assignments,
                 removingId = state.removingId,
                 onRequestRemove = { pendingRemoveId = it },
             )
-            state.removeError?.let { err ->
-                Text(err, style = VTypography.caption.copy(color = VColors.error))
-            }
-            AddAssignment(                                // 4. Add assignment flow
+            state.removeError?.let { Text(it, style = VTypography.caption, color = VColors.error) }
+            AddAssignmentCard(
                 state = state,
                 onSelectSubject = onSelectSubject,
                 onToggleClass = onToggleClass,
@@ -160,8 +158,8 @@ private fun AssignmentContent(
                 onSave = onSave,
                 onClearMessage = onClearMessage,
             )
-            WorkloadInsights(overview)                    // workload insights
-            DistributionVisual(overview)                  // distribution visual
+            WorkloadInsights(overview.insights)
+            SubjectDistribution(overview)
         }
     }
 
@@ -179,75 +177,90 @@ private fun AssignmentContent(
     )
 }
 
-// ─────────────────────────── 1. Teacher header ────────────────────────────
-
 @Composable
-private fun TeacherHeader(overview: TeacherAssignmentOverviewDto) {
-        val s = overview.summary
-    val subject = overview.distribution.firstOrNull()?.subject
+private fun TeacherHero(overview: TeacherAssignmentOverviewDto) {
+    val summary = overview.summary
+    val leadingSubject = overview.distribution.firstOrNull()?.subject?.takeIf { it.isNotBlank() }
+
     VCard(padding = 20.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            VAvatar(name = s.teacherName, size = 64.dp, ring = true)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(s.teacherName, style = VTypography.h2.copy(color = VColors.ink))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(76.dp).clip(CircleShape).background(VColors.violetSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                VAvatar(name = summary.teacherName, size = 72.dp, ring = true)
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    subject?.let { appString(StringKeys.SCH_SUBJECT_TEACHER, "subject" to it) } ?: appString(StringKeys.SCH_TEACHER),
-                    style = VTypography.caption.copy(color = VColors.ink2),
+                    summary.teacherName,
+                    style = VTypography.h2.copy(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold),
+                    color = VColors.ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    leadingSubject?.let { appString(StringKeys.SCH_SUBJECT_TEACHER, "subject" to it) }
+                        ?: appString(StringKeys.SCH_TEACHER),
+                    style = VTypography.caption,
+                    color = VColors.ink2,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    VBadge(text = appString(StringKeys.SCH_COUNT_CLASSES, "count" to s.classCount.toString()), tone = VBadgeTone.Arctic)
-                    VBadge(text = appString(StringKeys.SCH_COUNT_SUBJECTS, "count" to s.subjectCount.toString()), tone = VBadgeTone.Success)
+                    VBadge(
+                        appString(StringKeys.SCH_COUNT_CLASSES, "count" to summary.classCount.toString()),
+                        tone = VBadgeTone.Accent,
+                    )
+                    VBadge(
+                        appString(StringKeys.SCH_COUNT_SUBJECTS, "count" to summary.subjectCount.toString()),
+                        tone = VBadgeTone.Success,
+                    )
                 }
             }
         }
     }
 }
 
-// ─────────────────────────── 2. KPI carousel ──────────────────────────────
-
-@Composable
-private fun KpiCarousel(overview: TeacherAssignmentOverviewDto) {
-    val s = overview.summary
-    val kpis = listOf(
-        KpiData(appString(StringKeys.SCH_CLASSES_ASSIGNED), s.classCount.toString(), appString(StringKeys.SCH_ACTIVE_KPI), VIcons.School, VBadgeTone.Arctic),
-        KpiData(appString(StringKeys.SCH_SUBJECTS_ASSIGNED), s.subjectCount.toString(), appString(StringKeys.SCH_COVERED), VIcons.BookOpen, VBadgeTone.Warning),
-        KpiData(appString(StringKeys.SCH_TOTAL_STUDENTS), s.studentCount.toString(), appString(StringKeys.SCH_TAUGHT), VIcons.Users, VBadgeTone.Success),
-        KpiData(appString(StringKeys.SCH_SECTIONS_COVERED), s.sectionCount.toString(), appString(StringKeys.SCH_ACROSS_CLASSES), VIcons.Target, VBadgeTone.Arctic),
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_ASSIGNMENT_SUMMARY))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(kpis) { KpiCard(it) }
-        }
-    }
-}
-
-private data class KpiData(
-    val label: String,
+private data class AssignmentKpi(
     val value: String,
+    val label: String,
     val support: String,
     val icon: ImageVector,
-    val tone: VBadgeTone,
+    val tint: Color,
 )
 
 @Composable
-private fun KpiCard(data: KpiData) {
-        val tint = toneTint(data.tone)
-    VCard(modifier = Modifier.width(150.dp), padding = 16.dp) {
-        Box(
-            Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(tint.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center,
+private fun AssignmentKpis(overview: TeacherAssignmentOverviewDto) {
+    val summary = overview.summary
+    val data = listOf(
+        AssignmentKpi(summary.classCount.toString(), appString(StringKeys.SCH_CLASSES_ASSIGNED), appString(StringKeys.SCH_ACTIVE_KPI), VIcons.School, VColors.violet),
+        AssignmentKpi(summary.subjectCount.toString(), appString(StringKeys.SCH_SUBJECTS_ASSIGNED), appString(StringKeys.SCH_COVERED), VIcons.BookOpen, VColors.gold),
+        AssignmentKpi(summary.studentCount.toString(), appString(StringKeys.SCH_TOTAL_STUDENTS), appString(StringKeys.SCH_TAUGHT), VIcons.Users, VColors.success),
+        AssignmentKpi(summary.sectionCount.toString(), appString(StringKeys.SCH_SECTIONS_COVERED), appString(StringKeys.SCH_ACROSS_CLASSES), VIcons.Target, VColors.violet),
+    )
+
+    Section(appString(StringKeys.SCH_ASSIGNMENT_SUMMARY)) {
+        LazyRow(
+            contentPadding = PaddingValues(end = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(data.icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+            items(data) { item -> AssignmentKpiCard(item) }
         }
-        Spacer(Modifier.height(12.dp))
-        Text(data.value, style = VTypography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 22.sp).copy(color = VColors.ink))
-        Text(data.label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
-        Text(data.support, style = VTypography.label.copy(color = VColors.ink3))
     }
 }
 
-// ──────────────────────── 3. Current assignments ──────────────────────────
+@Composable
+private fun AssignmentKpiCard(item: AssignmentKpi) {
+    VCard(modifier = Modifier.width(150.dp), padding = 16.dp) {
+        IconChip(item.icon, item.tint, size = 36.dp, iconSize = 18.dp)
+        Spacer(Modifier.height(12.dp))
+        Text(item.value, style = VTypography.body.copy(fontSize = 22.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink)
+        Text(item.label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+        Text(item.support, style = VTypography.label, color = VColors.ink3)
+    }
+}
 
 @Composable
 private fun CurrentAssignments(
@@ -255,13 +268,18 @@ private fun CurrentAssignments(
     removingId: String?,
     onRequestRemove: (String) -> Unit,
 ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_CURRENT_ASSIGNMENTS))
+    Section(appString(StringKeys.SCH_CURRENT_ASSIGNMENTS)) {
         if (assignments.isEmpty()) {
             EmptyCard(VIcons.BookOpen, appString(StringKeys.SCH_NO_CLASSES_ASSIGNED))
         } else {
-            assignments.forEachIndexed { index, a ->
-                AssignmentCard(a, isRemoving = removingId == a.id, onRemove = { onRequestRemove(a.id) }, modifier = Modifier.staggeredItemEntrance(index, assignments.isNotEmpty()))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                assignments.forEach { assignment ->
+                    AssignmentCard(
+                        assignment = assignment,
+                        isRemoving = removingId == assignment.id,
+                        onRemove = { onRequestRemove(assignment.id) },
+                    )
+                }
             }
         }
     }
@@ -269,49 +287,67 @@ private fun CurrentAssignments(
 
 @Composable
 private fun AssignmentCard(
-    a: TeacherClassAssignmentDto,
+    assignment: TeacherClassAssignmentDto,
     isRemoving: Boolean,
     onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-        VCard(modifier = modifier, padding = 16.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VColors.sky.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(VIcons.BookOpen, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(20.dp))
-            }
+    VCard(padding = 16.dp) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconChip(
+                icon = VIcons.BookOpen,
+                tint = VColors.sky,
+                size = 40.dp,
+                iconSize = 20.dp,
+                background = VColors.skySoft,
+            )
             Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(a.subject, style = VTypography.h3.copy(color = VColors.ink))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(assignment.subject, style = VTypography.h3, color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    appString(StringKeys.SCH_CLASS_SECTION_LABEL, "className" to a.className, "section" to a.section),
-                    style = VTypography.caption.copy(color = VColors.ink2),
+                    appString(
+                        StringKeys.SCH_CLASS_SECTION_LABEL,
+                        "className" to assignment.className,
+                        "section" to assignment.section,
+                    ),
+                    style = VTypography.caption,
+                    color = VColors.ink2,
                 )
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(VIcons.Users, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
-                    Text(appString(StringKeys.SCH_COUNT_STUDENTS, "count" to a.studentCount.toString()), style = VTypography.caption.copy(color = VColors.ink3))
+                Spacer(Modifier.height(3.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Icon(VIcons.Users, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
+                    Text(
+                        appString(StringKeys.SCH_COUNT_STUDENTS, "count" to assignment.studentCount.toString()),
+                        style = VTypography.label,
+                        color = VColors.ink3,
+                    )
                 }
             }
-            VButton(
-                text = appString(StringKeys.SCH_REMOVE),
-                onClick = onRemove,
-                variant = VButtonVariant.Destructive,
-                size = VButtonSize.Sm,
-                loading = isRemoving,
-                enabled = !isRemoving,
-            )
+            RemoveButton(isRemoving = isRemoving, onClick = onRemove)
         }
     }
 }
 
-// ─────────────────────── 4. Add assignment flow ───────────────────────────
+@Composable
+private fun RemoveButton(isRemoving: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .border(1.dp, VColors.error, RoundedCornerShape(10.dp))
+            .clickable(enabled = !isRemoving, onClick = onClick)
+            .padding(horizontal = 13.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = if (isRemoving) "…" else appString(StringKeys.SCH_REMOVE),
+            style = VTypography.label.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.error,
+        )
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AddAssignment(
+private fun AddAssignmentCard(
     state: TeacherAssignmentUiState,
     onSelectSubject: (String?, String?) -> Unit,
     onToggleClass: (String) -> Unit,
@@ -320,226 +356,265 @@ private fun AddAssignment(
     onSave: () -> Unit,
     onClearMessage: () -> Unit,
 ) {
-        val options = state.options
+    val options = state.options
     val draft = state.draft
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_ADD_ASSIGNMENT))
-        VCard(padding = 18.dp) {
-            if (options == null) {
-                Text(appString(StringKeys.SCH_LOADING_OPTIONS), style = VTypography.body.copy(color = VColors.ink2))
-                return@VCard
-            }
-            if (options.classes.isEmpty() && options.subjects.isEmpty()) {
-                Text(
-                    appString(StringKeys.SCH_NO_CLASSES_SUBJECTS),
-                    style = VTypography.body.copy(color = VColors.ink2),
-                )
-                return@VCard
-            }
+    VCard(padding = 18.dp) {
+        Text("ADD NEW ASSIGNMENT", style = VTypography.label.copy(fontWeight = FontWeight.Bold), color = VColors.ink2)
+        Spacer(Modifier.height(14.dp))
 
-            // Step 1 — Subject
-            StepLabel(appString(StringKeys.SCH_STEP_1_SUBJECT))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                options.subjects.forEach { subj ->
-                    VTag(
-                        text = subj.name,
-                        active = draft.subjectId == subj.subjectId ||
-                            (draft.subjectId == null && draft.subjectName == subj.name),
-                        onClick = { onSelectSubject(subj.subjectId, subj.name) },
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // Step 2 — Classes (multi-select)
-            StepLabel(appString(StringKeys.SCH_STEP_2_CLASSES))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                options.classes.forEach { cls ->
-                    VTag(
-                        text = cls.name,
-                        active = cls.classId in draft.selectedClassIds,
-                        onClick = { onToggleClass(cls.classId) },
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // Step 3 — Sections (union of sections from chosen classes)
-            val availableSections = options.classes
-                .filter { it.classId in draft.selectedClassIds }
-                .flatMap { it.sections }
-                .distinct()
-                .sorted()
-            StepLabel(appString(StringKeys.SCH_STEP_3_SECTIONS))
-            if (availableSections.isEmpty()) {
-                Text(
-                    appString(StringKeys.SCH_PICK_CLASSES_FIRST),
-                    style = VTypography.caption.copy(color = VColors.ink3),
-                )
-            } else {
+        when {
+            options == null -> Text(appString(StringKeys.SCH_LOADING_OPTIONS), style = VTypography.body, color = VColors.ink2)
+            options.classes.isEmpty() && options.subjects.isEmpty() ->
+                Text(appString(StringKeys.SCH_NO_CLASSES_SUBJECTS), style = VTypography.body, color = VColors.ink2)
+            else -> {
+                FieldLabel("Subject")
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    availableSections.forEach { sec ->
+                    options.subjects.forEach { subject ->
                         VTag(
-                            text = sec,
-                            active = sec in draft.selectedSections,
-                            onClick = { onToggleSection(sec) },
+                            text = subject.name,
+                            active = draft.subjectId == subject.subjectId ||
+                                (draft.subjectId == null && draft.subjectName == subject.name),
+                            accentActive = true,
+                            onClick = { onSelectSubject(subject.subjectId, subject.name) },
                         )
                     }
                 }
-                Text(
-                    appString(StringKeys.SCH_LEAVE_UNSELECTED),
-                    style = VTypography.label.copy(color = VColors.ink3),
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-            }
 
-            Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(16.dp))
+                FieldLabel("Classes")
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    options.classes.forEach { classOption ->
+                        VTag(
+                            text = classOption.code.ifBlank { classOption.name },
+                            active = classOption.classId in draft.selectedClassIds,
+                            accentActive = true,
+                            onClick = { onToggleClass(classOption.classId) },
+                        )
+                    }
+                }
 
-            // Step 4 — Preview
-            val previewClasses = options.classes.filter { it.classId in draft.selectedClassIds }
-            val previewTargets = previewClasses.flatMap { cls ->
-                val secs = if (draft.selectedSections.isEmpty()) cls.sections
-                else cls.sections.filter { it in draft.selectedSections }
-                secs.ifEmpty { draft.selectedSections.toList() }.map { "${cls.name} $it" }
-            }
-            if (draft.subjectName != null && previewTargets.isNotEmpty()) {
-                StepLabel(appString(StringKeys.SCH_STEP_4_PREVIEW))
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(12.dp)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(draft.subjectName?:"", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink))
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            previewTargets.forEach { t -> VBadge(text = t, tone = VBadgeTone.Arctic) }
+                Spacer(Modifier.height(16.dp))
+                FieldLabel("Sections")
+                val availableSections = options.classes
+                    .filter { it.classId in draft.selectedClassIds }
+                    .flatMap { it.sections }
+                    .distinct()
+                    .sorted()
+                if (availableSections.isEmpty()) {
+                    Text(appString(StringKeys.SCH_PICK_CLASSES_FIRST), style = VTypography.caption, color = VColors.ink3)
+                } else {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        availableSections.forEach { section ->
+                            VTag(
+                                text = section,
+                                active = section in draft.selectedSections,
+                                accentActive = true,
+                                onClick = { onToggleSection(section) },
+                            )
                         }
                     }
                 }
-                Spacer(Modifier.height(12.dp))
-            }
 
-            // Step 5 — Save / Reset
-            state.saveError?.let { err ->
-                Text(err, style = VTypography.caption.copy(color = VColors.error))
-                Spacer(Modifier.height(8.dp))
-            }
-            state.lastSaveMessage?.let { msg ->
-                Text(msg, style = VTypography.caption.copy(color = VColors.success))
-                Spacer(Modifier.height(8.dp))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VButton(
-                    text = appString(StringKeys.SCH_CLEAR),
-                    onClick = { onResetDraft(); onClearMessage() },
-                    variant = VButtonVariant.Ghost,
-                    tone = VButtonTone.Navy,
-                    enabled = !state.isSaving,
-                )
-                VButton(
-                    text = appString(StringKeys.SCH_SAVE_ASSIGNMENTS),
-                    onClick = onSave,
-                    tone = VButtonTone.Teal,
-                    full = true,
-                    loading = state.isSaving,
-                    enabled = !state.isSaving,
-                    leading = { Icon(VIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                )
+                val selectedClasses = options.classes.filter { it.classId in draft.selectedClassIds }
+                val previewTargets = selectedClasses.flatMap { classOption ->
+                    val sections = if (draft.selectedSections.isEmpty()) {
+                        classOption.sections
+                    } else {
+                        classOption.sections.filter { it in draft.selectedSections }
+                    }
+                    sections.ifEmpty { draft.selectedSections.toList() }.map { section ->
+                        "${classOption.code.ifBlank { classOption.name }}-$section"
+                    }
+                }
+
+                if (!draft.subjectName.isNullOrBlank() && previewTargets.isNotEmpty()) {
+                    Spacer(Modifier.height(16.dp))
+                    FieldLabel(appString(StringKeys.SCH_STEP_4_PREVIEW))
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(draft.subjectName.orEmpty(), style = VTypography.caption.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            previewTargets.forEach { target -> VBadge(target, tone = VBadgeTone.Accent) }
+                        }
+                    }
+                }
+
+                state.saveError?.let {
+                    Spacer(Modifier.height(10.dp))
+                    Text(it, style = VTypography.caption, color = VColors.error)
+                }
+                state.lastSaveMessage?.let {
+                    Spacer(Modifier.height(10.dp))
+                    Text(it, style = VTypography.caption, color = VColors.success)
+                }
+
+                Spacer(Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(
+                        text = "Reset",
+                        onClick = {
+                            onResetDraft()
+                            onClearMessage()
+                        },
+                        modifier = Modifier.weight(1f),
+                        variant = VButtonVariant.Secondary,
+                        enabled = !state.isSaving,
+                        full = true,
+                    )
+                    VButton(
+                        text = "Save Assignment",
+                        onClick = onSave,
+                        modifier = Modifier.weight(1f),
+                        tone = VButtonTone.Lavender,
+                        soft = false,
+                        enabled = !state.isSaving,
+                        loading = state.isSaving,
+                        full = true,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun StepLabel(text: String) {
+private fun FieldLabel(text: String) {
     Text(
-        text,
-        style = VTypography.label.copy(color = VColors.ink3),
+        text = text,
+        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+        color = VColors.ink2,
         modifier = Modifier.padding(bottom = 8.dp),
     )
 }
 
-// ───────────────────────── workload insights ──────────────────────────────
-
 @Composable
-private fun WorkloadInsights(overview: TeacherAssignmentOverviewDto) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_WORKLOAD_INSIGHTS))
-        if (overview.insights.isEmpty()) {
-            EmptyCard(VIcons.Sparkles, appString(StringKeys.SCH_NO_WORKLOAD_INSIGHTS))
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                overview.insights.forEach { insight ->
-                    VCard(padding = 14.dp) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(
-                                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.sky.copy(alpha = 0.16f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.sky, modifier = Modifier.size(17.dp))
-                            }
-                            Text(insight, style = VTypography.body.copy(color = VColors.ink), modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ─────────────────────── distribution visual ──────────────────────────────
-
-@Composable
-private fun DistributionVisual(overview: TeacherAssignmentOverviewDto) {
-        val dist = overview.distribution
-    if (dist.isEmpty()) return
-    val max = (dist.maxOfOrNull { it.studentCount } ?: 0).coerceAtLeast(1)
+private fun WorkloadInsights(insights: List<String>) {
+    if (insights.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_ASSIGNMENT_DISTRIBUTION))
+        insights.forEach { insight ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(VColors.violet.copy(alpha = 0.10f), VColors.violetSoft.copy(alpha = 0.72f)),
+                        ),
+                    )
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    Box(Modifier.size(14.dp).clip(CircleShape).background(VColors.violet))
+                    Text("WORKLOAD INSIGHT", style = VTypography.label.copy(fontWeight = FontWeight.Bold), color = VColors.violet)
+                }
+                Text(insight, style = VTypography.body, color = VColors.ink)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubjectDistribution(overview: TeacherAssignmentOverviewDto) {
+    val distribution = overview.distribution
+    if (distribution.isEmpty()) return
+
+    val totalStudents = distribution.sumOf { it.studentCount }
+    val totalClasses = distribution.sumOf { it.classCount }.coerceAtLeast(1)
+    val colors = listOf(VColors.violet, VColors.sky, VColors.success, VColors.gold, VColors.coral)
+
+    Section("SUBJECT DISTRIBUTION") {
         VCard(padding = 18.dp) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                dist.forEach { d ->
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(d.subject, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold).copy(color = VColors.ink2))
-                            Text(
-                                appString(StringKeys.SCH_CLS_STU, "classCount" to d.classCount.toString(), "studentCount" to d.studentCount.toString()),
-                                style = VTypography.label.copy(color = VColors.ink3),
-                            )
-                        }
-                        VProgressBar(
-                            value = (d.studentCount * 100f) / max,
-                            tone = VBadgeTone.Arctic,
-                            height = 8.dp,
-                        )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                distribution.forEachIndexed { index, item ->
+                    val rawPercent = if (totalStudents > 0) {
+                        item.studentCount * 100f / totalStudents
+                    } else {
+                        item.classCount * 100f / totalClasses
                     }
+                    DistributionRow(
+                        label = item.subject,
+                        percent = rawPercent,
+                        color = colors[index % colors.size],
+                    )
                 }
             }
         }
     }
 }
 
-// ───────────────────────────── shared bits ────────────────────────────────
+@Composable
+private fun DistributionRow(label: String, percent: Float, color: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            label,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.ink2,
+            modifier = Modifier.width(80.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Box(
+            modifier = Modifier.weight(1f).height(28.dp).clip(RoundedCornerShape(10.dp)).background(VColors.violetSoft.copy(alpha = 0.45f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth((percent / 100f).coerceIn(0f, 1f))
+                    .height(28.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(color)
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(
+                    "${percent.toInt()}%",
+                    style = VTypography.label.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    textAlign = TextAlign.Start,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun IconChip(
+    icon: ImageVector,
+    tint: Color,
+    size: androidx.compose.ui.unit.Dp,
+    iconSize: androidx.compose.ui.unit.Dp,
+    background: Color = tint.copy(alpha = 0.12f),
+) {
+    Box(
+        modifier = Modifier.size(size).clip(RoundedCornerShape(10.dp)).background(background),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
+    }
+}
+
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        VSectionHeader(title = title)
+        content()
+    }
+}
 
 @Composable
 private fun EmptyCard(icon: ImageVector, message: String) {
-        VCard(padding = 18.dp) {
+    VCard(padding = 18.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(
-                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.cream),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(17.dp))
-            }
-            Text(message, style = VTypography.body.copy(color = VColors.ink2))
+            IconChip(icon, VColors.ink3, size = 34.dp, iconSize = 17.dp, background = VColors.cream)
+            Text(message, style = VTypography.body, color = VColors.ink2, modifier = Modifier.weight(1f))
         }
     }
-}
-
-@Composable
-private fun toneTint(tone: VBadgeTone) = when (tone) {
-    VBadgeTone.Arctic,VBadgeTone.Accent -> VColors.sky
-    VBadgeTone.Success -> VColors.success
-    VBadgeTone.Warning -> VColors.gold
-    VBadgeTone.Danger -> VColors.error
-    VBadgeTone.Neutral -> VColors.ink3
 }
