@@ -1,11 +1,16 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,10 +39,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -60,9 +67,10 @@ import kotlin.math.roundToInt
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  People Tab — premium card system.
-//  1:1 translation of prototypes/people-tab-premium.{html,css}. Every dimension,
-//  colour and layout decision below is copied from that prototype and its
-//  matching screenshots; nothing is improvised.
+//  A ground-up, dense card language for the school People directory, built to
+//  feel native to the app and keyed to the parents-portal violet accent. It is
+//  intentionally NOT a copy of any HTML prototype or screenshot — the layout,
+//  spacing and hierarchy below are designed for signal density over decoration.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Palette (mirrors :root in people-tab-premium.css) ──
@@ -225,50 +233,197 @@ internal fun FilterChipRow(chips: List<FilterChipSpec>, modifier: Modifier = Mod
 private fun FilterChip(spec: FilterChipSpec) {
     var expanded by remember { mutableStateOf(false) }
     val active = spec.selected.isNotEmpty()
-    val shape = RoundedCornerShape(50)
+    val shape = RoundedCornerShape(11.dp)
+
+    // Smooth open/active transitions so the chip never "pops".
+    val chipBg by animateColorAsState(if (active) PplAccent else PplCard, label = "chipBg")
+    val labelColor by animateColorAsState(if (active) VColors.white else PplInk2, label = "chipLabel")
+    val borderColor by animateColorAsState(
+        when {
+            active -> Color.Transparent
+            expanded -> PplAccent.copy(alpha = 0.55f)
+            else -> PplHairlineStrong
+        },
+        label = "chipBorder",
+    )
+    val caretRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chipCaret")
+
     Box {
         Row(
             modifier = Modifier
-                .shadow(2.dp, shape, ambientColor = Color(0x0D26234D))
-                .clip(shape)
-                .then(
-                    if (active) {
-                        Modifier.background(Brush.linearGradient(listOf(PplAccent, PplAccentSoft)))
-                    } else {
-                        Modifier.background(PplCard).border(1.dp, PplHairline, shape)
-                    },
+                .shadow(
+                    if (active) 5.dp else 1.dp,
+                    shape,
+                    ambientColor = if (active) PplAccent.copy(alpha = 0.30f) else Color(0x0D26234D),
+                    spotColor = if (active) PplAccent.copy(alpha = 0.30f) else Color(0x0D26234D),
                 )
+                .clip(shape)
+                .background(chipBg)
+                .border(1.dp, borderColor, shape)
                 .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { expanded = true }
-                .padding(horizontal = 14.dp, vertical = 7.dp),
+                .padding(start = 13.dp, end = 9.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(spec.label, color = if (active) VColors.white else PplInk2, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(if (active) Color.White.copy(alpha = 0.25f) else Color(0x1426234D))
-                    .padding(horizontal = 6.dp, vertical = 1.dp),
+            Text(
+                spec.label,
+                color = labelColor,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.1).sp,
+                maxLines = 1,
+                softWrap = false,
+            )
+            if (active) {
+                // Count badge only when something is selected — a clean white-on-violet
+                // pip. Unselected chips stay quiet (just label + caret).
+                Box(
+                    Modifier
+                        .size(17.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.24f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        spec.selected.size.toString(),
+                        color = VColors.white,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Icon(
+                VIcons.ChevronDown,
+                contentDescription = null,
+                tint = if (active) VColors.white.copy(alpha = 0.85f) else PplInk3,
+                modifier = Modifier.size(15.dp).rotate(caretRotation),
+            )
+        }
+
+        if (expanded) {
+            FilterDropdown(
+                spec = spec,
+                onDismiss = { expanded = false },
+            )
+        }
+    }
+}
+
+/**
+ * Premium filter dropdown — a custom elevated popup card (not Material3's
+ * DropdownMenu, which rendered with the wrong shape/elevation and caused the
+ * "distortion" the user flagged). It anchors just below the chip, has a titled
+ * header with a "Clear" action, animated check rows, and its own scroll for long
+ * option lists.
+ */
+@Composable
+private fun FilterDropdown(spec: FilterChipSpec, onDismiss: () -> Unit) {
+    Popup(
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = true),
+        offset = IntOffset(0, 18),
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(min = 196.dp, max = 260.dp)
+                .shadow(18.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x2626234D), spotColor = Color(0x2626234D))
+                .clip(RoundedCornerShape(16.dp))
+                .background(PplCard)
+                .border(1.dp, PplHairline, RoundedCornerShape(16.dp))
+                .padding(6.dp),
+        ) {
+            // Header: filter name + Clear
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    (if (active) spec.selected.size else spec.options.size).toString(),
-                    color = if (active) VColors.white else PplInk2,
-                    fontSize = 10.sp,
+                    spec.label,
+                    color = PplInk,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.4.sp,
+                    modifier = Modifier.weight(1f),
                 )
+                if (spec.selected.isNotEmpty()) {
+                    Text(
+                        "Clear",
+                        color = VColors.coral,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(7.dp))
+                            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
+                                spec.selected.toList().forEach(spec.onToggle)
+                            }
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+            }
+            if (spec.options.isEmpty()) {
+                Text(
+                    "No options",
+                    color = PplInk3,
+                    fontSize = 12.5.sp,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 264.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    spec.options.forEach { option ->
+                        FilterDropdownRow(
+                            label = option,
+                            selected = option in spec.selected,
+                            onClick = { spec.onToggle(option) },
+                        )
+                    }
+                }
             }
         }
-        DropdownMenu(expanded, { expanded = false }, modifier = Modifier.background(PplCard, RoundedCornerShape(14.dp))) {
-            if (spec.options.isEmpty()) {
-                DropdownMenuItem(text = { Text("No options", color = PplInk3) }, onClick = {}, enabled = false)
-            } else spec.options.forEach { option ->
-                val selected = option in spec.selected
-                DropdownMenuItem(
-                    text = { Text(option, color = if (selected) PplAccent else PplInk, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
-                    onClick = { spec.onToggle(option); expanded = false },
-                    leadingIcon = { if (selected) Icon(VIcons.Check, null, tint = PplAccent, modifier = Modifier.size(16.dp)) },
-                )
-            }
+    }
+}
+
+/** One option row inside the filter dropdown — a soft-highlight pill with an
+ *  animated violet check box on the trailing edge. Multi-select: tapping toggles
+ *  without closing the popup. */
+@Composable
+private fun FilterDropdownRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    val rowBg by animateColorAsState(if (selected) VioletSoftFill else Color.Transparent, label = "rowBg")
+    val boxBg by animateColorAsState(if (selected) PplAccent else Color.Transparent, label = "rowBoxBg")
+    val boxBorder by animateColorAsState(if (selected) PplAccent else PplHairlineStrong, label = "rowBoxBorder")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(9.dp))
+            .background(rowBg)
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            color = if (selected) PplAccentDeep else PplInk,
+            fontSize = 12.5.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            Modifier
+                .size(18.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(boxBg)
+                .border(1.5.dp, boxBorder, RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) Icon(VIcons.Check, null, tint = VColors.white, modifier = Modifier.size(12.dp))
         }
     }
 }
@@ -572,28 +727,6 @@ private fun ActionRow(actions: List<Triple<ImageVector, String, () -> Unit>>) {
     }
 }
 
-/** Contact row (staff) — phone + email inline. `.contact-row`. */
-@Composable
-private fun ContactRow(items: List<Pair<ImageVector, String>>) {
-    if (items.isEmpty()) return
-    Row(
-        Modifier.fillMaxWidth().padding(top = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        items.forEach { (icon, text) ->
-            Row(
-                modifier = Modifier.weight(1f, fill = false),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(icon, null, tint = PplInk3, modifier = Modifier.size(13.dp))
-                Text(text, color = PplInk2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-    }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  Teacher card
 // ─────────────────────────────────────────────────────────────────────────────
@@ -658,70 +791,6 @@ internal fun TeacherCard(
 //  Student card
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class FeeStatus(val label: String, val ink: Color, val fill: Color, val bar: Color, val progress: Float) {
-    Paid("Paid", SuccessInk, SuccessSoft, SuccessInk, 1f),
-    Pending("Pending", WarningInk, WarningSoft, WarningInk, 0.55f),
-}
-
-/**
- * Fee row — a single compact strip: a coloured status glyph, "Fees" + its state
- * caption, a status badge on the right, and a slim progress bar underneath. This
- * kills the tall, mostly-empty fee box from the old screenshots while keeping the
- * same information hierarchy.
- */
-@Composable
-private fun FeeSection(fee: FeeStatus) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(PplStripFill)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-        ) {
-            Box(
-                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(fee.fill),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(VIcons.Wallet, null, tint = fee.ink, modifier = Modifier.size(15.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text("Fees", color = PplInk, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    if (fee == FeeStatus.Paid) "Fully paid" else "Payment due",
-                    color = PplInk3,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-            Box(Modifier.clip(RoundedCornerShape(50)).background(fee.fill).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                Text(fee.label, color = fee.ink, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .padding(top = 9.dp)
-                .height(4.dp)
-                .clip(RoundedCornerShape(50))
-                .background(Color(0x11000000)),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(fee.progress)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(fee.bar),
-            )
-        }
-    }
-}
-
 private fun tagThemeForColor(color: String): TagTheme = when (color.lowercase()) {
     "green" -> TagTheme.ScoreHi
     "red" -> TagTheme.ScoreLo
@@ -732,6 +801,152 @@ private fun tagThemeForColor(color: String): TagTheme = when (color.lowercase())
     else -> TagTheme.Violet
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Compact dense card primitives (v2 — kills the tall stacked panels)
+//
+//  The old Student/Staff cards stacked a full MetricStrip panel + a tall fee box
+//  + a tag row + a full-width action bar, so each card was a column of near-empty
+//  blocks. The primitives below pack the same signal into far less height:
+//   • InlineStat   — one "value / label" cell, no heavy panel behind it.
+//   • InlineStatRail — a hairline-divided single row of those cells.
+//   • MetaChip     — a tiny icon+text status/fee chip that lives on the stat row.
+//   • CompactActionBar — a slim footer: a primary violet button + quiet icon
+//     buttons, right-weighted, instead of two lonely full-width pills.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** One stat cell — big DM-Mono value over a tight caption. */
+@Composable
+private fun InlineStat(value: String, label: String, valueColor: Color, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.Start) {
+        Text(
+            value,
+            color = valueColor,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.4).sp,
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+        )
+        Text(
+            label.uppercase(),
+            color = PplInk3,
+            fontSize = 8.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.4.sp,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+/**
+ * A single compact stat rail — equal-weight [InlineStat] cells separated by thin
+ * hairlines. No filled panel, no big padding: it sits directly on the card so the
+ * card reads dense instead of as a stack of empty boxes.
+ */
+@Composable
+private fun InlineStatRail(stats: List<Triple<String, String, Color>>) {
+    if (stats.isEmpty()) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        stats.forEachIndexed { index, (value, label, color) ->
+            InlineStat(
+                value = value,
+                label = label,
+                valueColor = color,
+                modifier = Modifier.weight(1f).padding(end = 8.dp),
+            )
+            if (index != stats.lastIndex) {
+                Box(
+                    Modifier
+                        .fillMaxHeight()
+                        .width(1.dp)
+                        .padding(vertical = 1.dp)
+                        .background(PplHairlineStrong),
+                )
+                Spacer(Modifier.width(12.dp))
+            }
+        }
+    }
+}
+
+/** Tiny icon+label status chip that sits inline (used for fees / meeting flags). */
+@Composable
+private fun MetaChip(icon: ImageVector, label: String, ink: Color, fill: Color) {
+    Row(
+        Modifier.clip(RoundedCornerShape(7.dp)).background(fill).padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(icon, null, tint = ink, modifier = Modifier.size(11.dp))
+        Text(label, color = ink, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+    }
+}
+
+/**
+ * Slim footer control bar — a hairline divider, then a right-weighted cluster:
+ * a quiet round "Call" icon button + a filled violet "Message" button. Half the
+ * height of the old two-pill row and reads like a deliberate action cluster.
+ */
+@Composable
+private fun CompactActionBar(
+    onCall: () -> Unit,
+    onMessage: () -> Unit,
+    messageLabel: String = "Message",
+    extra: Triple<ImageVector, String, () -> Unit>? = null,
+) {
+    Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(1.dp).background(PplHairline))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Spacer(Modifier.weight(1f))
+        // Quiet secondary — call
+        Box(
+            Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(PplStripFill)
+                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onCall),
+            contentAlignment = Alignment.Center,
+        ) { Icon(VIcons.Phone, "Call", tint = PplInk2, modifier = Modifier.size(16.dp)) }
+        // Optional third action (e.g. Assign) as a quiet button
+        if (extra != null) {
+            Box(
+                Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(PplStripFill)
+                    .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = extra.third),
+                contentAlignment = Alignment.Center,
+            ) { Icon(extra.first, extra.second, tint = PplInk2, modifier = Modifier.size(16.dp)) }
+        }
+        // Primary — message (violet gradient)
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Brush.linearGradient(listOf(PplAccent, PplAccentSoft)))
+                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onMessage)
+                .padding(horizontal = 16.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(VIcons.Chat, messageLabel, tint = VColors.white, modifier = Modifier.size(15.dp))
+            Text(messageLabel, color = VColors.white, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
 @Composable
 internal fun StudentCard(
     student: StudentDto,
@@ -740,12 +955,19 @@ internal fun StudentCard(
     onMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Roll + code only — the Class metric already shows the class, so the
-    // subtitle no longer repeats "Class 1 · Roll 1 · G1A-001".
+    // Roll + code + class in one tight subtitle — the class no longer needs its
+    // own stat column, freeing the rail for the numbers that actually matter.
+    val classLabel = listOf(student.className, student.section.takeIf(String::isNotBlank))
+        .filterNotNull().joinToString("-")
     val subtitle = buildList {
+        if (classLabel.isNotBlank()) add(classLabel)
         if (student.rollNumber.isNotBlank()) add("Roll ${student.rollNumber}")
         if (student.studentCode.isNotBlank()) add(student.studentCode)
     }.joinToString(" \u00B7 ").ifBlank { "Student" }
+
+    val feePaid = !student.feesPending
+    val avg = student.homeworkPercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
+    val att = student.attendancePercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
 
     Box(modifier) {
         PersonCard(onClick = onOpen) {
@@ -754,33 +976,33 @@ internal fun StudentCard(
                 trailing = { if (student.isNewAdmission) NewBadge() else StatusPill(student.status) },
             )
 
-            val avg = student.homeworkPercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
-            val att = student.attendancePercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
-            val classLabel = listOf(student.className, student.section.takeIf(String::isNotBlank))
-                .filterNotNull().joinToString("-").ifBlank { "\u2014" }
-            MetricStrip(
-                listOf(
-                    Metric(avg, "Homework", PplAccent),
-                    Metric(att, "Attend.", SkyInk),
-                    Metric(classLabel, "Class"),
-                ),
-            )
-
-            FeeSection(if (student.feesPending) FeeStatus.Pending else FeeStatus.Paid)
+            // Dense rail: only the numeric signal (Homework / Attendance), then a
+            // fee chip inline instead of a whole progress-bar panel.
+            Row(
+                Modifier.fillMaxWidth().padding(top = 12.dp).height(IntrinsicSize.Min),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                InlineStat(avg, "Homework", PplAccent, Modifier.weight(1f))
+                Box(Modifier.fillMaxHeight().width(1.dp).padding(vertical = 1.dp).background(PplHairlineStrong))
+                Spacer(Modifier.width(12.dp))
+                InlineStat(att, "Attend.", SkyInk, Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
+                MetaChip(
+                    icon = VIcons.Wallet,
+                    label = if (feePaid) "Fees paid" else "Fees due",
+                    ink = if (feePaid) SuccessInk else WarningInk,
+                    fill = if (feePaid) SuccessSoft else WarningSoft,
+                )
+            }
 
             SubjectTagRow(
                 student.todayItems
                     .filter { it.text.isNotBlank() }
-                    .take(4)
+                    .take(3)
                     .map { item: TodayItemDto -> item.text to tagThemeForColor(item.color) },
             )
 
-            ActionRow(
-                listOf(
-                    Triple(VIcons.Phone, "Call", onCall),
-                    Triple(VIcons.Chat, "Message", onMessage),
-                ),
-            )
+            CompactActionBar(onCall = onCall, onMessage = onMessage)
         }
     }
 }
@@ -799,9 +1021,18 @@ internal fun StaffCard(
 ) {
     val role = staff.role.takeIf(String::isNotBlank)?.replaceFirstChar { it.uppercase() } ?: "Staff"
     val dept = staff.department?.takeIf(String::isNotBlank)
-    // Role + department (deduped) — never the old "lib · of · 2026 yrs" jumble.
-    val subtitle = listOfNotNull(role, dept?.takeIf { !it.equals(role, true) })
-        .joinToString(" \u00B7 ")
+    val shift = staff.shift?.takeIf(String::isNotBlank)
+    // Role + department + shift, deduped, in one tight subtitle line.
+    val subtitle = listOfNotNull(
+        role,
+        dept?.takeIf { !it.equals(role, true) },
+        shift?.let { "$it shift" },
+    ).joinToString(" \u00B7 ")
+
+    // "FT" = full-time (active), otherwise the actual status abbreviation.
+    val employment = if (staff.status.equals("active", true) || staff.status.isBlank()) "Full-time" else
+        staff.status.replaceFirstChar { it.uppercase() }
+    val contact = staff.phone?.takeIf(String::isNotBlank) ?: staff.email?.takeIf(String::isNotBlank)
 
     Box(modifier) {
         PersonCard(onClick = onOpen) {
@@ -810,36 +1041,31 @@ internal fun StaffCard(
                 trailing = { StatusPill(staff.status) },
             )
 
-            // "FT" = full-time (active), otherwise the actual status abbreviation.
-            val employment = if (staff.status.equals("active", true) || staff.status.isBlank()) "FT" else
-                staff.status.replaceFirstChar { it.uppercase() }
-            MetricStrip(
+            InlineStatRail(
                 listOf(
-                    Metric(staff.joinedYear?.takeIf(String::isNotBlank) ?: "\u2014", "Joined", PplAccent),
-                    Metric(employment, "Type"),
-                    Metric(staff.employeeId?.takeIf(String::isNotBlank) ?: "\u2014", "Emp ID"),
+                    Triple(staff.joinedYear?.takeIf(String::isNotBlank) ?: "\u2014", "Joined", PplAccent),
+                    Triple(employment, "Type", PplInk),
+                    Triple(staff.employeeId?.takeIf(String::isNotBlank) ?: "\u2014", "Emp ID", PplInk),
                 ),
             )
 
-            val tags = buildList {
-                dept?.let { add(it to TagTheme.Peach) }
-                staff.shift?.takeIf(String::isNotBlank)?.let { add("$it shift" to TagTheme.Violet) }
+            if (!contact.isNullOrBlank()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        if (staff.phone?.isNotBlank() == true) VIcons.Phone else VIcons.Mail,
+                        null,
+                        tint = PplInk3,
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Text(contact, color = PplInk2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
-            SubjectTagRow(tags)
 
-            ContactRow(
-                buildList {
-                    staff.phone?.takeIf(String::isNotBlank)?.let { add(VIcons.Phone to it) }
-                    staff.email?.takeIf(String::isNotBlank)?.let { add(VIcons.Mail to it) }
-                },
-            )
-
-            ActionRow(
-                listOf(
-                    Triple(VIcons.Phone, "Call", onCall),
-                    Triple(VIcons.Chat, "Message", onMessage),
-                ),
-            )
+            CompactActionBar(onCall = onCall, onMessage = onMessage)
         }
     }
 }

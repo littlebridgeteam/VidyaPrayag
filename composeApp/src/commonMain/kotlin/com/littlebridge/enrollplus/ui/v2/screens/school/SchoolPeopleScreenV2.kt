@@ -1,6 +1,9 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,7 +46,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
@@ -111,7 +113,10 @@ private enum class PeopleSubTab {
     fun label(): String = when (this) {
         Teachers -> appString(StringKeys.PPL_TAB_TEACHERS)
         Students -> appString(StringKeys.PPL_TAB_STUDENTS)
-        Staff    -> appString(StringKeys.PPL_TAB_STAFF)
+        // Rebranded from the global "Non-teaching staff" string to the shorter
+        // "Non-teaching" for the tab chip — keeps the AppStrings i18n value intact
+        // everywhere else while giving the tab a tighter, single-word-ish label.
+        Staff    -> "Non-teaching"
     }
 }
 
@@ -240,64 +245,114 @@ private fun PeopleDirectoryTabs(
     onSelect: (Int) -> Unit,
 ) {
     val icons = listOf(VIcons.School, VIcons.GraduationCap, VIcons.UsersGroup)
+    // Individual chip pills — each tab is its own free-standing rounded chip with
+    // its own selected / unselected state and a smooth cross-fade between them.
+    // No shared segmented "track" behind them anymore.
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(VColors.creamDeep)
-            .border(1.dp, Color(0x0F26234D), RoundedCornerShape(14.dp))
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         tabs.forEachIndexed { index, label ->
-            val selected = index == selectedIndex
-            val shape = RoundedCornerShape(11.dp)
-            // The active segment grows so its icon + full label always fit on one
-            // line (e.g. "Non-teaching staff"); inactive segments share the rest.
-            Row(
-                modifier = Modifier
-                    .weight(if (selected) 1.55f else 1f)
-                    .then(
-                        if (selected) {
-                            Modifier
-                                .shadow(6.dp, shape, ambientColor = VColors.violet.copy(alpha = 0.35f), spotColor = VColors.violet.copy(alpha = 0.35f))
-                                .clip(shape)
-                                .background(Brush.linearGradient(listOf(VColors.violet, Color(0xFF7B6BE0))))
-                        } else {
-                            Modifier.clip(shape).background(Color.Transparent)
-                        },
-                    )
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                    ) { onSelect(index) }
-                    .padding(horizontal = 6.dp, vertical = 9.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (selected) {
-                    Icon(
-                        icons[index],
-                        contentDescription = null,
-                        tint = VColors.white,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Spacer(Modifier.width(5.dp))
-                }
-                Text(
-                    text = label,
-                    color = if (selected) VColors.white else VColors.ink3,
-                    fontSize = 12.sp,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-                    letterSpacing = (-0.2).sp,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-            }
+            PeopleDirectoryTabChip(
+                label = label,
+                icon = icons[index],
+                selected = index == selectedIndex,
+                onClick = { onSelect(index) },
+                modifier = Modifier.weight(1f),
+            )
         }
+    }
+}
+
+/**
+ * A single directory tab rendered as a stand-alone pill. Selected → violet
+ * gradient fill with a soft violet glow + white icon/label; unselected → quiet
+ * white chip with a hairline border and muted ink. Colour, border, elevation
+ * and the icon reveal all animate so tapping between tabs feels smooth rather
+ * than snapping.
+ */
+@Composable
+private fun PeopleDirectoryTabChip(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(13.dp)
+    val anim = tween<Color>(220, easing = FastOutSlowInEasing)
+    val bg by animateColorAsState(
+        if (selected) VColors.violet else VColors.white,
+        animationSpec = anim,
+        label = "tabBg",
+    )
+    val fg by animateColorAsState(
+        if (selected) VColors.white else VColors.ink3,
+        animationSpec = anim,
+        label = "tabFg",
+    )
+    val borderColor by animateColorAsState(
+        if (selected) Color.Transparent else Color(0x1A26234D),
+        animationSpec = anim,
+        label = "tabBorder",
+    )
+    // Icon glyph fades + grows in as the chip becomes selected.
+    val iconScale by animateFloatAsState(
+        if (selected) 1f else 0.6f,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "tabIconScale",
+    )
+    val elevation by animateFloatAsState(
+        if (selected) 8f else 0f,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "tabElev",
+    )
+
+    Row(
+        modifier = modifier
+            .shadow(
+                elevation.dp,
+                shape,
+                ambientColor = VColors.violet.copy(alpha = 0.40f),
+                spotColor = VColors.violet.copy(alpha = 0.40f),
+            )
+            .clip(shape)
+            .background(bg)
+            .border(1.dp, borderColor, shape)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            )
+            .padding(horizontal = 6.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = fg,
+            modifier = Modifier
+                .size(13.dp)
+                .graphicsLayer {
+                    scaleX = iconScale
+                    scaleY = iconScale
+                    alpha = iconScale
+                },
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = label,
+            color = fg,
+            fontSize = 11.5.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            letterSpacing = (-0.3).sp,
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }
 
@@ -520,7 +575,7 @@ private fun SchoolPeopleContent(
                     end = 20.dp,
                     bottom = PeopleBottomNavClearance,
                 ),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             PeopleDirectoryHeader(
                 adminName = adminName,
