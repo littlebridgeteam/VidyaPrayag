@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -65,6 +67,8 @@ import kotlin.math.roundToInt
 
 // ── Palette (mirrors :root in people-tab-premium.css) ──
 private val PplHairline = Color(0x0F26234D)          // rgba(38,35,77,.06) — navy @ 6%
+private val PplHairlineStrong = Color(0x1A26234D)    // navy @ 10% — metric-strip dividers
+private val PplStripFill = Color(0xFFF7F5FC)         // faint violet-tinted panel behind metrics
 private val PplCard = VColors.white                  // --card:#FFFFFF
 private val PplInk = Color(0xFF1A1614)               // --ink
 private val PplInk2 = Color(0xFF5C544E)              // --ink-2
@@ -201,13 +205,17 @@ internal data class FilterChipSpec(
     val onToggle: (String) -> Unit,
 )
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * Filter chips on a single line. The row scrolls horizontally if the chips
+ * overflow, so Subject / Grade / Availability (and their per-tab equivalents)
+ * never wrap onto a second row and eat vertical space.
+ */
 @Composable
 internal fun FilterChipRow(chips: List<FilterChipSpec>, modifier: Modifier = Modifier) {
-    FlowRow(
-        modifier,
+    Row(
+        modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         chips.forEach { FilterChip(it) }
     }
@@ -309,33 +317,67 @@ private val DotStatus.color: Color
         DotStatus.Inactive -> PplInk3
     }
 
-/** Card container — `.card`: white bg, hairline border, 16dp radius, navy-tinted shadow, 16dp padding. */
+/** Small tinted status pill for the header trailing slot (Active / On leave / Inactive). */
+@Composable
+private fun StatusPill(status: String) {
+    val dot = statusDotFor(status)
+    val (label, ink, fill) = when (dot) {
+        DotStatus.Active -> Triple("Active", SuccessInk, SuccessSoft)
+        DotStatus.Leave -> Triple("On leave", WarningInk, WarningSoft)
+        DotStatus.Inactive -> Triple("Inactive", PplInk3, Color(0x14262340))
+    }
+    Box(
+        Modifier.clip(RoundedCornerShape(50)).background(fill).padding(horizontal = 9.dp, vertical = 4.dp),
+    ) {
+        Text(label, color = ink, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+    }
+}
+
+/** "New" admission badge — violet accent pill for the header trailing slot. */
+@Composable
+private fun NewBadge() {
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Brush.linearGradient(listOf(PplAccent, PplAccentSoft)))
+            .padding(horizontal = 9.dp, vertical = 4.dp),
+    ) {
+        Text("New", color = VColors.white, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+    }
+}
+
+/** Card container — white bg, hairline border, 18dp radius, navy-tinted shadow, 14dp padding. */
 @Composable
 private fun PersonCard(onClick: () -> Unit, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x0D26234D), spotColor = Color(0x0D26234D))
-            .clip(RoundedCornerShape(16.dp))
+            .shadow(4.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x1426234D), spotColor = Color(0x1426234D))
+            .clip(RoundedCornerShape(18.dp))
             .background(PplCard)
-            .border(1.dp, PplHairline, RoundedCornerShape(16.dp))
+            .border(1.dp, PplHairline, RoundedCornerShape(18.dp))
             .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
-            .padding(16.dp),
+            .padding(14.dp),
     ) {
         content()
     }
 }
 
-/** Header row — 42dp avatar + status dot + name + subtitle. `.tr` / `.info`. */
+/**
+ * Header row — 44dp avatar + name (with an inline status dot) + subtitle, and a
+ * quiet trailing chevron that signals the whole card opens the profile. A
+ * trailing slot lets each card drop in a status pill (e.g. "On leave").
+ */
 @Composable
 private fun CardHeader(
     name: String,
     photoUrl: String?,
     status: String,
     subtitle: String,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        PplAvatar(name, photoUrl)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+        PplAvatar(name, photoUrl, size = 44.dp)
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 Box(Modifier.size(7.dp).clip(CircleShape).background(statusDotFor(status).color))
@@ -344,65 +386,83 @@ private fun CardHeader(
                     color = PplInk,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.2).sp,
+                    letterSpacing = (-0.3).sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
             }
             Text(
                 subtitle,
                 color = PplInk2,
-                fontSize = 13.sp,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = 3.dp),
             )
+        }
+        if (trailing != null) {
+            trailing()
+        } else {
+            Icon(VIcons.ChevronRight, null, tint = PplInk3.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
         }
     }
 }
 
 private data class Metric(val value: String, val label: String, val valueColor: Color = PplInk)
 
-/** Metric strip — hairline-divided columns, DM-Mono values + 10sp uppercase labels. `.metrics`. */
+/**
+ * Metric strip — a compact tinted panel with hairline-divided columns. Values
+ * are big DM-Mono numerals; labels are single-line (never wrap to "STUDENT\nS")
+ * with tightened tracking so all four teacher columns breathe evenly. The soft
+ * surface + inset dividers give the strip weight so the card no longer reads as
+ * an empty white block.
+ */
 @Composable
 private fun MetricStrip(metrics: List<Metric>) {
-    Box(Modifier.fillMaxWidth().padding(top = 14.dp).height(1.dp).background(PplHairline))
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 12.dp)
             .height(IntrinsicSize.Min)
-            .padding(top = 14.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(PplStripFill)
+            .padding(vertical = 11.dp, horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         metrics.forEachIndexed { index, m ->
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(
-                        start = if (index == 0) 0.dp else 10.dp,
-                        end = if (index == metrics.lastIndex) 0.dp else 10.dp,
-                    ),
+                    .padding(horizontal = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     m.value,
                     color = m.valueColor,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = (-0.2).sp,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.4).sp,
                     fontFamily = FontFamily.Monospace,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
                 )
                 Text(
                     m.label.uppercase(),
                     color = PplInk3,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.8.sp,
-                    modifier = Modifier.padding(top = 3.dp),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.4.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
             if (index != metrics.lastIndex) {
-                Box(Modifier.fillMaxHeight().width(1.dp).background(PplHairline))
+                Box(Modifier.fillMaxHeight().width(1.dp).background(PplHairlineStrong))
             }
         }
     }
@@ -463,30 +523,50 @@ private val subjectPalette = listOf(TagTheme.Violet, TagTheme.Teal, TagTheme.Sky
 private fun SubjectTagRow(tags: List<Pair<String, TagTheme>>) {
     if (tags.isEmpty()) return
     FlowRow(
-        Modifier.fillMaxWidth().padding(top = 12.dp),
+        Modifier.fillMaxWidth().padding(top = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) { tags.forEach { (text, theme) -> SubjectTag(text, theme) } }
 }
 
-/** Action row — hairline-separated text-link buttons (Call / Message / Assign). `.acts` / `.act-link`. */
+/**
+ * Action row — equal-weight pill buttons separated by a hairline. Each is a soft
+ * tinted chip with an icon + label, so the footer reads as a deliberate control
+ * bar instead of three lonely text links floating in white space. The primary
+ * action (last, e.g. Assign / Message) is emphasised in the violet accent.
+ */
 @Composable
 private fun ActionRow(actions: List<Triple<ImageVector, String, () -> Unit>>) {
-    Box(Modifier.fillMaxWidth().padding(top = 14.dp).height(1.dp).background(PplHairline))
+    if (actions.isEmpty()) return
+    Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(1.dp).background(PplHairline))
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        actions.forEach { (icon, label, onClick) ->
+        actions.forEachIndexed { index, (icon, label, onClick) ->
+            val primary = index == actions.lastIndex && actions.size > 1
             Row(
                 modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (primary) VioletSoftFill else PplStripFill)
                     .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
-                    .padding(end = 18.dp),
+                    .padding(vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalArrangement = Arrangement.Center,
             ) {
-                Icon(icon, label, tint = PplInk2, modifier = Modifier.size(14.dp))
-                Text(label, color = PplInk2, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Icon(icon, label, tint = if (primary) PplAccent else PplInk2, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    label,
+                    color = if (primary) PplAccentDeep else PplInk2,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                )
             }
         }
     }
@@ -497,12 +577,16 @@ private fun ActionRow(actions: List<Triple<ImageVector, String, () -> Unit>>) {
 private fun ContactRow(items: List<Pair<ImageVector, String>>) {
     if (items.isEmpty()) return
     Row(
-        Modifier.fillMaxWidth().padding(top = 12.dp),
+        Modifier.fillMaxWidth().padding(top = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEach { (icon, text) ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.weight(1f, fill = false),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 Icon(icon, null, tint = PplInk3, modifier = Modifier.size(13.dp))
                 Text(text, color = PplInk2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -524,23 +608,27 @@ internal fun TeacherCard(
     modifier: Modifier = Modifier,
 ) {
     val p = teacher.profile
+    val onLeave = statusDotFor(p.status) == DotStatus.Leave
+    // Role + experience only — the subject chips below already carry the subjects,
+    // so we never render the redundant "Biology · Biology Teacher" from the old UI.
     val subtitle = listOf(
-        teacher.academicAssignment.subjects.firstOrNull().orEmpty(),
-        p.role,
-        p.experience?.takeIf(String::isNotBlank).orEmpty(),
+        p.role.ifBlank { "Teacher" },
+        p.experience?.takeIf(String::isNotBlank)?.let { "$it exp" }.orEmpty(),
     ).filter(String::isNotBlank).joinToString(" \u00B7 ")
 
     Box(modifier) {
         PersonCard(onClick = onViewProfile) {
-            CardHeader(p.name, p.avatarUrl, p.status, subtitle)
+            CardHeader(
+                p.name, p.avatarUrl, p.status, subtitle,
+                trailing = { StatusPill(p.status) },
+            )
 
             val attendance = teacher.activity.attendancePercentage
-            val onLeave = statusDotFor(p.status) == DotStatus.Leave
             MetricStrip(
                 listOf(
                     Metric(teacher.workload.totalStudents.toString(), "Students"),
                     Metric(teacher.workload.totalClasses.toString(), "Classes"),
-                    Metric(attendance?.let { "$it%" } ?: "\u2014", "Attendance", PplAccent),
+                    Metric(attendance?.let { "$it%" } ?: "\u2014", "Attend.", PplAccent),
                     Metric(
                         if (onLeave) "\u2014" else (p.rating?.toString() ?: "\u2014"),
                         "PEWS",
@@ -572,37 +660,56 @@ internal fun TeacherCard(
 
 private enum class FeeStatus(val label: String, val ink: Color, val fill: Color, val bar: Color, val progress: Float) {
     Paid("Paid", SuccessInk, SuccessSoft, SuccessInk, 1f),
-    Pending("Pending", WarningInk, WarningSoft, WarningInk, 0.6f),
+    Pending("Pending", WarningInk, WarningSoft, WarningInk, 0.55f),
 }
 
-/** Fee section — `.fees` box from the student screenshots: rounded 10dp surface, status badge, 4dp bar. */
+/**
+ * Fee row — a single compact strip: a coloured status glyph, "Fees" + its state
+ * caption, a status badge on the right, and a slim progress bar underneath. This
+ * kills the tall, mostly-empty fee box from the old screenshots while keeping the
+ * same information hierarchy.
+ */
 @Composable
 private fun FeeSection(fee: FeeStatus) {
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(PplSurface)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(top = 10.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(PplStripFill)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
         ) {
-            Text("FEES", color = PplInk3, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp)
-            Box(Modifier.clip(RoundedCornerShape(6.dp)).background(fee.fill).padding(horizontal = 8.dp, vertical = 3.dp)) {
+            Box(
+                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(fee.fill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(VIcons.Wallet, null, tint = fee.ink, modifier = Modifier.size(15.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text("Fees", color = PplInk, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (fee == FeeStatus.Paid) "Fully paid" else "Payment due",
+                    color = PplInk3,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+            Box(Modifier.clip(RoundedCornerShape(50)).background(fee.fill).padding(horizontal = 10.dp, vertical = 4.dp)) {
                 Text(fee.label, color = fee.ink, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
         Box(
             Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp)
+                .padding(top = 9.dp)
                 .height(4.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color(0x14000000)),
+                .background(Color(0x11000000)),
         ) {
             Box(
                 Modifier
@@ -633,16 +740,19 @@ internal fun StudentCard(
     onMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Roll + code only — the Class metric already shows the class, so the
+    // subtitle no longer repeats "Class 1 · Roll 1 · G1A-001".
     val subtitle = buildList {
-        add("Class ${student.className}")
         if (student.rollNumber.isNotBlank()) add("Roll ${student.rollNumber}")
         if (student.studentCode.isNotBlank()) add(student.studentCode)
-        if (student.isNewAdmission) add("New")
-    }.joinToString(" \u00B7 ")
+    }.joinToString(" \u00B7 ").ifBlank { "Student" }
 
     Box(modifier) {
         PersonCard(onClick = onOpen) {
-            CardHeader(student.fullName, student.profilePhotoUrl, student.status, subtitle)
+            CardHeader(
+                student.fullName, student.profilePhotoUrl, student.status, subtitle,
+                trailing = { if (student.isNewAdmission) NewBadge() else StatusPill(student.status) },
+            )
 
             val avg = student.homeworkPercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
             val att = student.attendancePercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
@@ -650,8 +760,8 @@ internal fun StudentCard(
                 .filterNotNull().joinToString("-").ifBlank { "\u2014" }
             MetricStrip(
                 listOf(
-                    Metric(avg, "Average"),
-                    Metric(att, "Attendance", SkyInk),
+                    Metric(avg, "Homework", PplAccent),
+                    Metric(att, "Attend.", SkyInk),
                     Metric(classLabel, "Class"),
                 ),
             )
@@ -661,12 +771,13 @@ internal fun StudentCard(
             SubjectTagRow(
                 student.todayItems
                     .filter { it.text.isNotBlank() }
+                    .take(4)
                     .map { item: TodayItemDto -> item.text to tagThemeForColor(item.color) },
             )
 
             ActionRow(
                 listOf(
-                    Triple(VIcons.Phone, "Call Parent", onCall),
+                    Triple(VIcons.Phone, "Call", onCall),
                     Triple(VIcons.Chat, "Message", onMessage),
                 ),
             )
@@ -686,29 +797,33 @@ internal fun StaffCard(
     onMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val subtitle = listOf(
-        staff.role,
-        staff.department?.takeIf(String::isNotBlank).orEmpty(),
-        staff.joinedYear?.takeIf(String::isNotBlank)?.let { "$it yrs" }.orEmpty(),
-    ).filter(String::isNotBlank).joinToString(" \u00B7 ")
+    val role = staff.role.takeIf(String::isNotBlank)?.replaceFirstChar { it.uppercase() } ?: "Staff"
+    val dept = staff.department?.takeIf(String::isNotBlank)
+    // Role + department (deduped) — never the old "lib · of · 2026 yrs" jumble.
+    val subtitle = listOfNotNull(role, dept?.takeIf { !it.equals(role, true) })
+        .joinToString(" \u00B7 ")
 
     Box(modifier) {
         PersonCard(onClick = onOpen) {
-            CardHeader(staff.fullName, staff.photoUrl, staff.status, subtitle)
+            CardHeader(
+                staff.fullName, staff.photoUrl, staff.status, subtitle,
+                trailing = { StatusPill(staff.status) },
+            )
 
-            val statusLabel = if (staff.status.equals("active", true) || staff.status.isBlank()) "FT" else
-                staff.status.uppercase().take(2)
+            // "FT" = full-time (active), otherwise the actual status abbreviation.
+            val employment = if (staff.status.equals("active", true) || staff.status.isBlank()) "FT" else
+                staff.status.replaceFirstChar { it.uppercase() }
             MetricStrip(
                 listOf(
-                    Metric(staff.joinedYear?.takeIf(String::isNotBlank) ?: "\u2014", "Years"),
-                    Metric(statusLabel, "Status"),
-                    Metric(staff.employeeId?.takeIf(String::isNotBlank) ?: "\u2014", "ID"),
+                    Metric(staff.joinedYear?.takeIf(String::isNotBlank) ?: "\u2014", "Joined", PplAccent),
+                    Metric(employment, "Type"),
+                    Metric(staff.employeeId?.takeIf(String::isNotBlank) ?: "\u2014", "Emp ID"),
                 ),
             )
 
             val tags = buildList {
-                staff.department?.takeIf(String::isNotBlank)?.let { add(it to TagTheme.Peach) }
-                staff.shift?.takeIf(String::isNotBlank)?.let { add(it to TagTheme.Violet) }
+                dept?.let { add(it to TagTheme.Peach) }
+                staff.shift?.takeIf(String::isNotBlank)?.let { add("$it shift" to TagTheme.Violet) }
             }
             SubjectTagRow(tags)
 

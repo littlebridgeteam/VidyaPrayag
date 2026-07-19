@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -225,38 +226,75 @@ private fun PremiumPeopleMoreButton(onClick: () -> Unit) {
     }
 }
 
+/**
+ * Premium segmented control for the People sub-tabs. The track itself is the
+ * "surrounding border" (a soft cream capsule with a hairline outline); the
+ * active segment lifts onto a violet gradient with a subtle glow and reveals a
+ * leading glyph, while inactive segments stay quiet ink-3 text. Equal-weight
+ * segments keep "Non-teaching staff" on a single line — no awkward wrapping.
+ */
 @Composable
 private fun PeopleDirectoryTabs(
     tabs: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
 ) {
+    val icons = listOf(VIcons.School, VIcons.GraduationCap, VIcons.UsersGroup)
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(VColors.creamDeep)
+            .border(1.dp, Color(0x0F26234D), RoundedCornerShape(14.dp))
+            .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         tabs.forEachIndexed { index, label ->
             val selected = index == selectedIndex
-            Box(
+            val shape = RoundedCornerShape(11.dp)
+            // The active segment grows so its icon + full label always fit on one
+            // line (e.g. "Non-teaching staff"); inactive segments share the rest.
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(50))
+                    .weight(if (selected) 1.55f else 1f)
                     .then(
                         if (selected) {
                             Modifier
-                                .shadow(4.dp, RoundedCornerShape(50), ambientColor = VColors.violet.copy(alpha = 0.15f))
+                                .shadow(6.dp, shape, ambientColor = VColors.violet.copy(alpha = 0.35f), spotColor = VColors.violet.copy(alpha = 0.35f))
+                                .clip(shape)
                                 .background(Brush.linearGradient(listOf(VColors.violet, Color(0xFF7B6BE0))))
-                        } else Modifier.background(Color.Transparent)
+                        } else {
+                            Modifier.clip(shape).background(Color.Transparent)
+                        },
                     )
-                    .clickable { onSelect(index) }
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center,
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { onSelect(index) }
+                    .padding(horizontal = 6.dp, vertical = 9.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (selected) {
+                    Icon(
+                        icons[index],
+                        contentDescription = null,
+                        tint = VColors.white,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(Modifier.width(5.dp))
+                }
                 Text(
                     text = label,
                     color = if (selected) VColors.white else VColors.ink3,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                    letterSpacing = (-0.2).sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
             }
         }
@@ -477,12 +515,12 @@ private fun SchoolPeopleContent(
                 // the system inset; PeopleBottomNavClearance covers the nav bar itself.
                 .navigationBarsPadding()
                 .padding(
-                    start = 24.dp,
-                    top = 16.dp,
-                    end = 24.dp,
+                    start = 20.dp,
+                    top = 14.dp,
+                    end = 20.dp,
                     bottom = PeopleBottomNavClearance,
                 ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             PeopleDirectoryHeader(
                 adminName = adminName,
