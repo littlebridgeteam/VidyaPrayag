@@ -455,7 +455,7 @@ fun SchoolRegistrationFlow(
     val stepOrder = listOf(FlowStep.One, FlowStep.Two, FlowStep.Three, FlowStep.Four, FlowStep.Success)
     var previousStepIndex by remember { mutableIntStateOf(0) }
 
-    Column(modifier = Modifier.fillMaxSize().background(VTheme.colors.background).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(VTheme.colors.cream).statusBarsPadding()) {
         AnimatedContent(
             targetState = state.step,
             modifier = Modifier.fillMaxWidth().weight(1f),
