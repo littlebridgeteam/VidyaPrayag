@@ -38,12 +38,12 @@ import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.shapeInput
 
-// React VInput focus glow uses #3cd1be (brighter than --teal) @ 15% — §13.6 / matrix.
-private val FocusGlow = Color(0xFF3CD1BE)
+// Focus glow uses the violet accent (#5B41D5) @ 15% — unified with the brand purple.
+private val FocusGlow = Color(0xFF5B41D5)
 
 /**
  * VInput — a single-line text field with the design's focus treatment: surface lifts cream→card,
- * border turns teal-deep, and a soft 4dp teal glow ring appears.
+ * border turns violet accent, and a soft 4dp accent glow ring appears.
  *
  * Translated from primitives.tsx → `VInput`. Built on [BasicTextField] for full multiplatform
  * control over the focus visuals (Material3 TextField's chrome doesn't match the design).
@@ -75,13 +75,13 @@ fun VInput(
     val borderColor by animateColorAsState(
         when {
             isError -> c.dangerInk
-            focused -> c.tealDeep
+            focused -> c.accent
             else -> c.hairline
         }, tween(180), label = "border"
     )
     val bg by animateColorAsState(if (focused) c.card else c.cream, tween(180), label = "bg")
     val glow by animateDpAsState(if (focused) 4.dp else 0.dp, tween(180), label = "glow")
-    val iconTint by animateColorAsState(if (focused) c.tealDeep else c.ink3, tween(180), label = "iconTint")
+    val iconTint by animateColorAsState(if (focused) c.accent else c.ink3, tween(180), label = "iconTint")
 
     // §matrix: VInput radius is 12 (React `rounded-[12px]`), not the 10 legacy md.
     val shape = VTheme.dimens.shapeInput
@@ -124,7 +124,7 @@ fun VInput(
                         enabled = enabled,
                         singleLine = singleLine,
                         textStyle = VTheme.type.body.colored(c.ink),
-                        cursorBrush = SolidColor(c.tealDeep),
+                        cursorBrush = SolidColor(c.accent),
                         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                         visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
                         interactionSource = interaction,
