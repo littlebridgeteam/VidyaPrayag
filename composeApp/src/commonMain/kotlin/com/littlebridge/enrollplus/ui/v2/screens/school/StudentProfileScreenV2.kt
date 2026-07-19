@@ -278,6 +278,14 @@ private fun HeroFact(icon: ImageVector, label: String, value: String) {
 
 // ──────────────────────────── 2. KPI carousel ─────────────────────────────
 
+private data class KpiCardData(
+    val label: String,
+    val value: String,
+    val support: String,
+    val icon: ImageVector,
+    val tone: VBadgeTone,
+)
+
 @Composable
 private fun KpiCarousel(p: StudentProfileDto) {
     val kpis = buildList {
