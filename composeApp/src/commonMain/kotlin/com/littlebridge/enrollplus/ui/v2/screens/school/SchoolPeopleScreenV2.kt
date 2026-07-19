@@ -15,13 +15,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +52,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolClassDto
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
@@ -90,6 +91,17 @@ import com.littlebridge.enrollplus.ui.v2.theme.staggeredItemEntrance
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+
+// Bottom clearance for the floating VCreamBottomNav (inner Box 60dp + 12dp*2
+// vertical padding ≈ 84dp) plus a comfortable gap so the final card never sits
+// flush against — or behind — the nav. Combined with .navigationBarsPadding()
+// this keeps every card fully tappable above the bar.
+private val PeopleBottomNavClearance = 112.dp
+
+// Minimum height reserved for the per-tab state area so VStateHost's loading /
+// error / empty legs (which fill their box) still render inside the single
+// verticalScroll page, where an unconstrained fillMaxSize would collapse to 0.
+private val PeopleStateMinHeight = 360.dp
 
 private enum class PeopleSubTab {
     Teachers, Students, Staff;
@@ -311,7 +323,6 @@ fun SchoolPeopleScreenV2(
         teachersState = teachersState,
         onTeachersRetry = teachersViewModel::load,
         onAddTeacher = teachersViewModel::addTeacher,
-        onLoadMoreTeachers = teachersViewModel::loadMore,
         onDeactivateTeacher = teachersViewModel::removeTeacher,
         onClearTeacherMessages = teachersViewModel::clearMessages,
         studentsState = studentsState,
@@ -348,7 +359,6 @@ private fun SchoolPeopleContent(
     teachersState: SchoolTeachersState,
     onTeachersRetry: () -> Unit,
     onAddTeacher: (name: String, identifier: String, initialPassword: String?, onAdded: (() -> Unit)?) -> Unit,
-    onLoadMoreTeachers: () -> Unit,
     onDeactivateTeacher: (String) -> Unit,
     onClearTeacherMessages: () -> Unit,
     studentsState: StudentRosterState,
@@ -436,26 +446,19 @@ private fun SchoolPeopleContent(
     }
 
     val subTabLabels = PeopleSubTab.entries.map { it.label() }
-    val pagerState = rememberPagerState(
-        initialPage = initialSubTab.ordinal,
-        pageCount = { PeopleSubTab.entries.size },
-    )
-    // Sync tab taps with pager.
-    LaunchedEffect(subTab) {
-        val page = subTab.ordinal
-        if (pagerState.currentPage != page) {
-            pagerState.animateScrollToPage(page)
-        }
-    }
-    // Sync pager swipes with tabs.
-    LaunchedEffect(pagerState.currentPage) {
-        subTab = PeopleSubTab.entries[pagerState.currentPage]
-    }
+    val scrollState = rememberScrollState()
+
+    // CRITICAL FIX (RA-S17.5): the ENTIRE screen — header, tabs, search, filters
+    // and card list — scrolls as ONE unit inside a single verticalScroll, exactly
+    // like the `.screen` element in the prototype. No pager, no frozen top: tab
+    // switching is a pure tap (matches people-tab-premium.js `switchSubTab`), and
+    // switching resets the scroll to the top of the page.
+    LaunchedEffect(subTab) { scrollState.scrollTo(0) }
 
     VPullRefresh(
         isRefreshing = teachersState.isLoading || studentsState.isLoading || staffState.isLoading,
         onRefresh = {
-            when (PeopleSubTab.entries[pagerState.currentPage]) {
+            when (subTab) {
                 PeopleSubTab.Teachers -> onTeachersRetry()
                 PeopleSubTab.Students -> onStudentsRetry()
                 PeopleSubTab.Staff -> onStaffRetry()
@@ -468,8 +471,17 @@ private fun SchoolPeopleContent(
                 .background(VColors.cream)
                 .statusBarsPadding()
                 .imePadding()
+                .verticalScroll(scrollState)
+                // CRITICAL FIX (RA-S17.5): clear the floating VCreamBottomNav so the
+                // last card is never hidden behind it. navigationBarsPadding() covers
+                // the system inset; PeopleBottomNavClearance covers the nav bar itself.
                 .navigationBarsPadding()
-                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),
+                .padding(
+                    start = 24.dp,
+                    top = 16.dp,
+                    end = 24.dp,
+                    bottom = PeopleBottomNavClearance,
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             PeopleDirectoryHeader(
@@ -488,40 +500,33 @@ private fun SchoolPeopleContent(
                 onSelect = { subTab = PeopleSubTab.entries[it] },
             )
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                beyondViewportPageCount = 1,
-            ) { page ->
-                when (PeopleSubTab.entries[page]) {
-                    PeopleSubTab.Teachers -> TeachersSubTab(
-                        state = teachersState,
-                        onRetry = onTeachersRetry,
-                        onAddClick = { showAddTeacher = true },
-                        onOpenTeacher = onOpenTeacher,
-                        onOpenMessages = onOpenMessages,
-                        onLoadMore = onLoadMoreTeachers,
-                        onDeactivate = onDeactivateTeacher,
-                        onAssignClass = onAssignClasses,
-                    )
-                    PeopleSubTab.Students -> StudentsSubTab(
-                        state = studentsState,
-                        onRetry = onStudentsRetry,
-                        onOpenStudent = onOpenStudent,
-                        onOpenLinkRequests = onOpenLinkRequests,
-                        onOpenMessages = onOpenMessages,
-                        onAddClick = { showAddStudent = true },
-                        onImportClick = { showImportStudents = true },
-                        onGraduateClick = { studentIds, year -> onGraduateStudents(studentIds, year) },
-                    )
-                    PeopleSubTab.Staff -> StaffSubTab(
-                        state = staffState,
-                        onRetry = onStaffRetry,
-                        onSearch = onStaffSearch,
-                        onAddClick = { showAddStaff = true },
-                        onOpenStaff = onOpenStaff,
-                    )
-                }
+            when (subTab) {
+                PeopleSubTab.Teachers -> TeachersSubTab(
+                    state = teachersState,
+                    onRetry = onTeachersRetry,
+                    onAddClick = { showAddTeacher = true },
+                    onOpenTeacher = onOpenTeacher,
+                    onOpenMessages = onOpenMessages,
+                    onDeactivate = onDeactivateTeacher,
+                    onAssignClass = onAssignClasses,
+                )
+                PeopleSubTab.Students -> StudentsSubTab(
+                    state = studentsState,
+                    onRetry = onStudentsRetry,
+                    onOpenStudent = onOpenStudent,
+                    onOpenLinkRequests = onOpenLinkRequests,
+                    onOpenMessages = onOpenMessages,
+                    onAddClick = { showAddStudent = true },
+                    onImportClick = { showImportStudents = true },
+                    onGraduateClick = { studentIds, year -> onGraduateStudents(studentIds, year) },
+                )
+                PeopleSubTab.Staff -> StaffSubTab(
+                    state = staffState,
+                    onRetry = onStaffRetry,
+                    onSearch = onStaffSearch,
+                    onAddClick = { showAddStaff = true },
+                    onOpenStaff = onOpenStaff,
+                )
             }
         }
     }
@@ -584,7 +589,6 @@ private fun TeachersSubTab(
     onAddClick: () -> Unit,
     onOpenTeacher: (String) -> Unit,
     onOpenMessages: (String?) -> Unit,
-    onLoadMore: () -> Unit,
     onDeactivate: (String) -> Unit,
     onAssignClass: (String) -> Unit,
 ) {
@@ -612,7 +616,7 @@ private fun TeachersSubTab(
         q && subjectOk && gradeOk && availabilityOk
     }
 
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -667,7 +671,7 @@ private fun TeachersSubTab(
             },
         )
         VStateHost(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth().heightIn(min = PeopleStateMinHeight),
             loading = state.isLoading,
             error = state.errorMessage,
             isEmpty = filtered.isEmpty(),
@@ -680,9 +684,10 @@ private fun TeachersSubTab(
             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
         ) {
             val ready = filtered.isNotEmpty() && !state.isLoading
-            val scrollState = rememberScrollState()
+            // No inner verticalScroll here — the whole People screen is one scroll.
+            // No "Load more": every teacher is rendered directly in the list.
             Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 filtered.forEachIndexed { index, t ->
@@ -693,19 +698,6 @@ private fun TeachersSubTab(
                         onMessage = { onOpenMessages(t.id) },
                         onAssignClass = { onAssignClass(t.id) },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
-                    )
-                }
-
-                // Pagination: only meaningful when NOT filtering locally.
-                if (query.isBlank() && allFilters.isEmpty() && state.hasNext) {
-                    VButton(
-                        text = if (state.isLoadingMore) appString(StringKeys.PPL_LOADING) else appString(StringKeys.PPL_LOAD_MORE),
-                        onClick = onLoadMore,
-                        variant = VButtonVariant.Ghost,
-                        size = VButtonSize.Sm,
-                        full = true,
-                        enabled = !state.isLoadingMore && !state.isLoading,
-                        loading = state.isLoadingMore,
                     )
                 }
             }
@@ -755,7 +747,7 @@ private fun StudentsSubTab(
 
     var menuExpanded by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -835,7 +827,7 @@ private fun StudentsSubTab(
             onClick = onOpenLinkRequests,
         )
         VStateHost(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth().heightIn(min = PeopleStateMinHeight),
             loading = state.isLoading,
             error = state.error,
             isEmpty = filtered.isEmpty(),
@@ -848,9 +840,9 @@ private fun StudentsSubTab(
             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 6) },
         ) {
             val ready = filtered.isNotEmpty() && !state.isLoading
-            val scrollState = rememberScrollState()
+            // No inner verticalScroll — the whole People screen is one scroll.
             Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 filtered.forEachIndexed { index, s ->
@@ -929,19 +921,28 @@ private fun StudentsSubTab(
     }
 
     // ── Snackbar for no-phone warning ────────────────────────────────────
+    // A Popup keeps the toast floating at the bottom of the window regardless of
+    // where this sub-tab sits inside the single verticalScroll page (a plain
+    // fillMaxSize Box would collapse to zero height inside the scroll).
     snackMessage?.let { msg ->
         LaunchedEffect(msg) {
             kotlinx.coroutines.delay(3000)
             snackMessage = null
         }
-        Box(Modifier.fillMaxSize()) {
-            VSnackbar(
-                message = msg,
-                visible = true,
-                onDismiss = { snackMessage = null },
-                tone = VSnackbarTone.Warning,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+        Popup(
+            alignment = Alignment.BottomCenter,
+            onDismissRequest = { snackMessage = null },
+            properties = PopupProperties(focusable = false),
+        ) {
+            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = PeopleBottomNavClearance)) {
+                VSnackbar(
+                    message = msg,
+                    visible = true,
+                    onDismiss = { snackMessage = null },
+                    tone = VSnackbarTone.Warning,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }
@@ -979,7 +980,7 @@ private fun StaffSubTab(
         q && deptOk && roleOk && statusOk
     }
 
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -1034,7 +1035,7 @@ private fun StaffSubTab(
             },
         )
         VStateHost(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth().heightIn(min = PeopleStateMinHeight),
             loading = state.isLoading,
             error = state.error,
             isEmpty = filtered.isEmpty(),
@@ -1047,9 +1048,9 @@ private fun StaffSubTab(
             skeleton = { com.littlebridge.enrollplus.ui.v2.screens.SkeletonList(rows = 5) },
         ) {
             val ready = filtered.isNotEmpty() && !state.isLoading
-            val scrollState = rememberScrollState()
+            // No inner verticalScroll — the whole People screen is one scroll.
             Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 filtered.forEachIndexed { index, s ->
@@ -1073,19 +1074,28 @@ private fun StaffSubTab(
     }
 
     // ── Snackbar for no-phone warning ────────────────────────────────────
+    // A Popup keeps the toast floating at the bottom of the window regardless of
+    // where this sub-tab sits inside the single verticalScroll page (a plain
+    // fillMaxSize Box would collapse to zero height inside the scroll).
     snackMessage?.let { msg ->
         LaunchedEffect(msg) {
             kotlinx.coroutines.delay(3000)
             snackMessage = null
         }
-        Box(Modifier.fillMaxSize()) {
-            VSnackbar(
-                message = msg,
-                visible = true,
-                onDismiss = { snackMessage = null },
-                tone = VSnackbarTone.Warning,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+        Popup(
+            alignment = Alignment.BottomCenter,
+            onDismissRequest = { snackMessage = null },
+            properties = PopupProperties(focusable = false),
+        ) {
+            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = PeopleBottomNavClearance)) {
+                VSnackbar(
+                    message = msg,
+                    visible = true,
+                    onDismiss = { snackMessage = null },
+                    tone = VSnackbarTone.Warning,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }
