@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -69,8 +70,8 @@ import io.github.vinceglb.filekit.core.PickerType
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
@@ -904,7 +905,7 @@ private fun StudentsSubTab(
                     VButton(
                         text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                         onClick = { showGraduate = false },
-                        variant = VButtonVariant.Ghost,
+                        variant = VButtonVariant.Secondary,
                         size = VButtonSize.Sm,
                         modifier = Modifier.weight(1f),
                     )
@@ -916,6 +917,7 @@ private fun StudentsSubTab(
                             showGraduate = false
                         },
                         variant = VButtonVariant.Primary,
+                        tone = VButtonTone.Lavender,
                         size = VButtonSize.Sm,
                         soft = false,
                         modifier = Modifier.weight(1f),
@@ -1213,7 +1215,7 @@ private fun AddTeacherSheet(
                 VButton(
                     text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                     onClick = onDismiss,
-                    variant = VButtonVariant.Ghost,
+                    variant = VButtonVariant.Secondary,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = !isSubmitting,
                 )
@@ -1223,6 +1225,7 @@ private fun AddTeacherSheet(
                         onSubmit(name, identifier, password.takeIf { isEmail && it.isNotBlank() })
                     },
                     variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Lavender,
                     soft = false,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = canSubmit,
@@ -1313,7 +1316,7 @@ private fun AddStaffSheet(
                 VButton(
                     text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                     onClick = onDismiss,
-                    variant = VButtonVariant.Ghost,
+                    variant = VButtonVariant.Secondary,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = !isSubmitting,
                 )
@@ -1321,6 +1324,7 @@ private fun AddStaffSheet(
                     text = appString(StringKeys.PPL_ADD_STAFF),
                     onClick = { onSubmit(name, role, department, phone, email) },
                     variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Lavender,
                     soft = false,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = canSubmit,
@@ -1411,7 +1415,7 @@ private fun AddStudentPeopleSheet(
                 VButton(
                     text = appString(StringKeys.COMMON_BUTTON_CANCEL),
                     onClick = onDismiss,
-                    variant = VButtonVariant.Ghost,
+                    variant = VButtonVariant.Secondary,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = !isSubmitting,
                 )
@@ -1419,6 +1423,7 @@ private fun AddStudentPeopleSheet(
                     text = appString(StringKeys.PPL_ADD_STUDENT),
                     onClick = { onSubmit(name, className, section, roll, parentPhone, admissionDate) },
                     variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Lavender,
                     soft = false,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = canSubmit,
@@ -1471,46 +1476,59 @@ private fun ImportStudentsSheet(
     ) {
         PremiumPeopleSheetHeader(
             title = appString(StringKeys.PPL_IMPORT_STUDENTS_CSV),
-            subtitle = "Bulk import students from a CSV file",
+            subtitle = "Bulk import via CSV file",
             onClose = onDismiss,
         )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Primary: file upload gateway
-            VCard(
+            // Primary: file upload gateway — dashed cream drop zone (matches prototype .csv-upload)
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { csvPicker.launch() },
-                padding = 20.dp,
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Column(
-                    Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(VColors.violet.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(24.dp))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(VColors.cream)
+                    .drawBehind {
+                        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = 2.dp.toPx(),
+                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                                floatArrayOf(10.dp.toPx(), 8.dp.toPx()), 0f,
+                            ),
+                        )
+                        drawRoundRect(
+                            color = VColors.line,
+                            style = stroke,
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx(), 12.dp.toPx()),
+                        )
                     }
-                    Text(
-                        if (fileName != null) "File: $fileName" else "Upload CSV File",
-                        style = VTypography.body.copy(fontWeight = FontWeight.Bold),
-                        color = VColors.ink,
-                    )
-                    Text(
-                        if (fileName != null) "Tap to replace file" else "Tap to choose a .csv file from your device",
-                        style = VTypography.caption,
-                        color = VColors.ink3,
-                    )
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { csvPicker.launch() }
+                    .padding(vertical = 24.dp, horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(VColors.violet.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(VIcons.Upload, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(24.dp))
                 }
+                Text(
+                    if (fileName != null) "File: $fileName" else "Upload CSV File",
+                    style = VTypography.body.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink,
+                )
+                Text(
+                    if (fileName != null) "Tap to replace file" else "Click to browse or drag & drop",
+                    style = VTypography.caption,
+                    color = VColors.ink3,
+                )
             }
             // Secondary: paste area (collapsible-style, still visible)
-            Text("or paste CSV content manually", style = VTypography.caption, color = VColors.ink3)
+            Text("Or paste CSV content", style = VTypography.caption, color = VColors.ink3)
             VInput(
                 value = csv,
                 onValueChange = { csv = it; fileName = null },
@@ -1519,34 +1537,43 @@ private fun ImportStudentsSheet(
                 singleLine = false,
                 modifier = Modifier.fillMaxWidth().height(120.dp),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                VButton(
-                    text = "Download Template",
-                    onClick = { fileSaver.launch(baseName = "student_import_template", extension = "csv", bytes = csvTemplate.encodeToByteArray()) },
-                    variant = VButtonVariant.Secondary,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            Text(
+                "Download CSV Template",
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.violet,
+                modifier = Modifier
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { fileSaver.launch(baseName = "student_import_template", extension = "csv", bytes = csvTemplate.encodeToByteArray()) }
+                    .padding(vertical = 2.dp),
+            )
             if (error != null) {
                 Text(error, style = VTypography.caption, color = VColors.coral)
             }
             Spacer(Modifier.height(2.dp))
-            VButton(
-                text = appString(StringKeys.PPL_IMPORT),
-                onClick = { onSubmit(csv) },
-                variant = VButtonVariant.Primary,
-                soft = false,
-                full = true,
-                enabled = canSubmit,
-                loading = isSubmitting,
-            )
-            VButton(
-                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
-                onClick = onDismiss,
-                variant = VButtonVariant.Ghost,
-                full = true,
-                enabled = !isSubmitting,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Secondary,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = !isSubmitting,
+                )
+                VButton(
+                    text = appString(StringKeys.PPL_IMPORT),
+                    onClick = { onSubmit(csv) },
+                    variant = VButtonVariant.Primary,
+                    tone = VButtonTone.Lavender,
+                    soft = false,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = canSubmit,
+                    loading = isSubmitting,
+                )
+            }
         }
     }
 }
