@@ -163,18 +163,19 @@ private fun VChip(
     onClick: () -> Unit,
 ) {
     val c = VTheme.colors
-    val bg = if (selected) c.accent else c.cream
+    val bg = if (selected) c.accent else c.card
     val fg = if (selected) c.card else c.ink2
     val border = if (selected) c.accent else c.hairline
 
     Box(
         modifier = Modifier
+            .heightIn(min = 40.dp)
             .clip(VTheme.dimens.shapePill)
             .background(bg)
             .border(1.dp, border, VTheme.dimens.shapePill)
             .clickable { onClick() }
-            .heightIn(min = 38.dp)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
@@ -599,7 +600,7 @@ private fun StepTwoCreatePassword(
                 placeholder = "Min. 8 characters", keyboardType = KeyboardType.Password,
                 isPassword = true, passwordVisible = passwordVisible,
                 isError = getError("password") != null, errorText = getError("password"),
-                trailing = { Box(Modifier.size(48.dp).clickable { passwordVisible = !passwordVisible }, contentAlignment = Alignment.Center) { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp)) } },
+                trailing = { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp).clickable { passwordVisible = !passwordVisible }) },
             )
             if (state.password.isNotBlank()) PasswordStrengthBar(state.password)
             VInput(
@@ -614,7 +615,7 @@ private fun StepTwoCreatePassword(
                 isPassword = true, passwordVisible = confirmPasswordVisible,
                 isError = getError("confirm") != null || (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword),
                 errorText = getError("confirm") ?: if (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword) "Passwords do not match" else null,
-                trailing = { Box(Modifier.size(48.dp).clickable { confirmPasswordVisible = !confirmPasswordVisible }, contentAlignment = Alignment.Center) { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp)) } },
+                trailing = { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp).clickable { confirmPasswordVisible = !confirmPasswordVisible }) },
             )
             Column(
                 modifier = Modifier.fillMaxWidth().clip(VTheme.dimens.shapeCard).background(c.accentTint).border(1.dp, c.accent.copy(alpha = 0.15f), VTheme.dimens.shapeCard).padding(16.dp),

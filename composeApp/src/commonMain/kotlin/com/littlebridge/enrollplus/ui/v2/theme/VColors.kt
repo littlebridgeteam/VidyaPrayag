@@ -81,10 +81,10 @@ private object Raw {
     val cream = Color(0xFFF5F5F3)
     val warmOrange = Color(0xFF9E421A)
 
-    // Accent (lavender/violet) — website tailwind `colors.accent`.
-    val accent = Color(0xFF6C5CE0)
-    val accentSoft = Color(0xFF8B7EE8)
-    val accentDeep = Color(0xFF544AB8)
+    // Accent (lavender/violet) — matches V1 VColors.violet (#5B41D5) for cross-system consistency.
+    val accent = Color(0xFF5B41D5)
+    val accentSoft = Color(0xFF7B6BE0)
+    val accentDeep = Color(0xFF4A30C4)
     val accentTint = Color(0xFFF4F3FA) // website `colors.canvas` — cool lavender card canvas
 
     // Ink (light)
@@ -117,9 +117,9 @@ private object Raw {
     val nightTeal = Color(0xFF3CD1BE)
     val nightWarmOrange = Color(0xFFFFB37A)
     // Accent stays punchy on black (theme.css §"keep accents punchy on black").
-    val nightAccent = Color(0xFF8B7EE8)
-    val nightAccentSoft = Color(0xFFA99EF0)
-    val nightAccentDeep = Color(0xFF6C5CE0)
+    val nightAccent = Color(0xFF7B6BE0)
+    val nightAccentSoft = Color(0xFF9B8FF0)
+    val nightAccentDeep = Color(0xFF5B41D5)
     val nightAccentTint = Color(0xFF15141C) // violet-tinted near-black card canvas
     val nightInk = Color(0xFFF4F4F6)
     val nightInk2 = Color(0xFFB9BCC4)
