@@ -3,7 +3,9 @@ package com.littlebridge.enrollplus.ui.v2.screens.school
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -42,6 +44,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -53,12 +58,14 @@ import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolClassDto
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsState
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel
+import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersState
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.StaffRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StaffViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterState
 import com.littlebridge.enrollplus.feature.admin.presentation.StudentRosterViewModel
+import com.littlebridge.enrollplus.feature.parent.presentation.NotificationsViewModel
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.compose.rememberFileSaverLauncher
 import io.github.vinceglb.filekit.core.PickerMode
@@ -117,6 +124,7 @@ private enum class PeopleSubTab {
 fun SchoolPeopleScreenV2(
     modifier: Modifier = Modifier,
     onOpenLinkRequests: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
     onOpenStudent: (String) -> Unit = {},
     onOpenTeacher: (String) -> Unit = {},
     // RA-TAM — overflow "Assign classes" opens the reusable assignment module.
@@ -130,6 +138,8 @@ fun SchoolPeopleScreenV2(
     studentsViewModel: StudentRosterViewModel = koinViewModel(),
     staffViewModel: StaffViewModel = koinViewModel(),
     classesViewModel: ClassesSubjectsViewModel = koinViewModel(),
+    dashboardViewModel: SchoolDashboardViewModel = koinViewModel(),
+    notificationsViewModel: NotificationsViewModel = koinViewModel(),
     teacherRefreshKey: Int,
     studentRefreshKey: Int,
 ) {
@@ -137,6 +147,8 @@ fun SchoolPeopleScreenV2(
     val studentsState by studentsViewModel.state.collectAsStateV2()
     val staffState by staffViewModel.state.collectAsStateV2()
     val classesState by classesViewModel.state.collectAsStateV2()
+    val dashboardState by dashboardViewModel.state.collectAsStateV2()
+    val notificationsState by notificationsViewModel.state.collectAsStateV2()
 
     LaunchedEffect(teacherRefreshKey){
         teachersViewModel.load()
@@ -171,6 +183,11 @@ fun SchoolPeopleScreenV2(
         onAddStaff = staffViewModel::addStaff,
         onClearStaffMessages = staffViewModel::clearMessages,
         onOpenLinkRequests = onOpenLinkRequests,
+        onOpenNotifications = onOpenNotifications,
+        adminName = dashboardState.overview?.header?.adminName?.takeIf { it.isNotBlank() }
+            ?: dashboardState.adminName,
+        greeting = dashboardState.overview?.header?.greeting.orEmpty(),
+        unreadNotificationCount = notificationsState.unreadCount,
         onOpenStudent = onOpenStudent,
         onOpenTeacher = onOpenTeacher,
         onAssignClasses = onAssignClasses,
@@ -204,6 +221,10 @@ private fun SchoolPeopleContent(
     onAddStaff: (name: String, role: String, department: String, phone: String, email: String, onAdded: (() -> Unit)?) -> Unit,
     onClearStaffMessages: () -> Unit,
     onOpenLinkRequests: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    adminName: String,
+    greeting: String,
+    unreadNotificationCount: Int,
     onOpenStudent: (String) -> Unit,
     onOpenTeacher: (String) -> Unit,
     onAssignClasses: (String) -> Unit,
