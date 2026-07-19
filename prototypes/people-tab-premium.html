@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Enroll+ — People Tab Premium Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="people-tab-premium.css">
 </head>
 <body>
@@ -59,25 +62,58 @@
     </div>
     <div class="list">
       <div class="card" onclick="showView('view-teacher-profile')">
-        <div class="tr"><div class="av av-violet">PS</div><div class="info"><div class="nm">Priya Sharma</div><div class="sub">Mathematics · Grades 9–12 · Senior Teacher</div><div class="bgs"><span class="badge success"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Active</span><span class="badge accent">12 yrs exp</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call" onclick="alert('Calling Priya…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message" onclick="alert('Message Priya…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="act-btn act-assign" onclick="showView('view-teacher-assignments')" title="Assign classes"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av violet">PS</div>
+          <div class="info"><div class="nm-row"><div class="status-dot active"></div><div class="nm">Priya Sharma</div></div><div class="sub">Mathematics · Senior Teacher · 12 yrs</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag violet">Math</span><span class="subj-tag teal">Physics</span><span class="subj-tag sky">Statistics</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><b>142</b> students</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><b>6</b> classes</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><b>94%</b> att.</div><div class="rating"><svg viewBox="0 0 24 24"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.9</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">142</div><div class="metric-lbl">Students</div></div>
+          <div class="metric"><div class="metric-val">6</div><div class="metric-lbl">Classes</div></div>
+          <div class="metric"><div class="metric-val accent">94%</div><div class="metric-lbl">Attendance</div></div>
+          <div class="metric"><div class="metric-val">4.9</div><div class="metric-lbl">Rating</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag violet"><span class="tag-dot"></span>Math</span><span class="subj-tag teal"><span class="tag-dot"></span>Physics</span><span class="subj-tag sky"><span class="tag-dot"></span>Statistics</span></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling Priya…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+          <button class="act-link" onclick="alert('Message Priya…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+          <button class="act-link" onclick="showView('view-teacher-assignments')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Assign</button>
+        </div>
       </div>
       <div class="card" onclick="showView('view-teacher-profile')">
-        <div class="tr"><div class="av av-mint">RK</div><div class="info"><div class="nm">Rahul Verma</div><div class="sub">Physics · Grades 10–12 · Teacher</div><div class="bgs"><span class="badge success"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Active</span><span class="badge teal">8 yrs exp</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call" onclick="alert('Calling Rahul…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message" onclick="alert('Message Rahul…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="act-btn act-assign" onclick="showView('view-teacher-assignments')" title="Assign classes"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av teal">RK</div>
+          <div class="info"><div class="nm-row"><div class="status-dot active"></div><div class="nm">Rahul Verma</div></div><div class="sub">Physics · Teacher · 8 yrs</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag teal">Physics</span><span class="subj-tag sky">Chemistry</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><b>98</b> students</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><b>4</b> classes</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><b>91%</b> att.</div><div class="rating"><svg viewBox="0 0 24 24"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.6</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">98</div><div class="metric-lbl">Students</div></div>
+          <div class="metric"><div class="metric-val">4</div><div class="metric-lbl">Classes</div></div>
+          <div class="metric"><div class="metric-val teal">91%</div><div class="metric-lbl">Attendance</div></div>
+          <div class="metric"><div class="metric-val">4.6</div><div class="metric-lbl">Rating</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag teal"><span class="tag-dot"></span>Physics</span><span class="subj-tag sky"><span class="tag-dot"></span>Chemistry</span></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling Rahul…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+          <button class="act-link" onclick="alert('Message Rahul…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+          <button class="act-link" onclick="showView('view-teacher-assignments')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Assign</button>
+        </div>
       </div>
       <div class="card" onclick="showView('view-teacher-profile')">
-        <div class="tr"><div class="av av-gold">AN</div><div class="info"><div class="nm">Anita Nair</div><div class="sub">English · Grades 6–10 · Teacher</div><div class="bgs"><span class="badge warning"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>On leave</span><span class="badge peach">Returns Mar 15</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call" onclick="alert('Calling Anita…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message" onclick="alert('Message Anita…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="act-btn act-assign" onclick="showView('view-teacher-assignments')" title="Assign classes"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av gold">AN</div>
+          <div class="info"><div class="nm-row"><div class="status-dot leave"></div><div class="nm">Anita Nair</div></div><div class="sub">English · Teacher · On leave until Mar 15</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag peach">English</span><span class="subj-tag violet">Literature</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><b>120</b> students</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><b>5</b> classes</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><b>87%</b> att.</div><div class="rating"><svg viewBox="0 0 24 24"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.7</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">120</div><div class="metric-lbl">Students</div></div>
+          <div class="metric"><div class="metric-val">5</div><div class="metric-lbl">Classes</div></div>
+          <div class="metric"><div class="metric-val gold">87%</div><div class="metric-lbl">Attendance</div></div>
+          <div class="metric"><div class="metric-val">4.7</div><div class="metric-lbl">Rating</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag peach"><span class="tag-dot"></span>English</span><span class="subj-tag violet"><span class="tag-dot"></span>Literature</span></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling Anita…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+          <button class="act-link" onclick="alert('Message Anita…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+          <button class="act-link" onclick="showView('view-teacher-assignments')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Assign</button>
+        </div>
       </div>
     </div>
     <div class="load-more"><button onclick="this.textContent='Loading…'">Load more</button></div>
@@ -106,25 +142,52 @@
     </div>
     <div class="list">
       <div class="card" onclick="showView('view-student-profile')">
-        <div class="tr"><div class="av av-sky">AS</div><div class="info"><div class="nm">Aarav Singh</div><div class="sub">Class 10-A · Roll 05 · Sec A</div><div class="bgs"><span class="badge success"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Active</span><span class="badge accent">85% avg</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call parent" onclick="alert('Calling parent…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message parent" onclick="alert('Messaging parent…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av sky">AS</div>
+          <div class="info"><div class="nm-row"><div class="status-dot active"></div><div class="nm">Aarav Singh</div></div><div class="sub">Class 10-A · Roll 05 · STU2024001</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag violet">Math 92</span><span class="subj-tag teal">Physics 88</span><span class="subj-tag sky">English 85</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>STU2024001</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><b>92%</b> att.</div><div class="mi" style="color:var(--success-ink)"><svg viewBox="0 0 24 24" style="stroke:var(--success-ink)"><path d="M20 6 9 17l-5-5"/></svg>Fees paid</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">85%</div><div class="metric-lbl">Average</div></div>
+          <div class="metric"><div class="metric-val sky">92%</div><div class="metric-lbl">Attendance</div></div>
+          <div class="metric"><div class="metric-val"><span class="fee-dot paid" style="display:inline-block;margin-right:4px"></span>Paid</div><div class="metric-lbl">Fees</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag score-hi"><span class="tag-dot"></span>Math 92</span><span class="subj-tag score-hi"><span class="tag-dot"></span>Physics 88</span><span class="subj-tag score-hi"><span class="tag-dot"></span>English 85</span></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling parent…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call Parent</button>
+          <button class="act-link" onclick="alert('Messaging parent…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+        </div>
       </div>
       <div class="card" onclick="showView('view-student-profile')">
-        <div class="tr"><div class="av av-peach">DP</div><div class="info"><div class="nm">Diya Patel</div><div class="sub">Class 9-B · Roll 12 · Sec B</div><div class="bgs"><span class="badge success"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Active</span><span class="badge accent">New</span><span class="badge sky">78% avg</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call parent" onclick="alert('Calling parent…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message parent" onclick="alert('Messaging parent…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av peach">DP</div>
+          <div class="info"><div class="nm-row"><div class="status-dot active"></div><div class="nm">Diya Patel</div></div><div class="sub">Class 9-B · Roll 12 · STU2024015 · New</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag peach">Math 75</span><span class="subj-tag violet">Science 82</span><span class="subj-tag teal">English 78</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>STU2024015</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><b>88%</b> att.</div><div class="mi" style="color:var(--warning-ink)"><svg viewBox="0 0 24 24" style="stroke:var(--warning-ink)"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Fees pending</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">78%</div><div class="metric-lbl">Average</div></div>
+          <div class="metric"><div class="metric-val">88%</div><div class="metric-lbl">Attendance</div></div>
+          <div class="metric"><div class="metric-val warning"><span class="fee-dot pending" style="display:inline-block;margin-right:4px"></span>Pending</div><div class="metric-lbl">Fees</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag score-mid"><span class="tag-dot"></span>Math 75</span><span class="subj-tag score-mid"><span class="tag-dot"></span>Science 82</span><span class="subj-tag score-mid"><span class="tag-dot"></span>English 78</span></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling parent…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call Parent</button>
+          <button class="act-link" onclick="alert('Messaging parent…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+        </div>
       </div>
       <div class="card" onclick="showView('view-student-profile')">
-        <div class="tr"><div class="av av-violet">VK</div><div class="info"><div class="nm">Vihaan Kapoor</div><div class="sub">Class 12-A · Roll 01 · Sec A</div><div class="bgs"><span class="badge neutral">Inactive</span><span class="badge peach">72% avg</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call parent" onclick="alert('Calling parent…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message parent" onclick="alert('Messaging parent…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av violet">VK</div>
+          <div class="info"><div class="nm-row"><div class="status-dot inactive"></div><div class="nm">Vihaan Kapoor</div></div><div class="sub">Class 12-A · Roll 01 · STU2024003</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag sky">Math 68</span><span class="subj-tag peach">Physics 75</span><span class="subj-tag teal">Chem 72</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>STU2024003</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><b>76%</b> att.</div><div class="mi" style="color:var(--danger-ink)"><svg viewBox="0 0 24 24" style="stroke:var(--danger-ink)"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Fees overdue</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">72%</div><div class="metric-lbl">Average</div></div>
+          <div class="metric"><div class="metric-val">76%</div><div class="metric-lbl">Attendance</div></div>
+          <div class="metric"><div class="metric-val danger"><span class="fee-dot overdue" style="display:inline-block;margin-right:4px"></span>Overdue</div><div class="metric-lbl">Fees</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag score-lo"><span class="tag-dot"></span>Math 68</span><span class="subj-tag score-mid"><span class="tag-dot"></span>Physics 75</span><span class="subj-tag score-mid"><span class="tag-dot"></span>Chem 72</span></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling parent…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call Parent</button>
+          <button class="act-link" onclick="alert('Messaging parent…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+        </div>
       </div>
     </div>
   </div>
@@ -142,25 +205,55 @@
     </div>
     <div class="list">
       <div class="card" onclick="showView('view-staff-profile')">
-        <div class="tr"><div class="av av-peach">MJ</div><div class="info"><div class="nm">Meena Joshi</div><div class="sub">Librarian · Administration</div><div class="bgs"><span class="badge success"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Active</span><span class="badge peach">4 yrs svc</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call" onclick="alert('Calling Meena…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message" onclick="alert('Messaging Meena…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av peach">MJ</div>
+          <div class="info"><div class="nm-row"><div class="status-dot active"></div><div class="nm">Meena Joshi</div></div><div class="sub">Librarian · Administration · 4 yrs</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag peach">Library</span><span class="subj-tag violet">Admin</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>+91 98765 43210</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>meena@school.edu</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">4</div><div class="metric-lbl">Years</div></div>
+          <div class="metric"><div class="metric-val">FT</div><div class="metric-lbl">Status</div></div>
+          <div class="metric"><div class="metric-val">1,240</div><div class="metric-lbl">Books Mgd</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag peach"><span class="tag-dot"></span>Library</span><span class="subj-tag violet"><span class="tag-dot"></span>Admin</span></div>
+        <div class="contact-row"><div class="contact-item"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>+91 98765 43210</div><div class="contact-item"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>meena@school.edu</div></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling Meena…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+          <button class="act-link" onclick="alert('Messaging Meena…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+        </div>
       </div>
       <div class="card" onclick="showView('view-staff-profile')">
-        <div class="tr"><div class="av av-sky">RT</div><div class="info"><div class="nm">Rajesh Tiwari</div><div class="sub">Accountant · Finance</div><div class="bgs"><span class="badge success"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Active</span><span class="badge sky">6 yrs svc</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call" onclick="alert('Calling Rajesh…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message" onclick="alert('Messaging Rajesh…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av sky">RT</div>
+          <div class="info"><div class="nm-row"><div class="status-dot active"></div><div class="nm">Rajesh Tiwari</div></div><div class="sub">Accountant · Finance · 6 yrs</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag sky">Finance</span><span class="subj-tag teal">Accounts</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>+91 99876 54321</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>rajesh@school.edu</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">6</div><div class="metric-lbl">Years</div></div>
+          <div class="metric"><div class="metric-val">FT</div><div class="metric-lbl">Status</div></div>
+          <div class="metric"><div class="metric-val">₹4.2L</div><div class="metric-lbl">This Month</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag sky"><span class="tag-dot"></span>Finance</span><span class="subj-tag teal"><span class="tag-dot"></span>Accounts</span></div>
+        <div class="contact-row"><div class="contact-item"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>+91 99876 54321</div><div class="contact-item"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>rajesh@school.edu</div></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling Rajesh…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+          <button class="act-link" onclick="alert('Messaging Rajesh…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+        </div>
       </div>
       <div class="card" onclick="showView('view-staff-profile')">
-        <div class="tr"><div class="av av-mint">SK</div><div class="info"><div class="nm">Suresh Kumar</div><div class="sub">Transport Coordinator · Operations</div><div class="bgs"><span class="badge success"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Active</span><span class="badge teal">9 yrs svc</span></div></div>
-          <div class="acts" onclick="event.stopPropagation()"><div class="act-btn act-call" title="Call" onclick="alert('Calling Suresh…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="act-btn act-msg" title="Message" onclick="alert('Messaging Suresh…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div></div>
+        <div class="tr">
+          <div class="av mint">SK</div>
+          <div class="info"><div class="nm-row"><div class="status-dot active"></div><div class="nm">Suresh Kumar</div></div><div class="sub">Transport Coordinator · Operations · 9 yrs</div></div>
         </div>
-        <div class="subj-tags"><span class="subj-tag teal">Transport</span><span class="subj-tag sky">Logistics</span></div>
-        <div class="br"><div class="mi"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>+91 98765 99999</div><div class="mi"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>suresh@school.edu</div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">9</div><div class="metric-lbl">Years</div></div>
+          <div class="metric"><div class="metric-val">FT</div><div class="metric-lbl">Status</div></div>
+          <div class="metric"><div class="metric-val">12</div><div class="metric-lbl">Routes</div></div>
+        </div>
+        <div class="subj-tags"><span class="subj-tag teal"><span class="tag-dot"></span>Transport</span><span class="subj-tag sky"><span class="tag-dot"></span>Logistics</span></div>
+        <div class="contact-row"><div class="contact-item"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>+91 98765 99999</div><div class="contact-item"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>suresh@school.edu</div></div>
+        <div class="acts" onclick="event.stopPropagation()">
+          <button class="act-link" onclick="alert('Calling Suresh…')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+          <button class="act-link" onclick="alert('Messaging Suresh…')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message</button>
+        </div>
       </div>
       <div class="load-more"><button onclick="this.textContent='Loading…'">Load more</button></div>
     </div>

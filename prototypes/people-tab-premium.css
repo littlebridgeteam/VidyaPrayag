@@ -36,7 +36,8 @@
   --sh-btn:0 3px 8px rgba(91,65,213,.25);
   --sh-float:0 4px 12px rgba(91,65,213,.15);
   /* Typography */
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;
+  --font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'DM Mono','SF Mono','Cascadia Code',monospace;
   --t:240ms cubic-bezier(.4,0,.2,1);
 }
 /* ── Global reset + NO scrollbars anywhere ── */
@@ -172,56 +173,100 @@ body{font-family:var(--font);background:#E8E4F0;color:var(--ink);line-height:1.5
 /* ── Card list ── */
 .list{padding:6px 24px 20px;display:flex;flex-direction:column;gap:12px}
 
-/* ── Premium person card ── */
-.card{background:var(--card);border-radius:var(--r-card);padding:16px;box-shadow:var(--sh-card);cursor:pointer;transition:var(--t);border:1px solid var(--hairline);position:relative;overflow:hidden}
-.card:hover{box-shadow:var(--sh-lift);transform:translateY(-1px)}
-.card:active{transform:scale(.99)}
+/* ── Person card — Enroll+ design system ── */
+.card{
+  background:var(--card);
+  border:1px solid var(--hairline);
+  border-radius:var(--r-card);
+  padding:16px;
+  cursor:pointer;
+  box-shadow:var(--sh-card);
+}
+.card:hover{box-shadow:var(--sh-lift);border-color:rgba(38,35,77,.10)}
 
+/* Head row */
 .card .tr{display:flex;align-items:center;gap:12px}
-.av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:.5px;box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--hairline),0 4px 10px rgba(38,35,77,.10)}
+.av{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;font-weight:500;color:#fff;
+  letter-spacing:0;
+}
+.av.violet{background:var(--accent)}
+.av.teal{background:var(--teal)}
+.av.sky{background:var(--sky)}
+.av.peach{background:var(--peach)}
+.av.gold{background:#B45309}
+.av.mint{background:var(--teal-deep)}
+
 .card .info{flex:1;min-width:0}
-.card .info .nm{font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card .info .sub{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.card .bgs{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.card .nm-row{display:flex;align-items:center;gap:7px}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.status-dot.active{background:var(--success-ink)}
+.status-dot.leave{background:var(--warning-ink)}
+.status-dot.inactive{background:var(--ink-3)}
+.card .nm{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .sub{font-size:13px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── Badges ── */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-size:10px;font-weight:700;border-radius:var(--r-pill)}
-.badge svg{width:10px;height:10px;stroke:currentColor;stroke-width:2.5;fill:none}
-.badge.success{color:var(--success-ink);background:var(--success-soft)}
-.badge.warning{color:var(--warning-ink);background:var(--warning-soft)}
-.badge.neutral{color:var(--ink-3);background:var(--surface)}
-.badge.accent{color:var(--accent-deep);background:var(--accent-tint)}
-.badge.danger{color:var(--danger-ink);background:var(--danger-soft)}
-.badge.teal{color:var(--teal-deep);background:var(--teal-soft)}
-.badge.sky{color:#4A6BD8;background:var(--sky-soft)}
-.badge.peach{color:#C04A20;background:var(--peach-soft)}
+/* Metric strip */
+.card .metrics{
+  display:flex;margin-top:14px;padding-top:14px;
+  border-top:1px solid var(--hairline);
+}
+.card .metric{flex:1;padding:0 10px;border-right:1px solid var(--hairline)}
+.card .metric:first-child{padding-left:0}
+.card .metric:last-child{padding-right:0;border-right:none}
+.metric-val{
+  font-family:var(--mono);
+  font-size:15px;font-weight:500;color:var(--ink);
+  font-variant-numeric:tabular-nums;letter-spacing:-.2px;line-height:1.2;
+}
+.metric-val.accent{color:var(--accent)}
+.metric-val.teal{color:var(--teal-deep)}
+.metric-val.gold{color:#B45309}
+.metric-val.success{color:var(--success-ink)}
+.metric-val.warning{color:var(--warning-ink)}
+.metric-val.danger{color:var(--danger-ink)}
+.metric-lbl{
+  font-size:10px;font-weight:600;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:.08em;margin-top:3px;
+}
 
-/* ── Card stats row (mini KPIs inside cards) ── */
-.card .br{display:flex;align-items:center;gap:14px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline);flex-wrap:wrap}
-.mi{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);font-weight:500}
-.mi svg{width:13px;height:13px;stroke:var(--ink-3);stroke-width:2;fill:none}
-.mi b{color:var(--ink);font-weight:700}
-/* ── Action buttons (phone, message, assign) — circular, top row ── */
-.card .acts{display:flex;gap:8px;flex-shrink:0;align-self:flex-start}
-.act-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--hairline);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--t)}
-.act-btn:hover{background:var(--accent-tint);border-color:var(--accent-soft)}
-.act-btn:active{transform:scale(.92)}
-.act-btn svg{width:16px;height:16px;stroke:var(--ink-2);stroke-width:2;fill:none}
-.act-btn.act-call:hover svg{stroke:var(--teal-deep)}
-.act-btn.act-msg:hover svg{stroke:var(--accent)}
-.act-btn.act-assign:hover svg{stroke:var(--accent)}
+/* Subject tags */
+.card .subj-tags{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.subj-tag{
+  font-size:11px;font-weight:600;padding:3px 9px;
+  border-radius:6px;display:inline-flex;align-items:center;gap:5px;
+}
+.subj-tag .tag-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.subj-tag.violet{color:var(--accent-deep);background:rgba(91,65,213,.07)}.subj-tag.violet .tag-dot{background:var(--accent)}
+.subj-tag.teal{color:var(--teal-deep);background:var(--teal-soft)}.subj-tag.teal .tag-dot{background:var(--teal)}
+.subj-tag.sky{color:#4A6BD8;background:var(--sky-soft)}.subj-tag.sky .tag-dot{background:var(--sky)}
+.subj-tag.peach{color:#C04A20;background:var(--peach-soft)}.subj-tag.peach .tag-dot{background:var(--peach)}
+.subj-tag.score-hi{color:var(--success-ink);background:var(--success-soft)}.subj-tag.score-hi .tag-dot{background:var(--success-ink)}
+.subj-tag.score-mid{color:var(--warning-ink);background:var(--warning-soft)}.subj-tag.score-mid .tag-dot{background:var(--warning-ink)}
+.subj-tag.score-lo{color:var(--danger-ink);background:var(--danger-soft)}.subj-tag.score-lo .tag-dot{background:var(--danger-ink)}
 
-/* ── Card accent strip (subject tag with color) ── */
-.card .subj-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.subj-tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:var(--r-pill);letter-spacing:.2px}
-.subj-tag.violet{color:var(--accent-deep);background:var(--accent-tint)}
-.subj-tag.teal{color:var(--teal-deep);background:var(--teal-soft)}
-.subj-tag.sky{color:#4A6BD8;background:var(--sky-soft)}
-.subj-tag.peach{color:#C04A20;background:var(--peach-soft)}
+/* Fee status inline */
+.fee-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.fee-dot.paid{background:var(--success-ink)}
+.fee-dot.pending{background:var(--warning-ink)}
+.fee-dot.overdue{background:var(--danger-ink)}
 
-/* ── Card rating chip ── */
-.card .rating{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--warning-ink)}
-.card .rating svg{width:13px;height:13px;fill:var(--warning);stroke:none}
+/* Contact row (staff) */
+.card .contact-row{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.contact-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.contact-item svg{width:13px;height:13px;stroke:var(--ink-3);stroke-width:2;fill:none}
+
+/* Action row */
+.card .acts{display:flex;gap:0;margin-top:14px;padding-top:14px;border-top:1px solid var(--hairline)}
+.act-link{
+  font-size:13px;font-weight:600;color:var(--ink-2);
+  background:none;border:none;cursor:pointer;padding:0;margin-right:18px;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.act-link:hover{color:var(--accent)}
+.act-link svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
 
 /* ── Empty state ── */
 .empty{padding:60px 24px;text-align:center}

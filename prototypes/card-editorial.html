@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editorial / Notion-style Cards</title>
+<style>
+  :root {
+    --bg: #F7F6F3;
+    --card: #FFFFFF;
+    --border: #E8E6E1;
+    --ink: #1A1A1A;
+    --ink-2: #5C5C5C;
+    --ink-3: #9A9A9A;
+    --accent: #5B41D5;
+    --teal: #0D9488;
+    --gold: #B45309;
+    --success: #16A34A;
+    --warning: #D97706;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    --mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font); background: var(--bg); padding: 40px 20px; display: flex; justify-content: center; }
+  .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+  .label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+
+  /* ── Editorial card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px 16px 21px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 150ms ease;
+  }
+  .card:hover { border-color: #D0CDC8; }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0;
+    width: 3px; border-radius: 6px 0 0 6px;
+  }
+  .card.t-violet::before { background: var(--accent); }
+  .card.t-teal::before { background: var(--teal); }
+  .card.t-gold::before { background: var(--gold); }
+
+  .card-head { display: flex; align-items: flex-start; gap: 12px; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .avatar.violet { background: var(--accent); }
+  .avatar.teal { background: var(--teal); }
+  .avatar.gold { background: var(--gold); }
+
+  .identity { flex: 1; min-width: 0; }
+  .name { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -.1px; }
+  .sub { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
+  .sub em { font-style: normal; color: var(--ink); font-weight: 500; }
+
+  .actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity 150ms ease; }
+  .card:hover .actions { opacity: 1; }
+  .act-btn {
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .act-btn:hover { background: #F5F4F1; }
+  .act-btn svg { width: 14px; height: 14px; stroke: var(--ink-2); stroke-width: 2; fill: none; }
+
+  .metrics { display: flex; gap: 24px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .metric { display: flex; align-items: baseline; gap: 6px; }
+  .metric-lbl { font-size: 11px; color: var(--ink-3); font-family: var(--mono); letter-spacing: -.2px; }
+  .metric-val { font-size: 14px; font-weight: 600; color: var(--ink); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="label">Teachers · Editorial / Notion-style</div>
+
+    <div class="card t-violet">
+      <div class="card-head">
+        <div class="avatar violet">PS</div>
+        <div class="identity">
+          <div class="name">Priya Sharma</div>
+          <div class="sub">Mathematics — Senior Teacher</div>
+        </div>
+        <div class="actions">
+          <button class="act-btn"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+          <button class="act-btn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="metric-lbl">students</span><span class="metric-val">142</span></div>
+        <div class="metric"><span class="metric-lbl">classes</span><span class="metric-val">6</span></div>
+        <div class="metric"><span class="metric-lbl">att</span><span class="metric-val">94%</span></div>
+        <div class="metric"><span class="metric-lbl">exp</span><span class="metric-val">12y</span></div>
+        <div class="metric"><span class="metric-lbl">rating</span><span class="metric-val">4.9</span></div>
+      </div>
+    </div>
+
+    <div class="card t-teal">
+      <div class="card-head">
+        <div class="avatar teal">RK</div>
+        <div class="identity">
+          <div class="name">Rahul Verma</div>
+          <div class="sub">Physics — Teacher</div>
+        </div>
+        <div class="actions">
+          <button class="act-btn"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+          <button class="act-btn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="metric-lbl">students</span><span class="metric-val">98</span></div>
+        <div class="metric"><span class="metric-lbl">classes</span><span class="metric-val">4</span></div>
+        <div class="metric"><span class="metric-lbl">att</span><span class="metric-val">91%</span></div>
+        <div class="metric"><span class="metric-lbl">exp</span><span class="metric-val">8y</span></div>
+        <div class="metric"><span class="metric-lbl">rating</span><span class="metric-val">4.6</span></div>
+      </div>
+    </div>
+
+    <div class="card t-gold">
+      <div class="card-head">
+        <div class="avatar gold">AN</div>
+        <div class="identity">
+          <div class="name">Anita Nair</div>
+          <div class="sub">English — Teacher · <em>On leave until Mar 15</em></div>
+        </div>
+        <div class="actions">
+          <button class="act-btn"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+          <button class="act-btn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="metric-lbl">students</span><span class="metric-val">120</span></div>
+        <div class="metric"><span class="metric-lbl">classes</span><span class="metric-val">5</span></div>
+        <div class="metric"><span class="metric-lbl">att</span><span class="metric-val">87%</span></div>
+        <div class="metric"><span class="metric-lbl">rating</span><span class="metric-val">4.7</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
