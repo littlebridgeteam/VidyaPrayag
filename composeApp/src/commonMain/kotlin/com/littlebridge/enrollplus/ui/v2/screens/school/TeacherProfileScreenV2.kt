@@ -1,6 +1,8 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,12 +58,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
-import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonProfile
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
@@ -127,12 +128,17 @@ private fun TeacherProfileContent(
             skeleton = { SkeletonProfile() },
         ) {
             val profile = state.profile ?: return@VStateHost
-            TeacherProfileBody(profile, onOpenAssignments)
-            DangerZone(
-                isRemoving = state.isRemoving,
-                removeError = state.removeError,
-                onRequestRemove = { confirmRemove = true },
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+            ) {
+                TeacherProfileBody(profile, onOpenAssignments)
+                DangerZone(
+                    isRemoving = state.isRemoving,
+                    removeError = state.removeError,
+                    onRequestRemove = { confirmRemove = true },
+                )
+            }
         }
     }
 
@@ -261,7 +267,11 @@ private fun QuickActions(onOpenAssignments: () -> Unit) {
             ) {
                 IconChip(VIcons.GraduationCap, VColors.violet, size = 42.dp, iconSize = 20.dp)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(appString(StringKeys.SCH_ASSIGNMENTS), style = VTypography.h3, color = VColors.ink)
+                    Text(
+                        appString(StringKeys.SCH_ASSIGNMENTS),
+                        style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = VColors.ink,
+                    )
                     Text(appString(StringKeys.SCH_MANAGE_CLASSES_SUBJECTS), style = VTypography.caption, color = VColors.ink2)
                 }
                 Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(20.dp))
@@ -313,22 +323,36 @@ private fun PerformanceCard(profile: TeacherProfileDto) {
     Section(title = appString(StringKeys.SCH_PERFORMANCE)) {
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                PerformanceRow(appString(StringKeys.SCH_ATTENDANCE), profile.attendancePercent, VBadgeTone.Success)
-                PerformanceRow(appString(StringKeys.SCH_ASSIGNMENT_COMPLETION), profile.assignmentCompletionPercent, VBadgeTone.Accent)
-                PerformanceRow(appString(StringKeys.SCH_PARENT_SATISFACTION), profile.parentSatisfactionPercent, VBadgeTone.Warning)
+                PerformanceRow(appString(StringKeys.SCH_ATTENDANCE), profile.attendancePercent, Color(0xFFA8E6CF))
+                PerformanceRow(appString(StringKeys.SCH_ASSIGNMENT_COMPLETION), profile.assignmentCompletionPercent, AdminHomeTokens.Violet)
+                PerformanceRow(appString(StringKeys.SCH_PARENT_SATISFACTION), profile.parentSatisfactionPercent, Color(0xFFFFD4A3))
             }
         }
     }
 }
 
 @Composable
-private fun PerformanceRow(label: String, value: Float, tone: VBadgeTone) {
+private fun PerformanceRow(label: String, value: Float, color: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
             Text("${value.toInt()}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
         }
-        VProgressBar(value = value, tone = tone, height = 8.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(Color(0xFFF4F3FA)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth((value.coerceIn(0f, 100f)) / 100f)
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(color),
+            )
+        }
     }
 }
 
@@ -353,7 +377,13 @@ private fun PortfolioCard(assignment: TeacherAssignmentDto) {
     VCard(modifier = Modifier.width(180.dp), padding = 16.dp) {
         IconChip(VIcons.BookOpen, VColors.sky, size = 36.dp, iconSize = 18.dp, background = VColors.skySoft)
         Spacer(Modifier.height(12.dp))
-        Text(assignment.subject, style = VTypography.h3, color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            assignment.subject,
+            style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+            color = VColors.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Text(
             appString(StringKeys.SCH_CLASS_SECTION_LABEL, "className" to assignment.className, "section" to assignment.section),
             style = VTypography.caption,
@@ -458,7 +488,13 @@ private fun AchievementCard(achievement: TeacherAchievementDto, index: Int) {
     VCard(modifier = Modifier.width(200.dp), padding = 16.dp) {
         IconChip(VIcons.Star, tint, size = 40.dp, iconSize = 20.dp)
         Spacer(Modifier.height(10.dp))
-        Text(achievement.title, style = VTypography.h3, color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            achievement.title,
+            style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
+            color = VColors.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Text(achievement.description, style = VTypography.caption, color = VColors.ink3, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -498,24 +534,42 @@ private fun DetailDivider() {
 
 @Composable
 private fun DangerZone(isRemoving: Boolean, removeError: String?, onRequestRemove: () -> Unit) {
-    VCard(padding = 16.dp, background = VColors.white) {
+    VCard(
+        modifier = Modifier.border(1.dp, VColors.errorSoft, RoundedCornerShape(16.dp)),
+        padding = 16.dp,
+        background = VColors.white,
+    ) {
         Text("DANGER ZONE", style = VTypography.label.copy(fontWeight = FontWeight.Bold), color = VColors.error)
         Spacer(Modifier.height(8.dp))
-        Text(appString(StringKeys.SCH_REMOVE_TEACHER_DANGER), style = VTypography.caption, color = VColors.ink2)
+        Text(
+            "Removing this teacher will unassign all classes and revoke access. This cannot be undone.",
+            style = VTypography.caption,
+            color = VColors.ink2,
+        )
         removeError?.let {
             Spacer(Modifier.height(8.dp))
             Text(it, style = VTypography.caption, color = VColors.error)
         }
         Spacer(Modifier.height(12.dp))
-        VButton(
-            text = appString(StringKeys.SCH_REMOVE_TEACHER),
-            onClick = onRequestRemove,
-            variant = VButtonVariant.Destructive,
-            full = true,
-            loading = isRemoving,
-            enabled = !isRemoving,
-            leading = { Icon(VIcons.Close, contentDescription = null, modifier = Modifier.size(16.dp)) },
-        )
+        val shape = RoundedCornerShape(12.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .clip(shape)
+                .border(1.dp, VColors.error, shape)
+                .clickable(enabled = !isRemoving, onClick = onRequestRemove),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Delete, contentDescription = null, tint = VColors.error, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                if (isRemoving) "Removing…" else "Remove Teacher",
+                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                color = VColors.error,
+            )
+        }
     }
 }
 

@@ -56,13 +56,9 @@ import com.littlebridge.enrollplus.ui.v2.components.VAvatar
 import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
-import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
-import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VTag
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.SkeletonDashboard
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
@@ -91,7 +87,6 @@ fun TeacherAssignmentManagementScreen(
         VBackHeader(
             title = "Assignment Management",
             onBack = onBack,
-            pinRouteId = "overlay_teacher_assignments",
         )
         AssignmentContent(
             state = state,
@@ -141,25 +136,30 @@ private fun AssignmentContent(
             skeleton = { SkeletonDashboard() },
         ) {
             val overview = state.overview ?: return@VStateHost
-            TeacherHero(overview)
-            AssignmentKpis(overview)
-            CurrentAssignments(
-                assignments = overview.assignments,
-                removingId = state.removingId,
-                onRequestRemove = { pendingRemoveId = it },
-            )
-            state.removeError?.let { Text(it, style = VTypography.caption, color = VColors.error) }
-            AddAssignmentCard(
-                state = state,
-                onSelectSubject = onSelectSubject,
-                onToggleClass = onToggleClass,
-                onToggleSection = onToggleSection,
-                onResetDraft = onResetDraft,
-                onSave = onSave,
-                onClearMessage = onClearMessage,
-            )
-            WorkloadInsights(overview.insights)
-            SubjectDistribution(overview)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+            ) {
+                TeacherHero(overview)
+                AssignmentKpis(overview)
+                CurrentAssignments(
+                    assignments = overview.assignments,
+                    removingId = state.removingId,
+                    onRequestRemove = { pendingRemoveId = it },
+                )
+                state.removeError?.let { Text(it, style = VTypography.caption, color = VColors.error) }
+                AddAssignmentCard(
+                    state = state,
+                    onSelectSubject = onSelectSubject,
+                    onToggleClass = onToggleClass,
+                    onToggleSection = onToggleSection,
+                    onResetDraft = onResetDraft,
+                    onSave = onSave,
+                    onClearMessage = onClearMessage,
+                )
+                WorkloadInsights(overview.insights)
+                SubjectDistribution(overview)
+            }
         }
     }
 
@@ -302,7 +302,13 @@ private fun AssignmentCard(
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(assignment.subject, style = VTypography.h3, color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    assignment.subject,
+                    style = VTypography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = VColors.ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Text(
                     appString(
                         StringKeys.SCH_CLASS_SECTION_LABEL,
@@ -371,11 +377,10 @@ private fun AddAssignmentCard(
                 FieldLabel("Subject")
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     options.subjects.forEach { subject ->
-                        VTag(
+                        AssignmentChoiceChip(
                             text = subject.name,
                             active = draft.subjectId == subject.subjectId ||
                                 (draft.subjectId == null && draft.subjectName == subject.name),
-                            accentActive = true,
                             onClick = { onSelectSubject(subject.subjectId, subject.name) },
                         )
                     }
@@ -385,10 +390,9 @@ private fun AddAssignmentCard(
                 FieldLabel("Classes")
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     options.classes.forEach { classOption ->
-                        VTag(
+                        AssignmentChoiceChip(
                             text = classOption.code.ifBlank { classOption.name },
                             active = classOption.classId in draft.selectedClassIds,
-                            accentActive = true,
                             onClick = { onToggleClass(classOption.classId) },
                         )
                     }
@@ -406,10 +410,9 @@ private fun AddAssignmentCard(
                 } else {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         availableSections.forEach { section ->
-                            VTag(
+                            AssignmentChoiceChip(
                                 text = section,
                                 active = section in draft.selectedSections,
-                                accentActive = true,
                                 onClick = { onToggleSection(section) },
                             )
                         }
@@ -453,30 +456,76 @@ private fun AddAssignmentCard(
 
                 Spacer(Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VButton(
+                    AssignmentActionButton(
                         text = "Reset",
                         onClick = {
                             onResetDraft()
                             onClearMessage()
                         },
                         modifier = Modifier.weight(1f),
-                        variant = VButtonVariant.Secondary,
+                        primary = false,
                         enabled = !state.isSaving,
-                        full = true,
                     )
-                    VButton(
-                        text = "Save Assignment",
+                    AssignmentActionButton(
+                        text = if (state.isSaving) "Saving…" else "Save\nAssignment",
                         onClick = onSave,
                         modifier = Modifier.weight(1f),
-                        tone = VButtonTone.Lavender,
-                        soft = false,
+                        primary = true,
                         enabled = !state.isSaving,
-                        loading = state.isSaving,
-                        full = true,
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AssignmentChoiceChip(text: String, active: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(999.dp)
+    Text(
+        text = text,
+        modifier = Modifier
+            .clip(shape)
+            .background(if (active) AdminHomeTokens.Violet else Color(0xFFF4F3FA))
+            .border(
+                width = 1.dp,
+                color = if (active) AdminHomeTokens.Violet else AdminHomeTokens.Line.copy(alpha = 0.55f),
+                shape = shape,
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+        color = if (active) Color.White else VColors.ink2,
+        maxLines = 1,
+    )
+}
+
+@Composable
+private fun AssignmentActionButton(
+    text: String,
+    onClick: () -> Unit,
+    primary: Boolean,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Box(
+        modifier = modifier
+            .height(52.dp)
+            .clip(shape)
+            .background(if (primary) AdminHomeTokens.Violet else Color.White)
+            .border(1.dp, if (primary) AdminHomeTokens.Violet else AdminHomeTokens.Line, shape)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            color = if (primary) Color.White else VColors.ink,
+            fontSize = 14.sp,
+            lineHeight = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
