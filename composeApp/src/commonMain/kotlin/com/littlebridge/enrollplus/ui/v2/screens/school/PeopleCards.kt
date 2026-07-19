@@ -1,5 +1,6 @@
 package com.littlebridge.enrollplus.ui.v2.screens.school
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,13 +10,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -34,6 +38,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -44,33 +50,60 @@ import coil3.compose.rememberAsyncImagePainter
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCardDto
 import com.littlebridge.enrollplus.feature.school.domain.model.StaffDto
 import com.littlebridge.enrollplus.feature.school.domain.model.StudentDto
+import com.littlebridge.enrollplus.feature.school.domain.model.TodayItemDto
 import com.littlebridge.enrollplus.ui.tokens.VColors
-import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import kotlin.math.roundToInt
 
-private val PeopleHairline = Color(0x0F26234D)
-private val SuccessInk = Color(0xFF1F7A4D)
-private val SuccessSoft = Color(0x3FA8E6CF)
-private val WarningInk = Color(0xFFB3651A)
-private val WarningSoft = Color(0x3FFFD4A3)
-private val SkyInk = Color(0xFF4A6BD8)
-private val SkySoft = Color(0x1F6C8DF5)
-private val TealInk = Color(0xFF006A60)
-private val TealSoft = Color(0x1F3CB9A9)
-private val PeachInk = Color(0xFFC04A20)
-private val PeachSoft = Color(0x1FFF8A65)
+// ─────────────────────────────────────────────────────────────────────────────
+//  People Tab — premium card system.
+//  1:1 translation of prototypes/people-tab-premium.{html,css}. Every dimension,
+//  colour and layout decision below is copied from that prototype and its
+//  matching screenshots; nothing is improvised.
+// ─────────────────────────────────────────────────────────────────────────────
 
-private enum class AvatarVariant { Violet, Peach, Sky, Mint, Gold }
+// ── Palette (mirrors :root in people-tab-premium.css) ──
+private val PplHairline = Color(0x0F26234D)          // rgba(38,35,77,.06) — navy @ 6%
+private val PplCard = VColors.white                  // --card:#FFFFFF
+private val PplInk = Color(0xFF1A1614)               // --ink
+private val PplInk2 = Color(0xFF5C544E)              // --ink-2
+private val PplInk3 = Color(0xFF8A8078)              // --ink-3
+private val PplAccent = Color(0xFF5B41D5)            // --accent
+private val PplAccentDeep = Color(0xFF4A30C4)        // --accent-deep
+private val PplAccentSoft = Color(0xFF7B6BE0)        // --accent-soft
+private val PplSurface = Color(0xFFF4F3FA)           // --surface / --accent-tint
+
+private val SuccessInk = Color(0xFF1F7A4D)           // --success-ink
+private val SuccessSoft = Color(0x40A8E6CF)          // rgba(168,230,207,.25)
+private val WarningInk = Color(0xFFB3651A)           // --warning-ink
+private val WarningSoft = Color(0x40FFD4A3)          // rgba(255,212,163,.25)
+private val DangerInk = Color(0xFFB3261E)            // --danger-ink
+private val DangerSoft = Color(0x33FFADA8)           // rgba(255,173,168,.2)
+
+private val TealCol = Color(0xFF3CB9A9)              // --teal
+private val TealInk = Color(0xFF006A60)              // --teal-deep
+private val TealSoft = Color(0x1F3CB9A9)             // rgba(60,185,169,.12)
+private val SkyCol = Color(0xFF6C8DF5)               // --sky
+private val SkyInk = Color(0xFF4A6BD8)
+private val SkySoft = Color(0x1F6C8DF5)              // rgba(108,141,245,.12)
+private val PeachCol = Color(0xFFFF8A65)             // --peach
+private val PeachInk = Color(0xFFC04A20)
+private val PeachSoft = Color(0x1FFF8A65)            // rgba(255,138,101,.12)
+private val VioletSoftFill = Color(0x125B41D5)       // rgba(91,65,213,.07)
+private val GoldCol = Color(0xFFB45309)              // .av.gold background
+
+// ── Avatar gradients (parent palette rotation, .av-* in css) ──
+private enum class AvatarVariant { Violet, Teal, Sky, Peach, Gold, Mint }
 
 private val AvatarVariant.gradient: Pair<Color, Color>
     get() = when (this) {
         AvatarVariant.Violet -> Color(0xFF7B6BE0) to Color(0xFF5B41D5)
-        AvatarVariant.Peach -> Color(0xFFFFB088) to Color(0xFFFF8A65)
+        AvatarVariant.Teal -> Color(0xFF5DD9C8) to Color(0xFF3CB9A9)
         AvatarVariant.Sky -> Color(0xFF8BA8F8) to Color(0xFF6C8DF5)
-        AvatarVariant.Mint -> Color(0xFF5DD9C8) to Color(0xFF3CB9A9)
+        AvatarVariant.Peach -> Color(0xFFFFB088) to Color(0xFFFF8A65)
         AvatarVariant.Gold -> Color(0xFFFFD040) to Color(0xFFFCB400)
+        AvatarVariant.Mint -> Color(0xFF5DD9C8) to Color(0xFF006A60)
     }
 
 private fun avatarVariantFor(key: String): AvatarVariant {
@@ -86,34 +119,42 @@ private fun initialsOf(name: String): String = name.trim().split(" ")
     .joinToString("")
     .ifEmpty { "?" }
 
+/** 42dp circular avatar — DM-Mono initials on a solid colour, matching `.av` in the prototype. */
 @Composable
-private fun GradientAvatar(name: String, photoUrl: String?, size: Dp = 48.dp) {
+private fun PplAvatar(name: String, photoUrl: String?, size: Dp = 42.dp) {
     val (start, end) = remember(name) { avatarVariantFor(name).gradient }
     Box(
         modifier = Modifier
-            .shadow(7.dp, CircleShape, ambientColor = Color(0x1A26234D))
             .size(size)
-            .border(2.dp, VColors.white, CircleShape)
-            .padding(2.dp)
             .clip(CircleShape)
             .background(Brush.linearGradient(listOf(start, end))),
         contentAlignment = Alignment.Center,
     ) {
-        Text(initialsOf(name), color = VColors.white, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(
+            initialsOf(name),
+            color = VColors.white,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            fontFamily = FontFamily.Monospace,
+        )
         if (!photoUrl.isNullOrBlank()) {
             val painter = rememberAsyncImagePainter(photoUrl)
-            val state by painter.state.collectAsStateV2()
-            if (state is AsyncImagePainter.State.Success) {
-                androidx.compose.foundation.Image(
+            val painterState by painter.state.collectAsStateV2()
+            if (painterState is AsyncImagePainter.State.Success) {
+                Image(
                     painter = painter,
                     contentDescription = name,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                 )
             }
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Link-requests banner (Students sub-tab) — `.link-banner`
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 internal fun LinkRequestsBanner(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -122,25 +163,36 @@ internal fun LinkRequestsBanner(count: Int, onClick: () -> Unit, modifier: Modif
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFF4F3FA), Color(0xFFEAE6FA))))
-            .border(1.dp, VColors.violet.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .background(Brush.linearGradient(listOf(PplSurface, Color(0xFFEAE6FA))))
+            .border(1.dp, PplAccent.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            )
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            Modifier.size(36.dp).shadow(5.dp, RoundedCornerShape(10.dp)).clip(RoundedCornerShape(10.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFF7B6BE0), VColors.violet))),
+            Modifier
+                .size(36.dp)
+                .shadow(5.dp, RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(10.dp))
+                .background(Brush.linearGradient(listOf(PplAccentSoft, PplAccent))),
             contentAlignment = Alignment.Center,
         ) { Icon(VIcons.Check, null, tint = VColors.white, modifier = Modifier.size(18.dp)) }
         Column(Modifier.weight(1f)) {
-            Text("$count pending link requests", color = Color(0xFF4A30C4), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Text("Tap to review parent–child approvals", color = Color(0xFF7B6BE0), fontSize = 11.sp)
+            Text("$count pending link requests", color = PplAccentDeep, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text("Tap to review parent\u2192child approvals", color = PplAccentSoft, fontSize = 12.sp)
         }
-        Icon(VIcons.ChevronRight, null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+        Icon(VIcons.ChevronRight, null, tint = PplAccent, modifier = Modifier.size(18.dp))
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Filter chips — `.frow` / `.fchip`
+// ─────────────────────────────────────────────────────────────────────────────
 
 internal data class FilterChipSpec(
     val label: String,
@@ -152,7 +204,11 @@ internal data class FilterChipSpec(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FilterChipRow(chips: List<FilterChipSpec>, modifier: Modifier = Modifier) {
-    FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(
+        modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         chips.forEach { FilterChip(it) }
     }
 }
@@ -167,34 +223,42 @@ private fun FilterChip(spec: FilterChipSpec) {
             modifier = Modifier
                 .shadow(2.dp, shape, ambientColor = Color(0x0D26234D))
                 .clip(shape)
-                .then(if (active) Modifier.background(VColors.violet) else Modifier.background(VColors.white).border(1.dp, PeopleHairline, shape))
+                .then(
+                    if (active) {
+                        Modifier.background(Brush.linearGradient(listOf(PplAccent, PplAccentSoft)))
+                    } else {
+                        Modifier.background(PplCard).border(1.dp, PplHairline, shape)
+                    },
+                )
                 .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { expanded = true }
-                .padding(horizontal = 12.dp, vertical = 7.dp),
+                .padding(horizontal = 14.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(spec.label, color = if (active) VColors.white else VColors.ink2, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(spec.label, color = if (active) VColors.white else PplInk2, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             Box(
-                Modifier.clip(CircleShape).background(if (active) Color.White.copy(alpha = 0.22f) else Color(0x1426234D))
+                Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (active) Color.White.copy(alpha = 0.25f) else Color(0x1426234D))
                     .padding(horizontal = 6.dp, vertical = 1.dp),
             ) {
                 Text(
                     (if (active) spec.selected.size else spec.options.size).toString(),
-                    color = if (active) VColors.white else VColors.ink2,
-                    fontSize = 9.sp,
+                    color = if (active) VColors.white else PplInk2,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                 )
             }
         }
-        DropdownMenu(expanded, { expanded = false }, modifier = Modifier.background(VColors.white, RoundedCornerShape(14.dp))) {
+        DropdownMenu(expanded, { expanded = false }, modifier = Modifier.background(PplCard, RoundedCornerShape(14.dp))) {
             if (spec.options.isEmpty()) {
-                DropdownMenuItem(text = { Text("No options", color = VColors.ink3) }, onClick = {}, enabled = false)
+                DropdownMenuItem(text = { Text("No options", color = PplInk3) }, onClick = {}, enabled = false)
             } else spec.options.forEach { option ->
                 val selected = option in spec.selected
                 DropdownMenuItem(
-                    text = { Text(option, color = if (selected) VColors.violet else VColors.ink, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
+                    text = { Text(option, color = if (selected) PplAccent else PplInk, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
                     onClick = { spec.onToggle(option); expanded = false },
-                    leadingIcon = { if (selected) Icon(VIcons.Check, null, tint = VColors.violet, modifier = Modifier.size(16.dp)) },
+                    leadingIcon = { if (selected) Icon(VIcons.Check, null, tint = PplAccent, modifier = Modifier.size(16.dp)) },
                 )
             }
         }
@@ -203,7 +267,12 @@ private fun FilterChip(spec: FilterChipSpec) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun ActiveFilterChips(selected: Set<String>, onRemove: (String) -> Unit, onClearAll: () -> Unit, modifier: Modifier = Modifier) {
+internal fun ActiveFilterChips(
+    selected: Set<String>,
+    onRemove: (String) -> Unit,
+    onClearAll: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     if (selected.isEmpty()) return
     FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         selected.forEach { value ->
@@ -212,83 +281,239 @@ internal fun ActiveFilterChips(selected: Set<String>, onRemove: (String) -> Unit
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Text(value, color = VColors.violet, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                Icon(VIcons.Close, "Remove $value", tint = VColors.violet, modifier = Modifier.size(11.dp))
+                Text(value, color = PplAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                Icon(VIcons.Close, "Remove $value", tint = PplAccent, modifier = Modifier.size(11.dp))
             }
         }
         Text("Clear all", color = VColors.coral, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable(onClick = onClearAll).padding(4.dp))
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Shared card primitives
+// ─────────────────────────────────────────────────────────────────────────────
+
+private enum class DotStatus { Active, Leave, Inactive }
+
+private fun statusDotFor(status: String): DotStatus = when {
+    status.contains("leave", true) || status.equals("on_leave", true) -> DotStatus.Leave
+    status.equals("active", true) || status.equals("available", true) -> DotStatus.Active
+    status.isBlank() -> DotStatus.Active
+    else -> DotStatus.Inactive
+}
+
+private val DotStatus.color: Color
+    get() = when (this) {
+        DotStatus.Active -> SuccessInk
+        DotStatus.Leave -> WarningInk
+        DotStatus.Inactive -> PplInk3
+    }
+
+/** Card container — `.card`: white bg, hairline border, 16dp radius, navy-tinted shadow, 16dp padding. */
 @Composable
-private fun CircularAction(icon: ImageVector, description: String, onClick: () -> Unit, enabled: Boolean = true) {
-    Box(
+private fun PersonCard(onClick: () -> Unit, content: @Composable () -> Unit) {
+    Column(
         modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(VColors.white)
-            .border(1.dp, PeopleHairline, CircleShape)
-            .then(if (enabled) Modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick) else Modifier),
-        contentAlignment = Alignment.Center,
+            .fillMaxWidth()
+            .shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x0D26234D), spotColor = Color(0x0D26234D))
+            .clip(RoundedCornerShape(16.dp))
+            .background(PplCard)
+            .border(1.dp, PplHairline, RoundedCornerShape(16.dp))
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
+            .padding(16.dp),
     ) {
-        Icon(icon, description, tint = VColors.ink2.copy(alpha = if (enabled) 1f else 0.3f), modifier = Modifier.size(16.dp))
+        content()
     }
 }
 
+/** Header row — 42dp avatar + status dot + name + subtitle. `.tr` / `.info`. */
 @Composable
-private fun StatusBadge(status: String) {
-    val active = status.equals("active", true) || status.equals("available", true)
-    val ink = if (active) SuccessInk else VColors.ink3
-    val fill = if (active) SuccessSoft else Color(0xFFF4F3FA)
+private fun CardHeader(
+    name: String,
+    photoUrl: String?,
+    status: String,
+    subtitle: String,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        PplAvatar(name, photoUrl)
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                Box(Modifier.size(7.dp).clip(CircleShape).background(statusDotFor(status).color))
+                Text(
+                    name,
+                    color = PplInk,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.2).sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                subtitle,
+                color = PplInk2,
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+private data class Metric(val value: String, val label: String, val valueColor: Color = PplInk)
+
+/** Metric strip — hairline-divided columns, DM-Mono values + 10sp uppercase labels. `.metrics`. */
+@Composable
+private fun MetricStrip(metrics: List<Metric>) {
+    Box(Modifier.fillMaxWidth().padding(top = 14.dp).height(1.dp).background(PplHairline))
     Row(
-        Modifier.clip(CircleShape).background(fill).padding(horizontal = 8.dp, vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .padding(top = 14.dp),
     ) {
-        if (active) Icon(VIcons.Check, null, tint = ink, modifier = Modifier.size(9.dp))
-        Text(status.ifBlank { "Active" }.lowercase().replaceFirstChar(Char::uppercase), color = ink, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        metrics.forEachIndexed { index, m ->
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(
+                        start = if (index == 0) 0.dp else 10.dp,
+                        end = if (index == metrics.lastIndex) 0.dp else 10.dp,
+                    ),
+            ) {
+                Text(
+                    m.value,
+                    color = m.valueColor,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = (-0.2).sp,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    m.label.uppercase(),
+                    color = PplInk3,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.8.sp,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+            }
+            if (index != metrics.lastIndex) {
+                Box(Modifier.fillMaxHeight().width(1.dp).background(PplHairline))
+            }
+        }
     }
 }
 
+private enum class TagTheme { Violet, Teal, Sky, Peach, ScoreHi, ScoreMid, ScoreLo }
+
+private val TagTheme.ink: Color
+    get() = when (this) {
+        TagTheme.Violet -> PplAccentDeep
+        TagTheme.Teal -> TealInk
+        TagTheme.Sky -> SkyInk
+        TagTheme.Peach -> PeachInk
+        TagTheme.ScoreHi -> SuccessInk
+        TagTheme.ScoreMid -> WarningInk
+        TagTheme.ScoreLo -> DangerInk
+    }
+
+private val TagTheme.fill: Color
+    get() = when (this) {
+        TagTheme.Violet -> VioletSoftFill
+        TagTheme.Teal -> TealSoft
+        TagTheme.Sky -> SkySoft
+        TagTheme.Peach -> PeachSoft
+        TagTheme.ScoreHi -> SuccessSoft
+        TagTheme.ScoreMid -> WarningSoft
+        TagTheme.ScoreLo -> DangerSoft
+    }
+
+private val TagTheme.dot: Color
+    get() = when (this) {
+        TagTheme.Violet -> PplAccent
+        TagTheme.Teal -> TealCol
+        TagTheme.Sky -> SkyCol
+        TagTheme.Peach -> PeachCol
+        TagTheme.ScoreHi -> SuccessInk
+        TagTheme.ScoreMid -> WarningInk
+        TagTheme.ScoreLo -> DangerInk
+    }
+
+/** `.subj-tag` — 11sp semibold, 6dp radius, coloured dot + text. */
 @Composable
-private fun Badge(text: String, ink: Color = Color(0xFF4A30C4), fill: Color = Color(0xFFF4F3FA)) {
-    Box(Modifier.clip(CircleShape).background(fill).padding(horizontal = 8.dp, vertical = 3.dp)) {
-        Text(text, color = ink, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+private fun SubjectTag(text: String, theme: TagTheme) {
+    Row(
+        Modifier.clip(RoundedCornerShape(6.dp)).background(theme.fill).padding(horizontal = 9.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Box(Modifier.size(5.dp).clip(CircleShape).background(theme.dot))
+        Text(text, color = theme.ink, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
-@Composable
-private fun SubjectTag(text: String, index: Int) {
-    val themes = listOf(
-        Color(0xFF4A30C4) to Color(0xFFF4F3FA),
-        TealInk to TealSoft,
-        SkyInk to SkySoft,
-        PeachInk to PeachSoft,
-    )
-    val (ink, fill) = themes[index % themes.size]
-    Badge(text, ink, fill)
-}
-
-@Composable
-private fun MiniMetric(icon: ImageVector, value: String, suffix: String = "", tint: Color = VColors.ink3) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(13.dp))
-        Text(value, color = if (tint == VColors.ink3) VColors.ink else tint, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        if (suffix.isNotBlank()) Text(suffix, color = tint, fontSize = 10.sp)
-    }
-}
-
-@Composable
-private fun PersonCard(content: @Composable () -> Unit) {
-    VCard(
-        modifier = Modifier.fillMaxWidth(),
-        padding = 16.dp,
-        shape = RoundedCornerShape(16.dp),
-        background = VColors.white,
-    ) { content() }
-}
+private val subjectPalette = listOf(TagTheme.Violet, TagTheme.Teal, TagTheme.Sky, TagTheme.Peach)
 
 @OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SubjectTagRow(tags: List<Pair<String, TagTheme>>) {
+    if (tags.isEmpty()) return
+    FlowRow(
+        Modifier.fillMaxWidth().padding(top = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) { tags.forEach { (text, theme) -> SubjectTag(text, theme) } }
+}
+
+/** Action row — hairline-separated text-link buttons (Call / Message / Assign). `.acts` / `.act-link`. */
+@Composable
+private fun ActionRow(actions: List<Triple<ImageVector, String, () -> Unit>>) {
+    Box(Modifier.fillMaxWidth().padding(top = 14.dp).height(1.dp).background(PplHairline))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        actions.forEach { (icon, label, onClick) ->
+            Row(
+                modifier = Modifier
+                    .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
+                    .padding(end = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Icon(icon, label, tint = PplInk2, modifier = Modifier.size(14.dp))
+                Text(label, color = PplInk2, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+/** Contact row (staff) — phone + email inline. `.contact-row`. */
+@Composable
+private fun ContactRow(items: List<Pair<ImageVector, String>>) {
+    if (items.isEmpty()) return
+    Row(
+        Modifier.fillMaxWidth().padding(top = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items.forEach { (icon, text) ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(icon, null, tint = PplInk3, modifier = Modifier.size(13.dp))
+                Text(text, color = PplInk2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Teacher card
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
 internal fun TeacherCard(
     teacher: TeacherCardDto,
@@ -299,49 +524,107 @@ internal fun TeacherCard(
     modifier: Modifier = Modifier,
 ) {
     val p = teacher.profile
-    Box(modifier.clickable(onClick = onViewProfile)) {
-        PersonCard {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GradientAvatar(p.name, p.avatarUrl)
-                Column(Modifier.weight(1f)) {
-                    Text(p.name, color = VColors.ink, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    val subtitle = (teacher.academicAssignment.subjects.take(1) + teacher.academicAssignment.grades.takeIf { it.isNotEmpty() }?.let { "Grades ${it.joinToString("–")}" }.orEmpty() + p.role)
-                        .filter(String::isNotBlank).joinToString(" · ")
-                    Text(subtitle, color = VColors.ink2, fontSize = 10.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Row(Modifier.padding(top = 5.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        StatusBadge(p.status)
-                        p.experience?.takeIf(String::isNotBlank)?.let { Badge(it) }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.Top) {
-                    CircularAction(VIcons.Phone, "Call teacher", onCall, !p.phone.isNullOrBlank())
-                    CircularAction(VIcons.Chat, "Message teacher", onMessage)
-                    CircularAction(VIcons.School, "Assign classes", onAssignClass, teacher.actions.canAssignClass)
-                }
-            }
-            if (teacher.academicAssignment.subjects.isNotEmpty()) {
-                FlowRow(
-                    Modifier.padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) { teacher.academicAssignment.subjects.forEachIndexed { index, subject -> SubjectTag(subject, index) } }
-            }
-            Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(1.dp).background(PeopleHairline))
-            Row(
-                Modifier.fillMaxWidth().padding(top = 11.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                MiniMetric(VIcons.Users, teacher.workload.totalStudents.toString(), "students")
-                MiniMetric(VIcons.School, teacher.workload.totalClasses.toString(), "classes")
-                MiniMetric(VIcons.Target, teacher.activity.attendancePercentage?.let { "$it%" } ?: "—", "att.")
-                p.rating?.let { MiniMetric(VIcons.Star, it.toString(), tint = WarningInk) }
-            }
+    val subtitle = listOf(
+        teacher.academicAssignment.subjects.firstOrNull().orEmpty(),
+        p.role,
+        p.experience?.takeIf(String::isNotBlank).orEmpty(),
+    ).filter(String::isNotBlank).joinToString(" \u00B7 ")
+
+    Box(modifier) {
+        PersonCard(onClick = onViewProfile) {
+            CardHeader(p.name, p.avatarUrl, p.status, subtitle)
+
+            val attendance = teacher.activity.attendancePercentage
+            val onLeave = statusDotFor(p.status) == DotStatus.Leave
+            MetricStrip(
+                listOf(
+                    Metric(teacher.workload.totalStudents.toString(), "Students"),
+                    Metric(teacher.workload.totalClasses.toString(), "Classes"),
+                    Metric(attendance?.let { "$it%" } ?: "\u2014", "Attendance", PplAccent),
+                    Metric(
+                        if (onLeave) "\u2014" else (p.rating?.toString() ?: "\u2014"),
+                        "PEWS",
+                        PplAccent,
+                    ),
+                ),
+            )
+
+            SubjectTagRow(
+                teacher.academicAssignment.subjects.mapIndexed { index, subject ->
+                    subject to subjectPalette[index % subjectPalette.size]
+                },
+            )
+
+            ActionRow(
+                buildList {
+                    add(Triple(VIcons.Phone, "Call", onCall))
+                    add(Triple(VIcons.Chat, "Message", onMessage))
+                    if (teacher.actions.canAssignClass) add(Triple(VIcons.School, "Assign", onAssignClass))
+                },
+            )
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+// ─────────────────────────────────────────────────────────────────────────────
+//  Student card
+// ─────────────────────────────────────────────────────────────────────────────
+
+private enum class FeeStatus(val label: String, val ink: Color, val fill: Color, val bar: Color, val progress: Float) {
+    Paid("Paid", SuccessInk, SuccessSoft, SuccessInk, 1f),
+    Pending("Pending", WarningInk, WarningSoft, WarningInk, 0.6f),
+}
+
+/** Fee section — `.fees` box from the student screenshots: rounded 10dp surface, status badge, 4dp bar. */
+@Composable
+private fun FeeSection(fee: FeeStatus) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(PplSurface)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("FEES", color = PplInk3, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp)
+            Box(Modifier.clip(RoundedCornerShape(6.dp)).background(fee.fill).padding(horizontal = 8.dp, vertical = 3.dp)) {
+                Text(fee.label, color = fee.ink, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp)
+                .height(4.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color(0x14000000)),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(fee.progress)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(fee.bar),
+            )
+        }
+    }
+}
+
+private fun tagThemeForColor(color: String): TagTheme = when (color.lowercase()) {
+    "green" -> TagTheme.ScoreHi
+    "red" -> TagTheme.ScoreLo
+    "yellow", "amber", "orange" -> TagTheme.ScoreMid
+    "sky", "blue" -> TagTheme.Sky
+    "teal" -> TagTheme.Teal
+    "peach" -> TagTheme.Peach
+    else -> TagTheme.Violet
+}
+
 @Composable
 internal fun StudentCard(
     student: StudentDto,
@@ -350,54 +633,51 @@ internal fun StudentCard(
     onMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.clickable(onClick = onOpen)) {
-        PersonCard {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GradientAvatar(student.fullName, student.profilePhotoUrl)
-                Column(Modifier.weight(1f)) {
-                    Text(student.fullName, color = VColors.ink, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        listOf("Class ${student.className}", "Roll ${student.rollNumber}", student.section.takeIf(String::isNotBlank)?.let { "Sec $it" }).filterNotNull().joinToString(" · "),
-                        color = VColors.ink2,
-                        fontSize = 10.5.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Row(Modifier.padding(top = 5.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        StatusBadge(student.status)
-                        if (student.isNewAdmission) Badge("New")
-                        student.homeworkPercent.takeIf { it > 0f }?.let { Badge("${it.roundToInt()}% avg", SkyInk, SkySoft) }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    CircularAction(VIcons.Phone, "Call parent", onCall, !student.parentPhone.isNullOrBlank())
-                    CircularAction(VIcons.Chat, "Message parent", onMessage, !student.parentUserId.isNullOrBlank())
-                }
-            }
-            val tags = student.todayItems.map { it.text }.filter(String::isNotBlank)
-            if (tags.isNotEmpty()) {
-                FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    tags.forEachIndexed { index, text -> SubjectTag(text, index) }
-                }
-            }
-            Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(1.dp).background(PeopleHairline))
-            Row(
-                Modifier.fillMaxWidth().padding(top = 11.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                MiniMetric(VIcons.School, student.studentCode.ifBlank { "—" })
-                MiniMetric(VIcons.Target, student.attendancePercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "—", "att.")
-                when {
-                    student.feesPending -> MiniMetric(VIcons.AlertCircle, "Fees pending", tint = WarningInk)
-                    else -> MiniMetric(VIcons.Check, "Fees paid", tint = SuccessInk)
-                }
-            }
+    val subtitle = buildList {
+        add("Class ${student.className}")
+        if (student.rollNumber.isNotBlank()) add("Roll ${student.rollNumber}")
+        if (student.studentCode.isNotBlank()) add(student.studentCode)
+        if (student.isNewAdmission) add("New")
+    }.joinToString(" \u00B7 ")
+
+    Box(modifier) {
+        PersonCard(onClick = onOpen) {
+            CardHeader(student.fullName, student.profilePhotoUrl, student.status, subtitle)
+
+            val avg = student.homeworkPercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
+            val att = student.attendancePercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
+            val classLabel = listOf(student.className, student.section.takeIf(String::isNotBlank))
+                .filterNotNull().joinToString("-").ifBlank { "\u2014" }
+            MetricStrip(
+                listOf(
+                    Metric(avg, "Average"),
+                    Metric(att, "Attendance", SkyInk),
+                    Metric(classLabel, "Class"),
+                ),
+            )
+
+            FeeSection(if (student.feesPending) FeeStatus.Pending else FeeStatus.Paid)
+
+            SubjectTagRow(
+                student.todayItems
+                    .filter { it.text.isNotBlank() }
+                    .map { item: TodayItemDto -> item.text to tagThemeForColor(item.color) },
+            )
+
+            ActionRow(
+                listOf(
+                    Triple(VIcons.Phone, "Call Parent", onCall),
+                    Triple(VIcons.Chat, "Message", onMessage),
+                ),
+            )
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+// ─────────────────────────────────────────────────────────────────────────────
+//  Staff card
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
 internal fun StaffCard(
     staff: StaffDto,
@@ -406,38 +686,45 @@ internal fun StaffCard(
     onMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.clickable(onClick = onOpen)) {
-        PersonCard {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GradientAvatar(staff.fullName, staff.photoUrl)
-                Column(Modifier.weight(1f)) {
-                    Text(staff.fullName, color = VColors.ink, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(listOfNotNull(staff.role.takeIf(String::isNotBlank), staff.department?.takeIf(String::isNotBlank)).joinToString(" · "), color = VColors.ink2, fontSize = 10.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Row(Modifier.padding(top = 5.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        StatusBadge(staff.status)
-                        staff.joinedYear?.takeIf(String::isNotBlank)?.let { Badge("Since $it", PeachInk, PeachSoft) }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    CircularAction(VIcons.Phone, "Call staff member", onCall, !staff.phone.isNullOrBlank())
-                    CircularAction(VIcons.Chat, "Message staff member", onMessage, !staff.phone.isNullOrBlank())
-                }
+    val subtitle = listOf(
+        staff.role,
+        staff.department?.takeIf(String::isNotBlank).orEmpty(),
+        staff.joinedYear?.takeIf(String::isNotBlank)?.let { "$it yrs" }.orEmpty(),
+    ).filter(String::isNotBlank).joinToString(" \u00B7 ")
+
+    Box(modifier) {
+        PersonCard(onClick = onOpen) {
+            CardHeader(staff.fullName, staff.photoUrl, staff.status, subtitle)
+
+            val statusLabel = if (staff.status.equals("active", true) || staff.status.isBlank()) "FT" else
+                staff.status.uppercase().take(2)
+            MetricStrip(
+                listOf(
+                    Metric(staff.joinedYear?.takeIf(String::isNotBlank) ?: "\u2014", "Years"),
+                    Metric(statusLabel, "Status"),
+                    Metric(staff.employeeId?.takeIf(String::isNotBlank) ?: "\u2014", "ID"),
+                ),
+            )
+
+            val tags = buildList {
+                staff.department?.takeIf(String::isNotBlank)?.let { add(it to TagTheme.Peach) }
+                staff.shift?.takeIf(String::isNotBlank)?.let { add(it to TagTheme.Violet) }
             }
-            val tags = listOfNotNull(staff.department?.takeIf(String::isNotBlank), staff.shift?.takeIf(String::isNotBlank))
-            if (tags.isNotEmpty()) {
-                FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    tags.forEachIndexed { index, value -> SubjectTag(value, index) }
-                }
-            }
-            Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(1.dp).background(PeopleHairline))
-            Row(
-                Modifier.fillMaxWidth().padding(top = 11.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                staff.phone?.takeIf(String::isNotBlank)?.let { MiniMetric(VIcons.Phone, it) }
-                staff.email?.takeIf(String::isNotBlank)?.let { MiniMetric(VIcons.Mail, it) }
-            }
+            SubjectTagRow(tags)
+
+            ContactRow(
+                buildList {
+                    staff.phone?.takeIf(String::isNotBlank)?.let { add(VIcons.Phone to it) }
+                    staff.email?.takeIf(String::isNotBlank)?.let { add(VIcons.Mail to it) }
+                },
+            )
+
+            ActionRow(
+                listOf(
+                    Triple(VIcons.Phone, "Call", onCall),
+                    Triple(VIcons.Chat, "Message", onMessage),
+                ),
+            )
         }
     }
 }
