@@ -139,6 +139,28 @@ fun ClassesSubjectsScreenV2(
     var activeTab by remember { mutableStateOf(initialTab) }
     var createClassRequestKey by remember { mutableIntStateOf(0) }
     var addSubjectRequestKey by remember { mutableIntStateOf(0) }
+    var continueToSubjectAfterClass by remember { mutableStateOf(false) }
+
+    fun startSubjectSetup() {
+        if (state.classes.isEmpty()) {
+            continueToSubjectAfterClass = true
+            activeTab = ClassesSubjectsTab.Classes
+            createClassRequestKey++
+        } else {
+            if (state.selectedClassId == null) viewModel.selectClass(state.classes.first().id)
+            activeTab = ClassesSubjectsTab.Subjects
+            addSubjectRequestKey++
+        }
+    }
+
+    LaunchedEffect(continueToSubjectAfterClass, state.classes) {
+        if (continueToSubjectAfterClass && state.classes.isNotEmpty()) {
+            continueToSubjectAfterClass = false
+            viewModel.selectClass(state.classes.first().id)
+            activeTab = ClassesSubjectsTab.Subjects
+            addSubjectRequestKey++
+        }
+    }
 
     LaunchedEffect(deepLinkDestination) {
         when (deepLinkDestination) {
@@ -166,6 +188,27 @@ fun ClassesSubjectsScreenV2(
         VTopTabs(tabs = tabLabels, selected = tabLabels[activeTab.ordinal], onSelect = { label ->
             activeTab = ClassesSubjectsTab.entries[tabLabels.indexOf(label)]
         })
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            VButton(
+                text = appString(StringKeys.CS_ADD_CLASS),
+                onClick = { activeTab = ClassesSubjectsTab.Classes; createClassRequestKey++ },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Secondary,
+                tone = VButtonTone.Teal,
+                size = VButtonSize.Sm,
+            )
+            VButton(
+                text = appString(StringKeys.CS_ADD_SUBJECT),
+                onClick = { startSubjectSetup() },
+                modifier = Modifier.weight(1f),
+                variant = VButtonVariant.Primary,
+                tone = VButtonTone.Teal,
+                size = VButtonSize.Sm,
+            )
+        }
         when (activeTab) {
             ClassesSubjectsTab.Classes -> ClassesTab(
                 state = state,
@@ -234,7 +277,7 @@ private fun ClassesTab(
     VStateHost(
         loading = state.isLoading,
         error = state.errorMessage,
-        isEmpty = state.classes.isEmpty() && !state.isLoading,
+        isEmpty = false,
         emptyTitle = appString(StringKeys.CS_NO_CLASSES),
         emptyBody = appString(StringKeys.CS_NO_CLASSES_BODY),
         emptyIcon = VIcons.BookOpen,
@@ -251,6 +294,13 @@ private fun ClassesTab(
                 variant = VButtonVariant.Primary,
                 tone = VButtonTone.Teal,
             )
+            if (state.classes.isEmpty()) {
+                VEmptyState(
+                    title = appString(StringKeys.CS_NO_CLASSES),
+                    icon = VIcons.BookOpen,
+                    body = appString(StringKeys.CS_NO_CLASSES_BODY),
+                )
+            }
             state.classes.forEachIndexed { index, cls ->
                 ClassCard(
                     cls = cls,
@@ -432,14 +482,19 @@ private fun SubjectsTab(
     val subjects = selectedClassId?.let { state.subjectsByClass[it] } ?: emptyList()
     val selectedClass = state.classes.find { it.id == selectedClassId }
 
-    LaunchedEffect(openCreateRequestKey, selectedClassId) {
-        if (openCreateRequestKey > 0 && selectedClassId != null) showAddDialog = true
+    LaunchedEffect(openCreateRequestKey, selectedClassId, state.classes) {
+        if (openCreateRequestKey <= 0 || state.classes.isEmpty()) return@LaunchedEffect
+        if (selectedClassId == null) {
+            onSelectClass(state.classes.first().id)
+        } else {
+            showAddDialog = true
+        }
     }
 
     VStateHost(
         loading = state.isLoading,
         error = state.errorMessage,
-        isEmpty = state.classes.isEmpty() && !state.isLoading,
+        isEmpty = false,
         emptyTitle = appString(StringKeys.CS_NO_CLASSES_AVAIL),
         emptyBody = appString(StringKeys.CS_NO_CLASSES_AVAIL_BODY),
         emptyIcon = VIcons.BookOpen,
@@ -450,6 +505,13 @@ private fun SubjectsTab(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             VSectionHeader(appString(StringKeys.CS_SUBJECTS))
+            if (state.classes.isEmpty()) {
+                VEmptyState(
+                    title = appString(StringKeys.CS_NO_CLASSES_AVAIL),
+                    icon = VIcons.BookOpen,
+                    body = appString(StringKeys.CS_NO_CLASSES_AVAIL_BODY),
+                )
+            }
             if (state.classes.isNotEmpty()) {
                 // Class selector chips
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

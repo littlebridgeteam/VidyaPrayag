@@ -20,9 +20,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * ViewModel for the merged registration + onboarding flow (Figma "New School
- * Onboarding Flow"). Replaces the separate AdminSignupScreen + SchoolOnboardingScreenV2
- * with a single 4-step + success flow:
+ * ViewModel for the active school registration and workspace activation flow.
+ * It owns the single four-step registration journey and its success handoff:
  *
  *   Step 1: Basic Details (admin name, role, school name, board, type) — pre-auth
  *   Step 2: Create Password — pre-auth, calls registerSchool()

@@ -9,25 +9,34 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,9 +53,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +66,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.presentation.RegistrationOnboardingViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.RegistrationOnboardingViewModel.FlowStep
+import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
+import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
+import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VMaterialDatePicker
@@ -63,9 +79,10 @@ import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.shapeCard
 import com.littlebridge.enrollplus.ui.v2.theme.shapePill
-import com.littlebridge.enrollplus.ui.components.VBackHeader as LegacyBackHeader
-import com.littlebridge.enrollplus.ui.components.VButton as LegacyButton
-import com.littlebridge.enrollplus.ui.components.VButtonVariant as LegacyButtonVariant
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import com.littlebridge.enrollplus.util.parseIsoDate
+import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 
 private data class FieldError(val field: String, val message: String)
@@ -77,19 +94,20 @@ private fun validateName(name: String): String? {
     return null
 }
 
+private val emailPattern = Regex("^[A-Z0-9.!#\$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$", RegexOption.IGNORE_CASE)
+
 private fun validateEmail(email: String): String? {
     if (email.isBlank()) return "Email is required"
-    val trimmed = email.trim().lowercase()
-    if (!trimmed.contains("@")) return "Email must contain @ symbol"
-    val parts = trimmed.split("@")
-    if (parts.size != 2) return "Enter a valid email"
-    val local = parts[0]
-    val domain = parts[1]
-    if (local.isEmpty()) return "Enter a valid email"
-    if (!domain.contains(".") || domain.startsWith(".") || domain.endsWith(".")) return "Enter a valid email address"
-    val domainParts = domain.split(".")
-    if (domainParts.any { it.isEmpty() }) return "Enter a valid email address"
-    if (domainParts.last().length < 2) return "Enter a valid email address"
+    val value = email.trim()
+    val localPart = value.substringBefore('@', missingDelimiterValue = "")
+    if (
+        value.length > 254 ||
+        localPart.length !in 1..64 ||
+        localPart.startsWith('.') ||
+        localPart.endsWith('.') ||
+        value.contains("..") ||
+        !emailPattern.matches(value)
+    ) return "Enter a valid email address"
     return null
 }
 
@@ -97,16 +115,18 @@ private fun validatePhone(phone: String): String? {
     if (phone.isBlank()) return "Phone number is required"
     if (phone.length != 10) return "Phone must be exactly 10 digits"
     if (!phone.all { it.isDigit() }) return "Phone must contain only digits"
-    if (phone[0] == '0') return "Phone cannot start with 0"
+    if (phone.first() !in '6'..'9') return "Enter a valid Indian mobile number"
     return null
 }
 
 private fun validatePassword(password: String): String? {
     if (password.isBlank()) return "Password is required"
     if (password.length < 8) return "Must be at least 8 characters"
+    if (password.length > 128) return "Must be 128 characters or fewer"
     if (!password.any { it.isUpperCase() }) return "Must contain an uppercase letter"
+    if (!password.any { it.isLowerCase() }) return "Must contain a lowercase letter"
     if (!password.any { it.isDigit() }) return "Must contain a number"
-    if (!password.any { !it.isLetterOrDigit() }) return "Must contain a special character"
+    if (!password.any { !it.isLetterOrDigit() && !it.isWhitespace() }) return "Must contain a special character"
     return null
 }
 
@@ -132,6 +152,7 @@ private fun validatePrincipalPhone(phone: String): String? {
     if (phone.isBlank()) return "Principal phone is required"
     if (phone.length != 10) return "Phone must be exactly 10 digits"
     if (!phone.all { it.isDigit() }) return "Phone must contain only digits"
+    if (phone.first() !in '6'..'9') return "Enter a valid Indian mobile number"
     return null
 }
 
@@ -142,17 +163,19 @@ private fun VChip(
     onClick: () -> Unit,
 ) {
     val c = VTheme.colors
-    val bg = if (selected) c.accent else c.cream
+    val bg = if (selected) c.accent else c.card
     val fg = if (selected) c.card else c.ink2
     val border = if (selected) c.accent else c.hairline
 
     Box(
         modifier = Modifier
+            .heightIn(min = 40.dp)
             .clip(VTheme.dimens.shapePill)
             .background(bg)
             .border(1.dp, border, VTheme.dimens.shapePill)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
@@ -167,8 +190,9 @@ private fun VChipGroup(
     selected: String?,
     onSelect: (String) -> Unit,
 ) {
-    Row(
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         options.forEach { opt ->
@@ -193,62 +217,178 @@ private fun StepHeader(
     totalSteps: Int = 4,
 ) {
     val c = VTheme.colors
+    val eyebrow = when (currentStep) {
+        0 -> "LET'S GET STARTED"
+        1 -> "SECURE YOUR ACCOUNT"
+        2 -> "ABOUT YOUR SCHOOL"
+        else -> "FINAL STEP"
+    }
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(top = 16.dp, bottom = 24.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 16.dp)) {
-            repeat(totalSteps) { index ->
-                val isCompleted = index < currentStep
-                val isCurrent = index == currentStep
-                val color = when {
-                    isCompleted -> c.accent
-                    isCurrent -> c.accent
-                    else -> c.hairline
-                }
-                val width = if (isCurrent) 24.dp else 8.dp
-                Box(
-                    modifier = Modifier.height(4.dp).width(width).clip(VTheme.dimens.shapePill).background(color),
-                )
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Enroll", style = VTheme.type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink))
+            Text("+", style = VTheme.type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold).colored(c.accent))
         }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = eyebrow,
+            style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp).colored(c.accent),
+        )
+        Spacer(Modifier.height(8.dp))
         Text(
             text = title,
-            style = VTheme.type.h2.copy(fontWeight = FontWeight.ExtraBold).colored(c.ink),
+            style = VTheme.type.h2.copy(fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink),
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(6.dp))
-            Text(
+        Text(
             text = subtitle,
-            style = VTheme.type.body.colored(c.ink2),
+            style = VTheme.type.body.copy(fontSize = 14.sp, lineHeight = 20.sp).colored(c.ink3),
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
 @Composable
-private fun BackHeader(onBack: () -> Unit) {
-    LegacyBackHeader(onBack = onBack)
+private fun RegistrationTopBar(
+    currentStep: Int,
+    onBack: () -> Unit,
+) {
+    val c = VTheme.colors
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Box(
+                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(6.dp)).background(c.cream).clickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(18.dp))
+            }
+            Text(
+                text = "0${currentStep + 1} / 04",
+                style = VTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp).colored(c.ink3),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            repeat(4) { index ->
+                Box(
+                    Modifier.weight(1f).height(3.dp).clip(CircleShape)
+                        .background(if (index <= currentStep) c.accent else c.hairline)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RegistrationStepLayout(
+    title: String,
+    subtitle: String,
+    currentStep: Int,
+    onBack: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        RegistrationTopBar(
+            currentStep = currentStep,
+            onBack = onBack,
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 32.dp)
+                .padding(top = 12.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            StepHeader(
+                title = title,
+                subtitle = subtitle,
+                currentStep = currentStep,
+            )
+            content()
+        }
+    }
+}
+
+@Composable
+private fun RegistrationFormCard(
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun PrimaryRegistrationAction(
+    text: String,
+    enabled: Boolean,
+    loading: Boolean,
+    onClick: () -> Unit,
+) {
+    VButton(
+        text = text,
+        onClick = onClick,
+        full = true,
+        enabled = enabled,
+        loading = loading,
+        stateful = false,
+        size = VButtonSize.Lg,
+        tone = VButtonTone.Lavender,
+        soft = false,
+        trailing = {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+    )
+}
+
+@Composable
+private fun SecondaryRegistrationAction(
+    text: String,
+    onClick: () -> Unit,
+) {
+    VButton(
+        text = text,
+        onClick = onClick,
+        variant = VButtonVariant.Secondary,
+        full = true,
+        stateful = false,
+        size = VButtonSize.Md,
+        tone = VButtonTone.Lavender,
+    )
 }
 
 @Composable
 private fun SignInFooter(onSignIn: () -> Unit) {
     val c = VTheme.colors
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(top = 8.dp),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            text = "Already have an account?",
+            text = "Already managing a workspace?",
             style = VTheme.type.caption.colored(c.ink3),
-            modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
         )
-        LegacyButton(
-            text = "Sign in",
+        SecondaryRegistrationAction(
+            text = "Sign in instead",
             onClick = onSignIn,
-            variant = LegacyButtonVariant.Outline,
         )
     }
 }
@@ -259,9 +399,9 @@ private fun PasswordStrengthBar(password: String) {
     val strength = remember(password) {
         var score = 0
         if (password.length >= 8) score++
-        if (password.any { it.isUpperCase() }) score++
+        if (password.any { it.isUpperCase() } && password.any { it.isLowerCase() }) score++
         if (password.any { it.isDigit() }) score++
-        if (password.any { !it.isLetterOrDigit() }) score++
+        if (password.any { !it.isLetterOrDigit() && !it.isWhitespace() }) score++
         score
     }
     val color = when (strength) {
@@ -316,7 +456,7 @@ fun SchoolRegistrationFlow(
     val stepOrder = listOf(FlowStep.One, FlowStep.Two, FlowStep.Three, FlowStep.Four, FlowStep.Success)
     var previousStepIndex by remember { mutableIntStateOf(0) }
 
-    Column(modifier = Modifier.fillMaxSize().background(VTheme.colors.background).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(VTheme.colors.cream).statusBarsPadding()) {
         AnimatedContent(
             targetState = state.step,
             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -326,8 +466,16 @@ fun SchoolRegistrationFlow(
                 val dir = if (newIdx >= oldIdx) 1 else -1
                 previousStepIndex = newIdx
 
-                (slideInHorizontally(tween(350)) { it * dir } + fadeIn(tween(250)))
-                    .togetherWith(slideOutHorizontally(tween(350)) { -it * dir } + fadeOut(tween(200)))
+                (slideInHorizontally(
+                    animationSpec = tween(320, easing = FastOutSlowInEasing),
+                    initialOffsetX = { (it * 0.12f * dir).toInt() },
+                ) + fadeIn(tween(260)))
+                    .togetherWith(
+                        slideOutHorizontally(
+                            animationSpec = tween(260, easing = FastOutSlowInEasing),
+                            targetOffsetX = { (-it * 0.08f * dir).toInt() },
+                        ) + fadeOut(tween(190))
+                    )
             },
             label = "step-transition",
         ) { step ->
@@ -366,49 +514,47 @@ private fun StepOneBasicDetails(
         viewModel.submitBasicDetails {}
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        BackHeader(onBack = onSignIn)
-        Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            StepHeader(title = "Basic Details", subtitle = "Tell us about yourself and your school", currentStep = 0)
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                VInput(
-                    label = "Your Full Name", value = state.adminName,
-                    onValueChange = { viewModel.update { s -> s.copy(adminName = it) }; validationErrors = validationErrors.filter { it.field != "name" } },
-                    placeholder = "Dr. Rajesh Sharma",
-                    isError = getError("name") != null, errorText = getError("name"),
-                )
-                VSheetPicker(
-                    label = "Your Role", value = state.adminRole,
-                    options = listOf("Principal", "Vice Principal", "Administrator", "Director", "Manager"),
-                    onSelect = { viewModel.update { s -> s.copy(adminRole = it) }; validationErrors = validationErrors.filter { it.field != "role" } },
-                    placeholder = "Select your role", searchable = true,
-                )
-                if (getError("role") != null) Text(text = getError("role")!!, style = VTheme.type.caption.colored(c.dangerInk))
-                VInput(
-                    label = "Email Address", value = state.email,
-                    onValueChange = { viewModel.update { s -> s.copy(email = it) }; validationErrors = validationErrors.filter { it.field != "email" } },
-                    placeholder = "principal@dps.edu.in", keyboardType = KeyboardType.Email,
-                    isError = getError("email") != null, errorText = getError("email"),
-                )
-                VInput(
-                    label = "Phone Number", value = state.contactPhone,
-                    onValueChange = { if (it.length <= 10 && it.all { c -> c.isDigit() }) { viewModel.update { s -> s.copy(contactPhone = it) }; validationErrors = validationErrors.filter { it.field != "phone" } } },
-                    placeholder = "98765 43210", keyboardType = KeyboardType.Phone,
-                    isError = getError("phone") != null, errorText = getError("phone"),
-                )
-                if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
-                LegacyButton(
-                    text = "Continue", onClick = { validateAndSubmit() },
-                    enabled = state.adminName.isNotBlank() && state.email.isNotBlank() && state.contactPhone.isNotBlank(),
-                    loading = state.isLoading,
-                    icon = Icons.AutoMirrored.Filled.ArrowForward,
-                )
-                SignInFooter(onSignIn = onSignIn)
-            }
+    RegistrationStepLayout(
+        title = "Basic Details",
+        subtitle = "Tell us about yourself — we'll set up your school next",
+        currentStep = 0,
+        onBack = onSignIn,
+    ) {
+        RegistrationFormCard {
+            VInput(
+                label = "Your Full Name", value = state.adminName,
+                onValueChange = { viewModel.update { s -> s.copy(adminName = it) }; validationErrors = validationErrors.filter { it.field != "name" } },
+                placeholder = "Dr. Rajesh Sharma",
+                isError = getError("name") != null, errorText = getError("name"),
+            )
+            VSheetPicker(
+                label = "Your Role", value = state.adminRole,
+                options = listOf("Principal", "Vice Principal", "Administrator", "Director", "Manager"),
+                onSelect = { viewModel.update { s -> s.copy(adminRole = it) }; validationErrors = validationErrors.filter { it.field != "role" } },
+                placeholder = "Select your role", searchable = true,
+            )
+            if (getError("role") != null) Text(text = getError("role")!!, style = VTheme.type.caption.colored(c.dangerInk))
+            VInput(
+                label = "Email Address", value = state.email,
+                onValueChange = { viewModel.update { s -> s.copy(email = it) }; validationErrors = validationErrors.filter { it.field != "email" } },
+                placeholder = "principal@dps.edu.in", keyboardType = KeyboardType.Email,
+                isError = getError("email") != null, errorText = getError("email"),
+            )
+            VInput(
+                label = "Phone Number", value = state.contactPhone,
+                onValueChange = { if (it.length <= 10 && it.all { c -> c.isDigit() }) { viewModel.update { s -> s.copy(contactPhone = it) }; validationErrors = validationErrors.filter { it.field != "phone" } } },
+                placeholder = "98765 43210", keyboardType = KeyboardType.Phone,
+                isError = getError("phone") != null, errorText = getError("phone"),
+            )
         }
+        if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
+        PrimaryRegistrationAction(
+            text = "Continue",
+            enabled = state.adminName.isNotBlank() && state.email.isNotBlank() && state.contactPhone.isNotBlank(),
+            loading = state.isLoading,
+            onClick = { validateAndSubmit() },
+        )
+        SignInFooter(onSignIn = onSignIn)
     }
 }
 
@@ -436,52 +582,60 @@ private fun StepTwoCreatePassword(
         viewModel.createAccount {}
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        BackHeader(onBack = { viewModel.goBack() })
-        Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            StepHeader(title = "Create Password", subtitle = "Set a strong password for your account", currentStep = 1)
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                VInput(
-                    label = "Create Password", value = state.password,
-                    onValueChange = { viewModel.update { s -> s.copy(password = it) }; validationErrors = validationErrors.filter { it.field != "password" } },
-                    placeholder = "Min. 8 characters", keyboardType = KeyboardType.Password,
-                    isPassword = true, passwordVisible = passwordVisible,
-                    isError = getError("password") != null, errorText = getError("password"),
-                    trailing = { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp).clickable { passwordVisible = !passwordVisible }) },
-                )
-                if (state.password.isNotBlank()) PasswordStrengthBar(state.password)
-                VInput(
-                    label = "Confirm Password", value = state.confirmPassword,
-                    onValueChange = { viewModel.update { s -> s.copy(confirmPassword = it) }; validationErrors = validationErrors.filter { it.field != "confirm" } },
-                    placeholder = "Re-enter password", keyboardType = KeyboardType.Password,
-                    isPassword = true, passwordVisible = confirmPasswordVisible,
-                    isError = getError("confirm") != null || (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword),
-                    errorText = getError("confirm") ?: if (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword) "Passwords do not match" else null,
-                    trailing = { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp).clickable { confirmPasswordVisible = !confirmPasswordVisible }) },
-                )
-                Column(
-                    modifier = Modifier.fillMaxWidth().clip(VTheme.dimens.shapeCard).background(c.accentTint).border(1.dp, c.accent.copy(alpha = 0.15f), VTheme.dimens.shapeCard).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(text = "Password requirements", style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold).colored(c.ink))
-                    PasswordRequirement("At least 8 characters", state.password.length >= 8)
-                    PasswordRequirement("One uppercase letter (A–Z)", state.password.any { it.isUpperCase() })
-                    PasswordRequirement("One number (0–9)", state.password.any { it.isDigit() })
-                    PasswordRequirement("One special character (!@#\$%)", state.password.any { !it.isLetterOrDigit() })
-                }
-                if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
-                LegacyButton(
-                    text = "Create Account", onClick = { validateAndSubmit() },
-                    enabled = state.password.length >= 8 && state.password == state.confirmPassword,
-                    loading = state.isLoading,
-                    icon = Icons.AutoMirrored.Filled.ArrowForward,
-                )
-                SignInFooter(onSignIn = onSignIn)
+    RegistrationStepLayout(
+        title = "Create Password",
+        subtitle = "Set a strong password to protect your school data",
+        currentStep = 1,
+        onBack = { viewModel.goBack() },
+    ) {
+        RegistrationFormCard {
+            VInput(
+                label = "Create Password", value = state.password,
+                onValueChange = { value ->
+                    if (value.length <= 128) {
+                        viewModel.update { s -> s.copy(password = value) }
+                        validationErrors = validationErrors.filter { it.field != "password" }
+                    }
+                },
+                placeholder = "Min. 8 characters", keyboardType = KeyboardType.Password,
+                isPassword = true, passwordVisible = passwordVisible,
+                isError = getError("password") != null, errorText = getError("password"),
+                trailing = { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp).clickable { passwordVisible = !passwordVisible }) },
+            )
+            if (state.password.isNotBlank()) PasswordStrengthBar(state.password)
+            VInput(
+                label = "Confirm Password", value = state.confirmPassword,
+                onValueChange = { value ->
+                    if (value.length <= 128) {
+                        viewModel.update { s -> s.copy(confirmPassword = value) }
+                        validationErrors = validationErrors.filter { it.field != "confirm" }
+                    }
+                },
+                placeholder = "Re-enter password", keyboardType = KeyboardType.Password,
+                isPassword = true, passwordVisible = confirmPasswordVisible,
+                isError = getError("confirm") != null || (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword),
+                errorText = getError("confirm") ?: if (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword) "Passwords do not match" else null,
+                trailing = { Icon(VIcons.Eye, contentDescription = "Toggle password", tint = c.ink3, modifier = Modifier.size(18.dp).clickable { confirmPasswordVisible = !confirmPasswordVisible }) },
+            )
+            Column(
+                modifier = Modifier.fillMaxWidth().clip(VTheme.dimens.shapeCard).background(c.accentTint).border(1.dp, c.accent.copy(alpha = 0.15f), VTheme.dimens.shapeCard).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(text = "Password requirements", style = VTheme.type.caption.copy(fontWeight = FontWeight.Bold).colored(c.ink))
+                PasswordRequirement("At least 8 characters", state.password.length >= 8)
+                PasswordRequirement("Uppercase and lowercase letters", state.password.any { it.isUpperCase() } && state.password.any { it.isLowerCase() })
+                PasswordRequirement("One number (0–9)", state.password.any { it.isDigit() })
+                PasswordRequirement("One special character (!@#\$%)", state.password.any { !it.isLetterOrDigit() && !it.isWhitespace() })
             }
         }
+        if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
+        PrimaryRegistrationAction(
+            text = "Create Account",
+            enabled = state.password.length >= 8 && state.password == state.confirmPassword,
+            loading = state.isLoading,
+            onClick = { validateAndSubmit() },
+        )
+        SignInFooter(onSignIn = onSignIn)
     }
 }
 
@@ -509,67 +663,69 @@ private fun StepThreeSchoolIdentity(
         viewModel.submitSchoolIdentity {}
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        BackHeader(onBack = { viewModel.goBack() })
-        Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            StepHeader(title = "School Identity", subtitle = "Tell us about your school", currentStep = 2)
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                VInput(
-                    label = "Full legal name", value = state.schoolName,
-                    onValueChange = { viewModel.update { s -> s.copy(schoolName = it) }; validationErrors = validationErrors.filter { it.field != "schoolName" } },
-                    placeholder = "Delhi Public School",
-                    isError = getError("schoolName") != null, errorText = getError("schoolName"),
-                )
-                VInput(label = "Short name", value = state.shortName, onValueChange = { viewModel.update { s -> s.copy(shortName = it) } }, placeholder = "DPS")
-                VInput(label = "Affiliation number", value = state.affiliationNumber, onValueChange = { viewModel.update { s -> s.copy(affiliationNumber = it) } }, placeholder = "1234567")
-                VSectionLabel("BOARD")
-                VChipGroup(
-                    options = listOf("CBSE", "ICSE", "UP State", "Other"), selected = state.board,
-                    onSelect = { viewModel.update { s -> s.copy(board = it) }; validationErrors = validationErrors.filter { it.field != "board" } },
-                )
-                if (getError("board") != null) Text(text = getError("board")!!, style = VTheme.type.caption.colored(c.dangerInk))
-                VSectionLabel("SCHOOL TYPE")
-                VChipGroup(options = listOf("Government", "Private Aided", "Private Unaided", "Central"), selected = state.schoolType, onSelect = { viewModel.update { s -> s.copy(schoolType = it) }; validationErrors = validationErrors.filter { it.field != "schoolType" } })
-                if (getError("schoolType") != null) Text(text = getError("schoolType")!!, style = VTheme.type.caption.colored(c.dangerInk))
-                VInput(
-                    label = "Principal's name", value = state.principalName,
-                    onValueChange = { viewModel.update { s -> s.copy(principalName = it) }; validationErrors = validationErrors.filter { it.field != "principalName" } },
-                    placeholder = "Dr. Rajesh Sharma",
-                    isError = getError("principalName") != null, errorText = getError("principalName"),
-                )
-                VInput(
-                    label = "Principal's mobile", value = state.principalPhone,
-                    onValueChange = { if (it.length <= 10 && it.all { c -> c.isDigit() }) { viewModel.update { s -> s.copy(principalPhone = it) }; validationErrors = validationErrors.filter { it.field != "principalPhone" } } },
-                    placeholder = "98765 43210", keyboardType = KeyboardType.Phone,
-                    isError = getError("principalPhone") != null, errorText = getError("principalPhone"),
-                )
-                VSheetPicker(
-                    label = "City", value = state.city,
-                    options = listOf("New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Lucknow", "Kanpur", "Varanasi", "Meerut", "Noida", "Ghaziabad", "Gurugram"),
-                    onSelect = { viewModel.update { s -> s.copy(city = it) } }, placeholder = "Select city", searchable = true,
-                )
-                if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
-            }
-            LegacyButton(
-                text = "Continue", onClick = { validateAndSubmit() },
-                enabled = state.schoolName.isNotBlank() && state.board.isNotBlank(),
-                loading = state.isLoading,
-                icon = Icons.AutoMirrored.Filled.ArrowForward,
+    RegistrationStepLayout(
+        title = "School Identity",
+        subtitle = "This information appears on reports, ID cards & certificates",
+        currentStep = 2,
+        onBack = { viewModel.goBack() },
+    ) {
+        RegistrationFormCard {
+            VInput(
+                label = "Full legal name", value = state.schoolName,
+                onValueChange = { viewModel.update { s -> s.copy(schoolName = it) }; validationErrors = validationErrors.filter { it.field != "schoolName" } },
+                placeholder = "Delhi Public School",
+                isError = getError("schoolName") != null, errorText = getError("schoolName"),
             )
-            LegacyButton(
-                text = "Back", onClick = { viewModel.goBack() },
-                variant = LegacyButtonVariant.Outline,
+            VInput(label = "Short name", value = state.shortName, onValueChange = { viewModel.update { s -> s.copy(shortName = it) } }, placeholder = "DPS")
+            VInput(label = "Affiliation number", value = state.affiliationNumber, onValueChange = { viewModel.update { s -> s.copy(affiliationNumber = it) } }, placeholder = "1234567")
+            VSectionLabel("BOARD")
+            VChipGroup(
+                options = listOf("CBSE", "ICSE", "UP State", "Other"), selected = state.board,
+                onSelect = { viewModel.update { s -> s.copy(board = it) }; validationErrors = validationErrors.filter { it.field != "board" } },
+            )
+            if (getError("board") != null) Text(text = getError("board")!!, style = VTheme.type.caption.colored(c.dangerInk))
+            VSectionLabel("SCHOOL TYPE")
+            VChipGroup(options = listOf("Government", "Private Aided", "Private Unaided", "Central"), selected = state.schoolType, onSelect = { viewModel.update { s -> s.copy(schoolType = it) }; validationErrors = validationErrors.filter { it.field != "schoolType" } })
+            if (getError("schoolType") != null) Text(text = getError("schoolType")!!, style = VTheme.type.caption.colored(c.dangerInk))
+            VInput(
+                label = "Principal's name", value = state.principalName,
+                onValueChange = { viewModel.update { s -> s.copy(principalName = it) }; validationErrors = validationErrors.filter { it.field != "principalName" } },
+                placeholder = "Dr. Rajesh Sharma",
+                isError = getError("principalName") != null, errorText = getError("principalName"),
+            )
+            VInput(
+                label = "Principal's mobile", value = state.principalPhone,
+                onValueChange = { if (it.length <= 10 && it.all { c -> c.isDigit() }) { viewModel.update { s -> s.copy(principalPhone = it) }; validationErrors = validationErrors.filter { it.field != "principalPhone" } } },
+                placeholder = "98765 43210", keyboardType = KeyboardType.Phone,
+                isError = getError("principalPhone") != null, errorText = getError("principalPhone"),
+            )
+            VSheetPicker(
+                label = "City", value = state.city,
+                options = listOf("New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Lucknow", "Kanpur", "Varanasi", "Meerut", "Noida", "Ghaziabad", "Gurugram"),
+                onSelect = { viewModel.update { s -> s.copy(city = it) } }, placeholder = "Select city", searchable = true,
             )
         }
+        if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
+        PrimaryRegistrationAction(
+            text = "Continue",
+            enabled = state.schoolName.isNotBlank() && state.board.isNotBlank(),
+            loading = state.isLoading,
+            onClick = { validateAndSubmit() },
+        )
+        SecondaryRegistrationAction(text = "Back", onClick = { viewModel.goBack() })
     }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // Step 4: Academic Year
 // ════════════════════════════════════════════════════════════════════════════
+
+private fun academicYearOptions(): List<String> {
+    val currentYear = parseIsoDate(todayIso())?.first ?: return emptyList()
+    return listOf(currentYear, currentYear + 1).map { start ->
+        "$start-${((start + 1) % 100).toString().padStart(2, '0')}"
+    }
+}
 
 @Composable
 private fun StepFourAcademicYear(
@@ -601,82 +757,85 @@ private fun StepFourAcademicYear(
         viewModel.submitAcademicYear {}
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        BackHeader(onBack = { viewModel.goBack() })
-        Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            StepHeader(title = "Academic Year", subtitle = "Set up your academic calendar", currentStep = 3)
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                VSectionLabel("CURRENT ACADEMIC YEAR")
-                VChipGroup(
-                    options = listOf("2025-26", "2026-27"), selected = state.academicYearLabel,
-                    onSelect = { viewModel.update { s -> s.copy(academicYearLabel = it) }; validationErrors = validationErrors.filter { it.field != "year" } },
-                )
-                if (getError("year") != null) Text(text = getError("year")!!, style = VTheme.type.caption.colored(c.dangerInk))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        VMaterialDatePicker(value = state.yearStartDate, onValueChange = { viewModel.update { s -> s.copy(yearStartDate = it) }; validationErrors = validationErrors.filter { it.field != "startDate" } }, label = "Year starts", placeholder = "Select date")
-                        if (getError("startDate") != null) Text(text = getError("startDate")!!, style = VTheme.type.caption.colored(c.dangerInk), modifier = Modifier.padding(top = 4.dp))
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        VMaterialDatePicker(value = state.yearEndDate, onValueChange = { viewModel.update { s -> s.copy(yearEndDate = it) }; validationErrors = validationErrors.filter { it.field != "endDate" } }, label = "Year ends", placeholder = "Select date")
-                        if (getError("endDate") != null) Text(text = getError("endDate")!!, style = VTheme.type.caption.colored(c.dangerInk), modifier = Modifier.padding(top = 4.dp))
-                    }
+    RegistrationStepLayout(
+        title = "Academic Year",
+        subtitle = "Set up your academic calendar & timetable structure",
+        currentStep = 3,
+        onBack = { viewModel.goBack() },
+    ) {
+        RegistrationFormCard {
+            VSectionLabel("CURRENT ACADEMIC YEAR")
+            VChipGroup(
+                options = academicYearOptions(), selected = state.academicYearLabel,
+                onSelect = { viewModel.update { s -> s.copy(academicYearLabel = it) }; validationErrors = validationErrors.filter { it.field != "year" } },
+            )
+            if (getError("year") != null) Text(text = getError("year")!!, style = VTheme.type.caption.colored(c.dangerInk))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    VMaterialDatePicker(value = state.yearStartDate, onValueChange = { viewModel.update { s -> s.copy(yearStartDate = it) }; validationErrors = validationErrors.filter { it.field != "startDate" } }, label = "Year starts", placeholder = "Select date")
+                    if (getError("startDate") != null) Text(text = getError("startDate")!!, style = VTheme.type.caption.colored(c.dangerInk), modifier = Modifier.padding(top = 4.dp))
                 }
-                VSectionLabel("WORKING DAYS")
-                VChipGroup(options = listOf("Mon-Fri", "Mon-Sat"), selected = state.workingDays, onSelect = { viewModel.update { s -> s.copy(workingDays = it) }; validationErrors = validationErrors.filter { it.field != "workingDays" } })
-                if (getError("workingDays") != null) Text(text = getError("workingDays")!!, style = VTheme.type.caption.colored(c.dangerInk))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        val startHour = state.schoolStartTime.substringBefore(":").toIntOrNull() ?: 8
-                        val startMinute = state.schoolStartTime.substringAfter(":").take(2).ifBlank { "00" }
-                        VMaterialTimePicker(
-                            hour = startHour, minute = startMinute,
-                            onHourChange = { h -> viewModel.update { s -> val m = s.schoolStartTime.substringAfter(":").take(2).ifBlank { "00" }; s.copy(schoolStartTime = "${h.toString().padStart(2, '0')}:$m") } },
-                            onMinuteChange = { m -> viewModel.update { s -> val h = s.schoolStartTime.substringBefore(":").padStart(2, '0').ifBlank { "08" }; s.copy(schoolStartTime = "$h:$m") } },
-                            label = "Start time",
-                        )
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        val endHour = state.schoolEndTime.substringBefore(":").toIntOrNull() ?: 14
-                        val endMinute = state.schoolEndTime.substringAfter(":").take(2).ifBlank { "00" }
-                        VMaterialTimePicker(
-                            hour = endHour, minute = endMinute,
-                            onHourChange = { h -> viewModel.update { s -> val m = s.schoolEndTime.substringAfter(":").take(2).ifBlank { "00" }; s.copy(schoolEndTime = "${h.toString().padStart(2, '0')}:$m") } },
-                            onMinuteChange = { m -> viewModel.update { s -> val h = s.schoolEndTime.substringBefore(":").padStart(2, '0').ifBlank { "14" }; s.copy(schoolEndTime = "$h:$m") } },
-                            label = "End time",
-                        )
-                        if (getError("endTime") != null) Text(text = getError("endTime")!!, style = VTheme.type.caption.colored(c.dangerInk), modifier = Modifier.padding(top = 4.dp))
-                    }
+                Column(modifier = Modifier.weight(1f)) {
+                    VMaterialDatePicker(value = state.yearEndDate, onValueChange = { viewModel.update { s -> s.copy(yearEndDate = it) }; validationErrors = validationErrors.filter { it.field != "endDate" } }, label = "Year ends", placeholder = "Select date")
+                    if (getError("endDate") != null) Text(text = getError("endDate")!!, style = VTheme.type.caption.colored(c.dangerInk), modifier = Modifier.padding(top = 4.dp))
                 }
-                VSheetPicker(
-                    label = "Periods per day", value = state.periodsPerDay,
-                    options = listOf("4", "5", "6", "7", "8", "9", "10", "11", "12"),
-                    onSelect = { viewModel.update { s -> s.copy(periodsPerDay = it) }; validationErrors = validationErrors.filter { it.field != "periods" } }, placeholder = "Select periods",
-                )
-                if (getError("periods") != null) Text(text = getError("periods")!!, style = VTheme.type.caption.colored(c.dangerInk))
-                if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
             }
-            Spacer(Modifier.height(8.dp))
-            LegacyButton(
-                text = "Register School", onClick = { validateAndSubmit() },
-                enabled = state.academicYearLabel.isNotBlank(),
-                loading = state.isLoading,
-                icon = Icons.AutoMirrored.Filled.ArrowForward,
+            VSectionLabel("WORKING DAYS")
+            VChipGroup(options = listOf("Mon-Fri", "Mon-Sat"), selected = state.workingDays, onSelect = { viewModel.update { s -> s.copy(workingDays = it) }; validationErrors = validationErrors.filter { it.field != "workingDays" } })
+            if (getError("workingDays") != null) Text(text = getError("workingDays")!!, style = VTheme.type.caption.colored(c.dangerInk))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    val startHour = state.schoolStartTime.substringBefore(":").toIntOrNull() ?: 8
+                    val startMinute = state.schoolStartTime.substringAfter(":").take(2).ifBlank { "00" }
+                    VMaterialTimePicker(
+                        hour = startHour, minute = startMinute,
+                        onHourChange = { h -> viewModel.update { s -> val m = s.schoolStartTime.substringAfter(":").take(2).ifBlank { "00" }; s.copy(schoolStartTime = "${h.toString().padStart(2, '0')}:$m") } },
+                        onMinuteChange = { m -> viewModel.update { s -> val h = s.schoolStartTime.substringBefore(":").padStart(2, '0').ifBlank { "08" }; s.copy(schoolStartTime = "$h:$m") } },
+                        label = "Start time",
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    val endHour = state.schoolEndTime.substringBefore(":").toIntOrNull() ?: 14
+                    val endMinute = state.schoolEndTime.substringAfter(":").take(2).ifBlank { "00" }
+                    VMaterialTimePicker(
+                        hour = endHour, minute = endMinute,
+                        onHourChange = { h -> viewModel.update { s -> val m = s.schoolEndTime.substringAfter(":").take(2).ifBlank { "00" }; s.copy(schoolEndTime = "${h.toString().padStart(2, '0')}:$m") } },
+                        onMinuteChange = { m -> viewModel.update { s -> val h = s.schoolEndTime.substringBefore(":").padStart(2, '0').ifBlank { "14" }; s.copy(schoolEndTime = "$h:$m") } },
+                        label = "End time",
+                    )
+                    if (getError("endTime") != null) Text(text = getError("endTime")!!, style = VTheme.type.caption.colored(c.dangerInk), modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+            VSheetPicker(
+                label = "Periods per day", value = state.periodsPerDay,
+                options = listOf("4", "5", "6", "7", "8", "9", "10", "11", "12"),
+                onSelect = { viewModel.update { s -> s.copy(periodsPerDay = it) }; validationErrors = validationErrors.filter { it.field != "periods" } }, placeholder = "Select periods",
             )
-            LegacyButton(
-                text = "Back", onClick = { viewModel.goBack() },
-                variant = LegacyButtonVariant.Outline,
-            )
+            if (getError("periods") != null) Text(text = getError("periods")!!, style = VTheme.type.caption.colored(c.dangerInk))
         }
+        if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
+        PrimaryRegistrationAction(
+            text = "Register School",
+            enabled = state.academicYearLabel.isNotBlank(),
+            loading = state.isLoading,
+            onClick = { validateAndSubmit() },
+        )
+        SecondaryRegistrationAction(text = "Back", onClick = { viewModel.goBack() })
     }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 // Success screen
 // ════════════════════════════════════════════════════════════════════════════
+
+private enum class SuccessArtifact { Command, Admissions, Pews, Fees, Comms }
+
+private data class SuccessFeature(
+    val title: String,
+    val subtitle: String,
+    val accent: Color,
+    val artifact: SuccessArtifact,
+)
 
 @Composable
 private fun SuccessScreen(
@@ -685,70 +844,298 @@ private fun SuccessScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val c = VTheme.colors
-
-    val ringScale = remember { Animatable(0f) }
-    val iconScale = remember { Animatable(0f) }
-    val titleAlpha = remember { Animatable(0f) }
-    val subtitleAlpha = remember { Animatable(0f) }
-    val buttonAlpha = remember { Animatable(0f) }
+    val features = remember {
+        listOf(
+            SuccessFeature("Command Desk", "A calm, live view of your entire school.", Color(0xFF6546E8), SuccessArtifact.Command),
+            SuccessFeature("Admissions CRM", "Move every applicant forward with clarity.", Color(0xFF22B982), SuccessArtifact.Admissions),
+            SuccessFeature("PEWS Alerts", "See risk early and intervene with confidence.", Color(0xFFF34D6D), SuccessArtifact.Pews),
+            SuccessFeature("Fee Collection", "Real-time collections without spreadsheet work.", Color(0xFFE6A400), SuccessArtifact.Fees),
+            SuccessFeature("Communication Hub", "Reach every family from one trusted channel.", Color(0xFF1BA9E8), SuccessArtifact.Comms),
+        )
+    }
+    val pagerState = rememberPagerState(pageCount = { features.size })
+    val congrats = remember { Animatable(0f) }
+    val headline = remember { Animatable(0f) }
+    val subtitle = remember { Animatable(0f) }
+    val carousel = remember { Animatable(0f) }
+    val dots = remember { Animatable(0f) }
+    val bottom = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        ringScale.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
-        iconScale.animateTo(1f, tween(350, easing = FastOutSlowInEasing))
-        titleAlpha.animateTo(1f, tween(400))
-        subtitleAlpha.animateTo(1f, tween(400))
-        buttonAlpha.animateTo(1f, tween(400))
+        listOf(
+            150L to congrats,
+            300L to headline,
+            450L to subtitle,
+            600L to carousel,
+            750L to dots,
+            900L to bottom,
+        ).forEach { (delayMillis, animation) ->
+            launch {
+                delay(delayMillis)
+                animation.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
+            }
+        }
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .scale(ringScale.value)
-                        .background(c.successInk.copy(alpha = 0.08f), CircleShape),
-                )
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .scale(iconScale.value)
-                        .background(c.successInk, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(VIcons.CheckCircle, contentDescription = null, tint = c.card, modifier = Modifier.size(36.dp))
-                }
-            }
-
+            Text("Enroll", style = VTheme.type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink))
+            Text("+", style = VTheme.type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold).colored(c.accent))
+        }
+        Column(Modifier.padding(horizontal = 24.dp)) {
             Text(
-                text = "School Registered!",
-                style = VTheme.type.h2.copy(fontSize = 24.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.alpha(titleAlpha.value),
-            )
-            Text(
-                text = "Welcome to Enroll+!\nYour school management portal is ready.",
-                style = VTheme.type.body.copy(fontSize = 15.sp, lineHeight = 24.sp).colored(c.ink3),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.alpha(subtitleAlpha.value),
+                "CONGRATULATIONS",
+                style = VTheme.type.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp).colored(c.accent),
+                modifier = Modifier.premiumEntrance(congrats.value),
             )
             Spacer(Modifier.height(8.dp))
-            LegacyButton(
-                text = "Continue to Home",
-                onClick = { viewModel.completeOnboarding(onComplete) },
-                loading = state.isLoading,
-                icon = Icons.AutoMirrored.Filled.ArrowForward,
-                modifier = Modifier.alpha(buttonAlpha.value).fillMaxWidth(),
+            Text(
+                "Your school onboarding is complete — welcome to paperless school management.",
+                style = VTheme.type.h2.copy(fontSize = 26.sp, lineHeight = 31.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink),
+                modifier = Modifier.premiumEntrance(headline.value),
             )
-            if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Swipe to explore the premium tools now at your fingertips.",
+                style = VTheme.type.body.copy(fontSize = 13.sp, lineHeight = 19.sp).colored(c.ink3),
+                modifier = Modifier.premiumEntrance(subtitle.value),
+            )
+        }
+        Spacer(Modifier.height(18.dp))
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().height(286.dp).premiumEntrance(carousel.value),
+            contentPadding = PaddingValues(horizontal = 28.dp),
+            pageSpacing = 14.dp,
+            beyondViewportPageCount = 1,
+        ) { page ->
+            val offset = ((page - pagerState.currentPage) + pagerState.currentPageOffsetFraction).coerceIn(-1f, 1f)
+            val distance = kotlin.math.abs(offset)
+            SuccessFeatureCard(
+                feature = features[page],
+                modifier = Modifier.graphicsLayer {
+                    scaleX = 1f - 0.08f * distance
+                    scaleY = 1f - 0.08f * distance
+                    alpha = 1f - 0.4f * distance
+                },
+            )
+        }
+        Row(
+            Modifier.fillMaxWidth().height(28.dp).premiumEntrance(dots.value),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(features.size) { index ->
+                val selected = pagerState.currentPage == index
+                Box(
+                    Modifier.padding(horizontal = 3.dp).height(6.dp).width(if (selected) 22.dp else 6.dp)
+                        .clip(CircleShape).background(if (selected) c.accent else c.hairline),
+                )
+            }
+        }
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp).premiumEntrance(bottom.value),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card)
+                    .border(1.dp, c.hairline, RoundedCornerShape(16.dp)).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(c.accent), contentAlignment = Alignment.Center) {
+                    Text(state.schoolName.trim().firstOrNull()?.uppercase() ?: "S", color = c.card, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(state.schoolName.ifBlank { "Your school" }, style = VTheme.type.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold).colored(c.ink), maxLines = 1)
+                    Text("School Admin · Just registered", style = VTheme.type.caption.copy(fontSize = 11.sp).colored(c.ink3))
+                }
+                Row(
+                    Modifier.clip(VTheme.dimens.shapePill).background(c.successInk.copy(alpha = .1f)).padding(horizontal = 9.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(c.successInk))
+                    Text("ACTIVE", style = VTheme.type.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold).colored(c.successInk))
+                }
+            }
+            VButton(
+                text = "Continue to Dashboard",
+                onClick = { viewModel.completeOnboarding(onComplete) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                full = true,
+                loading = state.isLoading,
+                stateful = false,
+                size = VButtonSize.Lg,
+                tone = VButtonTone.Lavender,
+                soft = false,
+                trailing = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                },
+            )
+            if (state.error != null) Text(state.error!!, style = VTheme.type.caption.colored(c.dangerInk), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Text("A welcome email is on its way to your inbox", style = VTheme.type.caption.copy(fontSize = 11.sp).colored(c.ink3), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+private fun Modifier.premiumEntrance(progress: Float): Modifier = graphicsLayer {
+    alpha = progress
+    translationY = (1f - progress) * 14f
+}
+
+@Composable
+private fun SuccessFeatureCard(feature: SuccessFeature, modifier: Modifier = Modifier) {
+    val c = VTheme.colors
+    Column(
+        modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)).background(c.card)
+            .border(1.dp, feature.accent.copy(alpha = .16f), RoundedCornerShape(24.dp)),
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(194.dp)
+                .background(Brush.linearGradient(listOf(feature.accent.copy(alpha = .9f), feature.accent))),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(176.dp).clip(CircleShape).background(Color.White.copy(alpha = .08f)))
+            SuccessArtifactView(feature.artifact)
+        }
+        Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 13.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(7.dp).clip(CircleShape).background(feature.accent))
+                Text(feature.title, style = VTheme.type.body.copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink))
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(feature.subtitle, style = VTheme.type.caption.copy(fontSize = 12.sp).colored(c.ink3), maxLines = 2)
+        }
+    }
+}
+
+@Composable
+private fun SuccessArtifactView(type: SuccessArtifact) {
+    when (type) {
+        SuccessArtifact.Command -> CommandArtifact()
+        SuccessArtifact.Admissions -> AdmissionsArtifact()
+        SuccessArtifact.Pews -> PewsArtifact()
+        SuccessArtifact.Fees -> FeesArtifact()
+        SuccessArtifact.Comms -> CommsArtifact()
+    }
+}
+
+@Composable
+private fun GlassPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = .17f))
+            .border(1.dp, Color.White.copy(alpha = .24f), RoundedCornerShape(16.dp)).padding(14.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun CommandArtifact() {
+    Box(Modifier.fillMaxSize().padding(26.dp)) {
+        GlassPanel(Modifier.fillMaxWidth().align(Alignment.Center)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Icon(VIcons.Sparkles, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                Box(Modifier.width(42.dp).height(8.dp).clip(CircleShape).background(Color.White.copy(alpha = .35f)))
+            }
+            Spacer(Modifier.height(18.dp))
+            repeat(3) { index ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Box(Modifier.size(20.dp).clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = .25f + index * .08f)))
+                    Box(Modifier.weight(1f).height(7.dp).clip(CircleShape).background(Color.White.copy(alpha = .65f)))
+                }
+                if (index < 2) Spacer(Modifier.height(10.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdmissionsArtifact() {
+    GlassPanel(Modifier.widthIn(max = 250.dp).fillMaxWidth().padding(horizontal = 24.dp)) {
+        repeat(3) { index ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                Box(Modifier.size(26.dp).clip(CircleShape).background(Color.White.copy(alpha = .28f)), contentAlignment = Alignment.Center) {
+                    Icon(VIcons.User, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(Modifier.fillMaxWidth(if (index == 1) .72f else .9f).height(6.dp).clip(CircleShape).background(Color.White.copy(alpha = .72f)))
+                    Box(Modifier.fillMaxWidth(.5f).height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .3f)))
+                }
+                Icon(VIcons.Check, null, tint = Color.White, modifier = Modifier.size(15.dp))
+            }
+            if (index < 2) Spacer(Modifier.height(10.dp))
+        }
+    }
+}
+
+@Composable
+private fun PewsArtifact() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+        Box(Modifier.size(100.dp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.fillMaxSize()) {
+                drawArc(Color.White.copy(alpha = .2f), -90f, 360f, false, style = Stroke(10.dp.toPx()))
+                drawArc(Color.White, -90f, 250f, false, style = Stroke(10.dp.toPx(), cap = StrokeCap.Round))
+            }
+            Icon(VIcons.AlertTriangle, null, tint = Color.White, modifier = Modifier.size(28.dp))
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(.9f, .65f, .4f).forEach { width -> Box(Modifier.width(72.dp * width).height(8.dp).clip(CircleShape).background(Color.White.copy(alpha = .75f))) }
+            Text("EARLY SIGNALS", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+        }
+    }
+}
+
+@Composable
+private fun FeesArtifact() {
+    GlassPanel(Modifier.fillMaxWidth().padding(horizontal = 26.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(VIcons.Wallet, null, tint = Color.White, modifier = Modifier.size(24.dp))
+            Text("LIVE COLLECTIONS", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+        }
+        Spacer(Modifier.height(14.dp))
+        Box(Modifier.fillMaxWidth().height(7.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
+            Box(Modifier.fillMaxWidth(.72f).fillMaxHeight().clip(CircleShape).background(Color.White))
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("RECEIPTS", "RECONCILIATION").forEach {
+                Text(
+                    it,
+                    color = Color.White,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.clip(CircleShape).background(Color.White.copy(alpha = .16f))
+                        .padding(horizontal = 9.dp, vertical = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommsArtifact() {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        listOf(false, true, false).forEachIndexed { index, sent ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = if (sent) Arrangement.End else Arrangement.Start) {
+                Column(
+                    Modifier.fillMaxWidth(if (index == 1) .62f else .72f).clip(RoundedCornerShape(13.dp))
+                        .background(Color.White.copy(alpha = if (sent) .32f else .18f)).padding(11.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Box(Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(Color.White.copy(alpha = .8f)))
+                    Box(Modifier.fillMaxWidth(.65f).height(5.dp).clip(CircleShape).background(Color.White.copy(alpha = .4f)))
+                }
+            }
         }
     }
 }
