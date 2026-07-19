@@ -173,8 +173,8 @@ private fun VChip(
             .background(bg)
             .border(1.dp, border, VTheme.dimens.shapePill)
             .clickable { onClick() }
-            .heightIn(min = 48.dp)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .heightIn(min = 38.dp)
+            .padding(horizontal = 16.dp, vertical = 9.dp),
     ) {
         Text(
             text = text,
@@ -216,66 +216,37 @@ private fun StepHeader(
     totalSteps: Int = 4,
 ) {
     val c = VTheme.colors
+    val eyebrow = when (currentStep) {
+        0 -> "LET'S GET STARTED"
+        1 -> "SECURE YOUR ACCOUNT"
+        2 -> "ABOUT YOUR SCHOOL"
+        else -> "FINAL STEP"
+    }
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        c.accentTint,
-                        c.card,
-                    )
-                )
-            )
-            .border(
-                1.dp,
-                c.accent.copy(alpha = 0.14f),
-                RoundedCornerShape(24.dp)
-            )
-            .padding(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Enroll", style = VTheme.type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink))
+            Text("+", style = VTheme.type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold).colored(c.accent))
+        }
+        Spacer(Modifier.height(8.dp))
         Text(
-            text = "SCHOOL WORKSPACE  •  STEP ${currentStep + 1} OF $totalSteps",
-            style = VTheme.type.caption.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.1.sp,
-            ).colored(c.accentDeep),
+            text = eyebrow,
+            style = VTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp).colored(c.accent),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = title,
-            style = VTheme.type.h2.copy(
-                fontSize = 27.sp,
-                lineHeight = 32.sp,
-                fontWeight = FontWeight.ExtraBold,
-            ).colored(c.ink),
+            style = VTheme.type.h2.copy(fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink),
+            textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(6.dp))
         Text(
             text = subtitle,
-            style = VTheme.type.body.copy(
-                fontSize = 13.sp,
-                lineHeight = 19.sp,
-            ).colored(c.ink2),
+            style = VTheme.type.body.copy(fontSize = 14.sp, lineHeight = 20.sp).colored(c.ink3),
+            textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(18.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            repeat(totalSteps) { index ->
-                val active = index <= currentStep
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(4.dp)
-                        .clip(VTheme.dimens.shapePill)
-                        .background(if (active) c.accent else c.hairline),
-                )
-            }
-        }
     }
 }
 
@@ -285,57 +256,34 @@ private fun RegistrationTopBar(
     onBack: () -> Unit,
 ) {
     val c = VTheme.colors
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 64.dp)
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(c.card)
-                .border(1.dp, c.hairline, CircleShape)
-                .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = c.ink,
-                modifier = Modifier.size(19.dp),
-            )
-        }
-        Spacer(Modifier.width(12.dp))
+    Column(Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            Box(
+                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(6.dp)).background(c.cream).clickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = c.ink, modifier = Modifier.size(18.dp))
+            }
             Text(
-                "Enroll",
-                style = VTheme.type.body.copy(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                ).colored(c.ink),
-            )
-            Text(
-                "+",
-                style = VTheme.type.body.copy(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                ).colored(c.accent),
+                text = "0${currentStep + 1} / 04",
+                style = VTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp).colored(c.ink3),
             )
         }
-        Text(
-            text = "0${currentStep + 1} / 04",
-            style = VTheme.type.caption.copy(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.8.sp,
-            ).colored(c.ink3),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            repeat(4) { index ->
+                Box(
+                    Modifier.weight(1f).height(3.dp).clip(CircleShape)
+                        .background(if (index <= currentStep) c.accent else c.hairline)
+                )
+            }
+        }
     }
 }
 
@@ -356,8 +304,8 @@ private fun RegistrationStepLayout(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(top = 8.dp, bottom = 32.dp),
+                .padding(horizontal = 32.dp)
+                .padding(top = 12.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             StepHeader(
@@ -374,15 +322,9 @@ private fun RegistrationStepLayout(
 private fun RegistrationFormCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val c = VTheme.colors
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(c.card)
-            .border(1.dp, c.hairline, RoundedCornerShape(20.dp))
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
         content = content,
     )
 }
@@ -572,8 +514,8 @@ private fun StepOneBasicDetails(
     }
 
     RegistrationStepLayout(
-        title = "Build your admin profile",
-        subtitle = "A few verified details create the secure owner account for your school workspace.",
+        title = "Basic Details",
+        subtitle = "Tell us about yourself — we'll set up your school next",
         currentStep = 0,
         onBack = onSignIn,
     ) {
@@ -606,7 +548,7 @@ private fun StepOneBasicDetails(
         }
         if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
         PrimaryRegistrationAction(
-            text = "Continue securely",
+            text = "Continue",
             enabled = state.adminName.isNotBlank() && state.email.isNotBlank() && state.contactPhone.isNotBlank(),
             loading = state.isLoading,
             onClick = { validateAndSubmit() },
@@ -640,8 +582,8 @@ private fun StepTwoCreatePassword(
     }
 
     RegistrationStepLayout(
-        title = "Protect your workspace",
-        subtitle = "Create a strong password for the account that controls your school operations.",
+        title = "Create Password",
+        subtitle = "Set a strong password to protect your school data",
         currentStep = 1,
         onBack = { viewModel.goBack() },
     ) {
@@ -687,7 +629,7 @@ private fun StepTwoCreatePassword(
         }
         if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
         PrimaryRegistrationAction(
-            text = "Create secure account",
+            text = "Create Account",
             enabled = state.password.length >= 8 && state.password == state.confirmPassword,
             loading = state.isLoading,
             onClick = { validateAndSubmit() },
@@ -721,8 +663,8 @@ private fun StepThreeSchoolIdentity(
     }
 
     RegistrationStepLayout(
-        title = "Shape your school identity",
-        subtitle = "These details personalise the workspace and anchor every school-scoped record.",
+        title = "School Identity",
+        subtitle = "This information appears on reports, ID cards & certificates",
         currentStep = 2,
         onBack = { viewModel.goBack() },
     ) {
@@ -764,7 +706,7 @@ private fun StepThreeSchoolIdentity(
         }
         if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
         PrimaryRegistrationAction(
-            text = "Continue to calendar",
+            text = "Continue",
             enabled = state.schoolName.isNotBlank() && state.board.isNotBlank(),
             loading = state.isLoading,
             onClick = { validateAndSubmit() },
@@ -815,8 +757,8 @@ private fun StepFourAcademicYear(
     }
 
     RegistrationStepLayout(
-        title = "Set the rhythm of your year",
-        subtitle = "Define the live academic calendar that powers classes, periods and timetable planning.",
+        title = "Academic Year",
+        subtitle = "Set up your academic calendar & timetable structure",
         currentStep = 3,
         onBack = { viewModel.goBack() },
     ) {
@@ -872,7 +814,7 @@ private fun StepFourAcademicYear(
         }
         if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
         PrimaryRegistrationAction(
-            text = "Activate school workspace",
+            text = "Register School",
             enabled = state.academicYearLabel.isNotBlank(),
             loading = state.isLoading,
             onClick = { validateAndSubmit() },
@@ -952,13 +894,13 @@ private fun SuccessScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Your school is ready to run beautifully.",
+                "Your school onboarding is complete — welcome to paperless school management.",
                 style = VTheme.type.h2.copy(fontSize = 26.sp, lineHeight = 31.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink),
                 modifier = Modifier.premiumEntrance(headline.value),
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "A focused operating system for your team, families and every school day.",
+                "Swipe to explore the premium tools now at your fingertips.",
                 style = VTheme.type.body.copy(fontSize = 13.sp, lineHeight = 19.sp).colored(c.ink3),
                 modifier = Modifier.premiumEntrance(subtitle.value),
             )
@@ -1010,7 +952,7 @@ private fun SuccessScreen(
                 }
                 Column(Modifier.weight(1f)) {
                     Text(state.schoolName.ifBlank { "Your school" }, style = VTheme.type.body.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold).colored(c.ink), maxLines = 1)
-                    Text("Workspace activated", style = VTheme.type.caption.copy(fontSize = 11.sp).colored(c.ink3))
+                    Text("School Admin · Just registered", style = VTheme.type.caption.copy(fontSize = 11.sp).colored(c.ink3))
                 }
                 Row(
                     Modifier.clip(VTheme.dimens.shapePill).background(c.successInk.copy(alpha = .1f)).padding(horizontal = 9.dp, vertical = 5.dp),
@@ -1018,11 +960,11 @@ private fun SuccessScreen(
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Box(Modifier.size(6.dp).clip(CircleShape).background(c.successInk))
-                    Text("ONBOARDED", style = VTheme.type.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold).colored(c.successInk))
+                    Text("ACTIVE", style = VTheme.type.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold).colored(c.successInk))
                 }
             }
             VButton(
-                text = "Enter your command desk",
+                text = "Continue to Dashboard",
                 onClick = { viewModel.completeOnboarding(onComplete) },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                 full = true,
@@ -1040,7 +982,7 @@ private fun SuccessScreen(
                 },
             )
             if (state.error != null) Text(state.error!!, style = VTheme.type.caption.colored(c.dangerInk), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            Text("Your setup checklist is waiting on the dashboard.", style = VTheme.type.caption.copy(fontSize = 11.sp).colored(c.ink3), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Text("A welcome email is on its way to your inbox", style = VTheme.type.caption.copy(fontSize = 11.sp).colored(c.ink3), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         }
     }
 }

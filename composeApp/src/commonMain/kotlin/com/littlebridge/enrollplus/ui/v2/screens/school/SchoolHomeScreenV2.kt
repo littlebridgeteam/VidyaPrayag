@@ -211,7 +211,7 @@ private fun PremiumAdminHome(
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding()
             .padding(horizontal = 24.dp).padding(bottom = 112.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         PremiumHeader(overview, adminName, unreadCount, onNotifications, onSearch)
         HeroCard(overview, summary)
@@ -362,25 +362,25 @@ private fun SchoolSetupChecklistCard(
     val firstPending = setupStepVisuals.firstOrNull { stepsByKey[it.key]?.status != "done" }
 
     Column(
-        Modifier.fillMaxWidth().shadow(12.dp, AdminHomeTokens.Xl, ambientColor = Color.Black.copy(alpha = .05f), spotColor = Color.Black.copy(alpha = .07f))
+        Modifier.fillMaxWidth().shadow(2.dp, AdminHomeTokens.Xl, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .04f))
             .clip(AdminHomeTokens.Xl).background(AdminHomeTokens.Card)
             .border(1.dp, AdminHomeTokens.Line, AdminHomeTokens.Xl).padding(horizontal = 18.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            SetupProgressRing(animatedProgress, Modifier.size(42.dp))
-            Spacer(Modifier.size(12.dp))
+            SetupProgressRing(animatedProgress, Modifier.size(40.dp))
+            Spacer(Modifier.size(10.dp))
             Column(Modifier.weight(1f)) {
-                Text("School Setup", color = AdminHomeTokens.Ink, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Finish school setup", color = AdminHomeTokens.Ink, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                 Text(
-                    "${progress.completedSteps} of ${progress.totalSteps} completed",
+                    "${progress.completedSteps} of ${progress.totalSteps} steps done · Tap any step to get started",
                     color = AdminHomeTokens.Ink3,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
             Box(
-                Modifier.size(48.dp).clip(CircleShape).background(AdminHomeTokens.VioletSoft)
+                Modifier.size(28.dp).clip(CircleShape).background(AdminHomeTokens.SurfaceTint)
                     .clickable(
                         enabled = firstPending != null,
                         indication = null,
@@ -388,10 +388,10 @@ private fun SchoolSetupChecklistCard(
                     ) { firstPending?.let { onStepClick(it.route) } },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(VIcons.ChevronRight, "Continue school setup", tint = AdminHomeTokens.Violet, modifier = Modifier.size(20.dp))
+                Icon(VIcons.ChevronRight, "Continue school setup", tint = AdminHomeTokens.Ink3, modifier = Modifier.size(14.dp))
             }
         }
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(10.dp))
         setupStepVisuals.forEach { visual ->
             val step = stepsByKey[visual.key] ?: SetupProgressStep(visual.key, "pending", 0)
             SetupChecklistRow(visual, step) { onStepClick(visual.route) }
@@ -444,25 +444,26 @@ private fun SetupChecklistRow(
         active -> Color(0xFF8A6100)
         else -> AdminHomeTokens.Ink3
     }
-    val statusText = when (visual.key) {
-        "create_classes" -> "${step.count} created"
-        "create_timetable" -> "${step.count} periods"
+    val statusText = when {
+        step.count == 0 -> "Not started"
+        visual.key == "create_classes" -> "${step.count} created"
+        visual.key == "create_timetable" -> "${step.count} periods"
         else -> "${step.count} added"
     }
 
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(AdminHomeTokens.Md)
+        Modifier.fillMaxWidth().heightIn(min = 40.dp).clip(AdminHomeTokens.Md)
             .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(28.dp).clip(AdminHomeTokens.Sm).background(iconColor), contentAlignment = Alignment.Center) {
-            Icon(visual.icon, null, tint = Color.White, modifier = Modifier.size(15.dp))
+        Box(Modifier.size(24.dp).clip(AdminHomeTokens.Sm).background(iconColor), contentAlignment = Alignment.Center) {
+            Icon(visual.icon, null, tint = Color.White, modifier = Modifier.size(13.dp))
         }
         Text(
             visual.label,
-            color = if (done) AdminHomeTokens.Ink3 else AdminHomeTokens.Ink2,
+            color = if (done) AdminHomeTokens.Ink3 else AdminHomeTokens.Ink,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
@@ -472,7 +473,7 @@ private fun SetupChecklistRow(
             color = badgeTextColor,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.clip(AdminHomeTokens.Full).background(badgeBackground).padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.clip(AdminHomeTokens.Full).background(badgeBackground).padding(horizontal = 8.dp, vertical = 3.dp),
         )
     }
 }
