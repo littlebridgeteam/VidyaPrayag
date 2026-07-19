@@ -60,6 +60,7 @@ data class StaffDto(
     val department: String? = null,
     val phone: String? = null,
     val email: String? = null,
+    val address: String? = null,
     @SerialName("photo_url") val photoUrl: String? = null,
     // People Tab enrichment — new fields for enriched card UI.
     // All defaulted so older clients keep parsing; all DERIVED server-side.
@@ -67,6 +68,9 @@ data class StaffDto(
     val shift: String? = null,
     val status: String = "active",
     @SerialName("joined_year") val joinedYear: String? = null,
+    // Formatted "MMM yyyy" join label (e.g. "Jan 2020") for the profile hero /
+    // Professional details. DERIVED from created_at server-side.
+    @SerialName("joined_date") val joinedDate: String? = null,
     @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
 )
 
@@ -93,7 +97,8 @@ data class CreateStaffRequest(
     val role: String,
     val department: String? = null,
     val phone: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val address: String? = null
 )
 
 @Serializable
@@ -102,7 +107,8 @@ data class UpdateStaffRequest(
     val role: String? = null,
     val department: String? = null,
     val phone: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val address: String? = null
 )
 
 // ─────────────────────────── helpers ────────────────────────────
@@ -115,11 +121,19 @@ private fun staffRowToDto(row: ResultRow): StaffDto =
         department = row[NonTeachingStaffTable.department],
         phone = row[NonTeachingStaffTable.phone],
         email = row[NonTeachingStaffTable.email],
+        address = row[NonTeachingStaffTable.address],
         photoUrl = row[NonTeachingStaffTable.photoUrl],
         employeeId = row[NonTeachingStaffTable.employeeId],
         status = if (row[NonTeachingStaffTable.isActive]) "active" else "inactive",
         joinedYear = runCatching {
             row[NonTeachingStaffTable.createdAt].toString().take(4)
+        }.getOrNull(),
+        // "MMM yyyy" — e.g. "Jan 2020" — derived from created_at.
+        joinedDate = runCatching {
+            val created = row[NonTeachingStaffTable.createdAt]
+            val ld = java.time.LocalDate.ofInstant(created, java.time.ZoneOffset.UTC)
+            val month = ld.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+            "$month ${ld.year}"
         }.getOrNull()
     )
 
@@ -274,6 +288,7 @@ fun Route.nonTeachingStaffRouting() {
                         it[department] = req.department?.takeIf { d -> d.isNotBlank() }?.trim()
                         it[phone] = req.phone?.takeIf { p -> p.isNotBlank() }?.trim()
                         it[email] = req.email?.takeIf { e -> e.isNotBlank() }?.trim()
+                        it[address] = req.address?.takeIf { a -> a.isNotBlank() }?.trim()
                         it[isActive] = true
                         it[createdAt] = now
                         it[updatedAt] = now
@@ -328,6 +343,7 @@ fun Route.nonTeachingStaffRouting() {
                         if (req.department != null) it[department] = req.department.takeIf { d -> d.isNotBlank() }?.trim()
                         if (req.phone != null) it[phone] = req.phone.takeIf { p -> p.isNotBlank() }?.trim()
                         if (req.email != null) it[email] = req.email.takeIf { e -> e.isNotBlank() }?.trim()
+                        if (req.address != null) it[address] = req.address.takeIf { a -> a.isNotBlank() }?.trim()
                         it[updatedAt] = now
                     }
                     NonTeachingStaffTable.selectAll().where { NonTeachingStaffTable.id eq id }.first().let(::staffRowToDto)

@@ -11,11 +11,13 @@ data class StaffDto(
     val department: String? = null,
     val phone: String? = null,
     val email: String? = null,
+    val address: String? = null,
     @SerialName("photo_url") val photoUrl: String? = null,
     @SerialName("employee_id") val employeeId: String? = null,
     val shift: String? = null,
     val status: String = "active",
     @SerialName("joined_year") val joinedYear: String? = null,
+    @SerialName("joined_date") val joinedDate: String? = null,
     @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
 )
 

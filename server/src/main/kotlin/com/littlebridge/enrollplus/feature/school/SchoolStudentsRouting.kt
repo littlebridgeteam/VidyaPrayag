@@ -86,6 +86,7 @@ data class StudentDto(
     // ISSUE 2b: parent/guardian phone on record (used by parent-link matching).
     @SerialName("parent_phone") val parentPhone: String? = null,
     @SerialName("profile_photo_url") val profilePhotoUrl: String? = null,
+    val address: String? = null,
     // RA-SP: listing-card enrichment so the redesigned roster cards can show
     // meaningful, relationship-aware information at a glance. All defaulted so
     // older clients keep parsing; all DERIVED by StudentAggregationService.
@@ -235,6 +236,9 @@ data class StudentProfileDto(
     @SerialName("absent_days") val absentDays: Int,
     @SerialName("late_days") val lateDays: Int,
     @SerialName("attendance_rate") val attendanceRate: Int,
+    // RA-SP: current-term attendance (rolling ~90-day window) so the profile can
+    // render the "This Term" bar alongside overall. DERIVED server-side.
+    @SerialName("this_term_attendance") val thisTermAttendance: Int = 0,
     @SerialName("recent_attendance") val recentAttendance: List<AttendanceDayDto>,
     val marks: List<StudentMarkDto>,
     val leave: List<StudentLeaveDto>,
@@ -627,6 +631,7 @@ private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDt
         rollNumber = row[StudentsTable.rollNumber],
         parentPhone = row[StudentsTable.parentPhone],
         profilePhotoUrl = row[StudentsTable.profilePhotoUrl],
+        address = row[StudentsTable.address],
         status = if (row[StudentsTable.isActive]) "active" else "inactive",
         isNewAdmission = isNewAdmission(
             row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
@@ -1283,6 +1288,16 @@ fun Route.schoolStudentsRouting() {
                     val total = attRows.size
                     val rate = if (total > 0) (((present + late) * 100) / total) else 0
 
+                    // "This Term" attendance: rolling 90-day window of the same
+                    // attendance rows. Falls back to the overall rate when the
+                    // window has no records (keeps the bar meaningful, no mock).
+                    val termCutoff = java.time.LocalDate.now().minusDays(90).toString()
+                    val termRows = attRows.filter { it.date >= termCutoff }
+                    val termTotal = termRows.size
+                    val thisTermAttendance = if (termTotal > 0) {
+                        ((termRows.count { it.status == "present" || it.status == "late" } * 100) / termTotal)
+                    } else rate
+
                     // marks — join assessments (same school) ← assessment_marks (student_code)
                     val marks = AssessmentsTable.selectAll()
                         .where { (AssessmentsTable.schoolId eq ctx.schoolId) and (AssessmentsTable.isActive eq true) }
@@ -1372,6 +1387,7 @@ fun Route.schoolStudentsRouting() {
                         absentDays = absent,
                         lateDays = late,
                         attendanceRate = rate,
+                        thisTermAttendance = thisTermAttendance,
                         recentAttendance = attRows.take(30),
                         marks = marks,
                         leave = leave,

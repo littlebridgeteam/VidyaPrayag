@@ -1396,6 +1396,7 @@ object StringKeys {
     const val SCH_ACADEMIC_SCORE       = "sch.academic_score"
     const val SCH_ADD_SLOT             = "sch.add_slot"
     const val SCH_ADD_STUDENT          = "sch.add_student"
+    const val SCH_ADDRESS              = "sch.address"
     const val SCH_ADMINISTRATIVE_INFO  = "sch.administrative_info"
     const val SCH_ADMISSION_DATE       = "sch.admission_date"
     const val SCH_ADMISSION_NO         = "sch.admission_no"
@@ -1407,6 +1408,12 @@ object StringKeys {
     const val SCH_ATTENDANCE           = "sch.attendance"
     const val SCH_ATTENDANCE_OVERVIEW  = "sch.attendance_overview"
     const val SCH_ATTENDANCE_RATE      = "sch.attendance_rate"
+    const val SCH_OVERALL_ATTENDANCE   = "sch.overall_attendance"
+    const val SCH_THIS_TERM            = "sch.this_term"
+    const val SCH_TOTAL_LEAVE_DAYS     = "sch.total_leave_days"
+    const val SCH_PENDING_REQUESTS     = "sch.pending_requests"
+    const val SCH_FATHERS_PHONE        = "sch.fathers_phone"
+    const val SCH_MOTHERS_PHONE        = "sch.mothers_phone"
     const val SCH_AVERAGE              = "sch.average"
     const val SCH_CLASS                = "sch.class"
     const val SCH_CLASS_LEVEL          = "sch.class_level"
@@ -4911,6 +4918,7 @@ object AppStrings {
         StringKeys.SCH_ACADEMIC_SCORE                  to "Academic Score",
         StringKeys.SCH_ADD_SLOT                        to "+ Add Slot",
         StringKeys.SCH_ADD_STUDENT                     to "Add student",
+        StringKeys.SCH_ADDRESS                         to "Address",
         StringKeys.SCH_ADMINISTRATIVE_INFO             to "Administrative Information",
         StringKeys.SCH_ADMISSION_DATE                  to "Admission Date",
         StringKeys.SCH_ADMISSION_NO                    to "Admission No.",
@@ -4922,6 +4930,12 @@ object AppStrings {
         StringKeys.SCH_ATTENDANCE                      to "Attendance",
         StringKeys.SCH_ATTENDANCE_OVERVIEW             to "Attendance Overview",
         StringKeys.SCH_ATTENDANCE_RATE                 to "Attendance rate",
+        StringKeys.SCH_OVERALL_ATTENDANCE              to "Overall Attendance",
+        StringKeys.SCH_THIS_TERM                       to "This Term",
+        StringKeys.SCH_TOTAL_LEAVE_DAYS                to "Total Leave Days",
+        StringKeys.SCH_PENDING_REQUESTS                to "Pending Requests",
+        StringKeys.SCH_FATHERS_PHONE                   to "Father's Phone",
+        StringKeys.SCH_MOTHERS_PHONE                   to "Mother's Phone",
         StringKeys.SCH_AVERAGE                         to "average",
         StringKeys.SCH_CLASS                           to "Class",
         StringKeys.SCH_CLASS_LEVEL                     to "Class Level",
@@ -8405,6 +8419,13 @@ object AppStrings {
         StringKeys.SCH_ACADEMIC_SCORE                  to "एकादमिक स्कोर",
         StringKeys.SCH_ADD_SLOT                        to "+ स्लॉट जोड़ें",
         StringKeys.SCH_ADD_STUDENT                     to "छात्र जोड़ें",
+        StringKeys.SCH_ADDRESS                         to "पता",
+        StringKeys.SCH_OVERALL_ATTENDANCE              to "कुल हाजिरी",
+        StringKeys.SCH_THIS_TERM                       to "इस सत्र",
+        StringKeys.SCH_TOTAL_LEAVE_DAYS                to "कुल अवकाश दिन",
+        StringKeys.SCH_PENDING_REQUESTS                to "लंबित अनुरोध",
+        StringKeys.SCH_FATHERS_PHONE                   to "पिता का फोन",
+        StringKeys.SCH_MOTHERS_PHONE                   to "माता का फोन",
         StringKeys.SCH_ADMINISTRATIVE_INFO             to "प्रशासनिक जानकारी",
         StringKeys.SCH_ADMISSION_DATE                  to "प्रवेश तिथि",
         StringKeys.SCH_ADMISSION_NO                    to "प्रवेश संख्या",
