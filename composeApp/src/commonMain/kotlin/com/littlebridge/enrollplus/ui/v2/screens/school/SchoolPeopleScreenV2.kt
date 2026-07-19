@@ -67,7 +67,6 @@ import io.github.vinceglb.filekit.compose.rememberFileSaverLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
-import com.littlebridge.enrollplus.ui.v2.components.VBottomSheetHeader
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
@@ -163,6 +162,53 @@ private fun PeopleDirectoryHeader(
             lineHeight = 30.sp,
             letterSpacing = (-0.6).sp,
         )
+    }
+}
+
+@Composable
+private fun PremiumPeopleAddButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .height(42.dp)
+            .shadow(3.dp, RoundedCornerShape(14.dp), ambientColor = VColors.violet.copy(alpha = 0.2f))
+            .clip(RoundedCornerShape(14.dp))
+            .background(VColors.violet)
+            .clickable(
+                enabled = enabled,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            )
+            .alpha(if (enabled) 1f else 0.42f)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(VIcons.Plus, contentDescription = null, tint = VColors.white, modifier = Modifier.size(14.dp))
+        Text("Add", color = VColors.white, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun PremiumPeopleMoreButton(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(42.dp)
+            .shadow(2.dp, RoundedCornerShape(14.dp), ambientColor = Color(0x0D26234D))
+            .clip(RoundedCornerShape(14.dp))
+            .background(VColors.white)
+            .border(1.dp, Color(0x0F26234D), RoundedCornerShape(14.dp))
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(VIcons.More, contentDescription = "More actions", tint = VColors.ink, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -332,6 +378,7 @@ private fun SchoolPeopleContent(
 ) {
     val initialSubTab = when (deepLinkDestination) {
         "add_students" -> PeopleSubTab.Students
+        "add_staff" -> PeopleSubTab.Staff
         else -> PeopleSubTab.Teachers
     }
     var subTab by remember { mutableStateOf(initialSubTab) }
@@ -350,6 +397,10 @@ private fun SchoolPeopleContent(
             "add_students" -> {
                 subTab = PeopleSubTab.Students
                 showAddStudent = true
+            }
+            "add_staff" -> {
+                subTab = PeopleSubTab.Staff
+                showAddStaff = true
             }
             else -> return@LaunchedEffect
         }
@@ -447,6 +498,7 @@ private fun SchoolPeopleContent(
                         onRetry = onTeachersRetry,
                         onAddClick = { showAddTeacher = true },
                         onOpenTeacher = onOpenTeacher,
+                        onOpenMessages = onOpenMessages,
                         onLoadMore = onLoadMoreTeachers,
                         onDeactivate = onDeactivateTeacher,
                         onAssignClass = onAssignClasses,
@@ -491,6 +543,7 @@ private fun SchoolPeopleContent(
         AddStaffSheet(
             isSubmitting = staffState.isSaving,
             error = staffState.addError,
+            departments = staffState.staff.mapNotNull { it.department }.filter { it.isNotBlank() }.distinct().sorted(),
             onDismiss = { showAddStaff = false; onClearStaffMessages() },
             onSubmit = { name, role, dept, phone, email ->
                 onAddStaff(name, role, dept, phone, email) { showAddStaff = false }
@@ -529,10 +582,12 @@ private fun TeachersSubTab(
     onRetry: () -> Unit,
     onAddClick: () -> Unit,
     onOpenTeacher: (String) -> Unit,
+    onOpenMessages: (String?) -> Unit,
     onLoadMore: () -> Unit,
     onDeactivate: (String) -> Unit,
     onAssignClass: (String) -> Unit,
 ) {
+    val phoneHelper = rememberPhoneHelper()
     var query by remember { mutableStateOf("") }
     var selectedSubjects by remember { mutableStateOf(setOf<String>()) }
     var selectedGrades by remember { mutableStateOf(setOf<String>()) }
@@ -570,13 +625,9 @@ private fun TeachersSubTab(
                 leadingIcon = VIcons.Search,
                 modifier = Modifier.weight(1f),
             )
-            VButton(
-                text = appString(StringKeys.PPL_ADD_TEACHER),
-                onClick = onAddClick,
-                variant = VButtonVariant.Primary,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+            PremiumPeopleAddButton(
                 enabled = !state.isMutating,
+                onClick = onAddClick,
             )
         }
         FilterChipRow(
@@ -637,7 +688,8 @@ private fun TeachersSubTab(
                     TeacherCard(
                         teacher = t,
                         onViewProfile = { onOpenTeacher(t.id) },
-                        onDeactivate = { onDeactivate(t.id) },
+                        onCall = { t.profile.phone?.let(phoneHelper::dialPhone) },
+                        onMessage = { onOpenMessages(t.id) },
                         onAssignClass = { onAssignClass(t.id) },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
@@ -717,20 +769,11 @@ private fun StudentsSubTab(
                 modifier = Modifier.weight(1f),
             )
             Box {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(VColors.surfaceCard)
-                        .clickable { menuExpanded = true },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(VIcons.More, contentDescription = "More", tint = VColors.ink, modifier = Modifier.size(20.dp))
-                }
+                PremiumPeopleMoreButton(onClick = { menuExpanded = true })
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
+                    modifier = Modifier.background(VColors.white, RoundedCornerShape(14.dp)),
                 ) {
                     DropdownMenuItem(
                         text = { Text(appString(StringKeys.PPL_ADD_STUDENT)) },
@@ -836,7 +879,11 @@ private fun StudentsSubTab(
             visible = true,
             onDismiss = { showGraduate = false },
         ) {
-            VBottomSheetHeader(title = appString(StringKeys.PPL_MARK_ALUMNI))
+            PremiumPeopleSheetHeader(
+                title = appString(StringKeys.PPL_MARK_ALUMNI),
+                subtitle = "Move the selected students into alumni records",
+                onClose = { showGraduate = false },
+            )
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -870,6 +917,7 @@ private fun StudentsSubTab(
                         },
                         variant = VButtonVariant.Primary,
                         size = VButtonSize.Sm,
+                        soft = false,
                         modifier = Modifier.weight(1f),
                         enabled = filtered.isNotEmpty(),
                     )
@@ -943,13 +991,9 @@ private fun StaffSubTab(
                 leadingIcon = VIcons.Search,
                 modifier = Modifier.weight(1f),
             )
-            VButton(
-                text = appString(StringKeys.PPL_ADD_STAFF),
-                onClick = onAddClick,
-                variant = VButtonVariant.Primary,
-                size = VButtonSize.Sm,
-                leading = { Icon(VIcons.Plus, contentDescription = null, modifier = Modifier.size(14.dp)) },
+            PremiumPeopleAddButton(
                 enabled = !state.isSaving,
+                onClick = onAddClick,
             )
         }
         FilterChipRow(
@@ -1046,6 +1090,38 @@ private fun StaffSubTab(
 
 // ───────────────────────────── dialogs ─────────────────────────────
 
+@Composable
+private fun PremiumPeopleSheetHeader(
+    title: String,
+    subtitle: String,
+    onClose: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, color = VColors.ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = VColors.ink3, fontSize = 12.sp)
+        }
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(VColors.cream)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = onClose,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(VIcons.Close, contentDescription = "Close", tint = VColors.ink2, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
 /**
  * RA-22: add-teacher form. A teacher is provisioned by email (with an initial
  * password) or by phone (OTP login). Frozen primitives only.
@@ -1075,8 +1151,9 @@ private fun AddTeacherSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
-        VBottomSheetHeader(
+        PremiumPeopleSheetHeader(
             title = appString(StringKeys.PPL_ADD_TEACHER),
+            subtitle = "Create a new teacher account",
             onClose = onDismiss,
         )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1085,18 +1162,24 @@ private fun AddTeacherSheet(
                 onValueChange = { name = it },
                 label = appString(StringKeys.PPL_FULL_NAME),
                 placeholder = appString(StringKeys.PPL_NAME_PH_TEACHER),
-                leadingIcon = VIcons.User,
             )
             VInput(
                 value = identifier,
                 onValueChange = { identifier = it },
                 label = appString(StringKeys.PPL_EMAIL_OR_PHONE),
                 placeholder = appString(StringKeys.PPL_EMAIL_PHONE_PH),
-                leadingIcon = if (isEmail) VIcons.Mail else VIcons.Phone,
                 keyboardType = if (isEmail) KeyboardType.Email else KeyboardType.Text,
             )
+            VInput(
+                value = password,
+                onValueChange = { password = it },
+                label = appString(StringKeys.PPL_INITIAL_PASSWORD),
+                placeholder = appString(StringKeys.PPL_PASSWORD_PH),
+                isPassword = true,
+                enabled = isEmail,
+            )
             VSheetPicker(
-                label = "Class",
+                label = "Assign Class",
                 value = className,
                 options = availableClasses.map { it.name },
                 onSelect = { className = it; section = "" },
@@ -1111,26 +1194,8 @@ private fun AddTeacherSheet(
                 placeholder = if (className.isBlank()) "Select class first" else "Select section",
                 enabled = selectedClass != null,
             )
-            Text(
-                "Class and section options come from your configured school structure.",
-                style = VTypography.caption,
-                color = VColors.ink3,
-            )
-            if (isEmail) {
-                VInput(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = appString(StringKeys.PPL_INITIAL_PASSWORD),
-                    placeholder = appString(StringKeys.PPL_PASSWORD_PH),
-                    leadingIcon = VIcons.Lock,
-                    isPassword = true,
-                )
-            } else {
-                Text(
-                    appString(StringKeys.PPL_OTP_HINT),
-                    style = VTypography.caption,
-                    color = VColors.ink2,
-                )
+            if (!isEmail && identifier.isNotBlank()) {
+                Text(appString(StringKeys.PPL_OTP_HINT), style = VTypography.caption, color = VColors.ink2)
             }
             Spacer(Modifier.height(4.dp))
             if (error != null) {
@@ -1158,6 +1223,7 @@ private fun AddTeacherSheet(
                         onSubmit(name, identifier, password.takeIf { isEmail && it.isNotBlank() })
                     },
                     variant = VButtonVariant.Primary,
+                    soft = false,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = canSubmit,
                     loading = isSubmitting,
@@ -1175,6 +1241,7 @@ private fun AddTeacherSheet(
 private fun AddStaffSheet(
     isSubmitting: Boolean,
     error: String?,
+    departments: List<String>,
     onDismiss: () -> Unit,
     onSubmit: (name: String, role: String, department: String, phone: String, email: String) -> Unit,
 ) {
@@ -1190,8 +1257,9 @@ private fun AddStaffSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
-        VBottomSheetHeader(
+        PremiumPeopleSheetHeader(
             title = appString(StringKeys.PPL_ADD_STAFF_MEMBER),
+            subtitle = "Create a non-teaching staff record",
             onClose = onDismiss,
         )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1200,28 +1268,26 @@ private fun AddStaffSheet(
                 onValueChange = { name = it },
                 label = appString(StringKeys.PPL_FULL_NAME),
                 placeholder = appString(StringKeys.PPL_NAME_PH_STAFF),
-                leadingIcon = VIcons.User,
             )
             VInput(
                 value = role,
                 onValueChange = { role = it },
                 label = appString(StringKeys.PPL_ROLE),
                 placeholder = appString(StringKeys.PPL_ROLE_PH),
-                leadingIcon = VIcons.User,
             )
-            VInput(
-                value = department,
-                onValueChange = { department = it },
+            VSheetPicker(
                 label = appString(StringKeys.PPL_DEPT_OPTIONAL),
+                value = department,
+                options = departments,
+                onSelect = { department = it },
                 placeholder = appString(StringKeys.PPL_DEPT_PH),
-                leadingIcon = VIcons.Bookmark,
+                searchable = true,
             )
             VInput(
                 value = phone,
                 onValueChange = { phone = it },
                 label = appString(StringKeys.PPL_PHONE_OPTIONAL),
                 placeholder = appString(StringKeys.PPL_PHONE_PH),
-                leadingIcon = VIcons.Phone,
                 keyboardType = KeyboardType.Phone,
             )
             VInput(
@@ -1229,7 +1295,6 @@ private fun AddStaffSheet(
                 onValueChange = { email = it },
                 label = appString(StringKeys.PPL_EMAIL_OPTIONAL),
                 placeholder = appString(StringKeys.PPL_EMAIL_PH),
-                leadingIcon = VIcons.Mail,
                 keyboardType = KeyboardType.Email,
             )
             Spacer(Modifier.height(4.dp))
@@ -1256,6 +1321,7 @@ private fun AddStaffSheet(
                     text = appString(StringKeys.PPL_ADD_STAFF),
                     onClick = { onSubmit(name, role, department, phone, email) },
                     variant = VButtonVariant.Primary,
+                    soft = false,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = canSubmit,
                     loading = isSubmitting,
@@ -1294,12 +1360,13 @@ private fun AddStudentPeopleSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
-        VBottomSheetHeader(
+        PremiumPeopleSheetHeader(
             title = appString(StringKeys.PPL_ADD_STUDENT),
+            subtitle = "Manually add a single student",
             onClose = onDismiss,
         )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
+            VInput(name, { name = it }, label = "Student Name", placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT))
             VSheetPicker(
                 label = appString(StringKeys.PPL_CLASS),
                 value = className,
@@ -1321,17 +1388,17 @@ private fun AddStudentPeopleSheet(
             )
             VInput(roll, { roll = it }, label = appString(StringKeys.PPL_ROLL_NUMBER), placeholder = appString(StringKeys.PPL_ROLL_PH), keyboardType = KeyboardType.Number)
             VInput(
-                admissionDate,
-                { admissionDate = it },
-                label = "Admission Date",
-                placeholder = "YYYY-MM-DD (optional)",
-            )
-            VInput(
                 parentPhone,
                 { parentPhone = it },
                 label = appString(StringKeys.PPL_PARENT_PHONE),
                 placeholder = appString(StringKeys.PPL_PARENT_PHONE_PH),
                 keyboardType = KeyboardType.Phone,
+            )
+            VInput(
+                admissionDate,
+                { admissionDate = it },
+                label = "Admission Date",
+                placeholder = "dd-mm-yyyy",
             )
             if (error != null) {
                 Text(error, style = VTypography.caption, color = VColors.coral)
@@ -1352,6 +1419,7 @@ private fun AddStudentPeopleSheet(
                     text = appString(StringKeys.PPL_ADD_STUDENT),
                     onClick = { onSubmit(name, className, section, roll, parentPhone, admissionDate) },
                     variant = VButtonVariant.Primary,
+                    soft = false,
                     modifier = Modifier.weight(1f).height(52.dp),
                     enabled = canSubmit,
                     loading = isSubmitting,
@@ -1401,7 +1469,11 @@ private fun ImportStudentsSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
-        VBottomSheetHeader(title = appString(StringKeys.PPL_IMPORT_STUDENTS_CSV), subtitle = appString(StringKeys.PPL_IMPORT_INSTRUCTIONS))
+        PremiumPeopleSheetHeader(
+            title = appString(StringKeys.PPL_IMPORT_STUDENTS_CSV),
+            subtitle = "Bulk import students from a CSV file",
+            onClose = onDismiss,
+        )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Primary: file upload gateway
             VCard(
@@ -1463,6 +1535,7 @@ private fun ImportStudentsSheet(
                 text = appString(StringKeys.PPL_IMPORT),
                 onClick = { onSubmit(csv) },
                 variant = VButtonVariant.Primary,
+                soft = false,
                 full = true,
                 enabled = canSubmit,
                 loading = isSubmitting,

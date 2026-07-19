@@ -41,6 +41,8 @@ data class TeacherCardProfileDto(
     val name: String = "",
     val avatarUrl: String? = null,
     val role: String = "",
+    val phone: String? = null,
+    val email: String? = null,
     val status: String = "ACTIVE",                            // ACTIVE | INACTIVE
     @SerialName("is_class_teacher") val isClassTeacher: Boolean = false,
     val experience: String? = null,
