@@ -8,13 +8,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -56,7 +53,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolClassDto
-import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsState
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolDashboardViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersState
@@ -82,7 +78,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VSnackbar
 import com.littlebridge.enrollplus.ui.v2.components.VSnackbarTone
 import com.littlebridge.enrollplus.ui.v2.components.VSheetPicker
-import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -212,7 +207,7 @@ private fun PeopleDirectoryTabs(
 /**
  * SchoolPeopleScreenV2 — RA-S17 rebuild.
  *
- * The People tab is now a [VTopTabs]-driven 3-sub-tab surface — **Teachers /
+ * The People tab is a pager-driven 3-sub-tab surface — **Teachers /
  * Students / Non-teaching staff** — each with a search field and tappable,
  * DB-backed rows that open the person's profile. Deletion has been removed from
  * the rows entirely: it now lives inside each profile behind a confirm dialog
@@ -274,7 +269,6 @@ fun SchoolPeopleScreenV2(
         onClearTeacherMessages = teachersViewModel::clearMessages,
         studentsState = studentsState,
         onStudentsRetry = studentsViewModel::load,
-        onStudentSearch = { studentsViewModel.load() }, // students VM reloads full list; client-side filter below
         onAddStudent = { name, cls, sec, roll, phone, admission -> studentsViewModel.addStudent(name, cls, sec, roll, phone, admission) },
         onImportStudentsCsv = studentsViewModel::importStudentsCsv,
         onClearStudentMessages = studentsViewModel::clearMessages,
@@ -312,7 +306,6 @@ private fun SchoolPeopleContent(
     onClearTeacherMessages: () -> Unit,
     studentsState: StudentRosterState,
     onStudentsRetry: () -> Unit,
-    onStudentSearch: (String) -> Unit,
     onAddStudent: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
     onImportStudentsCsv: (String) -> Unit,
     onClearStudentMessages: () -> Unit,
@@ -395,8 +388,6 @@ private fun SchoolPeopleContent(
         initialPage = initialSubTab.ordinal,
         pageCount = { PeopleSubTab.entries.size },
     )
-    val scope = rememberCoroutineScope()
-
     // Sync tab taps with pager.
     LaunchedEffect(subTab) {
         val page = subTab.ordinal
@@ -422,6 +413,7 @@ private fun SchoolPeopleContent(
         Column(
             modifier
                 .fillMaxSize()
+                .background(VColors.cream)
                 .statusBarsPadding()
                 .imePadding()
                 .navigationBarsPadding()
@@ -1083,7 +1075,10 @@ private fun AddTeacherSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
-        VBottomSheetHeader(title = appString(StringKeys.PPL_ADD_TEACHER))
+        VBottomSheetHeader(
+            title = appString(StringKeys.PPL_ADD_TEACHER),
+            onClose = onDismiss,
+        )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(
                 value = name,
@@ -1146,23 +1141,28 @@ private fun AddTeacherSheet(
                 )
                 Spacer(Modifier.height(4.dp))
             }
-            VButton(
-                text = appString(StringKeys.PPL_ADD_TEACHER),
-                onClick = {
-                    onSubmit(name, identifier, password.takeIf { isEmail && it.isNotBlank() })
-                },
-                variant = VButtonVariant.Primary,
-                full = true,
-                enabled = canSubmit,
-                loading = isSubmitting,
-            )
-            VButton(
-                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
-                onClick = onDismiss,
-                variant = VButtonVariant.Ghost,
-                full = true,
-                enabled = !isSubmitting,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Ghost,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = !isSubmitting,
+                )
+                VButton(
+                    text = appString(StringKeys.PPL_ADD_TEACHER),
+                    onClick = {
+                        onSubmit(name, identifier, password.takeIf { isEmail && it.isNotBlank() })
+                    },
+                    variant = VButtonVariant.Primary,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = canSubmit,
+                    loading = isSubmitting,
+                )
+            }
         }
     }
 }
@@ -1190,7 +1190,10 @@ private fun AddStaffSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
-        VBottomSheetHeader(title = appString(StringKeys.PPL_ADD_STAFF_MEMBER))
+        VBottomSheetHeader(
+            title = appString(StringKeys.PPL_ADD_STAFF_MEMBER),
+            onClose = onDismiss,
+        )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(
                 value = name,
@@ -1238,21 +1241,26 @@ private fun AddStaffSheet(
                 )
                 Spacer(Modifier.height(4.dp))
             }
-            VButton(
-                text = appString(StringKeys.PPL_ADD_STAFF),
-                onClick = { onSubmit(name, role, department, phone, email) },
-                variant = VButtonVariant.Primary,
-                full = true,
-                enabled = canSubmit,
-                loading = isSubmitting,
-            )
-            VButton(
-                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
-                onClick = onDismiss,
-                variant = VButtonVariant.Ghost,
-                full = true,
-                enabled = !isSubmitting,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Ghost,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = !isSubmitting,
+                )
+                VButton(
+                    text = appString(StringKeys.PPL_ADD_STAFF),
+                    onClick = { onSubmit(name, role, department, phone, email) },
+                    variant = VButtonVariant.Primary,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = canSubmit,
+                    loading = isSubmitting,
+                )
+            }
         }
     }
 }
@@ -1286,7 +1294,10 @@ private fun AddStudentPeopleSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
-        VBottomSheetHeader(title = appString(StringKeys.PPL_ADD_STUDENT))
+        VBottomSheetHeader(
+            title = appString(StringKeys.PPL_ADD_STUDENT),
+            onClose = onDismiss,
+        )
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
             VSheetPicker(
@@ -1326,21 +1337,26 @@ private fun AddStudentPeopleSheet(
                 Text(error, style = VTypography.caption, color = VColors.coral)
             }
             Spacer(Modifier.height(2.dp))
-            VButton(
-                text = appString(StringKeys.PPL_ADD_STUDENT),
-                onClick = { onSubmit(name, className, section, roll, parentPhone, admissionDate) },
-                variant = VButtonVariant.Primary,
-                full = true,
-                enabled = canSubmit,
-                loading = isSubmitting,
-            )
-            VButton(
-                text = appString(StringKeys.COMMON_BUTTON_CANCEL),
-                onClick = onDismiss,
-                variant = VButtonVariant.Ghost,
-                full = true,
-                enabled = !isSubmitting,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Ghost,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = !isSubmitting,
+                )
+                VButton(
+                    text = appString(StringKeys.PPL_ADD_STUDENT),
+                    onClick = { onSubmit(name, className, section, roll, parentPhone, admissionDate) },
+                    variant = VButtonVariant.Primary,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    enabled = canSubmit,
+                    loading = isSubmitting,
+                )
+            }
         }
     }
 }

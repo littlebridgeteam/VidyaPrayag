@@ -17,16 +17,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,11 +31,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImagePainter
@@ -46,72 +45,62 @@ import coil3.compose.rememberAsyncImagePainter
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCardDto
 import com.littlebridge.enrollplus.feature.school.domain.model.StaffDto
 import com.littlebridge.enrollplus.feature.school.domain.model.StudentDto
-import com.littlebridge.enrollplus.feature.school.domain.model.TodayItemDto
 import com.littlebridge.enrollplus.ui.tokens.VColors
 import com.littlebridge.enrollplus.ui.tokens.VTypography
-import com.littlebridge.enrollplus.ui.v2.components.VBadge
-import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
-import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
-import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
-import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
-import com.littlebridge.enrollplus.ui.v2.components.VStatusDot
-import kotlin.math.roundToInt
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
-
-// ──────────────────────────── Avatar variants ────────────────────────────
+import kotlin.math.roundToInt
 
 private enum class AvatarVariant {
-    Violet, Coral, Gold, Mint, Sky
+    Violet, Coral, Gold, Mint, Sky,
 }
 
 private val AvatarVariant.gradient: Pair<Color, Color>
     get() = when (this) {
-        AvatarVariant.Violet -> Color(0xFF7B61E5) to Color(0xFF5B41D5)
-        AvatarVariant.Coral -> Color(0xFFFF5C85) to Color(0xFFF82B60)
-        AvatarVariant.Gold -> Color(0xFFFFD040) to Color(0xFFFCB400)
-        AvatarVariant.Mint -> Color(0xFF4EE6A0) to Color(0xFF2DCE89)
-        AvatarVariant.Sky -> Color(0xFF42CCFF) to Color(0xFF18BFFF)
+        AvatarVariant.Violet -> Color(0xFF8D7AE8) to VColors.violet
+        AvatarVariant.Coral -> Color(0xFFFF7898) to VColors.coral
+        AvatarVariant.Gold -> Color(0xFFFFDA69) to Color(0xFFE9A700)
+        AvatarVariant.Mint -> Color(0xFF66E9AE) to Color(0xFF20B978)
+        AvatarVariant.Sky -> Color(0xFF6BD7FF) to Color(0xFF169ED9)
     }
 
 private fun avatarVariantFor(name: String): AvatarVariant {
     val hash = name.sumOf { it.code }
-    return AvatarVariant.entries[(hash % AvatarVariant.entries.size + AvatarVariant.entries.size) % AvatarVariant.entries.size]
+    val variants = AvatarVariant.entries
+    return variants[(hash % variants.size + variants.size) % variants.size]
 }
 
-private fun initialsOf(name: String): String =
-    name.trim().split(" ")
-        .filter { it.isNotBlank() }
-        .take(2)
-        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-        .joinToString("")
-        .ifEmpty { "?" }
+private fun initialsOf(name: String): String = name.trim()
+    .split(" ")
+    .filter { it.isNotBlank() }
+    .take(2)
+    .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+    .joinToString("")
+    .ifEmpty { "?" }
 
 @Composable
 private fun GradientAvatar(
     name: String,
     photoUrl: String?,
-    size: androidx.compose.ui.unit.Dp,
+    size: Dp = 52.dp,
     modifier: Modifier = Modifier,
 ) {
-    val variant = remember(name) { avatarVariantFor(name) }
-    val (start, end) = variant.gradient
+    val (start, end) = remember(name) { avatarVariantFor(name).gradient }
     Box(
         modifier = modifier
+            .shadow(8.dp, CircleShape, ambientColor = VColors.violet.copy(alpha = 0.2f))
             .size(size)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(start, end))),
+            .background(Brush.linearGradient(listOf(start, end)))
+            .border(2.dp, VColors.white, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = initialsOf(name),
-            style = VTypography.body.copy(
-                fontSize = (size.value * 0.35).sp,
-                fontWeight = FontWeight.Bold,
-                color = VColors.white,
-            ),
+            color = VColors.white,
+            fontSize = (size.value * 0.32f).sp,
+            fontWeight = FontWeight.ExtraBold,
         )
         if (!photoUrl.isNullOrBlank()) {
             val painter = rememberAsyncImagePainter(model = photoUrl)
@@ -121,16 +110,12 @@ private fun GradientAvatar(
                     painter = painter,
                     contentDescription = name,
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.fillSize().clip(CircleShape),
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
                 )
             }
         }
     }
 }
-
-private fun Modifier.fillSize() = fillMaxSize()
-
-// ──────────────────────────── Link banner ──────────────────────────────
 
 @Composable
 internal fun LinkRequestsBanner(
@@ -139,44 +124,42 @@ internal fun LinkRequestsBanner(
     modifier: Modifier = Modifier,
 ) {
     if (count <= 0) return
-    Box(
+    Row(
         modifier = modifier
+            .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(VColors.violetSoft)
+            .background(Brush.linearGradient(listOf(Color(0xFFF0ECFF), Color(0xFFFFF7FA))))
+            .border(1.dp, VColors.violet.copy(alpha = 0.14f), RoundedCornerShape(14.dp))
             .clickable { onClick() }
-            .padding(12.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Box(
+            Modifier.size(32.dp).clip(CircleShape).background(VColors.violet),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF7B61E5), Color(0xFF5B41D5)))),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(VIcons.Check, contentDescription = null, tint = VColors.white, modifier = Modifier.size(18.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "$count pending link requests",
-                    style = VTypography.label.copy(fontWeight = FontWeight.Bold),
-                    color = VColors.violet,
-                )
-                Text(
-                    "Tap to review parent→child approvals",
-                    style = VTypography.caption,
-                    color = VColors.violetInk.copy(alpha = 0.7f),
-                )
-            }
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
+            Icon(VIcons.Check, contentDescription = null, tint = VColors.white, modifier = Modifier.size(16.dp))
         }
+        Column(Modifier.weight(1f)) {
+            Text(
+                "$count pending link requests",
+                color = VColors.violet,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text("Review parent and student links", color = VColors.ink3, fontSize = 10.5.sp)
+        }
+        Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(18.dp))
     }
 }
 
-// ──────────────────────────── Filter chips ─────────────────────────────
+internal data class FilterChipSpec(
+    val label: String,
+    val options: List<String>,
+    val selected: Set<String>,
+    val onToggle: (String) -> Unit,
+)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -186,8 +169,8 @@ internal fun FilterChipRow(
 ) {
     FlowRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         chips.forEach { chip ->
             FilterChip(
@@ -200,13 +183,6 @@ internal fun FilterChipRow(
     }
 }
 
-internal data class FilterChipSpec(
-    val label: String,
-    val options: List<String>,
-    val selected: Set<String>,
-    val onToggle: (String) -> Unit,
-)
-
 @Composable
 private fun FilterChip(
     label: String,
@@ -216,80 +192,77 @@ private fun FilterChip(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val active = selected.isNotEmpty()
-    val interactionSource = remember { MutableInteractionSource() }
-
+    val shape = RoundedCornerShape(50)
     Box {
-        Box(
+        Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(50))
+                .clip(shape)
                 .then(
-                    if (active) {
-                        Modifier.background(Brush.linearGradient(listOf(Color(0xFF7B61E5), Color(0xFF5B41D5))))
-                    } else {
-                        Modifier
-                            .background(VColors.white)
-                            .border(1.5.dp, VColors.line, RoundedCornerShape(50))
-                    }
+                    if (active) Modifier.background(VColors.violet)
+                    else Modifier.background(VColors.white).border(1.dp, VColors.line, shape),
                 )
-                .clickable(interactionSource = interactionSource, indication = null) { expanded = !expanded }
-                .padding(horizontal = 14.dp, vertical = 7.dp),
-            contentAlignment = Alignment.Center,
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { expanded = true }
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    label,
-                    style = VTypography.label.copy(fontSize = 12.sp),
-                    color = if (active) VColors.white else VColors.ink2,
-                )
-                Icon(
-                    VIcons.ChevronDown,
-                    contentDescription = null,
-                    tint = if (active) VColors.white else VColors.ink3,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
+            Text(
+                if (active) "$label ${selected.size}" else label,
+                color = if (active) VColors.white else VColors.ink2,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Icon(
+                VIcons.ChevronDown,
+                contentDescription = null,
+                tint = if (active) VColors.white else VColors.ink3,
+                modifier = Modifier.size(14.dp),
+            )
         }
-
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier.background(VColors.white, RoundedCornerShape(14.dp)),
         ) {
-            options.forEach { option ->
-                val isSelected = option in selected
+            if (options.isEmpty()) {
                 DropdownMenuItem(
-                    text = {
-                        Text(
-                            option,
-                            style = VTypography.caption,
-                            color = if (isSelected) VColors.violet else VColors.ink,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        )
-                    },
-                    onClick = { onToggle(option); expanded = false },
-                    leadingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clip(CircleShape)
-                                .then(
-                                    if (isSelected) {
-                                        Modifier.background(VColors.violet)
-                                    } else {
-                                        Modifier.border(1.5.dp, VColors.line, CircleShape)
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (isSelected) {
-                                Icon(VIcons.Check, contentDescription = null, tint = VColors.white, modifier = Modifier.size(12.dp))
-                            }
-                        }
-                    },
+                    text = { Text("No options", color = VColors.ink3, fontSize = 12.sp) },
+                    onClick = { expanded = false },
+                    enabled = false,
                 )
+            } else {
+                options.forEach { option ->
+                    val chosen = option in selected
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                option,
+                                color = if (chosen) VColors.violet else VColors.ink,
+                                fontWeight = if (chosen) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        },
+                        onClick = { onToggle(option); expanded = false },
+                        leadingIcon = {
+                            Box(
+                                Modifier
+                                    .size(18.dp)
+                                    .clip(CircleShape)
+                                    .then(
+                                        if (chosen) Modifier.background(VColors.violet)
+                                        else Modifier.border(1.dp, VColors.line, CircleShape),
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (chosen) {
+                                    Icon(VIcons.Check, contentDescription = null, tint = VColors.white, modifier = Modifier.size(12.dp))
+                                }
+                            }
+                        },
+                    )
+                }
             }
         }
     }
@@ -310,72 +283,94 @@ internal fun ActiveFilterChips(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         selected.forEach { item ->
-            Box(
-                modifier = Modifier
+            Row(
+                Modifier
                     .clip(RoundedCornerShape(50))
                     .background(VColors.violetSoft)
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                contentAlignment = Alignment.Center,
+                    .clickable { onRemove(item) }
+                    .padding(horizontal = 9.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        item,
-                        style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                        color = VColors.violet,
-                    )
-                    Icon(
-                        VIcons.Close,
-                        contentDescription = null,
-                        tint = VColors.violet,
-                        modifier = Modifier
-                            .size(14.dp)
-                            .clickable { onRemove(item) },
-                    )
-                }
+                Text(item, color = VColors.violet, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
+                Icon(VIcons.Close, contentDescription = "Remove $item", tint = VColors.violet, modifier = Modifier.size(12.dp))
             }
         }
         Text(
             "Clear all",
-            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
             color = VColors.coral,
-            modifier = Modifier.clickable { onClearAll() }
-                .padding(horizontal = 4.dp, vertical = 4.dp),
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.clickable { onClearAll() }.padding(4.dp),
         )
     }
 }
 
-// ──────────────────────────── Quick action tile ────────────────────────
-
 @Composable
-private fun QuickActionButton(
+private fun CircularAction(
     icon: ImageVector,
-    label: String,
+    contentDescription: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
 ) {
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(VColors.surfaceTint)
-            .clickable { onClick() }
-            .padding(vertical = 9.dp),
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(if (emphasized) VColors.violet else VColors.creamDeep)
+            .border(1.dp, if (emphasized) VColors.violet else VColors.line, CircleShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(icon, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(17.dp))
-            Text(label, style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-        }
+        Icon(
+            icon,
+            contentDescription = contentDescription,
+            tint = if (emphasized) VColors.white else VColors.violet,
+            modifier = Modifier.size(17.dp),
+        )
     }
 }
 
-// ──────────────────────────── Student card ─────────────────────────────
+@Composable
+private fun StatusBadge(status: String, highlight: Boolean = false) {
+    val active = status.equals("active", true) || status.equals("available", true) || highlight
+    val color = if (active) Color(0xFF1C9C64) else VColors.ink3
+    val background = if (active) Color(0xFFE5F7EE) else VColors.creamDeep
+    Row(
+        Modifier.clip(RoundedCornerShape(50)).background(background).padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(Modifier.size(6.dp).clip(CircleShape).background(color))
+        Text(status.ifBlank { "Active" }.replaceFirstChar { it.uppercase() }, color = color, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+    }
+}
 
+@Composable
+private fun Tag(text: String, color: Color = VColors.violet, background: Color = VColors.violetSoft) {
+    Box(Modifier.clip(RoundedCornerShape(50)).background(background).padding(horizontal = 8.dp, vertical = 4.dp)) {
+        Text(text, color = color, fontSize = 9.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
+@Composable
+private fun Metric(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text(value, color = VColors.ink, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(label.uppercase(), color = VColors.ink3, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.4.sp, maxLines = 1)
+    }
+}
+
+@Composable
+private fun CardDivider() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line.copy(alpha = 0.72f)))
+}
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun StudentCard(
     student: StudentDto,
@@ -384,185 +379,54 @@ internal fun StudentCard(
     onMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val alerts = remember(student) { studentAlerts(student) }
-    var menuOpen by remember { mutableStateOf(false) }
-
     VCard(
         modifier = modifier.fillMaxWidth(),
-        padding = 16.dp,
-        shape = RoundedCornerShape(14.dp),
+        padding = 14.dp,
+        shape = RoundedCornerShape(16.dp),
+        background = VColors.white,
         onClick = onOpen,
     ) {
-        Column {
-            // Header
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                GradientAvatar(
-                    name = student.fullName,
-                    photoUrl = student.profilePhotoUrl,
-                    size = 48.dp,
-                )
-                Column(Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            student.fullName,
-                            style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                            color = VColors.ink,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(VColors.violetSoft)
-                                .padding(horizontal = 10.dp, vertical = 3.dp),
-                        ) {
-                            val cleanClass = student.className.removePrefix("Class ").removePrefix("class ")
-                            Text(
-                                "Class $cleanClass-${student.section}",
-                                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = VColors.violet,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            "Roll #${student.rollNumber}",
-                            style = VTypography.caption,
-                            color = VColors.ink3,
-                        )
-                        Text(
-                            "Admission #${student.studentCode}",
-                            style = VTypography.caption,
-                            color = VColors.ink3,
-                        )
-                    }
-                }
-                Box {
-                    Icon(
-                        VIcons.More,
-                        contentDescription = "More options",
-                        tint = VColors.ink3,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clip(RoundedCornerShape(50))
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { menuOpen = true },
-                    )
-                    DropdownMenu(
-                        expanded = menuOpen,
-                        onDismissRequest = { menuOpen = false },
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("View Profile", style = VTypography.caption) },
-                            onClick = { menuOpen = false; onOpen() },
-                            leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Call Parent", style = VTypography.caption) },
-                            onClick = { menuOpen = false; onCall() },
-                            leadingIcon = { Icon(VIcons.Phone, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Message", style = VTypography.caption) },
-                            onClick = { menuOpen = false; onMessage() },
-                            leadingIcon = { Icon(VIcons.Chat, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                        )
-                    }
-                }
-            }
-
-            // Parent info
-            Row(
-                modifier = Modifier.padding(top = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(VIcons.User, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            GradientAvatar(student.fullName, student.profilePhotoUrl)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        student.parentName?.takeIf { it.isNotBlank() } ?: "—",
-                        style = VTypography.caption,
-                        color = VColors.ink2,
+                        student.fullName,
+                        color = VColors.ink,
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
+                    StatusBadge(student.status, highlight = student.status.isBlank())
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(VIcons.Phone, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
-                    Text(
-                        maskPhone(student.parentPhone),
-                        style = VTypography.caption,
-                        color = VColors.ink2,
-                    )
-                }
+                val classLabel = listOf(student.className, student.section.takeIf { it.isNotBlank() }).filterNotNull().joinToString(" · ")
+                Text(classLabel, color = VColors.ink2, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text("Roll ${student.rollNumber}", color = VColors.ink3, fontSize = 10.5.sp)
             }
-
-            DividerLine()
-
-            // Alerts
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.padding(top = 12.dp),
-            ) {
-                alerts.forEach { (label, color) ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        VStatusDot(color = color, size = 8.dp, ring = true)
-                        Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-                    }
-                }
-            }
-
-            // Micro viz
-            Row(
-                modifier = Modifier.padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                MicroViz(
-                    label = "ATTENDANCE",
-                    value = student.attendancePercent.takeIf { it > 0 }?.let { "${it.roundToInt()}%" } ?: "—",
-                    percent = student.attendancePercent,
-                    tone = attendanceBarTone(student.attendancePercent),
-                    modifier = Modifier.weight(1f),
-                )
-                MicroViz(
-                    label = "HOMEWORK",
-                    value = student.homeworkPercent.takeIf { it > 0 }?.let { "${it.roundToInt()}%" } ?: "—",
-                    percent = student.homeworkPercent,
-                    tone = homeworkBarTone(student.homeworkPercent),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            // Today
-            if (student.todayItems.isNotEmpty()) {
-                TodaySummary(student.todayItems)
-            }
-
-            // Actions
-            Row(
-                modifier = Modifier.padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                QuickActionButton(VIcons.User, "Profile", onOpen, Modifier.weight(1f))
-                QuickActionButton(VIcons.Phone, "Call", onCall, Modifier.weight(1f))
-                QuickActionButton(VIcons.Chat, "Message", onMessage, Modifier.weight(1f))
-            }
+        }
+        Spacer(Modifier.height(10.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (student.isNewAdmission) Tag("New admission", VColors.violet, VColors.violetSoft)
+            student.parentName?.takeIf { it.isNotBlank() }?.let { Tag(it, VColors.ink2, VColors.creamDeep) }
+            if (student.feesPending) Tag("Fees pending", Color(0xFFC26A00), Color(0xFFFFF1D6))
+            if (student.parentMeetingScheduled) Tag("Parent meeting", Color(0xFF1674A3), Color(0xFFE4F5FC))
+        }
+        Spacer(Modifier.height(11.dp))
+        CardDivider()
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Metric("Student ID", student.studentCode.ifBlank { "—" }, Modifier.weight(1f))
+            Metric("Attendance", student.attendancePercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "—", Modifier.weight(0.8f))
+            Metric("Homework", student.homeworkPercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "—", Modifier.weight(0.8f))
+            CircularAction(VIcons.Phone, "Call parent", onCall)
+            CircularAction(VIcons.Chat, "Message parent", onMessage, emphasized = true)
         }
     }
 }
 
-// ──────────────────────────── Staff card ─────────────────────────────────
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun StaffCard(
     staff: StaffDto,
@@ -571,141 +435,51 @@ internal fun StaffCard(
     onMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val alerts = remember(staff) { staffAlerts(staff) }
-
     VCard(
         modifier = modifier.fillMaxWidth(),
-        padding = 16.dp,
-        shape = RoundedCornerShape(14.dp),
+        padding = 14.dp,
+        shape = RoundedCornerShape(16.dp),
+        background = VColors.white,
         onClick = onOpen,
     ) {
-        Column {
-            // Header
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                GradientAvatar(
-                    name = staff.fullName,
-                    photoUrl = staff.photoUrl,
-                    size = 48.dp,
-                )
-                Column(Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            staff.fullName,
-                            style = VTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                            color = VColors.ink,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(VColors.mintSoft)
-                                .padding(horizontal = 10.dp, vertical = 3.dp),
-                        ) {
-                            Text(
-                                staff.department ?: "Staff",
-                                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = VColors.success,
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            staff.role,
-                            style = VTypography.caption,
-                            color = VColors.ink3,
-                        )
-                        Text(
-                            staff.employeeId?.takeIf { it.isNotBlank() }?.let { "EMP-$it" } ?: "",
-                            style = VTypography.caption,
-                            color = VColors.ink3,
-                        )
-                    }
-                }
-                Icon(
-                    VIcons.More,
-                    contentDescription = null,
-                    tint = VColors.ink3,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-
-            // Contact info
-            Row(
-                modifier = Modifier.padding(top = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(VIcons.Phone, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            GradientAvatar(staff.fullName, staff.photoUrl)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        staff.phone?.takeIf { it.isNotBlank() } ?: "—",
-                        style = VTypography.caption,
-                        color = VColors.ink2,
+                        staff.fullName,
+                        color = VColors.ink,
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
+                    StatusBadge(staff.status)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(VIcons.Mail, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
-                    Text(
-                        staff.email?.takeIf { it.isNotBlank() } ?: "—",
-                        style = VTypography.caption,
-                        color = VColors.ink2,
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(VIcons.Clock, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
-                    Text(
-                        staff.shift?.takeIf { it.isNotBlank() } ?: "—",
-                        style = VTypography.caption,
-                        color = VColors.ink2,
-                    )
-                }
+                Text(staff.role.ifBlank { "Staff" }, color = VColors.ink2, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
+                staff.department?.takeIf { it.isNotBlank() }?.let { Text(it, color = VColors.ink3, fontSize = 10.5.sp) }
             }
-
-            DividerLine()
-
-            // Alerts
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.padding(top = 12.dp),
-            ) {
-                alerts.forEach { (label, color) ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        VStatusDot(color = color, size = 8.dp, ring = true)
-                        Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-                    }
-                }
-            }
-
-            // Today
-            if (staff.todayItems.isNotEmpty()) {
-                TodaySummary(staff.todayItems)
-            }
-
-            // Actions
-            Row(
-                modifier = Modifier.padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                QuickActionButton(VIcons.User, "Profile", onOpen, Modifier.weight(1f))
-                QuickActionButton(VIcons.Phone, "Call", onCall, Modifier.weight(1f))
-                QuickActionButton(VIcons.Chat, "Message", onMessage, Modifier.weight(1f))
-            }
+        }
+        Spacer(Modifier.height(10.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            staff.department?.takeIf { it.isNotBlank() }?.let { Tag(it) }
+            staff.shift?.takeIf { it.isNotBlank() }?.let { Tag(it, VColors.ink2, VColors.creamDeep) }
+            staff.joinedYear?.takeIf { it.isNotBlank() }?.let { Tag("Since $it", Color(0xFF1C7A56), Color(0xFFE5F7EE)) }
+        }
+        Spacer(Modifier.height(11.dp))
+        CardDivider()
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Metric("Phone", staff.phone?.takeIf { it.isNotBlank() } ?: "—", Modifier.weight(1f))
+            Metric("Email", staff.email?.takeIf { it.isNotBlank() } ?: "—", Modifier.weight(1.3f))
+            CircularAction(VIcons.Phone, "Call staff member", onCall)
+            CircularAction(VIcons.Chat, "Message staff member", onMessage, emphasized = true)
         }
     }
 }
 
-// ──────────────────────────── Teacher card (bento) ───────────────────────
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun TeacherCard(
     teacher: TeacherCardDto,
@@ -715,449 +489,93 @@ internal fun TeacherCard(
     modifier: Modifier = Modifier,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    val isActive = teacher.profile.status.equals("ACTIVE", ignoreCase = true)
-    val subject = teacher.academicAssignment.subjects.firstOrNull() ?: "Mathematics"
-    val theme = subjectTheme(subject)
-
-    Box(modifier = modifier.fillMaxWidth()) {
-        VCard(
-            modifier = Modifier.fillMaxWidth(),
-            padding = 14.dp,
-            shape = RoundedCornerShape(18.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    GradientAvatar(
-                        name = teacher.profile.name,
-                        photoUrl = teacher.profile.avatarUrl,
-                        size = 38.dp,
+    val profile = teacher.profile
+    val attendance = teacher.activity.attendancePercentage
+    VCard(
+        modifier = modifier.fillMaxWidth(),
+        padding = 14.dp,
+        shape = RoundedCornerShape(16.dp),
+        background = VColors.white,
+        onClick = onViewProfile,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            GradientAvatar(profile.name, profile.avatarUrl)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        profile.name.ifBlank { "Unnamed teacher" },
+                        color = VColors.ink,
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
-                    Column(Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                teacher.profile.name.ifBlank { "Unnamed" },
-                                style = VTypography.caption.copy(fontWeight = FontWeight.Bold),
-                                color = VColors.ink,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false),
-                            )
-                            if (teacher.profile.isClassTeacher) {
-                                Spacer(Modifier.width(4.dp))
-                                Icon(VIcons.Star, contentDescription = null, tint = VColors.gold, modifier = Modifier.size(16.dp))
-                            }
-                        }
-                        Text(
-                            listOfNotNull(
-                                teacher.profile.role.takeIf { it.isNotBlank() },
-                                teacher.profile.experience?.takeIf { it.isNotBlank() },
-                            ).joinToString(" · "),
-                            style = VTypography.caption,
-                            color = VColors.ink3,
-                        )
-                    }
-                    AvailabilityPill(teacher.availability)
+                    if (profile.isClassTeacher) Icon(VIcons.Star, contentDescription = "Class teacher", tint = Color(0xFFE9A700), modifier = Modifier.size(14.dp))
+                    StatusBadge(profile.status)
                 }
-
-                DividerLine()
-
-                // Bento grid
-                Column {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        BentoCell(
-                            label = "CLASSES",
-                            value = teacher.workload.totalClasses.toString(),
-                            sub = "active",
-                            icon = VIcons.BookOpen,
-                            iconBg = VColors.violetSoft,
-                            iconTint = VColors.violet,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Box(Modifier.width(1.dp).height(60.dp).background(VColors.lineSoft))
-                        BentoCell(
-                            label = "STUDENTS",
-                            value = teacher.workload.totalStudents.toString(),
-                            sub = "enrolled",
-                            icon = VIcons.Users,
-                            iconBg = VColors.skySoft,
-                            iconTint = VColors.sky,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        val att = teacher.activity.attendancePercentage
-                        val attTone = when {
-                            att == null -> VBadgeTone.Neutral
-                            att >= 95 -> VBadgeTone.Success
-                            att >= 85 -> VBadgeTone.Warning
-                            else -> VBadgeTone.Danger
-                        }
-                        BentoCell(
-                            label = "ATTENDANCE",
-                            value = att?.let { "$it%" } ?: "—",
-                            sub = "avg rate",
-                            icon = VIcons.Calendar,
-                            iconBg = when (attTone) {
-                                VBadgeTone.Success -> VColors.mintSoft
-                                VBadgeTone.Warning -> VColors.goldSoft
-                                VBadgeTone.Danger -> VColors.coralSoft
-                                else -> VColors.surfaceTint
-                            },
-                            iconTint = when (attTone) {
-                                VBadgeTone.Success -> VColors.success
-                                VBadgeTone.Warning -> VColors.gold
-                                VBadgeTone.Danger -> VColors.coral
-                                else -> VColors.ink3
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                        Box(Modifier.width(1.dp).height(60.dp).background(VColors.lineSoft))
-                        BentoCell(
-                            label = "WORKLOAD",
-                            value = "${teacher.workload.workloadPercent}%",
-                            sub = "Weekly capacity",
-                            icon = null,
-                            isWorkload = true,
-                            workloadPercent = teacher.workload.workloadPercent,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
-                    // Subjects & grades
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                    ) {
-                        Text(
-                            "SUBJECTS & GRADES",
-                            style = VTypography.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
-                            color = VColors.ink3,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            teacher.academicAssignment.subjects.forEach { subj ->
-                                val t = subjectTheme(subj)
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(50))
-                                        .background(t.soft)
-                                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                                ) {
-                                    Text(
-                                        subj,
-                                        style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                                        color = t.ink,
-                                    )
-                                }
-                            }
-                            teacher.academicAssignment.grades.forEach { grade ->
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(50))
-                                        .background(VColors.surfaceTint)
-                                        .border(1.dp, VColors.lineSoft, RoundedCornerShape(50))
-                                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                                ) {
-                                    Text(
-                                        "Gr $grade",
-                                        style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                        color = VColors.ink2,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.lineSoft))
-                    // Schedule + actions
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(VIcons.Calendar, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
-                            Text(
-                                teacher.workload.schedule.takeIf { it.isNotBlank() } ?: "No schedule",
-                                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
-                                color = VColors.ink2,
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            VButton(
-                                text = "Profile",
-                                onClick = onViewProfile,
-                                variant = VButtonVariant.Primary,
-                                size = VButtonSize.Sm,
-                                leading = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                            )
-                            Box {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(VColors.surfaceTint)
-                                        .clickable { menuOpen = true },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(VIcons.More, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(18.dp))
-                                }
-                                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                    if (teacher.actions.canAssignClass) {
-                                        DropdownMenuItem(
-                                            text = { Text("Assign Classes") },
-                                            onClick = { menuOpen = false; onAssignClass() },
-                                            leadingIcon = { Icon(VIcons.Menu, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                                        )
-                                    }
-                                    DropdownMenuItem(
-                                        text = { Text("Edit Details") },
-                                        onClick = { menuOpen = false; onViewProfile() },
-                                        leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                                    )
-                                    if (teacher.actions.canDeactivate) {
-                                        DropdownMenuItem(
-                                            text = { Text("Deactivate", color = VColors.coral) },
-                                            onClick = { menuOpen = false; onDeactivate() },
-                                            leadingIcon = { Icon(VIcons.Close, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(16.dp)) },
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                Text(profile.role.ifBlank { "Teacher" }, color = VColors.ink2, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
+                profile.experience?.takeIf { it.isNotBlank() }?.let { Text(it, color = VColors.ink3, fontSize = 10.5.sp) }
             }
         }
-
-        // Accent strip — drawn on top so it sits flush against the card top edge.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .align(Alignment.TopCenter)
-                .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
-                .background(Brush.linearGradient(listOf(theme.start, theme.end))),
-        )
-    }
-}
-
-@Composable
-private fun BentoCell(
-    label: String,
-    value: String,
-    sub: String,
-    icon: ImageVector?,
-    modifier: Modifier = Modifier,
-    iconBg: Color = VColors.surfaceTint,
-    iconTint: Color = VColors.ink3,
-    isWorkload: Boolean = false,
-    workloadPercent: Int = 0,
-) {
-    Column(
-        modifier = modifier.padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(label, style = VTypography.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp), color = VColors.ink3)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (icon != null) {
-                Box(
-                    modifier = Modifier.size(24.dp).clip(RoundedCornerShape(7.dp)).background(iconBg),
-                    contentAlignment = Alignment.Center,
+        Spacer(Modifier.height(10.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            teacher.academicAssignment.subjects.forEach { subject ->
+                val theme = subjectTheme(subject)
+                Tag(subject, theme.ink, theme.soft)
+            }
+            teacher.academicAssignment.grades.forEach { grade -> Tag("Grade $grade", VColors.ink2, VColors.creamDeep) }
+        }
+        Spacer(Modifier.height(11.dp))
+        CardDivider()
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Metric("Students", teacher.workload.totalStudents.toString(), Modifier.weight(0.7f))
+            Metric("Classes", teacher.workload.totalClasses.toString(), Modifier.weight(0.7f))
+            Metric("Attendance", attendance?.let { "$it%" } ?: "—", Modifier.weight(0.9f))
+            profile.rating?.let { Metric("Rating", it.toString(), Modifier.weight(0.7f)) }
+            if (teacher.actions.canAssignClass) {
+                CircularAction(VIcons.School, "Assign classes", onAssignClass, emphasized = true)
+            }
+            Box {
+                CircularAction(VIcons.More, "More teacher actions", { menuOpen = true })
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                    modifier = Modifier.background(VColors.white, RoundedCornerShape(14.dp)),
                 ) {
-                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(14.dp))
-                }
-            }
-            Column {
-                Text(value, style = VTypography.h3.copy(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold), color = VColors.ink)
-                Text(sub, style = VTypography.caption, color = VColors.ink3)
-            }
-        }
-        if (isWorkload) {
-            Spacer(Modifier.height(4.dp))
-            VProgressBar(
-                value = workloadPercent.toFloat(),
-                tone = workloadBarTone(workloadPercent.toFloat()),
-                height = 6.dp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun AvailabilityPill(availability: String) {
-    val (label, dotColor, bgGradient) = when (availability.lowercase()) {
-        "teaching" -> Triple("Teaching", VColors.success, listOf(VColors.mintSoft, Color(0xFFB8EBCC)))
-        "break" -> Triple("Break", VColors.gold, listOf(VColors.goldSoft, Color(0xFFFFEAB8)))
-        "meeting" -> Triple("In Meeting", VColors.sky, listOf(VColors.skySoft, Color(0xFFC8E4FF)))
-        "leave" -> Triple("On Leave", VColors.coral, listOf(VColors.coralSoft, Color(0xFFFFD0DA)))
-        else -> Triple("Break", VColors.gold, listOf(VColors.goldSoft, Color(0xFFFFEAB8)))
-    }
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(Brush.linearGradient(bgGradient))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            VStatusDot(color = dotColor, size = 7.dp)
-            Text(label, style = VTypography.caption.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold), color = dotColor)
-        }
-    }
-}
-
-// ──────────────────────────── Shared helpers ─────────────────────────────
-
-@Composable
-private fun DividerLine() {
-    Box(Modifier.padding(vertical = 12.dp).fillMaxWidth().height(1.dp).background(VColors.lineSoft))
-}
-
-@Composable
-private fun MicroViz(
-    label: String,
-    value: String,
-    percent: Float,
-    tone: VBadgeTone,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                label,
-                style = VTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp),
-                color = VColors.ink3,
-            )
-            Text(value, style = VTypography.label.copy(fontWeight = FontWeight.Bold), color = VColors.ink)
-        }
-        Spacer(Modifier.height(4.dp))
-        VProgressBar(value = percent, tone = tone, height = 6.dp)
-    }
-}
-
-@Composable
-private fun TodaySummary(items: List<TodayItemDto>) {
-    Column(
-        modifier = Modifier
-            .padding(top = 12.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(VColors.surfaceTint)
-            .padding(10.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "TODAY",
-                style = VTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp),
-                color = VColors.ink2,
-            )
-            Icon(VIcons.ChevronRight, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(14.dp))
-        }
-        Spacer(Modifier.height(4.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            items.forEach { item ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    VStatusDot(color = todayColor(item.color), size = 5.dp)
-                    Text(item.text, style = VTypography.caption, color = VColors.ink2)
+                    DropdownMenuItem(
+                        text = { Text("View profile") },
+                        onClick = { menuOpen = false; onViewProfile() },
+                        leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    )
+                    if (teacher.actions.canAssignClass) {
+                        DropdownMenuItem(
+                            text = { Text("Assign classes") },
+                            onClick = { menuOpen = false; onAssignClass() },
+                            leadingIcon = { Icon(VIcons.School, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                    }
+                    if (teacher.actions.canDeactivate) {
+                        DropdownMenuItem(
+                            text = { Text("Deactivate", color = VColors.coral) },
+                            onClick = { menuOpen = false; onDeactivate() },
+                            leadingIcon = { Icon(VIcons.Close, contentDescription = null, tint = VColors.coral, modifier = Modifier.size(16.dp)) },
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-private fun maskPhone(phone: String?): String {
-    if (phone.isNullOrBlank()) return "—"
-    val digits = phone.filter { it.isDigit() }
-    val prefix = phone.takeWhile { it == '+' || it == ' ' }
-    if (digits.length <= 4) return phone
-    val suffix = digits.takeLast(4)
-    val masked = "X".repeat(digits.length - 4)
-    return "${prefix}${masked}${suffix}"
-}
-
-private fun studentAlerts(student: StudentDto): List<Pair<String, Color>> {
-    val list = mutableListOf<Pair<String, Color>>()
-    when {
-        !student.status.equals("active", true) -> list.add("Inactive" to VColors.ink3)
-        student.isNewAdmission -> list.add("New Admission" to VColors.violet)
-        student.attendancePercent in 0.1f..74.9f -> list.add("Low Attendance" to VColors.coral)
-        student.attendancePercent >= 75f -> list.add("Healthy" to VColors.mint)
-    }
-    if (student.homeworkPercent < 80f && student.homeworkPercent > 0) list.add("Homework Due" to VColors.gold)
-    if (student.feesPending) list.add("Fees Pending" to Color(0xFFFF8800))
-    if (student.parentMeetingScheduled) list.add("Parent Meeting" to VColors.sky)
-    return list
-}
-
-private fun staffAlerts(staff: StaffDto): List<Pair<String, Color>> {
-    val list = mutableListOf<Pair<String, Color>>()
-    val active = staff.status.equals("active", true)
-    val checkedIn = staff.todayItems.any { it.text.contains("Checked in", ignoreCase = true) }
-    when {
-        active && checkedIn -> list.add("On Duty" to VColors.mint)
-        active -> list.add("On Duty" to VColors.mint)
-        else -> list.add("Off Duty" to VColors.coral)
-    }
-    if (staff.joinedYear?.isNotBlank() == true) {
-        list.add("Since ${staff.joinedYear}" to VColors.violet)
-    }
-    return list
-}
-
-private fun todayColor(name: String): Color = when (name.lowercase()) {
-    "green" -> VColors.mint
-    "yellow" -> VColors.gold
-    "red" -> VColors.coral
-    "sky" -> VColors.sky
-    else -> VColors.ink3
-}
-
-private fun attendanceBarTone(value: Float): VBadgeTone = when {
-    value >= 85f -> VBadgeTone.Success
-    value >= 75f -> VBadgeTone.Warning
-    value > 0f -> VBadgeTone.Danger
-    else -> VBadgeTone.Arctic
-}
-
-private fun homeworkBarTone(value: Float): VBadgeTone = when {
-    value >= 80f -> VBadgeTone.Success
-    value >= 50f -> VBadgeTone.Warning
-    else -> VBadgeTone.Danger
-}
-
-private fun workloadBarTone(value: Float): VBadgeTone = when {
-    value >= 80f -> VBadgeTone.Danger
-    value >= 60f -> VBadgeTone.Warning
-    value > 0f -> VBadgeTone.Success
-    else -> VBadgeTone.Neutral
-}
-
-private data class SubjectTheme(val start: Color, val end: Color, val soft: Color, val ink: Color)
+private data class SubjectTheme(val soft: Color, val ink: Color)
 
 private fun subjectTheme(subject: String): SubjectTheme = when (subject.lowercase()) {
-    "mathematics", "maths", "math" -> SubjectTheme(Color(0xFF7B61E5), Color(0xFF5B41D5), VColors.violetSoft, VColors.violet)
-    "science" -> SubjectTheme(Color(0xFF4EE6A0), Color(0xFF2DCE89), VColors.mintSoft, VColors.success)
-    "english" -> SubjectTheme(Color(0xFF42CCFF), Color(0xFF18BFFF), VColors.skySoft, Color(0xFF0B7AB8))
-    "social studies", "social" -> SubjectTheme(Color(0xFFFF5C85), Color(0xFFF82B60), VColors.coralSoft, Color(0xFFD11A4A))
-    "hindi" -> SubjectTheme(Color(0xFFFFD040), Color(0xFFFCB400), VColors.goldSoft, Color(0xFFB07500))
-    "computer science", "cs", "computers" -> SubjectTheme(Color(0xFFA78BFA), Color(0xFF7C3AED), Color(0xFFEDE9FE), Color(0xFF5B21B6))
-    else -> SubjectTheme(Color(0xFF7B61E5), Color(0xFF5B41D5), VColors.violetSoft, VColors.violet)
+    "science" -> SubjectTheme(Color(0xFFE5F7EE), Color(0xFF1C7A56))
+    "english" -> SubjectTheme(Color(0xFFE4F5FC), Color(0xFF1674A3))
+    "social studies", "social" -> SubjectTheme(Color(0xFFFFE9EF), Color(0xFFC42752))
+    "hindi" -> SubjectTheme(Color(0xFFFFF1D6), Color(0xFFA56300))
+    "computer science", "cs", "computers" -> SubjectTheme(Color(0xFFEDE9FE), Color(0xFF5B21B6))
+    else -> SubjectTheme(VColors.violetSoft, VColors.violet)
 }

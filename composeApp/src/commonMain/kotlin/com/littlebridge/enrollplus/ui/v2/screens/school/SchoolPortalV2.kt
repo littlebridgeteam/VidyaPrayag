@@ -781,6 +781,7 @@ fun SchoolPortalV2(
                         studentRefreshKey = studentRefreshKey,
                         // RA-48 — open the parent→child link approval queue.
                         onOpenLinkRequests = { overlay = SchoolOverlay.LinkRequests },
+                        onOpenNotifications = { overlay = SchoolOverlay.Notifications },
                         // RA-S17 — People is now a 3-sub-tab roster; rows open the
                         // matching profile overlay (delete-in-profile lives there).
                         onOpenStudent = { id -> selectedStudentId = id; overlay = SchoolOverlay.StudentProfile },
