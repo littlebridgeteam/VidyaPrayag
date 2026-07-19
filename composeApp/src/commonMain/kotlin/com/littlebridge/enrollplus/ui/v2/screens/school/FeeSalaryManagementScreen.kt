@@ -51,6 +51,11 @@ import com.littlebridge.enrollplus.ui.tokens.VTypography
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 
+private fun formatFrequency(freq: String): String =
+    freq.lowercase().split("_").joinToString(" ") { word ->
+        word.replaceFirstChar { it.uppercase() }
+    }
+
 @Composable
 fun FeeSalaryManagementScreen(
     onBack: () -> Unit,
@@ -240,7 +245,7 @@ private fun FeeStructureCard(
                         color = VColors.violet,
                     )
                     VBadge(
-                        text = struct.frequency,
+                        text = formatFrequency(struct.frequency),
                         tone = VBadgeTone.Neutral,
                     )
                     if (!struct.isActive) {
@@ -316,7 +321,7 @@ private fun AddFeeStructureSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = selectedFrequency,
+                        text = formatFrequency(selectedFrequency),
                         style = VTypography.body,
                         color = VColors.ink,
                     )
@@ -340,7 +345,7 @@ private fun AddFeeStructureSheet(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = freq,
+                                text = formatFrequency(freq),
                                 style = VTypography.body,
                                 color = VColors.ink,
                                 modifier = Modifier.weight(1f),
@@ -495,7 +500,7 @@ private fun EditFeeStructureSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = selectedFrequency,
+                        text = formatFrequency(selectedFrequency),
                         style = VTypography.body,
                         color = VColors.ink,
                     )
@@ -519,7 +524,7 @@ private fun EditFeeStructureSheet(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = freq,
+                                text = formatFrequency(freq),
                                 style = VTypography.body,
                                 color = VColors.ink,
                                 modifier = Modifier.weight(1f),

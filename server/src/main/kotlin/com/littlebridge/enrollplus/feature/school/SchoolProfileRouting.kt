@@ -181,6 +181,23 @@ fun Route.schoolProfileRouting() {
                 val req = runCatching { call.receive<UpdateSchoolProfileRequest>() }.getOrNull()
                     ?: run { call.fail("Invalid body"); return@put }
 
+                // ── Server-side pincode validation (Bug 18 + 19) ──
+                val pincode = req.pincode?.takeIf { it.isNotBlank() }
+                if (pincode != null) {
+                    if (!pincode.matches(Regex("^\\d{6}$"))) {
+                        call.fail("PIN must be exactly 6 digits", HttpStatusCode.BadRequest, "INVALID_PINCODE")
+                        return@put
+                    }
+                    val city = req.city?.takeIf { it.isNotBlank() }
+                    if (city != null) {
+                        val expectedPrefix = CITY_PINCODE_PREFIX_SERVER[city]
+                        if (expectedPrefix != null && !pincode.startsWith(expectedPrefix)) {
+                            call.fail("PIN code does not match $city. Expected prefix: $expectedPrefix", HttpStatusCode.BadRequest, "PINCODE_CITY_MISMATCH")
+                            return@put
+                        }
+                    }
+                }
+
                 val dto = dbQuery {
                     val exists = SchoolsTable.selectAll()
                         .where { SchoolsTable.id eq ctx.schoolId }
@@ -237,3 +254,22 @@ fun Route.schoolProfileRouting() {
         }
     }
 }
+
+private val CITY_PINCODE_PREFIX_SERVER: Map<String, String> = mapOf(
+    "New Delhi" to "110",
+    "Mumbai" to "400",
+    "Pune" to "411",
+    "Bangalore" to "560",
+    "Chennai" to "600",
+    "Kolkata" to "700",
+    "Hyderabad" to "500",
+    "Ahmedabad" to "380",
+    "Jaipur" to "302",
+    "Lucknow" to "226",
+    "Kanpur" to "208",
+    "Varanasi" to "221",
+    "Meerut" to "250",
+    "Noida" to "201",
+    "Ghaziabad" to "201",
+    "Gurugram" to "122",
+)

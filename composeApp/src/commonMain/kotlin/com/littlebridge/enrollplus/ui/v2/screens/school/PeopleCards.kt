@@ -639,11 +639,11 @@ internal fun StaffCard(
                 )
             }
 
-            // Contact info
-            Row(
-                modifier = Modifier.padding(top = 10.dp),
+            // Contact info — FlowRow wraps to next line on narrow screens
+            FlowRow(
+                modifier = Modifier.padding(top = 10.dp).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(VIcons.Phone, contentDescription = null, tint = VColors.ink3, modifier = Modifier.size(13.dp))
@@ -651,6 +651,8 @@ internal fun StaffCard(
                         staff.phone?.takeIf { it.isNotBlank() } ?: "—",
                         style = VTypography.caption,
                         color = VColors.ink2,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -659,6 +661,8 @@ internal fun StaffCard(
                         staff.email?.takeIf { it.isNotBlank() } ?: "—",
                         style = VTypography.caption,
                         color = VColors.ink2,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -667,6 +671,8 @@ internal fun StaffCard(
                         staff.shift?.takeIf { it.isNotBlank() } ?: "—",
                         style = VTypography.caption,
                         color = VColors.ink2,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -712,11 +718,12 @@ internal fun TeacherCard(
     onViewProfile: () -> Unit,
     onAssignClass: () -> Unit,
     onDeactivate: () -> Unit,
+    onEdit: () -> Unit = onViewProfile,
     modifier: Modifier = Modifier,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val isActive = teacher.profile.status.equals("ACTIVE", ignoreCase = true)
-    val subject = teacher.academicAssignment.subjects.firstOrNull() ?: "Mathematics"
+    val subject = teacher.academicAssignment.subjects.firstOrNull() ?: "No subjects assigned"
     val theme = subjectTheme(subject)
 
     Box(modifier = modifier.fillMaxWidth()) {
@@ -923,7 +930,7 @@ internal fun TeacherCard(
                                     }
                                     DropdownMenuItem(
                                         text = { Text("Edit Details") },
-                                        onClick = { menuOpen = false; onViewProfile() },
+                                        onClick = { menuOpen = false; onEdit() },
                                         leadingIcon = { Icon(VIcons.User, contentDescription = null, modifier = Modifier.size(16.dp)) },
                                     )
                                     if (teacher.actions.canDeactivate) {

@@ -9,14 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,15 +41,10 @@ private fun formatClock12h(hour: Int, minute: String): String {
         hour > 12 -> hour - 12
         else -> hour
     }
-    return "$h12:$minute $period"
+    return "${h12.toString().padStart(2, '0')}:$minute $period"
 }
 
-/**
- * VMaterialTimePicker — a read-only field that opens a bottom-sheet time selector
- * with VTheme-aware colours. Uses a clock-style hour/minute selector.
- *
- * Shows 12-hour formatted preview on the field, opens a sheet with hour grid + minute grid.
- */
+/** Prototype-faithful single-field trigger with a three-column time wheel sheet. */
 @Composable
 fun VMaterialTimePicker(
     hour: Int,
@@ -62,187 +57,107 @@ fun VMaterialTimePicker(
 ) {
     val c = VTheme.colors
     var open by remember { mutableStateOf(false) }
-
     Column(modifier.fillMaxWidth()) {
-        if (label != null) {
-            Text(
-                text = label,
-                style = VTheme.type.inputLabel.colored(c.ink2),
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
+        label?.let {
+            Text(it, style = VTheme.type.inputLabel.colored(c.ink2), modifier = Modifier.padding(bottom = 7.dp))
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.fillMaxWidth().clip(VTheme.dimens.shapeInput).background(c.card)
+                .border(1.dp, c.hairline, VTheme.dimens.shapeInput)
+                .clickable(enabled = enabled) { open = true }.padding(horizontal = 14.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(VTheme.dimens.shapeInput)
-                    .background(c.cream)
-                    .border(1.dp, c.hairline, VTheme.dimens.shapeInput)
-                    .clickable(enabled = enabled) { open = true }
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = hour.toString().padStart(2, '0'),
-                    style = VTheme.type.h3.colored(if (enabled) c.ink else c.ink3),
-                )
-            }
-            Text(":", style = VTheme.type.h3.colored(c.ink2))
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(VTheme.dimens.shapeInput)
-                    .background(c.cream)
-                    .border(1.dp, c.hairline, VTheme.dimens.shapeInput)
-                    .clickable(enabled = enabled) { open = true }
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = minute,
-                    style = VTheme.type.h3.colored(if (enabled) c.ink else c.ink3),
-                )
-            }
-            Spacer(Modifier.width(4.dp))
             Text(
                 formatClock12h(hour, minute),
-                style = VTheme.type.body.colored(c.ink3),
+                style = VTheme.type.body.colored(if (enabled) c.ink else c.ink3),
+                modifier = Modifier.weight(1f),
             )
+            Icon(VIcons.Clock, contentDescription = null, tint = c.ink3, modifier = Modifier.size(18.dp))
         }
     }
-
     if (open) {
-        TimePickerSheet(
-            initialHour = hour,
-            initialMinute = minute,
-            onDismiss = { open = false },
-            onConfirm = { h, m -> onHourChange(h); onMinuteChange(m); open = false },
-        )
+        TimeWheelSheet(hour, minute, onDismiss = { open = false }) { selectedHour, selectedMinute ->
+            onHourChange(selectedHour)
+            onMinuteChange(selectedMinute)
+            open = false
+        }
     }
 }
 
 @Composable
-private fun TimePickerSheet(
+private fun TimeWheelSheet(
     initialHour: Int,
     initialMinute: String,
     onDismiss: () -> Unit,
     onConfirm: (Int, String) -> Unit,
 ) {
     val c = VTheme.colors
-    var selectedHour by remember { mutableStateOf(initialHour) }
+    var selectedPeriod by remember { mutableStateOf(if (initialHour < 12) "AM" else "PM") }
+    var selectedHour12 by remember {
+        mutableStateOf(when { initialHour == 0 -> 12; initialHour > 12 -> initialHour - 12; else -> initialHour })
+    }
     var selectedMinute by remember { mutableStateOf(initialMinute) }
+    val minutes = listOf("00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55")
 
-    VBottomSheet(
-        visible = true,
-        onDismiss = onDismiss,
-    ) {
-        VBottomSheetHeader(title = "Select time")
-
-        Spacer(Modifier.size(8.dp))
-
-        Text(
-            text = "HOUR",
-            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp).colored(c.ink3),
-            modifier = Modifier.padding(bottom = 8.dp),
+    VBottomSheet(visible = true, onDismiss = onDismiss) {
+        VBottomSheetHeader(title = "Select Time")
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
+            Text(selectedHour12.toString().padStart(2, '0'), style = VTheme.type.h1.copy(fontSize = 38.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink))
+            Text(":", style = VTheme.type.h1.copy(fontSize = 38.sp, fontWeight = FontWeight.ExtraBold).colored(c.accent))
+            Text(selectedMinute, style = VTheme.type.h1.copy(fontSize = 38.sp, fontWeight = FontWeight.ExtraBold).colored(c.ink))
+            Text(selectedPeriod, style = VTheme.type.body.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold).colored(c.ink3), modifier = Modifier.padding(start = 7.dp, bottom = 5.dp))
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            WheelColumn("HOUR", (1..12).toList(), selectedHour12, { it.toString().padStart(2, '0') }) { selectedHour12 = it }
+            Text(":", style = VTheme.type.h2.colored(c.ink3), modifier = Modifier.padding(top = 48.dp, start = 7.dp, end = 7.dp))
+            WheelColumn("MIN", minutes, selectedMinute, { it }) { selectedMinute = it }
+            Spacer(Modifier.width(10.dp))
+            WheelColumn("AM/PM", listOf("AM", "PM"), selectedPeriod, { it }) { selectedPeriod = it }
+        }
+        Spacer(Modifier.height(14.dp))
+        VButton(
+            text = "Done",
+            onClick = {
+                val hour24 = when {
+                    selectedPeriod == "AM" && selectedHour12 == 12 -> 0
+                    selectedPeriod == "PM" && selectedHour12 != 12 -> selectedHour12 + 12
+                    else -> selectedHour12
+                }
+                onConfirm(hour24, selectedMinute)
+            },
+            full = true,
+            variant = VButtonVariant.Primary,
+            modifier = Modifier.padding(bottom = 16.dp),
         )
+    }
+}
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(6),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 180.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            items((0..23).toList()) { h ->
-                val isSelected = h == selectedHour
-                val bgColor = if (isSelected) c.accent else c.cream
-                val textColor = if (isSelected) c.card else c.ink
-
+@Composable
+private fun <T> WheelColumn(
+    label: String,
+    values: List<T>,
+    selected: T,
+    text: (T) -> String,
+    onSelect: (T) -> Unit,
+) {
+    val c = VTheme.colors
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, style = VTheme.type.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = .5.sp).colored(c.ink3))
+        Spacer(Modifier.height(6.dp))
+        LazyColumn(Modifier.width(62.dp).height(150.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            items(values) { value ->
+                val active = value == selected
                 Box(
-                    Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(bgColor)
-                        .clickable { selectedHour = h }
-                        .padding(vertical = 10.dp),
+                    Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(RoundedCornerShape(9.dp))
+                        .background(if (active) c.accent else c.card)
+                        .clickable { onSelect(value) }.padding(vertical = 9.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = h.toString().padStart(2, '0'),
-                        style = VTheme.type.body.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        ).colored(textColor),
-                        textAlign = TextAlign.Center,
-                    )
+                    Text(text(value), style = VTheme.type.body.copy(fontSize = 15.sp, fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Medium).colored(if (active) c.card else c.ink3), textAlign = TextAlign.Center)
                 }
             }
         }
-
-        Spacer(Modifier.size(12.dp))
-
-        Text(
-            text = "MINUTES",
-            style = VTheme.type.caption.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp).colored(c.ink3),
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
-
-        val minutes = listOf("00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55")
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 140.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            items(minutes) { m ->
-                val isSelected = m == selectedMinute
-                val bgColor = if (isSelected) c.accent else c.cream
-                val textColor = if (isSelected) c.card else c.ink
-
-                Box(
-                    Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(bgColor)
-                        .clickable { selectedMinute = m }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = m,
-                        style = VTheme.type.body.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        ).colored(textColor),
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.size(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            VButton(
-                text = "Cancel",
-                onClick = onDismiss,
-                variant = VButtonVariant.Ghost,
-                modifier = Modifier.weight(1f),
-            )
-            VButton(
-                text = "Confirm",
-                onClick = { onConfirm(selectedHour, selectedMinute) },
-                variant = VButtonVariant.Primary,
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        Spacer(Modifier.size(8.dp))
     }
 }

@@ -45,6 +45,7 @@ import com.littlebridge.enrollplus.core.StudentCode
 import com.littlebridge.enrollplus.core.fail
 import com.littlebridge.enrollplus.core.ok
 import com.littlebridge.enrollplus.core.principalUserId
+import com.littlebridge.enrollplus.core.requireSchoolAdmin
 import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.FacultyTable
@@ -54,6 +55,7 @@ import com.littlebridge.enrollplus.db.SchoolMediaTable
 import com.littlebridge.enrollplus.db.SchoolSubjectsTable
 import com.littlebridge.enrollplus.db.SchoolsTable
 import com.littlebridge.enrollplus.db.StudentsTable
+import com.littlebridge.enrollplus.db.TeacherPeriodsTable
 import com.littlebridge.enrollplus.db.TeacherSubjectAssignmentsTable
 import com.littlebridge.enrollplus.feature.auth.hashPassword
 import com.littlebridge.enrollplus.feature.auth.normaliseIdentifier
@@ -194,6 +196,22 @@ data class CompletionResponse(
     @SerialName("onboarding_status") val onboardingStatus: String  // "active" once complete
 )
 
+@Serializable
+data class SetupProgressStepResponse(
+    val step: String,
+    val status: String,
+    val count: Int,
+)
+
+@Serializable
+data class SetupProgressResponse(
+    val setupComplete: Boolean,
+    val steps: List<SetupProgressStepResponse>,
+    val completedSteps: Int,
+    val totalSteps: Int,
+    val completionPercent: Int,
+)
+
 // ---------- Field schemas per step ----------
 private val BASIC_FIELDS = listOf(
     Triple("school_name", "SchoolName", "line"),
@@ -288,6 +306,9 @@ private fun ensureSchoolForUser(uid: UUID): UUID {
         .associate { it[OnboardingDraftsTable.key] to it[OnboardingDraftsTable.value] }
 
     val schoolName = basics["school_name"]?.takeIf { it.isNotBlank() } ?: "Unnamed School"
+    val city = basics["city"] ?: "Unknown"
+    val derivedState = basics["state"]?.takeIf { it.isNotBlank() }
+        ?: CITY_TO_STATE_SERVER[city] ?: "Uttar Pradesh"
     val now = Instant.now()
     val newSchoolId = UUID.randomUUID()
     SchoolsTable.insert {
@@ -300,9 +321,9 @@ private fun ensureSchoolForUser(uid: UUID): UUID {
         it[contactEmail] = basics["contact_email"]
         it[contactPhone] = basics["contact_phone"]
         it[fullAddress] = basics["full_address"]
-        it[city] = basics["city"] ?: "Unknown"
+        it[city] = city
         it[district] = basics["district"] ?: "Unknown"
-        it[state] = basics["state"] ?: "Uttar Pradesh"
+        it[state] = derivedState
         it[pincode] = basics["pincode"]
         it[latitude] = basics["latitude"]?.toDoubleOrNull()
         it[longitude] = basics["longitude"]?.toDoubleOrNull()
@@ -342,7 +363,12 @@ private fun syncSchoolBasics(schoolId: UUID, uid: UUID) {
         basics["principal_name"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[principalName] = v }
         basics["principal_phone"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[principalPhone] = v }
         basics["full_address"]?.let { v -> it[fullAddress] = v }
-        basics["city"]?.let { v -> it[city] = v }
+        basics["city"]?.let { v ->
+            it[city] = v
+            if (basics["state"].isNullOrBlank()) {
+                CITY_TO_STATE_SERVER[v]?.let { st -> it[state] = st }
+            }
+        }
         basics["district"]?.let { v -> it[district] = v }
         basics["state"]?.let { v -> it[state] = v }
         basics["pincode"]?.let { v -> it[pincode] = v }
@@ -613,7 +639,8 @@ private fun upsertAssignment(
     val existing = TeacherSubjectAssignmentsTable.selectAll()
         .where {
             (TeacherSubjectAssignmentsTable.schoolId eq schoolId) and
-                (TeacherSubjectAssignmentsTable.subject eq subject)
+                (TeacherSubjectAssignmentsTable.subject eq subject) and
+                (TeacherSubjectAssignmentsTable.teacherName eq teacherName)
         }
         .firstOrNull {
             ClassNaming.sameClassSection(
@@ -838,6 +865,30 @@ private suspend fun computeOnboardingStatusResponse(uid: UUID): OnboardingStatus
     )
 }
 
+private data class SetupCounts(
+    val teachers: Int,
+    val students: Int,
+    val subjects: Int,
+    val classes: Int,
+    val timetablePeriods: Int,
+)
+
+private fun setupStatus(count: Int): String = if (count > 0) "done" else "pending"
+
+private val onboardingEmailPattern = Regex("^[A-Z0-9.!#\$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$", RegexOption.IGNORE_CASE)
+private fun validOnboardingEmail(value: String): Boolean {
+    val localPart = value.substringBefore('@', missingDelimiterValue = "")
+    return value.length <= 254 &&
+        localPart.length in 1..64 &&
+        !localPart.startsWith('.') &&
+        !localPart.endsWith('.') &&
+        !value.contains("..") &&
+        onboardingEmailPattern.matches(value)
+}
+
+private fun validIndianMobile(value: String): Boolean =
+    Regex("^[6-9][0-9]{9}$").matches(value)
+
 // ---------- Routing ----------
 fun Route.onboardingRouting() {
     authenticate("jwt") {
@@ -1026,6 +1077,27 @@ fun Route.onboardingRouting() {
                 }
                 val step = req.obStepType.uppercase()
 
+                if (step == "BASIC") {
+                    val schoolName = req.dataPayload["school_name"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
+                    val email = req.dataPayload["contact_email"]?.jsonPrimitive?.contentOrNull?.trim()
+                    val phone = req.dataPayload["contact_phone"]?.jsonPrimitive?.contentOrNull?.trim()
+                    val principalPhone = req.dataPayload["principal_phone"]?.jsonPrimitive?.contentOrNull?.trim()
+                    when {
+                        schoolName.length < 3 -> {
+                            call.fail("School name must be at least 3 characters", HttpStatusCode.BadRequest); return@post
+                        }
+                        !email.isNullOrBlank() && !validOnboardingEmail(email) -> {
+                            call.fail("Enter a valid email address", HttpStatusCode.BadRequest); return@post
+                        }
+                        !phone.isNullOrBlank() && !validIndianMobile(phone) -> {
+                            call.fail("Enter a valid Indian mobile number", HttpStatusCode.BadRequest); return@post
+                        }
+                        !principalPhone.isNullOrBlank() && !validIndianMobile(principalPhone) -> {
+                            call.fail("Enter a valid principal mobile number", HttpStatusCode.BadRequest); return@post
+                        }
+                    }
+                }
+
                 // 1. Upsert (key,value) into drafts.
                 dbQuery {
                     req.dataPayload.forEach { (k, v) ->
@@ -1140,6 +1212,57 @@ fun Route.onboardingRouting() {
                 call.ok(computeOnboardingStatusResponse(uid), message = "Onboarding status fetched")
             }
 
+            // -------- GET /setup-progress --------
+            // This checklist is intentionally independent from onboarding completion.
+            // Onboarding creates the tenant; setup progress reflects the school's live
+            // operational data and disappears only after every category exists.
+            get("/setup-progress") {
+                val schoolContext = call.requireSchoolAdmin() ?: return@get
+                val schoolId = schoolContext.schoolId
+
+                val counts = dbQuery {
+                    val teachers = FacultyTable.selectAll()
+                        .where { (FacultyTable.schoolId eq schoolId) and (FacultyTable.isActive eq true) }
+                        .count().toInt()
+                    val students = StudentsTable.selectAll()
+                        .where { (StudentsTable.schoolId eq schoolId) and (StudentsTable.isActive eq true) }
+                        .count().toInt()
+                    val classRows = SchoolClassesTable.selectAll()
+                        .where { SchoolClassesTable.schoolId eq schoolId }
+                        .toList()
+                    val classIds = classRows.map { it[SchoolClassesTable.id].value }
+                    val subjects = if (classIds.isEmpty()) 0 else SchoolSubjectsTable.selectAll()
+                        .where {
+                            classIds.map { classId -> SchoolSubjectsTable.classId eq classId }
+                                .reduce { expression, next -> expression or next }
+                        }
+                        .count().toInt()
+                    val timetablePeriods = TeacherPeriodsTable.selectAll()
+                        .where { (TeacherPeriodsTable.schoolId eq schoolId) and (TeacherPeriodsTable.isActive eq true) }
+                        .count().toInt()
+                    SetupCounts(teachers, students, subjects, classRows.size, timetablePeriods)
+                }
+
+                val steps = listOf(
+                    SetupProgressStepResponse("add_teachers", setupStatus(counts.teachers), counts.teachers),
+                    SetupProgressStepResponse("add_students", setupStatus(counts.students), counts.students),
+                    SetupProgressStepResponse("add_subjects", setupStatus(counts.subjects), counts.subjects),
+                    SetupProgressStepResponse("create_classes", setupStatus(counts.classes), counts.classes),
+                    SetupProgressStepResponse("create_timetable", setupStatus(counts.timetablePeriods), counts.timetablePeriods),
+                )
+                val completed = steps.count { it.status == "done" }
+                call.ok(
+                    SetupProgressResponse(
+                        setupComplete = completed == steps.size,
+                        steps = steps,
+                        completedSteps = completed,
+                        totalSteps = steps.size,
+                        completionPercent = completed * 100 / steps.size,
+                    ),
+                    message = "School setup progress fetched",
+                )
+            }
+
             // -------- POST /complete --------
             // Idempotently finalizes onboarding: ensures the school exists, seeds
             // a default academic structure if the admin skipped it, stamps
@@ -1184,3 +1307,22 @@ fun Route.onboardingRouting() {
         }
     }
 }
+
+private val CITY_TO_STATE_SERVER: Map<String, String> = mapOf(
+    "New Delhi" to "Delhi",
+    "Mumbai" to "Maharashtra",
+    "Pune" to "Maharashtra",
+    "Bangalore" to "Karnataka",
+    "Chennai" to "Tamil Nadu",
+    "Kolkata" to "West Bengal",
+    "Hyderabad" to "Telangana",
+    "Ahmedabad" to "Gujarat",
+    "Jaipur" to "Rajasthan",
+    "Lucknow" to "Uttar Pradesh",
+    "Kanpur" to "Uttar Pradesh",
+    "Varanasi" to "Uttar Pradesh",
+    "Meerut" to "Uttar Pradesh",
+    "Noida" to "Uttar Pradesh",
+    "Ghaziabad" to "Uttar Pradesh",
+    "Gurugram" to "Haryana",
+)

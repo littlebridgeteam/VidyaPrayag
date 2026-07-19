@@ -69,22 +69,24 @@ class ClassesSubjectsViewModel(
     // ── Teachers (for timetable dropdowns) ─────────────────────────────────────
 
     fun loadTeachers() {
-        viewModelScope.launch {
-            try {
-                val token = preferenceRepository.getUserToken().first()
-                if (token.isNullOrBlank()) return@launch
-                when (val r = teachersRepository.getTeachers(token, page = 1, pageSize = 100)) {
-                    is NetworkResult.Success -> {
-                        _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
-                    }
-                    is NetworkResult.Error -> {
-                        AppLogger.e("ClassesVM", "teachers error: ${r.message}")
-                    }
-                    is NetworkResult.ConnectionError -> {}
+        viewModelScope.launch { loadTeachersInternal() }
+    }
+
+    private suspend fun loadTeachersInternal() {
+        try {
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) return
+            when (val r = teachersRepository.getTeachers(token, page = 1, pageSize = 100)) {
+                is NetworkResult.Success -> {
+                    _state.value = _state.value.copy(teachers = r.data.data?.teachers ?: emptyList(), isStale = r.isStale, isOffline = r.isOffline)
                 }
-            } catch (e: Exception) {
-                AppLogger.e("ClassesVM", "loadTeachers exception", e)
+                is NetworkResult.Error -> {
+                    AppLogger.e("ClassesVM", "teachers error: ${r.message}")
+                }
+                is NetworkResult.ConnectionError -> {}
             }
+        } catch (e: Exception) {
+            AppLogger.e("ClassesVM", "loadTeachers exception", e)
         }
     }
 
@@ -103,8 +105,8 @@ class ClassesSubjectsViewModel(
             when (val r = teachersRepository.createTeacher(token, CreateTeacherRequest(name.trim(), identifier.trim()))) {
                 is NetworkResult.Success -> {
                     _state.value = _state.value.copy(isSaving = false, infoMessage = "Teacher created")
+                    loadTeachersInternal()
                     onDone?.invoke()
-                    loadTeachers()
                 }
                 is NetworkResult.Error -> {
                     _state.value = _state.value.copy(isSaving = false, errorMessage = r.message)
@@ -152,6 +154,18 @@ class ClassesSubjectsViewModel(
             _state.value = _state.value.copy(errorMessage = "Code and name are required.")
             return
         }
+        if (!code.matches(Regex("^[A-Za-z0-9]{1,10}$"))) {
+            _state.value = _state.value.copy(errorMessage = "Code must be 1-10 alphanumeric characters.")
+            return
+        }
+        if (name.trim().length > 50) {
+            _state.value = _state.value.copy(errorMessage = "Name must be at most 50 characters.")
+            return
+        }
+        if (sections.any { it.length > 5 || !it.matches(Regex("^[A-Za-z0-9]+$")) }) {
+            _state.value = _state.value.copy(errorMessage = "Sections must be 1-5 alphanumeric characters each.")
+            return
+        }
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, errorMessage = null)
             val token = preferenceRepository.getUserToken().first()
@@ -178,6 +192,18 @@ class ClassesSubjectsViewModel(
     fun updateClass(id: String, code: String, name: String, sections: List<String>, onDone: (() -> Unit)? = null) {
         if (code.isBlank() || name.isBlank()) {
             _state.value = _state.value.copy(errorMessage = "Code and name are required.")
+            return
+        }
+        if (!code.matches(Regex("^[A-Za-z0-9]{1,10}$"))) {
+            _state.value = _state.value.copy(errorMessage = "Code must be 1-10 alphanumeric characters.")
+            return
+        }
+        if (name.trim().length > 50) {
+            _state.value = _state.value.copy(errorMessage = "Name must be at most 50 characters.")
+            return
+        }
+        if (sections.any { it.length > 5 || !it.matches(Regex("^[A-Za-z0-9]+$")) }) {
+            _state.value = _state.value.copy(errorMessage = "Sections must be 1-5 alphanumeric characters each.")
             return
         }
         viewModelScope.launch {

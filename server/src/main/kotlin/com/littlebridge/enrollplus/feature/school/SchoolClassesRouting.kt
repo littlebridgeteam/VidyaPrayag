@@ -164,6 +164,22 @@ fun Route.schoolClassesRouting() {
                     call.fail("Code and name are required", HttpStatusCode.BadRequest, "VALIDATION")
                     return@post
                 }
+                if (!req.code.trim().matches(Regex("^[A-Za-z0-9]{1,10}$"))) {
+                    call.fail("Code must be 1-10 alphanumeric characters", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@post
+                }
+                if (req.name.trim().length > 50) {
+                    call.fail("Name must be at most 50 characters", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@post
+                }
+                if (!req.name.trim().matches(Regex("^[A-Za-z0-9 \\-()]+$"))) {
+                    call.fail("Name can only contain letters, numbers, spaces, hyphens, and parentheses", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@post
+                }
+                if (req.sections.any { it.length > 5 || !it.matches(Regex("^[A-Za-z0-9]+$")) }) {
+                    call.fail("Sections must be 1-5 alphanumeric characters each", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@post
+                }
                 val now = Instant.now()
                 val newId = JUUID.randomUUID()
                 val dto = dbQuery {
@@ -209,6 +225,22 @@ fun Route.schoolClassesRouting() {
                 val req = call.receive<UpdateSchoolClassRequest>()
                 if (req.code.isBlank() || req.name.isBlank()) {
                     call.fail("Code and name are required", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@put
+                }
+                if (!req.code.trim().matches(Regex("^[A-Za-z0-9]{1,10}$"))) {
+                    call.fail("Code must be 1-10 alphanumeric characters", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@put
+                }
+                if (req.name.trim().length > 50) {
+                    call.fail("Name must be at most 50 characters", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@put
+                }
+                if (!req.name.trim().matches(Regex("^[A-Za-z0-9 \\-()]+$"))) {
+                    call.fail("Name can only contain letters, numbers, spaces, hyphens, and parentheses", HttpStatusCode.BadRequest, "VALIDATION")
+                    return@put
+                }
+                if (req.sections.any { it.length > 5 || !it.matches(Regex("^[A-Za-z0-9]+$")) }) {
+                    call.fail("Sections must be 1-5 alphanumeric characters each", HttpStatusCode.BadRequest, "VALIDATION")
                     return@put
                 }
                 val dto = dbQuery {

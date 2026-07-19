@@ -50,6 +50,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.littlebridge.enrollplus.feature.admin.domain.model.SchoolClassDto
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsState
 import com.littlebridge.enrollplus.feature.admin.presentation.ClassesSubjectsViewModel
 import com.littlebridge.enrollplus.feature.admin.presentation.SchoolTeachersState
@@ -68,11 +69,13 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VDropdown
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
 import com.littlebridge.enrollplus.ui.v2.components.VSnackbar
 import com.littlebridge.enrollplus.ui.v2.components.VSnackbarTone
+import com.littlebridge.enrollplus.ui.v2.components.VSheetPicker
 import com.littlebridge.enrollplus.ui.v2.components.VTopTabs
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
 import com.littlebridge.enrollplus.ui.v2.screens.collectAsStateV2
@@ -117,6 +120,7 @@ fun SchoolPeopleScreenV2(
     onOpenLinkRequests: () -> Unit = {},
     onOpenStudent: (String) -> Unit = {},
     onOpenTeacher: (String) -> Unit = {},
+    onEditTeacher: (String) -> Unit = {},
     // RA-TAM — overflow "Assign classes" opens the reusable assignment module.
     onAssignClasses: (String) -> Unit = {},
     onOpenStaff: (String) -> Unit = {},
@@ -162,7 +166,7 @@ fun SchoolPeopleScreenV2(
         onAddStudent = { name, cls, sec, roll, phone, admission -> studentsViewModel.addStudent(name, cls, sec, roll, phone, admission) },
         onImportStudentsCsv = studentsViewModel::importStudentsCsv,
         onClearStudentMessages = studentsViewModel::clearMessages,
-        availableClassNames = classesState.classes.map { it.name },
+        availableClasses = classesState.classes,
         staffState = staffState,
         onStaffRetry = staffViewModel::load,
         onStaffSearch = staffViewModel::onQueryChange,
@@ -171,6 +175,7 @@ fun SchoolPeopleScreenV2(
         onOpenLinkRequests = onOpenLinkRequests,
         onOpenStudent = onOpenStudent,
         onOpenTeacher = onOpenTeacher,
+        onEditTeacher = onEditTeacher,
         onAssignClasses = onAssignClasses,
         onOpenStaff = onOpenStaff,
         onOpenMessages = onOpenMessages,
@@ -195,7 +200,7 @@ private fun SchoolPeopleContent(
     onAddStudent: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
     onImportStudentsCsv: (String) -> Unit,
     onClearStudentMessages: () -> Unit,
-    availableClassNames: List<String> = emptyList(),
+    availableClasses: List<SchoolClassDto> = emptyList(),
     staffState: StaffRosterState,
     onStaffRetry: () -> Unit,
     onStaffSearch: (String) -> Unit,
@@ -204,6 +209,7 @@ private fun SchoolPeopleContent(
     onOpenLinkRequests: () -> Unit,
     onOpenStudent: (String) -> Unit,
     onOpenTeacher: (String) -> Unit,
+    onEditTeacher: (String) -> Unit,
     onAssignClasses: (String) -> Unit,
     onOpenStaff: (String) -> Unit,
     onOpenMessages: (String?) -> Unit,
@@ -284,10 +290,15 @@ private fun SchoolPeopleContent(
         subTab = PeopleSubTab.entries[pagerState.currentPage]
     }
 
+    val currentTab = PeopleSubTab.entries[pagerState.currentPage]
     VPullRefresh(
-        isRefreshing = teachersState.isLoading || studentsState.isLoading || staffState.isLoading,
+        isRefreshing = when (currentTab) {
+            PeopleSubTab.Teachers -> teachersState.isLoading
+            PeopleSubTab.Students -> studentsState.isLoading
+            PeopleSubTab.Staff -> staffState.isLoading
+        },
         onRefresh = {
-            when (PeopleSubTab.entries[pagerState.currentPage]) {
+            when (currentTab) {
                 PeopleSubTab.Teachers -> onTeachersRetry()
                 PeopleSubTab.Students -> onStudentsRetry()
                 PeopleSubTab.Staff -> onStaffRetry()
@@ -351,6 +362,7 @@ private fun SchoolPeopleContent(
                         onRetry = onTeachersRetry,
                         onAddClick = { showAddTeacher = true },
                         onOpenTeacher = onOpenTeacher,
+                        onEditTeacher = onEditTeacher,
                         onLoadMore = onLoadMoreTeachers,
                         onDeactivate = onDeactivateTeacher,
                         onAssignClass = onAssignClasses,
@@ -382,6 +394,7 @@ private fun SchoolPeopleContent(
         AddTeacherSheet(
             isSubmitting = teachersState.isMutating,
             error = teachersState.errorMessage,
+            availableClasses = availableClasses,
             onDismiss = { showAddTeacher = false; onClearTeacherMessages() },
             onSubmit = { name, identifier, password ->
                 onAddTeacher(name, identifier, password) { showAddTeacher = false }
@@ -408,7 +421,7 @@ private fun SchoolPeopleContent(
             error = studentsState.addError,
             onDismiss = { showAddStudent = false; onClearStudentMessages() },
             onSubmit = { name, cls, sec, roll, phone, admission -> onAddStudent(name, cls, sec, roll, phone, admission) },
-            availableClassNames = availableClassNames,
+            availableClasses = availableClasses,
         )
     }
 
@@ -432,6 +445,7 @@ private fun TeachersSubTab(
     onRetry: () -> Unit,
     onAddClick: () -> Unit,
     onOpenTeacher: (String) -> Unit,
+    onEditTeacher: (String) -> Unit,
     onLoadMore: () -> Unit,
     onDeactivate: (String) -> Unit,
     onAssignClass: (String) -> Unit,
@@ -542,6 +556,7 @@ private fun TeachersSubTab(
                         onViewProfile = { onOpenTeacher(t.id) },
                         onDeactivate = { onDeactivate(t.id) },
                         onAssignClass = { onAssignClass(t.id) },
+                        onEdit = { onEditTeacher(t.id) },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
@@ -832,6 +847,7 @@ private fun StaffSubTab(
         q && deptOk && roleOk && statusOk
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
@@ -929,22 +945,21 @@ private fun StaffSubTab(
         }
     }
 
-    // ── Snackbar for no-phone warning ────────────────────────────────────
+    // ── Snackbar for no-phone warning (overlay, outside Column) ────────
     snackMessage?.let { msg ->
         LaunchedEffect(msg) {
             kotlinx.coroutines.delay(3000)
             snackMessage = null
         }
-        Box(Modifier.fillMaxSize()) {
-            VSnackbar(
-                message = msg,
-                visible = true,
-                onDismiss = { snackMessage = null },
-                tone = VSnackbarTone.Warning,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
-        }
+        VSnackbar(
+            message = msg,
+            visible = true,
+            onDismiss = { snackMessage = null },
+            tone = VSnackbarTone.Warning,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
+    } // end Box
 }
 
 // ───────────────────────────── dialogs ─────────────────────────────
@@ -957,12 +972,16 @@ private fun StaffSubTab(
 private fun AddTeacherSheet(
     isSubmitting: Boolean,
     error: String?,
+    availableClasses: List<SchoolClassDto>,
     onDismiss: () -> Unit,
     onSubmit: (name: String, identifier: String, initialPassword: String?) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var className by remember { mutableStateOf("") }
+    var section by remember { mutableStateOf("") }
+    val selectedClass = availableClasses.firstOrNull { it.name == className }
 
     val isEmail = identifier.contains("@")
     val canSubmit = name.isNotBlank() &&
@@ -989,7 +1008,28 @@ private fun AddTeacherSheet(
                 label = appString(StringKeys.PPL_EMAIL_OR_PHONE),
                 placeholder = appString(StringKeys.PPL_EMAIL_PHONE_PH),
                 leadingIcon = if (isEmail) VIcons.Mail else VIcons.Phone,
-                keyboardType = if (isEmail) KeyboardType.Email else KeyboardType.Text,
+                keyboardType = if (isEmail) KeyboardType.Email else KeyboardType.Phone,
+            )
+            VSheetPicker(
+                label = "Class",
+                value = className,
+                options = availableClasses.map { it.name },
+                onSelect = { className = it; section = "" },
+                placeholder = "Select class",
+                searchable = true,
+            )
+            VSheetPicker(
+                label = "Section",
+                value = section,
+                options = selectedClass?.sections.orEmpty(),
+                onSelect = { section = it },
+                placeholder = if (className.isBlank()) "Select class first" else "Select section",
+                enabled = selectedClass != null,
+            )
+            Text(
+                "Class and section options come from your configured school structure.",
+                style = VTypography.caption,
+                color = VColors.ink3,
             )
             if (isEmail) {
                 VInput(
@@ -1069,12 +1109,14 @@ private fun AddStaffSheet(
                 placeholder = appString(StringKeys.PPL_NAME_PH_STAFF),
                 leadingIcon = VIcons.User,
             )
-            VInput(
+            VSheetPicker(
                 value = role,
-                onValueChange = { role = it },
+                options = STAFF_ROLE_OPTIONS,
+                onSelect = { role = it },
                 label = appString(StringKeys.PPL_ROLE),
                 placeholder = appString(StringKeys.PPL_ROLE_PH),
                 leadingIcon = VIcons.User,
+                searchable = true,
             )
             VInput(
                 value = department,
@@ -1127,6 +1169,12 @@ private fun AddStaffSheet(
     }
 }
 
+private val STAFF_ROLE_OPTIONS = listOf(
+    "Accountant", "Librarian", "Office Assistant", "Receptionist",
+    "Lab Assistant", "Peon", "Security Guard", "Driver", "Sweeper",
+    "Gardener", "Electrician", "Plumber", "Carpenter", "Other",
+)
+
 // ───────────────────────── Student add / import dialogs ─────────────────────
 
 /** Manual single-student add from the People → Students sub-tab. */
@@ -1136,7 +1184,7 @@ private fun AddStudentPeopleSheet(
     error: String?,
     onDismiss: () -> Unit,
     onSubmit: (name: String, className: String, section: String, rollNumber: String, parentPhone: String, admissionDate: String) -> Unit,
-    availableClassNames: List<String> = emptyList(),
+    availableClasses: List<SchoolClassDto> = emptyList(),
 ) {
     var name by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
@@ -1144,11 +1192,11 @@ private fun AddStudentPeopleSheet(
     var roll by remember { mutableStateOf("") }
     var parentPhone by remember { mutableStateOf("") }
     var admissionDate by remember { mutableStateOf("") }
-    var classDropdownExpanded by remember { mutableStateOf(false) }
+    val selectedClass = availableClasses.firstOrNull { it.name == className }
 
     val phoneDigits = parentPhone.count { it.isDigit() }
     val phoneOk = parentPhone.isBlank() || phoneDigits >= 10
-    val classValid = className.isNotBlank() && (availableClassNames.isEmpty() || availableClassNames.any { it.equals(className, ignoreCase = true) })
+    val classValid = className.isNotBlank() && selectedClass != null
     val canSubmit = name.isNotBlank() && classValid && roll.isNotBlank() &&
         phoneOk && !isSubmitting
 
@@ -1159,31 +1207,25 @@ private fun AddStudentPeopleSheet(
         VBottomSheetHeader(title = appString(StringKeys.PPL_ADD_STUDENT))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             VInput(name, { name = it }, label = appString(StringKeys.PPL_FULL_NAME), placeholder = appString(StringKeys.PPL_NAME_PH_STUDENT), leadingIcon = VIcons.User)
-            Box {
-                VInput(
-                    className,
-                    { className = it },
-                    label = appString(StringKeys.PPL_CLASS),
-                    placeholder = appString(StringKeys.PPL_CLASS_PH),
-                    modifier = Modifier.fillMaxWidth().clickable { classDropdownExpanded = true },
-                )
-                DropdownMenu(
-                    expanded = classDropdownExpanded,
-                    onDismissRequest = { classDropdownExpanded = false },
-                    modifier = Modifier.background(VColors.surfaceCard, RoundedCornerShape(14.dp)),
-                ) {
-                    availableClassNames.forEach { cn ->
-                        DropdownMenuItem(
-                            text = { Text(cn) },
-                            onClick = { className = cn; classDropdownExpanded = false },
-                        )
-                    }
-                }
-            }
+            VSheetPicker(
+                label = appString(StringKeys.PPL_CLASS),
+                value = className,
+                options = availableClasses.map { it.name },
+                onSelect = { className = it; section = "" },
+                placeholder = appString(StringKeys.PPL_CLASS_PH),
+                searchable = true,
+            )
             if (className.isNotBlank() && !classValid) {
                 Text("Please select a configured class", style = VTypography.caption, color = VColors.coral)
             }
-            VInput(section, { section = it }, label = appString(StringKeys.PPL_SECTION), placeholder = appString(StringKeys.PPL_SECTION_PH))
+            VSheetPicker(
+                label = appString(StringKeys.PPL_SECTION),
+                value = section,
+                options = selectedClass?.sections.orEmpty(),
+                onSelect = { section = it },
+                placeholder = if (className.isBlank()) "Select class first" else appString(StringKeys.PPL_SECTION_PH),
+                enabled = selectedClass != null,
+            )
             VInput(roll, { roll = it }, label = appString(StringKeys.PPL_ROLL_NUMBER), placeholder = appString(StringKeys.PPL_ROLL_PH), keyboardType = KeyboardType.Number)
             VInput(
                 admissionDate,

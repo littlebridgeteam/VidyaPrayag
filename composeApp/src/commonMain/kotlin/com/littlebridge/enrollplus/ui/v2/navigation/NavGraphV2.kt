@@ -586,14 +586,10 @@ private fun AuthedFlow(
         ))
     }
 
-    // For school roles, the decision is made by the server-truth gate VM below
-    // (it sets `route`). The gate is AUTHORITATIVE: OnboardingGateViewModel reads
-    // the server /onboarding/status (derived from real persisted school data, not
-    // the local profile_completed flag) and yields both the Dashboard/Onboarding
-    // decision AND the first incomplete step so a partial/manually-seeded admin
-    // RESUMES at the right place instead of being wrongly dropped on an empty
-    // dashboard ("shows onboarding completed" bug). For the other roles we resolve
-    // locally as before.
+    // For school roles, the server-truth gate decides when the authenticated
+    // portal can open. Operational setup is intentionally handled inside the
+    // dashboard through real school-scoped progress rather than a second wizard.
+    // Other roles continue to resolve locally.
     val isSchoolRole = role == EntryRole.SchoolAdmin || role == EntryRole.SuperAdmin
 
     if (isSchoolRole) {
@@ -603,10 +599,9 @@ private fun AuthedFlow(
             when (val g = gate) {
                 is OnboardingGate.Resolving -> route = AuthedRoute.Resolving
                 is OnboardingGate.Onboarding -> {
-                    // Old 6-step onboarding wizard is DELETED. The merged 4-step
-                    // SchoolRegistrationFlow handles all onboarding during signup.
-                    // A returning admin with incomplete onboarding lands on the
-                    // dashboard and can configure remaining settings from there.
+                    // Registration is completed before authentication. Returning
+                    // admins continue in the portal, where server-backed setup
+                    // progress guides any remaining operational configuration.
                     route = AuthedRoute.Portal
                 }
                 is OnboardingGate.Dashboard -> route = AuthedRoute.Portal

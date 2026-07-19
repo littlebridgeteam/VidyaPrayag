@@ -325,6 +325,26 @@ fun Route.teacherAttendanceRouting() {
                     return@post
                 }
 
+                // Holiday guard — reject attendance on a published HOLIDAY (Bug 41).
+                val isHoliday = dbQuery {
+                    CalendarEventsTable.selectAll().where {
+                        (CalendarEventsTable.schoolId eq ctx.schoolId) and
+                            (CalendarEventsTable.isActive eq true) and
+                            (CalendarEventsTable.status eq EventStatus.PUBLISHED) and
+                            (CalendarEventsTable.type eq EventType.HOLIDAY) and
+                            (CalendarEventsTable.startDate lessEq date) and
+                            (CalendarEventsTable.endDate greaterEq date)
+                    }.firstOrNull() != null
+                }
+                if (isHoliday) {
+                    call.fail(
+                        "Attendance cannot be marked on a holiday",
+                        HttpStatusCode.BadRequest,
+                        "HOLIDAY_BLOCKED",
+                    )
+                    return@post
+                }
+
                 // Validate the marks against the typed roster (only enrolled students
                 // can be marked) and the valid state space.
                 val rosterById = enrollmentsFor(assignment).associateBy { it.studentId }

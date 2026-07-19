@@ -560,7 +560,7 @@ object StringKeys {
     const val LV3_FOOTER_AND          = "lv3.footer_and"
     const val LV3_FOOTER_PRIVACY      = "lv3.footer_privacy"
 
-    // SchoolOnboardingScreenV2 — Header
+    // School registration and setup — Header
     const val OB_ONBOARDING           = "ob.onboarding"
     const val OB_STEP_OF              = "ob.step_of"
     const val OB_BACK                 = "ob.back"
@@ -4131,7 +4131,7 @@ object AppStrings {
         StringKeys.LV3_FOOTER_AND          to " & ",
         StringKeys.LV3_FOOTER_PRIVACY      to "Privacy",
 
-        // SchoolOnboardingScreenV2 — Header
+        // School registration and setup — Header
         StringKeys.OB_ONBOARDING           to "ONBOARDING",
         StringKeys.OB_STEP_OF              to "Step {step} of {total}",
         StringKeys.OB_BACK                 to "Back",
@@ -7625,7 +7625,7 @@ object AppStrings {
         StringKeys.LV3_FOOTER_AND          to " और ",
         StringKeys.LV3_FOOTER_PRIVACY      to "गोपनीयता",
 
-        // SchoolOnboardingScreenV2 — Header
+        // School registration and setup — Header
         StringKeys.OB_ONBOARDING           to "ऑनबोर्डिंग",
         StringKeys.OB_STEP_OF              to "चरण {step} / {total}",
         StringKeys.OB_BACK                 to "पीछे",

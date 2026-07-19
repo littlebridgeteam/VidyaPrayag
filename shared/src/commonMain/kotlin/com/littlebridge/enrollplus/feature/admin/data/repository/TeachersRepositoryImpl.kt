@@ -9,6 +9,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.CreateTeacherReque
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherAccountDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCardListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCredentialDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateTeacherRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.TeachersRepository
 
 class TeachersRepositoryImpl(
@@ -23,12 +24,28 @@ class TeachersRepositoryImpl(
     ): NetworkResult<ApiResponse<TeacherCardListResponse>> =
         cacheFirstNetworkResult(cache, "admin_teachers_${page}_$pageSize", ApiResponse.serializer(TeacherCardListResponse.serializer())) { api.getTeachers(token, page, pageSize) }
 
-    override suspend fun createTeacher(token: String, request: CreateTeacherRequest): NetworkResult<ApiResponse<TeacherAccountDto>> =
-        api.createTeacher(token, request)
+    override suspend fun createTeacher(token: String, request: CreateTeacherRequest): NetworkResult<ApiResponse<TeacherAccountDto>> {
+        val result = api.createTeacher(token, request)
+        if (result is NetworkResult.Success) invalidateTeachersCache()
+        return result
+    }
 
-    override suspend fun deleteTeacher(token: String, teacherId: String): NetworkResult<ApiResponse<Unit>> =
-        api.deleteTeacher(token, teacherId)
+    override suspend fun deleteTeacher(token: String, teacherId: String): NetworkResult<ApiResponse<Unit>> {
+        val result = api.deleteTeacher(token, teacherId)
+        if (result is NetworkResult.Success) invalidateTeachersCache()
+        return result
+    }
+
+    private suspend fun invalidateTeachersCache() {
+        for (page in 1..5) {
+            cache.delete("admin_teachers_${page}_10")
+            cache.delete("admin_teachers_${page}_100")
+        }
+    }
 
     override suspend fun resetTeacherPassword(token: String, teacherId: String): NetworkResult<ApiResponse<TeacherCredentialDto>> =
         api.resetTeacherPassword(token, teacherId)
+
+    override suspend fun updateTeacher(token: String, teacherId: String, request: UpdateTeacherRequest): NetworkResult<ApiResponse<TeacherAccountDto>> =
+        api.updateTeacher(token, teacherId, request)
 }

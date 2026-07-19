@@ -53,6 +53,7 @@ class BrandingPhotosViewModel(
     init { load() }
 
     fun load() {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, errorMessage = null, infoMessage = null)
             val token = preferenceRepository.getUserToken().first()

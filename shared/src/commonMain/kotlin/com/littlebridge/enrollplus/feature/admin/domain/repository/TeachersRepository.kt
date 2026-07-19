@@ -6,6 +6,7 @@ import com.littlebridge.enrollplus.feature.admin.domain.model.CreateTeacherReque
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherAccountDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCardListResponse
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherCredentialDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateTeacherRequest
 
 /** RA-22: school teacher roster (list / add / delete). RA-32: credential reset. */
 interface TeachersRepository {
@@ -17,4 +18,5 @@ interface TeachersRepository {
     suspend fun createTeacher(token: String, request: CreateTeacherRequest): NetworkResult<ApiResponse<TeacherAccountDto>>
     suspend fun deleteTeacher(token: String, teacherId: String): NetworkResult<ApiResponse<Unit>>
     suspend fun resetTeacherPassword(token: String, teacherId: String): NetworkResult<ApiResponse<TeacherCredentialDto>>
+    suspend fun updateTeacher(token: String, teacherId: String, request: UpdateTeacherRequest): NetworkResult<ApiResponse<TeacherAccountDto>>
 }

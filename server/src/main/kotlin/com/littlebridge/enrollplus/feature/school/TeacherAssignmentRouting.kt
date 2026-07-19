@@ -644,7 +644,7 @@ fun Route.teacherAssignmentRouting() {
                         val existing = TeacherSubjectAssignmentsTable.selectAll().where {
                             (TeacherSubjectAssignmentsTable.schoolId eq ctx.schoolId) and
                                 (TeacherSubjectAssignmentsTable.subject eq resolvedSubjectName) and
-                                (TeacherSubjectAssignmentsTable.className like "%${canonClass.trim()}%")
+                                (TeacherSubjectAssignmentsTable.className eq canonClass)
                         }.firstOrNull {
                             ClassNaming.sameClassSection(
                                 it[TeacherSubjectAssignmentsTable.className],
