@@ -107,6 +107,108 @@ private enum class PeopleSubTab {
     }
 }
 
+@Composable
+private fun PeopleDirectoryHeader(
+    adminName: String,
+    greeting: String,
+    unreadNotificationCount: Int,
+    onOpenNotifications: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.padding(top = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Enroll+",
+                color = VColors.violet,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.3).sp,
+            )
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(VColors.white)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = onOpenNotifications,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(VIcons.Bell, contentDescription = "Notifications", tint = VColors.ink, modifier = Modifier.size(18.dp))
+                if (unreadNotificationCount > 0) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(3.dp)
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(VColors.coral)
+                            .border(1.5.dp, VColors.white, CircleShape),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        val greetingText = listOf(greeting.ifBlank { "Hi" }, adminName)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+        Text(greetingText, color = VColors.violet, fontSize = 15.4.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) { append("People") }
+                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = VColors.ink3)) { append(" Directory") }
+            },
+            fontSize = 26.4.sp,
+            lineHeight = 30.sp,
+            letterSpacing = (-0.6).sp,
+        )
+    }
+}
+
+@Composable
+private fun PeopleDirectoryTabs(
+    tabs: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        tabs.forEachIndexed { index, label ->
+            val selected = index == selectedIndex
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .then(
+                        if (selected) {
+                            Modifier
+                                .shadow(4.dp, RoundedCornerShape(50), ambientColor = VColors.violet.copy(alpha = 0.15f))
+                                .background(Brush.linearGradient(listOf(VColors.violet, Color(0xFF7B6BE0))))
+                        } else Modifier.background(Color.Transparent)
+                    )
+                    .clickable { onSelect(index) }
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = label,
+                    color = if (selected) VColors.white else VColors.ink3,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
+
 /**
  * SchoolPeopleScreenV2 — RA-S17 rebuild.
  *
@@ -326,41 +428,20 @@ private fun SchoolPeopleContent(
                 .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Premium header
-            Column(
+            PeopleDirectoryHeader(
+                adminName = adminName,
+                greeting = greeting,
+                unreadNotificationCount = unreadNotificationCount,
+                onOpenNotifications = onOpenNotifications,
                 modifier = Modifier
                     .graphicsLayer(translationY = headerOffset.value)
                     .alpha(headerAlpha.value),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Box(Modifier.size(5.dp).clip(CircleShape).background(VColors.violet))
-                    Text(appString(StringKeys.PPL_TITLE), style = VTypography.accentLabel, color = VColors.violet)
-                }
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = VColors.ink)) {
-                            append("People")
-                        }
-                        withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = VColors.ink2)) {
-                            append(" Directory")
-                        }
-                    },
-                    style = VTypography.h2,
-                )
-            }
+            )
 
-            // ── RA-S17: sub-tabs ─────────────────────────────────────────────────
-            VTopTabs(
+            PeopleDirectoryTabs(
                 tabs = subTabLabels,
-                selected = subTabLabels[subTab.ordinal],
-                onSelect = { label ->
-                    subTab = PeopleSubTab.entries[subTabLabels.indexOf(label)]
-                },
-                activeColor = VColors.violet,
+                selectedIndex = subTab.ordinal,
+                onSelect = { subTab = PeopleSubTab.entries[it] },
             )
 
             HorizontalPager(
