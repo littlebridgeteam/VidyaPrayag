@@ -141,27 +141,29 @@ private fun AssignmentContent(
             skeleton = { SkeletonDashboard() },
         ) {
             val overview = state.overview ?: return@VStateHost
-            TeacherHeader(overview)                       // 1. Teacher header
-            KpiCarousel(overview)                         // 2. Assignment summary
-            CurrentAssignments(                           // 3. Current assignments
-                assignments = overview.assignments,
-                removingId = state.removingId,
-                onRequestRemove = { pendingRemoveId = it },
-            )
-            state.removeError?.let { err ->
-                Text(err, style = VTypography.caption.copy(color = VColors.error))
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                TeacherHeader(overview)                       // 1. Teacher header
+                KpiCarousel(overview)                         // 2. Assignment summary
+                CurrentAssignments(                           // 3. Current assignments
+                    assignments = overview.assignments,
+                    removingId = state.removingId,
+                    onRequestRemove = { pendingRemoveId = it },
+                )
+                state.removeError?.let { err ->
+                    Text(err, style = VTypography.caption.copy(color = VColors.error))
+                }
+                AddAssignment(                                // 4. Add assignment flow
+                    state = state,
+                    onSelectSubject = onSelectSubject,
+                    onToggleClass = onToggleClass,
+                    onToggleSection = onToggleSection,
+                    onResetDraft = onResetDraft,
+                    onSave = onSave,
+                    onClearMessage = onClearMessage,
+                )
+                WorkloadInsights(overview)                    // workload insights
+                DistributionVisual(overview)                  // distribution visual
             }
-            AddAssignment(                                // 4. Add assignment flow
-                state = state,
-                onSelectSubject = onSelectSubject,
-                onToggleClass = onToggleClass,
-                onToggleSection = onToggleSection,
-                onResetDraft = onResetDraft,
-                onSave = onSave,
-                onClearMessage = onClearMessage,
-            )
-            WorkloadInsights(overview)                    // workload insights
-            DistributionVisual(overview)                  // distribution visual
         }
     }
 

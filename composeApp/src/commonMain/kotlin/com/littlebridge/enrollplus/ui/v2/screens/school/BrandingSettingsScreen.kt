@@ -122,7 +122,7 @@ fun BrandingSettingsScreen(
     )
 }
 
-private fun isSubdomainValid(input: String): Boolean {
+internal fun isSubdomainValid(input: String): Boolean {
     return input.length >= 4 && input.length <= 32 && SUBDOMAIN_REGEX.matches(input)
 }
 

@@ -582,6 +582,7 @@ fun Route.authRouting() {
                     it[contactEmail] = id
                     it[contactPhone] = req.contactPhone?.takeIf { p -> p.isNotBlank() }
                     it[principalName] = req.name.trim()
+                    it[principalEmail] = id
                     it[city] = req.city?.takeIf { c -> c.isNotBlank() } ?: "Unknown"
                     it[district] = req.city?.takeIf { c -> c.isNotBlank() } ?: "Unknown"
                     it[state] = req.state?.takeIf { s -> s.isNotBlank() } ?: "Uttar Pradesh"

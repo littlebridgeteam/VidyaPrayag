@@ -97,6 +97,10 @@ class AcademicYearViewModel(
             _state.value = _state.value.copy(errorMessage = "Name, start and end dates are required.")
             return
         }
+        if (startDate >= endDate) {
+            _state.value = _state.value.copy(errorMessage = "End date must be after start date.")
+            return
+        }
         viewModelScope.launch {
             _state.value = _state.value.copy(isMutating = true, errorMessage = null)
             val token = token() ?: run {

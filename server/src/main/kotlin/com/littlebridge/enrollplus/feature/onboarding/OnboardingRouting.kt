@@ -306,6 +306,9 @@ private fun ensureSchoolForUser(uid: UUID): UUID {
         .associate { it[OnboardingDraftsTable.key] to it[OnboardingDraftsTable.value] }
 
     val schoolName = basics["school_name"]?.takeIf { it.isNotBlank() } ?: "Unnamed School"
+    val city = basics["city"] ?: "Unknown"
+    val derivedState = basics["state"]?.takeIf { it.isNotBlank() }
+        ?: CITY_TO_STATE_SERVER[city] ?: "Uttar Pradesh"
     val now = Instant.now()
     val newSchoolId = UUID.randomUUID()
     SchoolsTable.insert {
@@ -318,9 +321,9 @@ private fun ensureSchoolForUser(uid: UUID): UUID {
         it[contactEmail] = basics["contact_email"]
         it[contactPhone] = basics["contact_phone"]
         it[fullAddress] = basics["full_address"]
-        it[city] = basics["city"] ?: "Unknown"
+        it[city] = city
         it[district] = basics["district"] ?: "Unknown"
-        it[state] = basics["state"] ?: "Uttar Pradesh"
+        it[state] = derivedState
         it[pincode] = basics["pincode"]
         it[latitude] = basics["latitude"]?.toDoubleOrNull()
         it[longitude] = basics["longitude"]?.toDoubleOrNull()
@@ -360,7 +363,12 @@ private fun syncSchoolBasics(schoolId: UUID, uid: UUID) {
         basics["principal_name"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[principalName] = v }
         basics["principal_phone"]?.takeIf { v -> v.isNotBlank() }?.let { v -> it[principalPhone] = v }
         basics["full_address"]?.let { v -> it[fullAddress] = v }
-        basics["city"]?.let { v -> it[city] = v }
+        basics["city"]?.let { v ->
+            it[city] = v
+            if (basics["state"].isNullOrBlank()) {
+                CITY_TO_STATE_SERVER[v]?.let { st -> it[state] = st }
+            }
+        }
         basics["district"]?.let { v -> it[district] = v }
         basics["state"]?.let { v -> it[state] = v }
         basics["pincode"]?.let { v -> it[pincode] = v }
@@ -631,7 +639,8 @@ private fun upsertAssignment(
     val existing = TeacherSubjectAssignmentsTable.selectAll()
         .where {
             (TeacherSubjectAssignmentsTable.schoolId eq schoolId) and
-                (TeacherSubjectAssignmentsTable.subject eq subject)
+                (TeacherSubjectAssignmentsTable.subject eq subject) and
+                (TeacherSubjectAssignmentsTable.teacherName eq teacherName)
         }
         .firstOrNull {
             ClassNaming.sameClassSection(
@@ -1298,3 +1307,22 @@ fun Route.onboardingRouting() {
         }
     }
 }
+
+private val CITY_TO_STATE_SERVER: Map<String, String> = mapOf(
+    "New Delhi" to "Delhi",
+    "Mumbai" to "Maharashtra",
+    "Pune" to "Maharashtra",
+    "Bangalore" to "Karnataka",
+    "Chennai" to "Tamil Nadu",
+    "Kolkata" to "West Bengal",
+    "Hyderabad" to "Telangana",
+    "Ahmedabad" to "Gujarat",
+    "Jaipur" to "Rajasthan",
+    "Lucknow" to "Uttar Pradesh",
+    "Kanpur" to "Uttar Pradesh",
+    "Varanasi" to "Uttar Pradesh",
+    "Meerut" to "Uttar Pradesh",
+    "Noida" to "Uttar Pradesh",
+    "Ghaziabad" to "Uttar Pradesh",
+    "Gurugram" to "Haryana",
+)

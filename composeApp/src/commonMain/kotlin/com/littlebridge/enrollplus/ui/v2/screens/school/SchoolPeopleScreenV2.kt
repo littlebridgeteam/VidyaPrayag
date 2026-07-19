@@ -69,6 +69,7 @@ import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
+import com.littlebridge.enrollplus.ui.v2.components.VDropdown
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.components.VPullRefresh
@@ -119,6 +120,7 @@ fun SchoolPeopleScreenV2(
     onOpenLinkRequests: () -> Unit = {},
     onOpenStudent: (String) -> Unit = {},
     onOpenTeacher: (String) -> Unit = {},
+    onEditTeacher: (String) -> Unit = {},
     // RA-TAM — overflow "Assign classes" opens the reusable assignment module.
     onAssignClasses: (String) -> Unit = {},
     onOpenStaff: (String) -> Unit = {},
@@ -173,6 +175,7 @@ fun SchoolPeopleScreenV2(
         onOpenLinkRequests = onOpenLinkRequests,
         onOpenStudent = onOpenStudent,
         onOpenTeacher = onOpenTeacher,
+        onEditTeacher = onEditTeacher,
         onAssignClasses = onAssignClasses,
         onOpenStaff = onOpenStaff,
         onOpenMessages = onOpenMessages,
@@ -206,6 +209,7 @@ private fun SchoolPeopleContent(
     onOpenLinkRequests: () -> Unit,
     onOpenStudent: (String) -> Unit,
     onOpenTeacher: (String) -> Unit,
+    onEditTeacher: (String) -> Unit,
     onAssignClasses: (String) -> Unit,
     onOpenStaff: (String) -> Unit,
     onOpenMessages: (String?) -> Unit,
@@ -286,10 +290,15 @@ private fun SchoolPeopleContent(
         subTab = PeopleSubTab.entries[pagerState.currentPage]
     }
 
+    val currentTab = PeopleSubTab.entries[pagerState.currentPage]
     VPullRefresh(
-        isRefreshing = teachersState.isLoading || studentsState.isLoading || staffState.isLoading,
+        isRefreshing = when (currentTab) {
+            PeopleSubTab.Teachers -> teachersState.isLoading
+            PeopleSubTab.Students -> studentsState.isLoading
+            PeopleSubTab.Staff -> staffState.isLoading
+        },
         onRefresh = {
-            when (PeopleSubTab.entries[pagerState.currentPage]) {
+            when (currentTab) {
                 PeopleSubTab.Teachers -> onTeachersRetry()
                 PeopleSubTab.Students -> onStudentsRetry()
                 PeopleSubTab.Staff -> onStaffRetry()
@@ -353,6 +362,7 @@ private fun SchoolPeopleContent(
                         onRetry = onTeachersRetry,
                         onAddClick = { showAddTeacher = true },
                         onOpenTeacher = onOpenTeacher,
+                        onEditTeacher = onEditTeacher,
                         onLoadMore = onLoadMoreTeachers,
                         onDeactivate = onDeactivateTeacher,
                         onAssignClass = onAssignClasses,
@@ -435,6 +445,7 @@ private fun TeachersSubTab(
     onRetry: () -> Unit,
     onAddClick: () -> Unit,
     onOpenTeacher: (String) -> Unit,
+    onEditTeacher: (String) -> Unit,
     onLoadMore: () -> Unit,
     onDeactivate: (String) -> Unit,
     onAssignClass: (String) -> Unit,
@@ -545,6 +556,7 @@ private fun TeachersSubTab(
                         onViewProfile = { onOpenTeacher(t.id) },
                         onDeactivate = { onDeactivate(t.id) },
                         onAssignClass = { onAssignClass(t.id) },
+                        onEdit = { onEditTeacher(t.id) },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }
@@ -835,6 +847,7 @@ private fun StaffSubTab(
         q && deptOk && roleOk && statusOk
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
@@ -932,22 +945,21 @@ private fun StaffSubTab(
         }
     }
 
-    // ── Snackbar for no-phone warning ────────────────────────────────────
+    // ── Snackbar for no-phone warning (overlay, outside Column) ────────
     snackMessage?.let { msg ->
         LaunchedEffect(msg) {
             kotlinx.coroutines.delay(3000)
             snackMessage = null
         }
-        Box(Modifier.fillMaxSize()) {
-            VSnackbar(
-                message = msg,
-                visible = true,
-                onDismiss = { snackMessage = null },
-                tone = VSnackbarTone.Warning,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
-        }
+        VSnackbar(
+            message = msg,
+            visible = true,
+            onDismiss = { snackMessage = null },
+            tone = VSnackbarTone.Warning,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
+    } // end Box
 }
 
 // ───────────────────────────── dialogs ─────────────────────────────
@@ -996,7 +1008,7 @@ private fun AddTeacherSheet(
                 label = appString(StringKeys.PPL_EMAIL_OR_PHONE),
                 placeholder = appString(StringKeys.PPL_EMAIL_PHONE_PH),
                 leadingIcon = if (isEmail) VIcons.Mail else VIcons.Phone,
-                keyboardType = if (isEmail) KeyboardType.Email else KeyboardType.Text,
+                keyboardType = if (isEmail) KeyboardType.Email else KeyboardType.Phone,
             )
             VSheetPicker(
                 label = "Class",
@@ -1097,12 +1109,14 @@ private fun AddStaffSheet(
                 placeholder = appString(StringKeys.PPL_NAME_PH_STAFF),
                 leadingIcon = VIcons.User,
             )
-            VInput(
+            VSheetPicker(
                 value = role,
-                onValueChange = { role = it },
+                options = STAFF_ROLE_OPTIONS,
+                onSelect = { role = it },
                 label = appString(StringKeys.PPL_ROLE),
                 placeholder = appString(StringKeys.PPL_ROLE_PH),
                 leadingIcon = VIcons.User,
+                searchable = true,
             )
             VInput(
                 value = department,
@@ -1154,6 +1168,12 @@ private fun AddStaffSheet(
         }
     }
 }
+
+private val STAFF_ROLE_OPTIONS = listOf(
+    "Accountant", "Librarian", "Office Assistant", "Receptionist",
+    "Lab Assistant", "Peon", "Security Guard", "Driver", "Sweeper",
+    "Gardener", "Electrician", "Plumber", "Carpenter", "Other",
+)
 
 // ───────────────────────── Student add / import dialogs ─────────────────────
 

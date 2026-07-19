@@ -27,6 +27,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -188,27 +189,6 @@ fun ClassesSubjectsScreenV2(
         VTopTabs(tabs = tabLabels, selected = tabLabels[activeTab.ordinal], onSelect = { label ->
             activeTab = ClassesSubjectsTab.entries[tabLabels.indexOf(label)]
         })
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            VButton(
-                text = appString(StringKeys.CS_ADD_CLASS),
-                onClick = { activeTab = ClassesSubjectsTab.Classes; createClassRequestKey++ },
-                modifier = Modifier.weight(1f),
-                variant = VButtonVariant.Secondary,
-                tone = VButtonTone.Teal,
-                size = VButtonSize.Sm,
-            )
-            VButton(
-                text = appString(StringKeys.CS_ADD_SUBJECT),
-                onClick = { startSubjectSetup() },
-                modifier = Modifier.weight(1f),
-                variant = VButtonVariant.Primary,
-                tone = VButtonTone.Teal,
-                size = VButtonSize.Sm,
-            )
-        }
         when (activeTab) {
             ClassesSubjectsTab.Classes -> ClassesTab(
                 state = state,
@@ -428,20 +408,58 @@ private fun ClassEditSheet(
     var name by remember { mutableStateOf(initialName) }
     var sectionsText by remember { mutableStateOf(initialSections.joinToString(", ")) }
 
+    val codeError = when {
+        code.isBlank() -> "Class code is required"
+        !code.matches(Regex("^[A-Za-z0-9]{1,10}$")) -> "Code must be 1-10 alphanumeric characters"
+        else -> null
+    }
+    val nameError = when {
+        name.isBlank() -> "Class name is required"
+        name.length > 50 -> "Name must be at most 50 characters"
+        !name.matches(Regex("^[A-Za-z0-9 \\-()]+$")) -> "Name can only contain letters, numbers, spaces, hyphens, and parentheses"
+        else -> null
+    }
+    val parsedSections = sectionsText.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    val sectionsError = when {
+        parsedSections.isEmpty() -> null
+        parsedSections.any { it.length > 5 || !it.matches(Regex("^[A-Za-z0-9]+$")) } ->
+            "Sections must be 1-5 alphanumeric characters each"
+        else -> null
+    }
+    val canSubmit = codeError == null && nameError == null && sectionsError == null && !isSaving
+
     VBottomSheet(
         visible = true,
         onDismiss = onDismiss,
     ) {
         VBottomSheetHeader(title = title)
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            VInput(value = code, onValueChange = { code = it }, label = appString(StringKeys.CS_CLASS_CODE), hint = "e.g. 10A", placeholder = "10A")
-            VInput(value = name, onValueChange = { name = it }, label = appString(StringKeys.CS_CLASS_NAME), hint = "e.g. Grade 10", placeholder = "Grade 10")
+            VInput(
+                value = code,
+                onValueChange = { code = it.take(10) },
+                label = appString(StringKeys.CS_CLASS_CODE),
+                hint = "e.g. 10A",
+                placeholder = "10A",
+                isError = codeError != null,
+                errorText = codeError,
+            )
+            VInput(
+                value = name,
+                onValueChange = { name = it.take(50) },
+                label = appString(StringKeys.CS_CLASS_NAME),
+                hint = "e.g. Grade 10",
+                placeholder = "Grade 10",
+                isError = nameError != null,
+                errorText = nameError,
+            )
             VInput(
                 value = sectionsText,
                 onValueChange = { sectionsText = it },
                 label = appString(StringKeys.CS_SECTIONS_LABEL),
                 hint = "A, B, C",
                 placeholder = "A, B, C",
+                isError = sectionsError != null,
+                errorText = sectionsError,
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -449,14 +467,15 @@ private fun ClassEditSheet(
             VButton(
                 text = appString(StringKeys.CS_SAVE),
                 onClick = {
-                    val sections = sectionsText.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    val sections = parsedSections
                     val finalSections = if (sections.isEmpty()) listOf("A") else sections
-                    onSave(code, name, finalSections)
+                    onSave(code.trim(), name.trim(), finalSections)
                 },
                 modifier = Modifier.weight(1f),
                 variant = VButtonVariant.Primary,
                 tone = VButtonTone.Teal,
                 loading = isSaving,
+                enabled = canSubmit,
             )
         }
     }
@@ -1155,7 +1174,7 @@ private fun ImportSheet(
 private val TIME_REGEX = Regex("(\\d{1,2}[:.]\\d{2})\\s*[-–to ]+\\s*(\\d{1,2}[:.]\\d{2})")
 private val BREAK_KEYWORDS = setOf("break", "recess", "lunch", "interval", "assembly", "prayer")
 
-private fun parseTimetableText(text: String): Pair<List<SchoolDaySlotDto>, String> {
+internal fun parseTimetableText(text: String): Pair<List<SchoolDaySlotDto>, String> {
     val lines = text.lines().map { it.trim() }.filter { it.isNotBlank() }
     val slots = mutableListOf<SchoolDaySlotDto>()
     var name = ""
@@ -1207,7 +1226,7 @@ private fun parseTimetableText(text: String): Pair<List<SchoolDaySlotDto>, Strin
     return slots to name
 }
 
-private fun normalizeTime(time: String): String {
+internal fun normalizeTime(time: String): String {
     val parts = time.split(":")
     if (parts.size == 2) {
         val h = parts[0].padStart(2, '0')
@@ -2047,7 +2066,9 @@ private fun ManualPeriodEditorSheet(
             onCreate = { name, identifier ->
                 onCreateTeacherInline(name, identifier) {
                     showNewTeacher = false
-                    selectedTeacherId = state.teachers.lastOrNull()?.id ?: ""
+                    selectedTeacherId = state.teachers.firstOrNull {
+                        it.profile.name.equals(name.trim(), ignoreCase = true)
+                    }?.id ?: state.teachers.lastOrNull()?.id ?: ""
                 }
             },
             onDismiss = { showNewTeacher = false },
@@ -2227,7 +2248,9 @@ private fun SlotAssignmentEditorSheet(
             onCreate = { name, identifier ->
                 onCreateTeacherInline(name, identifier) {
                     showNewTeacher = false
-                    selectedTeacherId = state.teachers.lastOrNull()?.id ?: ""
+                    selectedTeacherId = state.teachers.firstOrNull {
+                        it.profile.name.equals(name.trim(), ignoreCase = true)
+                    }?.id ?: state.teachers.lastOrNull()?.id ?: ""
                 }
             },
             onDismiss = { showNewTeacher = false },
@@ -2708,8 +2731,10 @@ private fun AddExceptionSheet(
     onDismiss: () -> Unit,
 ) {
     var date by remember { mutableStateOf("") }
-    var kind by remember { mutableStateOf("CANCEL") }
+    var kind by remember { mutableStateOf("CANCELLED") }
     var note by remember { mutableStateOf("") }
+    var kindDropdownOpen by remember { mutableStateOf(false) }
+    val kindOptions = listOf("CANCELLED", "RESCHEDULED", "ROOM_CHANGE", "SUBSTITUTION", "EXTRA")
 
     VBottomSheet(
         visible = true,
@@ -2718,7 +2743,55 @@ private fun AddExceptionSheet(
         VBottomSheetHeader(title = appString(StringKeys.CS_ADD_EXCEPTION_TITLE))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             VDatePicker(value = date, onValueChange = { date = it }, label = appString(StringKeys.CS_DATE))
-            VInput(value = kind, onValueChange = { kind = it }, label = appString(StringKeys.CS_KIND), hint = "CANCEL, RESCHEDULE, SUBSTITUTE", placeholder = "CANCEL")
+            Text(appString(StringKeys.CS_KIND), style = VTypography.caption, color = VColors.ink2)
+            VCard {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { kindDropdownOpen = !kindDropdownOpen }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = kind,
+                            style = VTypography.body,
+                            color = VColors.ink,
+                        )
+                        Icon(
+                            if (kindDropdownOpen) VIcons.ChevronUp else VIcons.ChevronDown,
+                            contentDescription = null,
+                            tint = VColors.ink2,
+                        )
+                    }
+                    if (kindDropdownOpen) {
+                        Spacer(Modifier.height(4.dp))
+                        kindOptions.forEach { option ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        kind = option
+                                        kindDropdownOpen = false
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = option,
+                                    style = VTypography.body,
+                                    color = VColors.ink,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (option == kind) {
+                                    Icon(VIcons.Check, contentDescription = null, tint = VColors.violet)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             VInput(value = note, onValueChange = { note = it }, label = appString(StringKeys.CS_NOTE), hint = "Optional note", placeholder = "Holiday")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VButton(text = appString(StringKeys.CS_CANCEL), onClick = onDismiss, variant = VButtonVariant.Ghost)

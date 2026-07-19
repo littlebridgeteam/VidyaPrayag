@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -103,34 +106,37 @@ fun VMaterialDatePicker(
         val initialMillis = remember(value) { isoToMillis(value.ifBlank(::todayIso)) ?: 0L }
         val pickerState = androidx.compose.material3.rememberDatePickerState(initialSelectedDateMillis = initialMillis)
         VBottomSheet(visible = true, onDismiss = { open = false }) {
-            VBottomSheetHeader(title = "Select Date")
-            DatePicker(
-                state = pickerState,
-                showModeToggle = false,
-                colors = DatePickerDefaults.colors(
-                    containerColor = c.card,
-                    selectedDayContainerColor = c.accent,
-                    selectedDayContentColor = c.card,
-                    todayContentColor = c.accent,
-                    todayDateBorderColor = c.accent,
-                    dayContentColor = c.ink,
-                    headlineContentColor = c.ink,
-                    titleContentColor = c.ink,
-                    weekdayContentColor = c.ink3,
-                    navigationContentColor = c.ink,
-                    subheadContentColor = c.ink2,
-                ),
-            )
-            VButton(
-                text = "Done",
-                onClick = {
-                    pickerState.selectedDateMillis?.let { onValueChange(millisToIso(it)) }
-                    open = false
-                },
-                full = true,
-                variant = VButtonVariant.Primary,
-                modifier = Modifier.padding(bottom = 16.dp),
-            )
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                VBottomSheetHeader(title = "Select Date")
+                DatePicker(
+                    state = pickerState,
+                    showModeToggle = false,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 360.dp),
+                    colors = DatePickerDefaults.colors(
+                        containerColor = c.card,
+                        selectedDayContainerColor = c.accent,
+                        selectedDayContentColor = c.card,
+                        todayContentColor = c.accent,
+                        todayDateBorderColor = c.accent,
+                        dayContentColor = c.ink,
+                        headlineContentColor = c.ink,
+                        titleContentColor = c.ink,
+                        weekdayContentColor = c.ink3,
+                        navigationContentColor = c.ink,
+                        subheadContentColor = c.ink2,
+                    ),
+                )
+                VButton(
+                    text = "Done",
+                    onClick = {
+                        pickerState.selectedDateMillis?.let { onValueChange(millisToIso(it)) }
+                        open = false
+                    },
+                    full = true,
+                    variant = VButtonVariant.Primary,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+            }
         }
     }
 }

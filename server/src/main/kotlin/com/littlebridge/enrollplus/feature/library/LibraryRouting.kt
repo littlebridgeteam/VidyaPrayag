@@ -522,6 +522,8 @@ fun Route.libraryRouting() {
                     call.ok(result)
                 } catch (e: LibraryException) {
                     call.fail(e.message ?: "Onboarding error", e.toHttpStatusCode(), e::class.simpleName)
+                } catch (e: Exception) {
+                    call.fail("Onboarding failed: ${e.message ?: "Unexpected error"}", HttpStatusCode.InternalServerError, "ONBOARDING_ERROR")
                 }
             }
 
@@ -648,7 +650,14 @@ fun Route.libraryRouting() {
                 val req = call.receive<CreateCategoryRequest>()
                 try {
                     val id = libraryService.createCategory(ctx.schoolId, req, ctx.userId, ctx.role)
-                    call.ok(mapOf("id" to id.toString()), "Category created", HttpStatusCode.Created)
+                    val categoryDto = LibraryCategoryDto(
+                        id = id.toString(),
+                        name = req.name,
+                        color = req.color,
+                        icon = req.icon,
+                        displayOrder = 0,
+                    )
+                    call.ok(categoryDto, "Category created", HttpStatusCode.Created)
                 } catch (e: LibraryException) {
                     call.fail(e.message ?: "Create category error", e.toHttpStatusCode(), e::class.simpleName)
                 }

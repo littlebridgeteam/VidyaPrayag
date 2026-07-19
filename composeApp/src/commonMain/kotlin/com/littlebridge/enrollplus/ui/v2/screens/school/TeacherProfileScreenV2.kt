@@ -49,10 +49,12 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
+import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VCard
 import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
+import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.core.locale.StringKeys
 import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.locale.appString
@@ -85,11 +87,17 @@ fun TeacherProfileScreenV2(
     onRemoved: () -> Unit = onBack,
     // RA-TAM — Quick Action → reusable Teacher Assignment Management module.
     onOpenAssignments: () -> Unit = {},
+    // Bug 11: when true, the screen opens in edit mode.
+    initialEditMode: Boolean = false,
     modifier: Modifier = Modifier,
     viewModel: TeacherProfileViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
     LaunchedEffect(teacherId) { viewModel.load(teacherId) }
+    // Bug 11: enter edit mode on open if requested.
+    LaunchedEffect(initialEditMode) {
+        if (initialEditMode) viewModel.startEdit()
+    }
     // RA-S17: when the VM confirms removal, leave the profile.
     LaunchedEffect(state.removed) { if (state.removed) onRemoved() }
 
@@ -103,9 +111,16 @@ fun TeacherProfileScreenV2(
         VBackHeader(title = appString(StringKeys.SCH_TEACHER), onBack = onBack)
         TeacherProfileContent(
             state = state,
+            teacherId = teacherId,
             onRetry = viewModel::retry,
             onRemove = { viewModel.remove(teacherId) },
             onOpenAssignments = onOpenAssignments,
+            onStartEdit = viewModel::startEdit,
+            onCancelEdit = viewModel::cancelEdit,
+            onSaveEdit = { name, email, phone, designation ->
+                viewModel.updateTeacher(teacherId, name, email, phone, designation)
+            },
+            onClearSaveMessage = viewModel::clearSaveMessage,
             modifier = Modifier.fillMaxSize(),
         )
     }
@@ -114,9 +129,14 @@ fun TeacherProfileScreenV2(
 @Composable
 private fun TeacherProfileContent(
     state: TeacherProfileUiState,
+    teacherId: String,
     onRetry: () -> Unit,
     onRemove: () -> Unit,
     onOpenAssignments: () -> Unit,
+    onStartEdit: () -> Unit,
+    onCancelEdit: () -> Unit,
+    onSaveEdit: (name: String, email: String, phone: String, designation: String) -> Unit,
+    onClearSaveMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var confirmRemove by remember { mutableStateOf(false) }
@@ -139,15 +159,45 @@ private fun TeacherProfileContent(
             skeleton = { SkeletonProfile() },
         ) {
             val p = state.profile ?: return@VStateHost
-            TeacherProfileBody(p, onOpenAssignments = onOpenAssignments)
 
-            // ── 9. Danger zone — destructive action separated at the bottom. ──
-            Spacer(Modifier.height(8.dp))
-            DangerZone(
-                isRemoving = state.isRemoving,
-                removeError = state.removeError,
-                onRequestRemove = { confirmRemove = true },
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                if (state.isEditing) {
+                    EditTeacherForm(
+                        profile = p,
+                        isSaving = state.isSaving,
+                        saveError = state.saveError,
+                        onSave = onSaveEdit,
+                        onCancel = onCancelEdit,
+                    )
+                } else {
+                    TeacherProfileBody(p, onOpenAssignments = onOpenAssignments)
+
+                    // Bug 11: Edit button
+                    VButton(
+                        text = "Edit Details",
+                        onClick = onStartEdit,
+                        variant = VButtonVariant.Secondary,
+                        size = VButtonSize.Sm,
+                        leading = { Icon(VIcons.Edit3, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                    )
+
+                    // ── 9. Danger zone — destructive action separated at the bottom. ──
+                    Spacer(Modifier.height(8.dp))
+                    DangerZone(
+                        isRemoving = state.isRemoving,
+                        removeError = state.removeError,
+                        onRequestRemove = { confirmRemove = true },
+                    )
+                }
+            }
+        }
+    }
+
+    // Show save success → auto-clear after 2s
+    if (state.saveSuccess) {
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(2000)
+            onClearSaveMessage()
         }
     }
 
@@ -160,6 +210,88 @@ private fun TeacherProfileContent(
         onConfirm = { confirmRemove = false; onRemove() },
         onDismiss = { confirmRemove = false },
     )
+}
+
+// ───────────────────────── Bug 11: Edit form ─────────────────────────
+
+@Composable
+private fun EditTeacherForm(
+    profile: TeacherProfileDto,
+    isSaving: Boolean,
+    saveError: String?,
+    onSave: (name: String, email: String, phone: String, designation: String) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var name by remember { mutableStateOf(profile.name) }
+    var email by remember { mutableStateOf(profile.email ?: "") }
+    var phone by remember { mutableStateOf(profile.phone ?: "") }
+    var designation by remember { mutableStateOf(profile.designation ?: "") }
+
+    VCard(padding = 20.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Edit Teacher Details", style = VTypography.h3, color = VColors.ink)
+
+            VInput(
+                value = name,
+                onValueChange = { name = it },
+                label = "Full Name",
+                placeholder = "Enter full name",
+                leadingIcon = VIcons.User,
+            )
+            VInput(
+                value = email,
+                onValueChange = { email = it },
+                label = "Email",
+                placeholder = "email@example.com",
+                leadingIcon = VIcons.Mail,
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Email,
+            )
+            VInput(
+                value = phone,
+                onValueChange = { phone = it },
+                label = "Phone",
+                placeholder = "Phone number",
+                leadingIcon = VIcons.Phone,
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone,
+            )
+            VInput(
+                value = designation,
+                onValueChange = { designation = it },
+                label = "Designation",
+                placeholder = "e.g. Senior Teacher",
+                leadingIcon = VIcons.Star,
+            )
+
+            if (saveError != null) {
+                Text(
+                    saveError,
+                    style = VTypography.caption,
+                    color = VColors.coral,
+                )
+            }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                VButton(
+                    text = "Cancel",
+                    onClick = onCancel,
+                    variant = VButtonVariant.Ghost,
+                    modifier = Modifier.weight(1f),
+                    enabled = !isSaving,
+                )
+                VButton(
+                    text = if (isSaving) "Saving..." else "Save Changes",
+                    onClick = { onSave(name, email, phone, designation) },
+                    variant = VButtonVariant.Primary,
+                    modifier = Modifier.weight(1f),
+                    enabled = !isSaving,
+                    loading = isSaving,
+                )
+            }
+        }
+    }
 }
 
 @Composable

@@ -114,3 +114,12 @@ data class TeacherCredentialDto(
     val email: String,
     @SerialName("initial_password") val initialPassword: String
 )
+
+/** Bug 11: update teacher details (name, email, phone, designation). */
+@Serializable
+data class UpdateTeacherRequest(
+    val name: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val designation: String? = null,
+)

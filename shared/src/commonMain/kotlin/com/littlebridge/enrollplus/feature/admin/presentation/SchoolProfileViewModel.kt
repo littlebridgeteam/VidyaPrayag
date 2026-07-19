@@ -34,6 +34,7 @@ data class SchoolProfileState(
     // Editable fields
     val name: String = "",
     val board: String = "",
+    val customBoard: String = "",
     val medium: String = "",
     val schoolGender: String = "",
     val contactPhone: String = "",
@@ -64,6 +65,7 @@ class SchoolProfileViewModel(
     init { load() }
 
     fun load() {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, loadError = null)
             val token = preferenceRepository.getUserToken().first()
@@ -78,11 +80,15 @@ class SchoolProfileViewModel(
                         _state.value = _state.value.copy(isLoading = false, loadError = "School profile not found.")
                         return@launch
                     }
+                    val knownBoards = listOf("CBSE", "ICSE", "UP State")
+                    val loadedBoard = d.board
+                    val isKnownBoard = loadedBoard in knownBoards
                     _state.value = _state.value.copy(
                         isLoading = false,
                         loadError = null,
                         name = d.name,
-                        board = d.board,
+                        board = if (isKnownBoard) loadedBoard else if (loadedBoard.isNotBlank()) "Other" else "",
+                        customBoard = if (!isKnownBoard) loadedBoard else "",
                         medium = d.medium,
                         schoolGender = d.schoolGender,
                         contactPhone = d.contactPhone.orEmpty(),
@@ -114,7 +120,8 @@ class SchoolProfileViewModel(
 
     // -------- field editors (clear field-specific errors on edit) --------
     fun onName(v: String) { _state.value = _state.value.copy(name = v, fieldErrors = _state.value.fieldErrors - "name") }
-    fun onBoard(v: String) { _state.value = _state.value.copy(board = v, fieldErrors = _state.value.fieldErrors - "board") }
+    fun onBoard(v: String) { _state.value = _state.value.copy(board = v, customBoard = if (v != "Other") "" else _state.value.customBoard, fieldErrors = _state.value.fieldErrors - "board") }
+    fun onCustomBoard(v: String) { _state.value = _state.value.copy(customBoard = v, fieldErrors = _state.value.fieldErrors - "customBoard") }
     fun onMedium(v: String) { _state.value = _state.value.copy(medium = v, fieldErrors = _state.value.fieldErrors - "medium") }
     fun onSchoolGender(v: String) { _state.value = _state.value.copy(schoolGender = v, fieldErrors = _state.value.fieldErrors - "schoolGender") }
     fun onContactPhone(v: String) { _state.value = _state.value.copy(contactPhone = v, fieldErrors = _state.value.fieldErrors - "contactPhone") }
@@ -134,25 +141,7 @@ class SchoolProfileViewModel(
 
     fun save() {
         val s = _state.value
-        val errors = mutableMapOf<String, String>()
-
-        if (s.name.isBlank()) errors["name"] = "School name is required"
-        if (s.city.isBlank()) errors["city"] = "City is required"
-        if (s.district.isBlank()) errors["district"] = "District is required"
-
-        val phoneRegex = Regex("^\\d{10}$")
-        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-
-        if (s.contactPhone.isNotBlank() && !s.contactPhone.matches(phoneRegex))
-            errors["contactPhone"] = "Phone must be exactly 10 digits"
-        if (s.principalPhone.isNotBlank() && !s.principalPhone.matches(phoneRegex))
-            errors["principalPhone"] = "Phone must be exactly 10 digits"
-        if (s.pincode.isNotBlank() && !s.pincode.matches(Regex("^\\d{6}$")))
-            errors["pincode"] = "PIN must be exactly 6 digits"
-        if (s.contactEmail.isNotBlank() && !s.contactEmail.matches(emailRegex))
-            errors["contactEmail"] = "Invalid email format"
-        if (s.principalEmail.isNotBlank() && !s.principalEmail.matches(emailRegex))
-            errors["principalEmail"] = "Invalid email format"
+        val errors = validateSchoolProfileFields(s)
 
         if (errors.isNotEmpty()) {
             _state.value = s.copy(fieldErrors = errors, errorMessage = "Please fix the highlighted fields.")
@@ -167,7 +156,7 @@ class SchoolProfileViewModel(
             _state.value = _state.value.copy(isSaving = true, errorMessage = null, infoMessage = null, saved = false)
             val req = UpdateSchoolProfileRequest(
                 name = s.name.trim(),
-                board = s.board.trim(),
+                board = if (s.board == "Other") s.customBoard.trim().ifBlank { "Other" } else s.board.trim(),
                 medium = s.medium.trim(),
                 schoolGender = s.schoolGender.trim(),
                 contactPhone = s.contactPhone.trim(),
@@ -195,4 +184,54 @@ class SchoolProfileViewModel(
             }
         }
     }
+}
+
+public val PHONE_REGEX_10 = Regex("^\\d{10}$")
+public val EMAIL_REGEX_PROFILE = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+public val PINCODE_REGEX_6 = Regex("^\\d{6}$")
+
+public val CITY_PINCODE_PREFIX: Map<String, String> = mapOf(
+    "New Delhi" to "110",
+    "Mumbai" to "400",
+    "Pune" to "411",
+    "Bangalore" to "560",
+    "Chennai" to "600",
+    "Kolkata" to "700",
+    "Hyderabad" to "500",
+    "Ahmedabad" to "380",
+    "Jaipur" to "302",
+    "Lucknow" to "226",
+    "Kanpur" to "208",
+    "Varanasi" to "221",
+    "Meerut" to "250",
+    "Noida" to "201",
+    "Ghaziabad" to "201",
+    "Gurugram" to "122",
+)
+
+public fun validateSchoolProfileFields(s: SchoolProfileState): Map<String, String> {
+    val errors = mutableMapOf<String, String>()
+    if (s.name.isBlank()) errors["name"] = "School name is required"
+    if (s.board == "Other" && s.customBoard.isBlank())
+        errors["customBoard"] = "Board name is required when 'Other' is selected"
+    if (s.city.isBlank()) errors["city"] = "City is required"
+    if (s.district.isBlank()) errors["district"] = "District is required"
+    if (s.pincode.isBlank()) errors["pincode"] = "PIN code is required"
+
+    if (s.contactPhone.isNotBlank() && !s.contactPhone.matches(PHONE_REGEX_10))
+        errors["contactPhone"] = "Phone must be exactly 10 digits"
+    if (s.principalPhone.isNotBlank() && !s.principalPhone.matches(PHONE_REGEX_10))
+        errors["principalPhone"] = "Phone must be exactly 10 digits"
+    if (s.pincode.isNotBlank() && !s.pincode.matches(PINCODE_REGEX_6))
+        errors["pincode"] = "PIN must be exactly 6 digits"
+    if (s.contactEmail.isNotBlank() && !s.contactEmail.matches(EMAIL_REGEX_PROFILE))
+        errors["contactEmail"] = "Invalid email format"
+    if (s.principalEmail.isNotBlank() && !s.principalEmail.matches(EMAIL_REGEX_PROFILE))
+        errors["principalEmail"] = "Invalid email format"
+    if (s.pincode.isNotBlank() && s.pincode.matches(PINCODE_REGEX_6)) {
+        val expectedPrefix = CITY_PINCODE_PREFIX[s.city]
+        if (expectedPrefix != null && !s.pincode.startsWith(expectedPrefix))
+            errors["pincode"] = "PIN code does not match ${s.city}. Expected prefix: $expectedPrefix"
+    }
+    return errors
 }

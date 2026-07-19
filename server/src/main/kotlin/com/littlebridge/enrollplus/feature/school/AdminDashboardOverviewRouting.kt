@@ -54,6 +54,7 @@ import com.littlebridge.enrollplus.db.FacultyTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import com.littlebridge.enrollplus.db.LeaveRequestsTable
 import com.littlebridge.enrollplus.db.MessageThreadsTable
+import com.littlebridge.enrollplus.db.NonTeachingStaffTable
 import com.littlebridge.enrollplus.db.ParentChildLinksTable
 import com.littlebridge.enrollplus.db.PtmEventsTable
 import com.littlebridge.enrollplus.db.SchoolClassesTable
@@ -371,7 +372,12 @@ fun Route.adminDashboardOverviewRouting() {
                         .where { FacultyTable.schoolId eq schoolId }
                         .toList()
                     val teacherActive = faculty.filter { it[FacultyTable.isActive] }
-                    val teacherTotal = teacherActive.size
+                    val teacherTotal = faculty.size
+
+                    val nonTeachingStaff = NonTeachingStaffTable.selectAll()
+                        .where { NonTeachingStaffTable.schoolId eq schoolId }
+                        .toList()
+                    val staffTotal = teacherTotal + nonTeachingStaff.size
 
                     val classes = SchoolClassesTable.selectAll()
                         .where { SchoolClassesTable.schoolId eq schoolId }
@@ -818,8 +824,8 @@ fun Route.adminDashboardOverviewRouting() {
                             ovDirection(studentDelta), abs(studentDelta), "new this week", true
                         ),
                         OvKpiDto(
-                            "teachers", "Total Teachers", teacherTotal, "",
-                            "flat", 0.0, "active faculty", teachersAvailable || teacherTotal >= 0
+                            "staff", "Staff & Teachers", staffTotal, "",
+                            "flat", 0.0, "active staff", teachersAvailable || staffTotal >= 0
                         ),
                         OvKpiDto(
                             "attendance", "Attendance", attendancePct, "%",

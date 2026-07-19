@@ -11,6 +11,7 @@
  * Endpoints (JWT + school-scoped via requireSchoolContext):
  *   POST   /api/v1/school/teachers                     create a teacher app_users row
  *   GET    /api/v1/school/teachers                     list active teachers in the admin's school
+ *   PUT    /api/v1/school/teachers/{id}                update teacher details (name, email, phone, designation)
  *   DELETE /api/v1/school/teachers/{id}                deactivate (soft-delete) a teacher (RA-22)
  *   POST   /api/v1/school/teachers/{id}/reset-password reissue an initial password (RA-32)
  *
@@ -50,6 +51,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
@@ -66,6 +68,14 @@ data class CreateTeacherDto(
     val name: String,
     val identifier: String,                               // email OR phone
     @SerialName("initial_password") val initialPassword: String? = null
+)
+
+@Serializable
+data class UpdateTeacherDto(
+    val name: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val designation: String? = null,
 )
 
 @Serializable
@@ -816,6 +826,123 @@ fun Route.teacherProvisioningRouting() {
                     else ->
                         call.ok(result, message = "New initial password issued")
                 }
+            }
+
+            // ---- update teacher details (Bug 11) ----
+            // School-admin-only: updates name, email, phone, and/or designation
+            // on the teacher's app_users row. IDOR-safe: constrained to ctx.schoolId.
+            put("/{id}") {
+                val ctx = call.requireSchoolAdmin() ?: return@put
+                val teacherId = call.parameters["id"]
+                    ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                    ?: run { call.fail("A valid teacher id is required", HttpStatusCode.BadRequest, "BAD_TEACHER_ID"); return@put }
+
+                val req = runCatching { call.receive<UpdateTeacherDto>() }.getOrNull()
+                    ?: run { call.fail("Invalid body"); return@put }
+
+                // Validate: at least one field must be provided
+                if (req.name == null && req.email == null && req.phone == null && req.designation == null) {
+                    call.fail("At least one field must be provided", HttpStatusCode.BadRequest, "EMPTY_UPDATE")
+                    return@put
+                }
+
+                // Validate name if provided
+                if (req.name != null && req.name.isBlank()) {
+                    call.fail("Name cannot be blank", HttpStatusCode.BadRequest, "INVALID_NAME")
+                    return@put
+                }
+
+                // Check for duplicate email/phone if changing
+                if (req.email != null) {
+                    val existing = dbQuery {
+                        AppUsersTable.selectAll()
+                            .where {
+                                (AppUsersTable.email eq req.email) and
+                                    (AppUsersTable.id neq teacherId)
+                            }
+                            .firstOrNull()
+                    }
+                    if (existing != null) {
+                        call.fail("An account with this email already exists", HttpStatusCode.Conflict, "EMAIL_EXISTS")
+                        return@put
+                    }
+                }
+                if (req.phone != null) {
+                    val existing = dbQuery {
+                        AppUsersTable.selectAll()
+                            .where {
+                                (AppUsersTable.phone eq req.phone) and
+                                    (AppUsersTable.id neq teacherId)
+                            }
+                            .firstOrNull()
+                    }
+                    if (existing != null) {
+                        call.fail("An account with this phone number already exists", HttpStatusCode.Conflict, "PHONE_EXISTS")
+                        return@put
+                    }
+                }
+
+                val now = Instant.now()
+                val updated = dbQuery {
+                    // Confirm the teacher exists in THIS school
+                    val row = AppUsersTable.selectAll()
+                        .where {
+                            (AppUsersTable.id eq teacherId) and
+                                (AppUsersTable.schoolId eq ctx.schoolId) and
+                                (AppUsersTable.role eq "teacher")
+                        }
+                        .firstOrNull() ?: return@dbQuery null
+
+                    AppUsersTable.update({ AppUsersTable.id eq teacherId }) {
+                        if (req.name != null) it[fullName] = req.name.trim()
+                        if (req.email != null) {
+                            it[email] = req.email.trim().ifBlank { null }
+                            it[isEmailVerified] = req.email.trim().isNotBlank()
+                        }
+                        if (req.phone != null) {
+                            it[phone] = req.phone.trim().ifBlank { null }
+                            it[isPhoneVerified] = req.phone.trim().isNotBlank()
+                        }
+                        it[updatedAt] = now
+                    }
+
+                    // Sync faculty row name if it exists
+                    val externalId = "U-$teacherId"
+                    FacultyTable.selectAll()
+                        .where { FacultyTable.externalId eq externalId }
+                        .firstOrNull()?.let { fRow ->
+                        if (req.name != null) {
+                            FacultyTable.update({ FacultyTable.id eq fRow[FacultyTable.id] }) {
+                                it[FacultyTable.name] = req.name.trim()
+                            }
+                        }
+                        if (req.designation != null) {
+                            FacultyTable.update({ FacultyTable.id eq fRow[FacultyTable.id] }) {
+                                it[FacultyTable.department] = req.designation.trim().ifBlank { null }
+                            }
+                        }
+                    }
+
+                    // Return the updated row
+                    AppUsersTable.selectAll().where { AppUsersTable.id eq teacherId }.firstOrNull()
+                }
+
+                if (updated == null) {
+                    call.fail("Teacher not found in your school", HttpStatusCode.NotFound, "TEACHER_NOT_FOUND")
+                    return@put
+                }
+
+                call.ok(
+                    TeacherAccountDto(
+                        id = teacherId.toString(),
+                        name = updated[AppUsersTable.fullName],
+                        email = updated[AppUsersTable.email],
+                        phone = updated[AppUsersTable.phone],
+                        role = updated[AppUsersTable.role],
+                        schoolId = ctx.schoolId.toString()
+                    ),
+                    message = "Teacher updated successfully"
+                )
             }
         }
     }

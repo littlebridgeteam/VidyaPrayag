@@ -42,6 +42,7 @@ import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.EnrollmentsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.ExamResultsTable
+import com.littlebridge.enrollplus.db.FacultyTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
@@ -469,11 +470,18 @@ private fun buildTeacherProfile(schoolId: UUID, teacherId: UUID): TeacherProfile
         val years = java.time.Duration.between(created, Instant.now()).toDays() / 365
         years.toInt().coerceAtLeast(0)
     }.getOrDefault(0)
-    val designation = when {
+    val savedDesignation = dbQuery {
+        FacultyTable.selectAll()
+            .where { FacultyTable.externalId eq "U-$teacherId" }
+            .firstOrNull()
+            ?.get(FacultyTable.department)
+    }
+    val computedDesignation = when {
         subjectCount >= 4 -> "Senior Teacher"
         subjectCount >= 1 -> "Subject Teacher"
         else -> "Teacher"
     }
+    val designation = savedDesignation?.takeIf { it.isNotBlank() } ?: computedDesignation
 
     return TeacherProfileDto(
         id = row[AppUsersTable.id].value.toString(),
