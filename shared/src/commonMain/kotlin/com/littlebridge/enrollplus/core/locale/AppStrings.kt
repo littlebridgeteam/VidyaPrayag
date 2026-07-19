@@ -1068,6 +1068,11 @@ object StringKeys {
     const val SCH_REMOVE_STAFF_MEMBER  = "sch.remove_staff_member"
     const val SCH_REMOVE_STAFF_CONFIRM = "sch.remove_staff_confirm"
     const val SCH_REMOVE               = "sch.remove"
+    const val SCH_STAFF_PROFILE        = "sch.staff_profile"
+    const val SCH_ROLE                 = "sch.role"
+    const val SCH_DEPARTMENT           = "sch.department"
+    const val SCH_REMOVE_STAFF         = "sch.remove_staff"
+    const val SCH_REMOVE_STAFF_DANGER  = "sch.remove_staff_danger"
 
     // DailyAttendanceScreenV2
     const val SCH_DAILY_ATTENDANCE     = "sch.daily_attendance"
@@ -4603,6 +4608,11 @@ object AppStrings {
         StringKeys.SCH_REMOVE_STAFF_MEMBER  to "Remove staff member",
         StringKeys.SCH_REMOVE_STAFF_CONFIRM to "Remove {name} from your school? Their record will be hidden. This can be reversed by re-adding them.",
         StringKeys.SCH_REMOVE               to "Remove",
+        StringKeys.SCH_STAFF_PROFILE        to "Staff Profile",
+        StringKeys.SCH_ROLE                 to "Role",
+        StringKeys.SCH_DEPARTMENT           to "Department",
+        StringKeys.SCH_REMOVE_STAFF         to "Remove Staff",
+        StringKeys.SCH_REMOVE_STAFF_DANGER  to "Removing this staff member will revoke access immediately. This can be reversed by re-adding them.",
         // DailyAttendanceScreenV2
         StringKeys.SCH_DAILY_ATTENDANCE     to "Daily Attendance",
         StringKeys.SCH_STUDENTS             to "Students",
@@ -8104,6 +8114,11 @@ object AppStrings {
         StringKeys.SCH_REMOVE_STAFF_MEMBER  to "स्टाफ सदस्य हटाएं",
         StringKeys.SCH_REMOVE_STAFF_CONFIRM to "{name} को आपके स्कूल से हटाएं? उनका रिकॉर्ड छिप जाएगा। इसे फिर से जोड़कर पूर्ववत किया जा सकता है।",
         StringKeys.SCH_REMOVE               to "हटाएं",
+        StringKeys.SCH_STAFF_PROFILE        to "स्टाफ प्रोफ़ाइल",
+        StringKeys.SCH_ROLE                 to "भूमिका",
+        StringKeys.SCH_DEPARTMENT           to "विभाग",
+        StringKeys.SCH_REMOVE_STAFF         to "स्टाफ हटाएं",
+        StringKeys.SCH_REMOVE_STAFF_DANGER  to "इस स्टाफ सदस्य को हटाने से उनकी पहुंच तुरंत रद्द हो जाएगी। इसे फिर से जोड़कर पूर्ववत किया जा सकता है।",
         // DailyAttendanceScreenV2
         StringKeys.SCH_DAILY_ATTENDANCE     to "दैनिक उपस्थिति",
         StringKeys.SCH_STUDENTS             to "छात्र",
