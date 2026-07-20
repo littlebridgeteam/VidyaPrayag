@@ -96,6 +96,39 @@ class SchoolTeachersViewModel(
         }
     }
 
+    /** Silently refresh the roster without showing the loading skeleton.
+     *  Used after mutations (add/remove) so the list updates without a visual reset. */
+    fun refresh() {
+        viewModelScope.launch {
+            try {
+                val token = preferenceRepository.getUserToken().first()
+                if (token.isNullOrBlank()) return@launch
+                when (val result = repository.getTeachers(token, page = 1, pageSize = TEACHERS_PAGE_SIZE)) {
+                    is NetworkResult.Success -> {
+                        val body = result.data.data
+                        _state.value = _state.value.copy(
+                            teachers = body?.teachers.orEmpty(),
+                            errorMessage = null,
+                            page = body?.pagination?.page ?: 1,
+                            hasNext = body?.pagination?.hasNext ?: false,
+                            totalRecords = body?.pagination?.totalRecords ?: 0,
+                            isStale = result.isStale,
+                            isOffline = result.isOffline,
+                        )
+                    }
+                    is NetworkResult.Error -> {
+                        AppLogger.e("SchoolTeachersVM", "refresh() error: ${result.message}")
+                    }
+                    is NetworkResult.ConnectionError -> {
+                        AppLogger.e("SchoolTeachersVM", "refresh() connection error")
+                    }
+                }
+            } catch (e: Exception) {
+                AppLogger.e("SchoolTeachersVM", "refresh() exception", e)
+            }
+        }
+    }
+
     /** Append the NEXT page to the current roster (infinite scroll / "load
      *  more"). No-op when already loading or there is no further page. */
     fun loadMore() {

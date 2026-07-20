@@ -91,7 +91,8 @@ data class DashboardStatistics(
     val students: DashboardStudentsStat = DashboardStudentsStat(),
     val teachers: DashboardTeachersStat = DashboardTeachersStat(),
     val classes: DashboardSimpleStat = DashboardSimpleStat(),
-    val subjects: DashboardSimpleStat = DashboardSimpleStat()
+    val subjects: DashboardSimpleStat = DashboardSimpleStat(),
+    val staff: DashboardSimpleStat = DashboardSimpleStat()
 )
 
 @Serializable

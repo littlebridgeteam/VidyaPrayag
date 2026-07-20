@@ -114,11 +114,13 @@ private fun VLanguageRow(
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1,
             )
-            Text(
-                text = lang.englishName,
-                style = VTheme.type.caption.colored(colors.ink3),
-                maxLines = 1,
-            )
+            if (lang.englishName != lang.nativeName) {
+                Text(
+                    text = lang.englishName,
+                    style = VTheme.type.caption.colored(colors.ink3),
+                    maxLines = 1,
+                )
+            }
         }
 
         if (isSelected) {

@@ -168,6 +168,22 @@ class TeacherAssignmentViewModel(
             return
         }
 
+        val existing = s.overview?.assignments.orEmpty()
+        val subjectName = draft.subjectName?.trim()?.lowercase()
+        val duplicates = targets.filter { target ->
+            existing.any { a ->
+                a.className.equals(target.className, ignoreCase = true) &&
+                    a.section.equals(target.section, ignoreCase = true) &&
+                    a.subject.lowercase() == subjectName
+            }
+        }
+        if (duplicates.size == targets.size) {
+            _state.value = s.copy(
+                saveError = "All selected assignments already exist for this teacher."
+            )
+            return
+        }
+
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, saveError = null, lastSaveMessage = null)
             val token = token() ?: run {

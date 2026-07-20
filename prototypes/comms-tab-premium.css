@@ -54,15 +54,19 @@ body{font-family:var(--font);background:#E8E4F0;color:var(--ink);line-height:1.5
 .hdr-title{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.6px;line-height:1.1}
 .hdr-title .light{font-weight:300;color:var(--ink-2)}
 
-/* ── Sub-tab pills ── */
-.tabs{display:flex;gap:4px;margin-bottom:16px}
+/* ── Sub-tab pills — matches PeopleDirectoryTabs from SchoolPeopleScreenV2.kt ── */
+.tabs{display:flex;gap:4px;margin-bottom:16px;align-items:center}
 .tab{
   padding:8px 18px;border-radius:var(--r-pill);font-size:13px;font-weight:600;
   color:var(--ink-3);cursor:pointer;border:none;background:transparent;
+  transition:all .22s ease;white-space:nowrap;transform:scale(.98);
 }
+.tab:hover{color:var(--ink-2)}
 .tab.active{
-  color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-soft));
-  box-shadow:0 3px 8px rgba(91,65,213,.20);
+  color:#fff;
+  background:linear-gradient(90deg,var(--accent),var(--accent-soft));
+  box-shadow:0 4px 12px rgba(91,65,213,.15);
+  transform:scale(1);
 }
 
 /* ─── Sub-tab content ─── */

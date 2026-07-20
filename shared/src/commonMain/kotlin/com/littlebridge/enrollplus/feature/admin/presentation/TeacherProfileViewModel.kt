@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.littlebridge.enrollplus.core.network.NetworkResult
 import com.littlebridge.enrollplus.core.prefs.PreferenceRepository
 import com.littlebridge.enrollplus.feature.admin.domain.model.TeacherProfileDto
+import com.littlebridge.enrollplus.feature.admin.domain.model.UpdateTeacherRequest
 import com.littlebridge.enrollplus.feature.admin.domain.repository.StudentsRepository
 import com.littlebridge.enrollplus.feature.admin.domain.repository.TeachersRepository
 import com.littlebridge.enrollplus.util.AppLogger
@@ -31,6 +32,11 @@ data class TeacherProfileUiState(
     val removeError: String? = null,
     val isStale: Boolean = false,
     val isOffline: Boolean = false,
+    // Bug 11: edit-mode state
+    val isEditing: Boolean = false,
+    val isSaving: Boolean = false,
+    val saveError: String? = null,
+    val saveSuccess: Boolean = false,
 )
 
 class TeacherProfileViewModel(
@@ -99,4 +105,49 @@ class TeacherProfileViewModel(
     }
 
     fun clearRemoveError() { _state.value = _state.value.copy(removeError = null) }
+
+    fun startEdit() {
+        _state.value = _state.value.copy(isEditing = true, saveError = null, saveSuccess = false)
+    }
+
+    fun cancelEdit() {
+        _state.value = _state.value.copy(isEditing = false, saveError = null, isSaving = false)
+    }
+
+    fun updateTeacher(teacherId: String, name: String, email: String, phone: String, designation: String) {
+        viewModelScope.launch {
+            if (name.isBlank()) {
+                _state.value = _state.value.copy(saveError = "Name cannot be blank")
+                return@launch
+            }
+            _state.value = _state.value.copy(isSaving = true, saveError = null)
+            val token = preferenceRepository.getUserToken().first()
+            if (token.isNullOrBlank()) {
+                _state.value = _state.value.copy(isSaving = false, saveError = "You are not signed in. Please log in again.")
+                return@launch
+            }
+            val request = UpdateTeacherRequest(
+                name = name.trim(),
+                email = email.trim().ifBlank { null },
+                phone = phone.trim().ifBlank { null },
+                designation = designation.trim().ifBlank { null },
+            )
+            when (val r = teachersRepository.updateTeacher(token, teacherId, request)) {
+                is NetworkResult.Success -> {
+                    _state.value = _state.value.copy(isSaving = false, isEditing = false, saveSuccess = true)
+                    // Reload the profile to reflect the updated data
+                    load(teacherId)
+                }
+                is NetworkResult.Error -> {
+                    AppLogger.e("TeacherProfileVM", "updateTeacher error: ${r.message}")
+                    _state.value = _state.value.copy(isSaving = false, saveError = r.message)
+                }
+                is NetworkResult.ConnectionError -> {
+                    _state.value = _state.value.copy(isSaving = false, saveError = "Connection error. Check your internet.")
+                }
+            }
+        }
+    }
+
+    fun clearSaveMessage() { _state.value = _state.value.copy(saveError = null, saveSuccess = false) }
 }
