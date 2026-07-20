@@ -565,6 +565,53 @@ private fun CardHeader(
     }
 }
 
+/**
+ * Header variant that takes an explicit status-dot colour (rather than deriving
+ * it from a status string), so callers with a richer status model — e.g. the
+ * teacher card's "Unassigned" state — can drive the dot precisely.
+ */
+@Composable
+private fun CardHeaderStatus(
+    name: String,
+    photoUrl: String?,
+    dotColor: Color,
+    subtitle: String,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+        PplAvatar(name, photoUrl, size = 44.dp)
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                Box(Modifier.size(7.dp).clip(CircleShape).background(dotColor))
+                Text(
+                    name,
+                    color = PplInk,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.3).sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+            }
+            Text(
+                subtitle,
+                color = PplInk2,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 3.dp),
+            )
+        }
+        if (trailing != null) {
+            trailing()
+        } else {
+            Icon(VIcons.ChevronRight, null, tint = PplInk3.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
 private data class Metric(val value: String, val label: String, val valueColor: Color = PplInk)
 
 /**
@@ -731,6 +778,48 @@ private fun ActionRow(actions: List<Triple<ImageVector, String, () -> Unit>>) {
 //  Teacher card
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Teacher card presentation status. Distinct from the account active/inactive
+ * flag: an active teacher with NO class allotted is surfaced as "Unassigned"
+ * (never "Active"), per the requirement that a teacher with no classes must not
+ * read as active.
+ */
+private enum class TeacherStatus(val label: String, val ink: Color, val fill: Color, val dot: Color) {
+    Active("Active", SuccessInk, SuccessSoft, SuccessInk),
+    Leave("On leave", WarningInk, WarningSoft, WarningInk),
+    Unassigned("Unassigned", SkyInk, SkySoft, SkyCol),
+    Inactive("Inactive", PplInk3, Color(0x14262340), PplInk3);
+
+    companion object {
+        fun resolve(rawStatus: String, totalClasses: Int): TeacherStatus = when {
+            statusDotFor(rawStatus) == DotStatus.Leave -> Leave
+            statusDotFor(rawStatus) == DotStatus.Inactive -> Inactive
+            totalClasses <= 0 -> Unassigned
+            else -> Active
+        }
+    }
+}
+
+/**
+ * Premium status pill — a soft-tinted capsule with a small solid status dot.
+ * Replaces the flat text pill so the active/leave/unassigned signal reads as a
+ * deliberate, high-craft indicator rather than a plain label.
+ */
+@Composable
+private fun PremiumTeacherStatusPill(status: TeacherStatus) {
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(50))
+            .background(status.fill)
+            .padding(start = 8.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Box(Modifier.size(6.dp).clip(CircleShape).background(status.dot))
+        Text(status.label, color = status.ink, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+    }
+}
+
 @Composable
 internal fun TeacherCard(
     teacher: TeacherCardDto,
@@ -741,47 +830,67 @@ internal fun TeacherCard(
     modifier: Modifier = Modifier,
 ) {
     val p = teacher.profile
-    val onLeave = statusDotFor(p.status) == DotStatus.Leave
-    // Role + experience only — the subject chips below already carry the subjects,
+    val totalClasses = teacher.workload.totalClasses
+    val status = TeacherStatus.resolve(p.status, totalClasses)
+    // Role + class-teacher flag — the subject chips below already carry subjects,
     // so we never render the redundant "Biology · Biology Teacher" from the old UI.
-    val subtitle = listOf(
-        p.role.ifBlank { "Teacher" },
-        p.experience?.takeIf(String::isNotBlank)?.let { "$it exp" }.orEmpty(),
-    ).filter(String::isNotBlank).joinToString(" \u00B7 ")
+    val subtitle = buildList {
+        add(p.role.ifBlank { "Teacher" })
+        if (p.isClassTeacher) add("Class teacher")
+        p.experience?.takeIf(String::isNotBlank)?.let { add("$it exp") }
+    }.joinToString(" \u00B7 ")
 
     Box(modifier) {
         PersonCard(onClick = onViewProfile) {
-            CardHeader(
-                p.name, p.avatarUrl, p.status, subtitle,
-                trailing = { StatusPill(p.status) },
+            CardHeaderStatus(
+                p.name, p.avatarUrl, status.dot, subtitle,
+                trailing = { PremiumTeacherStatusPill(status) },
             )
 
             val attendance = teacher.activity.attendancePercentage
+            val workloadPct = teacher.workload.workloadPercent
+            // Metric strip — every column now carries real, always-available data.
+            // The old "PEWS" column was empty most of the time (rating is null
+            // until a teacher is rated); "Workload" is derived from live class
+            // load, so the fourth column no longer reads as a dead "—".
             MetricStrip(
                 listOf(
                     Metric(teacher.workload.totalStudents.toString(), "Students"),
-                    Metric(teacher.workload.totalClasses.toString(), "Classes"),
+                    Metric(totalClasses.toString(), "Classes"),
                     Metric(attendance?.let { "$it%" } ?: "\u2014", "Attend.", PplAccent),
-                    Metric(
-                        if (onLeave) "\u2014" else (p.rating?.toString() ?: "\u2014"),
-                        "PEWS",
-                        PplAccent,
-                    ),
+                    Metric("$workloadPct%", "Workload", PplAccent),
                 ),
             )
 
-            SubjectTagRow(
-                teacher.academicAssignment.subjects.mapIndexed { index, subject ->
-                    subject to subjectPalette[index % subjectPalette.size]
-                },
-            )
+            if (teacher.academicAssignment.subjects.isNotEmpty()) {
+                SubjectTagRow(
+                    teacher.academicAssignment.subjects.mapIndexed { index, subject ->
+                        subject to subjectPalette[index % subjectPalette.size]
+                    },
+                )
+            } else {
+                // No subjects assigned — a quiet inline hint instead of a blank gap,
+                // reinforcing the "Unassigned" state and inviting the Assign action.
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(VIcons.School, null, tint = PplInk3, modifier = Modifier.size(13.dp))
+                    Text(
+                        "No classes assigned yet",
+                        color = PplInk3,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
 
-            ActionRow(
-                buildList {
-                    add(Triple(VIcons.Phone, "Call", onCall))
-                    add(Triple(VIcons.Chat, "Message", onMessage))
-                    if (teacher.actions.canAssignClass) add(Triple(VIcons.School, "Assign", onAssignClass))
-                },
+            CompactActionBar(
+                onCall = onCall,
+                onMessage = onMessage,
+                extra = if (teacher.actions.canAssignClass)
+                    Triple(VIcons.School, "Assign", onAssignClass) else null,
             )
         }
     }
@@ -893,57 +1002,163 @@ private fun MetaChip(icon: ImageVector, label: String, ink: Color, fill: Color) 
 }
 
 /**
- * Slim footer control bar — a hairline divider, then a right-weighted cluster:
- * a quiet round "Call" icon button + a filled violet "Message" button. Half the
- * height of the old two-pill row and reads like a deliberate action cluster.
+ * A guardian / contact strip — a soft-tinted panel that holds the parent name
+ * and phone number so the student card footer no longer reads as empty white
+ * space. The leading pip echoes the avatar palette; the number is DM-Mono so it
+ * scans like a real dialable contact. Falls back gracefully when only one of
+ * name / phone is on record.
+ */
+@Composable
+private fun GuardianStrip(name: String?, phone: String?, relation: String = "Guardian") {
+    val cleanName = name?.takeIf { it.isNotBlank() }
+    val cleanPhone = phone?.takeIf { it.isNotBlank() }
+    if (cleanName == null && cleanPhone == null) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(PplStripFill)
+            .padding(horizontal = 11.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(VioletSoftFill),
+            contentAlignment = Alignment.Center,
+        ) { Icon(VIcons.UsersGroup, null, tint = PplAccent, modifier = Modifier.size(15.dp)) }
+        Column(Modifier.weight(1f)) {
+            Text(
+                cleanName ?: relation,
+                color = PplInk,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.2).sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                if (cleanName != null) relation.uppercase() else "CONTACT",
+                color = PplInk3,
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
+                modifier = Modifier.padding(top = 1.dp),
+            )
+        }
+        if (cleanPhone != null) {
+            Text(
+                cleanPhone,
+                color = PplInk2,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = (-0.3).sp,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+    }
+}
+
+/**
+ * Premium footer control bar — two equal-weight, icon-forward buttons that read
+ * as one deliberate control cluster (the user asked for Call and Message to look
+ * consistent). "Call" is a quiet tinted button; "Message" is the violet accent
+ * button. Both share the same height, radius and icon size so neither looks like
+ * an afterthought floating in white space.
  */
 @Composable
 private fun CompactActionBar(
     onCall: () -> Unit,
     onMessage: () -> Unit,
     messageLabel: String = "Message",
+    callLabel: String = "Call",
     extra: Triple<ImageVector, String, () -> Unit>? = null,
 ) {
     Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(1.dp).background(PplHairline))
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Spacer(Modifier.weight(1f))
-        // Quiet secondary — call
-        Box(
-            Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(PplStripFill)
-                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onCall),
-            contentAlignment = Alignment.Center,
-        ) { Icon(VIcons.Phone, "Call", tint = PplInk2, modifier = Modifier.size(16.dp)) }
-        // Optional third action (e.g. Assign) as a quiet button
+        // Quiet secondary — Call
+        PplActionButton(
+            icon = VIcons.Phone,
+            label = callLabel,
+            primary = false,
+            modifier = Modifier.weight(1f),
+            onClick = onCall,
+        )
+        // Optional third action (e.g. Assign) — quiet, equal weight
         if (extra != null) {
-            Box(
-                Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(PplStripFill)
-                    .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = extra.third),
-                contentAlignment = Alignment.Center,
-            ) { Icon(extra.first, extra.second, tint = PplInk2, modifier = Modifier.size(16.dp)) }
+            PplActionButton(
+                icon = extra.first,
+                label = extra.second,
+                primary = false,
+                modifier = Modifier.weight(1f),
+                onClick = extra.third,
+            )
         }
-        // Primary — message (violet gradient)
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(Brush.linearGradient(listOf(PplAccent, PplAccentSoft)))
-                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onMessage)
-                .padding(horizontal = 16.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(VIcons.Chat, messageLabel, tint = VColors.white, modifier = Modifier.size(15.dp))
-            Text(messageLabel, color = VColors.white, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
-        }
+        // Primary — Message (violet accent)
+        PplActionButton(
+            icon = VIcons.ChatPremium,
+            label = messageLabel,
+            primary = true,
+            modifier = Modifier.weight(1f),
+            onClick = onMessage,
+        )
+    }
+}
+
+/** One premium action button — consistent 40dp height, icon + label. */
+@Composable
+private fun PplActionButton(
+    icon: ImageVector,
+    label: String,
+    primary: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(11.dp)
+    val base = if (primary) {
+        Modifier
+            .shadow(6.dp, shape, ambientColor = PplAccent.copy(alpha = 0.28f), spotColor = PplAccent.copy(alpha = 0.28f))
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(PplAccent, PplAccentSoft)))
+    } else {
+        Modifier
+            .clip(shape)
+            .background(PplStripFill)
+            .border(1.dp, PplHairlineStrong, shape)
+    }
+    Row(
+        modifier = modifier
+            .height(40.dp)
+            .then(base)
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            icon,
+            label,
+            tint = if (primary) VColors.white else PplInk2,
+            modifier = Modifier.size(15.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            label,
+            color = if (primary) VColors.white else PplInk2,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+        )
     }
 }
 
@@ -965,7 +1180,10 @@ internal fun StudentCard(
         if (student.studentCode.isNotBlank()) add(student.studentCode)
     }.joinToString(" \u00B7 ").ifBlank { "Student" }
 
-    val feePaid = !student.feesPending
+    // Tri-state fee signal (server: fee_status). We only render the fee pill when
+    // we actually have data — a student with no fee records no longer reads as a
+    // false-positive "Fees paid".
+    val feeState = FeeState.from(student.feeStatus, student.feesPending)
     val avg = student.homeworkPercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
     val att = student.attendancePercent.takeIf { it > 0f }?.let { "${it.roundToInt()}%" } ?: "\u2014"
 
@@ -976,8 +1194,8 @@ internal fun StudentCard(
                 trailing = { if (student.isNewAdmission) NewBadge() else StatusPill(student.status) },
             )
 
-            // Dense rail: only the numeric signal (Homework / Attendance), then a
-            // fee chip inline instead of a whole progress-bar panel.
+            // Dense rail: numeric signal (Homework / Attendance), plus the fee
+            // chip inline — but only when there's real fee data to show.
             Row(
                 Modifier.fillMaxWidth().padding(top = 12.dp).height(IntrinsicSize.Min),
                 verticalAlignment = Alignment.CenterVertically,
@@ -986,14 +1204,24 @@ internal fun StudentCard(
                 Box(Modifier.fillMaxHeight().width(1.dp).padding(vertical = 1.dp).background(PplHairlineStrong))
                 Spacer(Modifier.width(12.dp))
                 InlineStat(att, "Attend.", SkyInk, Modifier.weight(1f))
-                Spacer(Modifier.width(8.dp))
-                MetaChip(
-                    icon = VIcons.Wallet,
-                    label = if (feePaid) "Fees paid" else "Fees due",
-                    ink = if (feePaid) SuccessInk else WarningInk,
-                    fill = if (feePaid) SuccessSoft else WarningSoft,
-                )
+                if (feeState != null) {
+                    Spacer(Modifier.width(8.dp))
+                    MetaChip(
+                        icon = VIcons.WalletPremium,
+                        label = feeState.label,
+                        ink = feeState.ink,
+                        fill = feeState.fill,
+                    )
+                }
             }
+
+            // Parent / guardian contact — fills the previously-empty footer area
+            // with the info an admin actually needs to reach the family.
+            GuardianStrip(
+                name = student.parentName,
+                phone = student.parentPhone,
+                relation = "Guardian",
+            )
 
             SubjectTagRow(
                 student.todayItems
@@ -1003,6 +1231,24 @@ internal fun StudentCard(
             )
 
             CompactActionBar(onCall = onCall, onMessage = onMessage)
+        }
+    }
+}
+
+/** Fee pill presentation resolved from the server's tri-state fee_status. */
+private enum class FeeState(val label: String, val ink: Color, val fill: Color) {
+    Paid("Fees paid", SuccessInk, SuccessSoft),
+    Pending("Fees due", WarningInk, WarningSoft);
+
+    companion object {
+        /** Returns null for "no fee data" so the card shows no misleading pill. */
+        fun from(status: String, legacyPending: Boolean): FeeState? = when (status.uppercase()) {
+            "PAID" -> Paid
+            "PENDING" -> Pending
+            "NONE" -> null
+            // Legacy payloads without fee_status fall back to the boolean, but we
+            // still only surface a pill when it explicitly signals a due balance.
+            else -> if (legacyPending) Pending else null
         }
     }
 }
@@ -1029,10 +1275,11 @@ internal fun StaffCard(
         shift?.let { "$it shift" },
     ).joinToString(" \u00B7 ")
 
-    // "FT" = full-time (active), otherwise the actual status abbreviation.
+    // Employment type — full-time for active staff, else the real status word.
     val employment = if (staff.status.equals("active", true) || staff.status.isBlank()) "Full-time" else
         staff.status.replaceFirstChar { it.uppercase() }
-    val contact = staff.phone?.takeIf(String::isNotBlank) ?: staff.email?.takeIf(String::isNotBlank)
+    val phone = staff.phone?.takeIf(String::isNotBlank)
+    val email = staff.email?.takeIf(String::isNotBlank)
 
     Box(modifier) {
         PersonCard(onClick = onOpen) {
@@ -1049,23 +1296,80 @@ internal fun StaffCard(
                 ),
             )
 
-            if (!contact.isNullOrBlank()) {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(
-                        if (staff.phone?.isNotBlank() == true) VIcons.Phone else VIcons.Mail,
-                        null,
-                        tint = PplInk3,
-                        modifier = Modifier.size(13.dp),
-                    )
-                    Text(contact, color = PplInk2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+            // Contact strip — a dense tinted panel so the card body no longer
+            // has a dead white gap between the stat rail and the actions. Shows
+            // the phone (dialable) with the email as a quiet second line.
+            if (phone != null || email != null) {
+                ContactStrip(phone = phone, email = email)
             }
 
             CompactActionBar(onCall = onCall, onMessage = onMessage)
+        }
+    }
+}
+
+/**
+ * Staff contact strip — mirrors [GuardianStrip] so student & staff cards share
+ * one visual language. Leading phone plate, dialable number in DM-Mono, and a
+ * quiet email underneath when present.
+ */
+@Composable
+private fun ContactStrip(phone: String?, email: String?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(PplStripFill)
+            .padding(horizontal = 11.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(VioletSoftFill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (phone != null) VIcons.Phone else VIcons.Mail,
+                null,
+                tint = PplAccent,
+                modifier = Modifier.size(15.dp),
+            )
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                phone ?: email ?: "\u2014",
+                color = PplInk,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = if (phone != null) FontFamily.Monospace else FontFamily.Default,
+                letterSpacing = if (phone != null) (-0.3).sp else (-0.2).sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (phone != null && email != null) {
+                Text(
+                    email,
+                    color = PplInk3,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+            } else {
+                Text(
+                    if (phone != null) "PHONE" else "EMAIL",
+                    color = PplInk3,
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+            }
         }
     }
 }

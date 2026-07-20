@@ -28,6 +28,10 @@ data class StudentDto(
     @SerialName("parent_name") val parentName: String? = null,
     @SerialName("homework_percent") val homeworkPercent: Float = 0f,
     @SerialName("fees_pending") val feesPending: Boolean = false,
+    // Tri-state fee signal: "PAID" | "PENDING" | "NONE" (no fee data on record).
+    // Lets the card avoid the false-positive "Fees paid" pill for students that
+    // simply have no fee records yet.
+    @SerialName("fee_status") val feeStatus: String = "NONE",
     @SerialName("parent_meeting_scheduled") val parentMeetingScheduled: Boolean = false,
     @SerialName("parent_user_id") val parentUserId: String? = null,
     @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()

@@ -116,6 +116,7 @@ fun SchoolPortalV2(
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
     var messageRecipientId by remember { mutableStateOf<String?>(null) }
+    var messageRecipientName by remember { mutableStateOf("") }
     // PEWS — student code carried into the early-warning detail overlay.
     var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
@@ -345,10 +346,11 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.Messages -> {
                 MessagesScreenV2(
-                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null; messageRecipientId = null },
+                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null; messageRecipientId = null; messageRecipientName = "" },
                     modifier = modifier,
                     initialThreadId = deepLinkThreadId,
                     initialRecipientId = messageRecipientId,
+                    initialRecipientName = messageRecipientName,
                 )
                 return
             }
@@ -790,8 +792,9 @@ fun SchoolPortalV2(
                         onAssignClasses = { id -> selectedTeacherId = id; overlay = SchoolOverlay.TeacherAssignments },
                         onOpenStaff = { id -> selectedStaffId = id; overlay = SchoolOverlay.Staff },
                         // Bug 5: Message button on StudentCard opens in-app messaging.
-                        onOpenMessages = { recipientId ->
+                        onOpenMessages = { recipientId, recipientName ->
                             messageRecipientId = recipientId
+                            messageRecipientName = recipientName
                             overlay = SchoolOverlay.Messages
                         },
                         // Mark students as alumni (graduation bulk action)

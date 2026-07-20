@@ -379,7 +379,7 @@ fun SchoolPeopleScreenV2(
     // RA-TAM — overflow "Assign classes" opens the reusable assignment module.
     onAssignClasses: (String) -> Unit = {},
     onOpenStaff: (String) -> Unit = {},
-    onOpenMessages: (String?) -> Unit = {},
+    onOpenMessages: (recipientId: String?, recipientName: String) -> Unit = { _, _ -> },
     onGraduateStudents: (List<String>, Int) -> Unit = { _, _ -> },
     deepLinkDestination: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
@@ -474,7 +474,7 @@ private fun SchoolPeopleContent(
     onOpenTeacher: (String) -> Unit,
     onAssignClasses: (String) -> Unit,
     onOpenStaff: (String) -> Unit,
-    onOpenMessages: (String?) -> Unit,
+    onOpenMessages: (recipientId: String?, recipientName: String) -> Unit,
     onGraduateStudents: (List<String>, Int) -> Unit,
     deepLinkDestination: String?,
     onDeepLinkConsumed: () -> Unit,
@@ -619,6 +619,7 @@ private fun SchoolPeopleContent(
                     onSearch = onStaffSearch,
                     onAddClick = { showAddStaff = true },
                     onOpenStaff = onOpenStaff,
+                    onOpenMessages = onOpenMessages,
                 )
             }
         }
@@ -681,7 +682,7 @@ private fun TeachersSubTab(
     onRetry: () -> Unit,
     onAddClick: () -> Unit,
     onOpenTeacher: (String) -> Unit,
-    onOpenMessages: (String?) -> Unit,
+    onOpenMessages: (recipientId: String?, recipientName: String) -> Unit,
     onDeactivate: (String) -> Unit,
     onAssignClass: (String) -> Unit,
 ) {
@@ -788,7 +789,7 @@ private fun TeachersSubTab(
                         teacher = t,
                         onViewProfile = { onOpenTeacher(t.id) },
                         onCall = { t.profile.phone?.let(phoneHelper::dialPhone) },
-                        onMessage = { onOpenMessages(t.id) },
+                        onMessage = { onOpenMessages(t.id, t.profile.name) },
                         onAssignClass = { onAssignClass(t.id) },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
@@ -808,7 +809,7 @@ private fun StudentsSubTab(
     onRetry: () -> Unit,
     onOpenStudent: (String) -> Unit,
     onOpenLinkRequests: () -> Unit,
-    onOpenMessages: (String?) -> Unit,
+    onOpenMessages: (recipientId: String?, recipientName: String) -> Unit,
     onAddClick: () -> Unit,
     onImportClick: () -> Unit,
     onGraduateClick: (List<String>, Int) -> Unit,
@@ -948,7 +949,8 @@ private fun StudentsSubTab(
                             else snackMessage = "No parent phone available for ${s.fullName}"
                         },
                         onMessage = {
-                            onOpenMessages(s.parentUserId)
+                            // Open the 1:1 chat directly with the parent/guardian.
+                            onOpenMessages(s.parentUserId, s.parentName?.takeIf { it.isNotBlank() } ?: s.fullName)
                         },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
@@ -1050,6 +1052,7 @@ private fun StaffSubTab(
     onSearch: (String) -> Unit,
     onAddClick: () -> Unit,
     onOpenStaff: (String) -> Unit,
+    onOpenMessages: (recipientId: String?, recipientName: String) -> Unit,
 ) {
     val phoneHelper = rememberPhoneHelper()
     var selectedDepartments by remember { mutableStateOf(setOf<String>()) }
@@ -1155,10 +1158,7 @@ private fun StaffSubTab(
                             if (phone != null) phoneHelper.dialPhone(phone)
                             else snackMessage = "No phone available for ${s.fullName}"
                         },
-                        onMessage = {
-                            if (phone != null) phoneHelper.sendSms(phone)
-                            else snackMessage = "No phone available for ${s.fullName}"
-                        },
+                        onMessage = { onOpenMessages(s.id, s.fullName) },
                         modifier = Modifier.staggeredItemEntrance(index, ready),
                     )
                 }

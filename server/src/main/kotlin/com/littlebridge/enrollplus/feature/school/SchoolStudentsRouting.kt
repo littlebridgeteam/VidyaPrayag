@@ -100,6 +100,10 @@ data class StudentDto(
     @SerialName("parent_name") val parentName: String? = null,
     @SerialName("homework_percent") val homeworkPercent: Float = 0f,
     @SerialName("fees_pending") val feesPending: Boolean = false,
+    // Tri-state fee status: "PAID" | "PENDING" | "NONE". NONE means no fee
+    // records exist yet, so the card renders no fee chip (fixes the bug where
+    // every student wrongly showed "Fees paid").
+    @SerialName("fee_status") val feeStatus: String = "NONE",
     @SerialName("parent_meeting_scheduled") val parentMeetingScheduled: Boolean = false,
     @SerialName("parent_user_id") val parentUserId: String? = null,
     @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
@@ -683,7 +687,7 @@ private fun enrichStudentForList(schoolId: UUID, dto: StudentDto): StudentDto {
     val parentCount = StudentAggregationService.parentCountForStudent(schoolId, dto.studentCode)
     val parentName = StudentAggregationService.primaryParentNameForStudent(schoolId, dto.studentCode)
     val homeworkPercent = StudentAggregationService.homeworkPercentForStudent(schoolId, dto.studentCode)
-    val feesPending = StudentAggregationService.feesPendingForStudent(schoolId, dto.studentCode)
+    val feeStatus = StudentAggregationService.feeStatusForStudent(schoolId, dto.studentCode)
     val parentMeetingScheduled = StudentAggregationService.parentMeetingScheduledForStudent(schoolId, dto.studentCode)
     val todayItems = StudentAggregationService.todayItemsForStudent(schoolId, dto.studentCode, dto.className, dto.section)
     return dto.copy(
@@ -692,7 +696,8 @@ private fun enrichStudentForList(schoolId: UUID, dto: StudentDto): StudentDto {
         parentCount = parentCount,
         parentName = parentName,
         homeworkPercent = homeworkPercent,
-        feesPending = feesPending,
+        feesPending = feeStatus == StudentAggregationService.FeeStatus.PENDING,
+        feeStatus = feeStatus.name,
         parentMeetingScheduled = parentMeetingScheduled,
         todayItems = todayItems
     )
