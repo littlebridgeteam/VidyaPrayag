@@ -42,6 +42,7 @@ import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.EnrollmentsTable
 import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.ExamResultsTable
+import com.littlebridge.enrollplus.db.FacultyTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
@@ -86,6 +87,7 @@ data class StudentDto(
     // ISSUE 2b: parent/guardian phone on record (used by parent-link matching).
     @SerialName("parent_phone") val parentPhone: String? = null,
     @SerialName("profile_photo_url") val profilePhotoUrl: String? = null,
+    val address: String? = null,
     // RA-SP: listing-card enrichment so the redesigned roster cards can show
     // meaningful, relationship-aware information at a glance. All defaulted so
     // older clients keep parsing; all DERIVED by StudentAggregationService.
@@ -99,6 +101,10 @@ data class StudentDto(
     @SerialName("parent_name") val parentName: String? = null,
     @SerialName("homework_percent") val homeworkPercent: Float = 0f,
     @SerialName("fees_pending") val feesPending: Boolean = false,
+    // Tri-state fee status: "PAID" | "PENDING" | "NONE". NONE means no fee
+    // records exist yet, so the card renders no fee chip (fixes the bug where
+    // every student wrongly showed "Fees paid").
+    @SerialName("fee_status") val feeStatus: String = "NONE",
     @SerialName("parent_meeting_scheduled") val parentMeetingScheduled: Boolean = false,
     @SerialName("parent_user_id") val parentUserId: String? = null,
     @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
@@ -235,6 +241,9 @@ data class StudentProfileDto(
     @SerialName("absent_days") val absentDays: Int,
     @SerialName("late_days") val lateDays: Int,
     @SerialName("attendance_rate") val attendanceRate: Int,
+    // RA-SP: current-term attendance (rolling ~90-day window) so the profile can
+    // render the "This Term" bar alongside overall. DERIVED server-side.
+    @SerialName("this_term_attendance") val thisTermAttendance: Int = 0,
     @SerialName("recent_attendance") val recentAttendance: List<AttendanceDayDto>,
     val marks: List<StudentMarkDto>,
     val leave: List<StudentLeaveDto>,
@@ -469,11 +478,18 @@ private fun buildTeacherProfile(schoolId: UUID, teacherId: UUID): TeacherProfile
         val years = java.time.Duration.between(created, Instant.now()).toDays() / 365
         years.toInt().coerceAtLeast(0)
     }.getOrDefault(0)
-    val designation = when {
+    val savedDesignation = dbQuery {
+        FacultyTable.selectAll()
+            .where { FacultyTable.externalId eq "U-$teacherId" }
+            .firstOrNull()
+            ?.get(FacultyTable.department)
+    }
+    val computedDesignation = when {
         subjectCount >= 4 -> "Senior Teacher"
         subjectCount >= 1 -> "Subject Teacher"
         else -> "Teacher"
     }
+    val designation = savedDesignation?.takeIf { it.isNotBlank() } ?: computedDesignation
 
     return TeacherProfileDto(
         id = row[AppUsersTable.id].value.toString(),
@@ -627,6 +643,7 @@ private fun studentRowToDto(row: org.jetbrains.exposed.sql.ResultRow): StudentDt
         rollNumber = row[StudentsTable.rollNumber],
         parentPhone = row[StudentsTable.parentPhone],
         profilePhotoUrl = row[StudentsTable.profilePhotoUrl],
+        address = row[StudentsTable.address],
         status = if (row[StudentsTable.isActive]) "active" else "inactive",
         isNewAdmission = isNewAdmission(
             row[StudentsTable.admissionDate]?.let { java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT).toInstant(java.time.ZoneOffset.UTC) }
@@ -678,7 +695,7 @@ private fun enrichStudentForList(schoolId: UUID, dto: StudentDto): StudentDto {
     val parentCount = StudentAggregationService.parentCountForStudent(schoolId, dto.studentCode)
     val parentName = StudentAggregationService.primaryParentNameForStudent(schoolId, dto.studentCode)
     val homeworkPercent = StudentAggregationService.homeworkPercentForStudent(schoolId, dto.studentCode)
-    val feesPending = StudentAggregationService.feesPendingForStudent(schoolId, dto.studentCode)
+    val feeStatus = StudentAggregationService.feeStatusForStudent(schoolId, dto.studentCode)
     val parentMeetingScheduled = StudentAggregationService.parentMeetingScheduledForStudent(schoolId, dto.studentCode)
     val todayItems = StudentAggregationService.todayItemsForStudent(schoolId, dto.studentCode, dto.className, dto.section)
     return dto.copy(
@@ -687,7 +704,8 @@ private fun enrichStudentForList(schoolId: UUID, dto: StudentDto): StudentDto {
         parentCount = parentCount,
         parentName = parentName,
         homeworkPercent = homeworkPercent,
-        feesPending = feesPending,
+        feesPending = feeStatus == StudentAggregationService.FeeStatus.PENDING,
+        feeStatus = feeStatus.name,
         parentMeetingScheduled = parentMeetingScheduled,
         todayItems = todayItems
     )
@@ -1283,6 +1301,16 @@ fun Route.schoolStudentsRouting() {
                     val total = attRows.size
                     val rate = if (total > 0) (((present + late) * 100) / total) else 0
 
+                    // "This Term" attendance: rolling 90-day window of the same
+                    // attendance rows. Falls back to the overall rate when the
+                    // window has no records (keeps the bar meaningful, no mock).
+                    val termCutoff = java.time.LocalDate.now().minusDays(90).toString()
+                    val termRows = attRows.filter { it.date >= termCutoff }
+                    val termTotal = termRows.size
+                    val thisTermAttendance = if (termTotal > 0) {
+                        ((termRows.count { it.status == "present" || it.status == "late" } * 100) / termTotal)
+                    } else rate
+
                     // marks — join assessments (same school) ← assessment_marks (student_code)
                     val marks = AssessmentsTable.selectAll()
                         .where { (AssessmentsTable.schoolId eq ctx.schoolId) and (AssessmentsTable.isActive eq true) }
@@ -1372,6 +1400,7 @@ fun Route.schoolStudentsRouting() {
                         absentDays = absent,
                         lateDays = late,
                         attendanceRate = rate,
+                        thisTermAttendance = thisTermAttendance,
                         recentAttendance = attRows.take(30),
                         marks = marks,
                         leave = leave,

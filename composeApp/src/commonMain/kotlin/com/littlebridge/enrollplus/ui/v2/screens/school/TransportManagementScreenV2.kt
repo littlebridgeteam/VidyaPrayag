@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import com.littlebridge.enrollplus.feature.transport.domain.model.CreateAssignmentRequest
 import com.littlebridge.enrollplus.feature.transport.domain.model.CreateRouteRequest
 import com.littlebridge.enrollplus.feature.transport.domain.model.CreateVehicleRequest
+import com.littlebridge.enrollplus.feature.transport.domain.model.UpdateRouteRequest
+import com.littlebridge.enrollplus.feature.transport.domain.model.UpdateVehicleRequest
 import com.littlebridge.enrollplus.feature.transport.domain.model.TransportRoute
 import com.littlebridge.enrollplus.feature.transport.domain.model.TransportVehicle
 import com.littlebridge.enrollplus.feature.transport.domain.model.TransportAssignment
@@ -63,6 +65,8 @@ fun TransportManagementScreenV2(
     var showRouteForm by remember { mutableStateOf(false) }
     var showVehicleForm by remember { mutableStateOf(false) }
     var showAssignmentForm by remember { mutableStateOf(false) }
+    var editRouteId by remember { mutableStateOf<String?>(null) }
+    var editVehicleId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.loadRoutes()
@@ -75,6 +79,8 @@ fun TransportManagementScreenV2(
             showRouteForm = false
             showVehicleForm = false
             showAssignmentForm = false
+            editRouteId = null
+            editVehicleId = null
             viewModel.clearMessages()
         }
     }
@@ -120,6 +126,12 @@ fun TransportManagementScreenV2(
                 itemsIndexed(state.routes, key = { _, it -> it.id }) { index, route ->
                     RouteCard(
                         route = route,
+                        isEditing = editRouteId == route.id,
+                        onEdit = { editRouteId = if (editRouteId == route.id) null else route.id },
+                        onSaveEdit = { name, description, isActive ->
+                            viewModel.updateRoute(route.id, UpdateRouteRequest(name = name, description = description, isActive = isActive))
+                            editRouteId = null
+                        },
                         onDelete = { viewModel.deleteRoute(route.id) },
                         modifier = Modifier.staggeredItemEntrance(index, state.routes.isNotEmpty()),
                     )
@@ -146,6 +158,12 @@ fun TransportManagementScreenV2(
                 itemsIndexed(state.vehicles, key = { _, it -> it.id }) { index, vehicle ->
                     VehicleCard(
                         vehicle = vehicle,
+                        isEditing = editVehicleId == vehicle.id,
+                        onEdit = { editVehicleId = if (editVehicleId == vehicle.id) null else vehicle.id },
+                        onSaveEdit = { busNumber, capacity, driverName, driverPhone, isActive ->
+                            viewModel.updateVehicle(vehicle.id, UpdateVehicleRequest(busNumber = busNumber, capacity = capacity, driverName = driverName, driverPhone = driverPhone, isActive = isActive))
+                            editVehicleId = null
+                        },
                         onDelete = { viewModel.deleteVehicle(vehicle.id) },
                         modifier = Modifier.staggeredItemEntrance(index, state.vehicles.isNotEmpty()),
                     )
@@ -437,39 +455,98 @@ private fun CreateAssignmentForm(
 @Composable
 private fun RouteCard(
     route: TransportRoute,
+    isEditing: Boolean = false,
+    onEdit: () -> Unit = {},
+    onSaveEdit: (name: String, description: String?, isActive: Boolean) -> Unit = { _, _, _ -> },
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var editName by remember(isEditing) { mutableStateOf(route.name) }
+    var editDescription by remember(isEditing) { mutableStateOf(route.description ?: "") }
+    var editIsActive by remember(isEditing) { mutableStateOf(route.isActive) }
+
     VCard(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(route.name, style = VTypography.h3, color = VColors.ink)
-                route.description?.let {
-                    Text(it, style = VTypography.caption, color = VColors.ink2)
+        if (!isEditing) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(route.name, style = VTypography.h3, color = VColors.ink)
+                    route.description?.let {
+                        Text(it, style = VTypography.caption, color = VColors.ink2)
+                    }
+                    Text(
+                        appString(StringKeys.TRANS_STOPS).replace("{count}", route.stops.size.toString()),
+                        style = VTypography.caption,
+                        color = VColors.ink2,
+                    )
                 }
-                Text(
-                    appString(StringKeys.TRANS_STOPS).replace("{count}", route.stops.size.toString()),
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+                VBadge(
+                    text = if (route.isActive) appString(StringKeys.TRANS_ACTIVE) else appString(StringKeys.TRANS_INACTIVE),
+                    tone = if (route.isActive) VBadgeTone.Success else VBadgeTone.Neutral,
                 )
             }
-            VBadge(
-                text = if (route.isActive) appString(StringKeys.TRANS_ACTIVE) else appString(StringKeys.TRANS_INACTIVE),
-                tone = if (route.isActive) VBadgeTone.Success else VBadgeTone.Neutral,
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VButton(
-                text = appString(StringKeys.COMMON_BUTTON_DELETE),
-                variant = VButtonVariant.Destructive,
-                size = VButtonSize.Sm,
-                onClick = onDelete,
-            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Edit",
+                    variant = VButtonVariant.Secondary,
+                    size = VButtonSize.Sm,
+                    onClick = onEdit,
+                )
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_DELETE),
+                    variant = VButtonVariant.Destructive,
+                    size = VButtonSize.Sm,
+                    onClick = onDelete,
+                )
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Edit Route", style = VTypography.h3, color = VColors.ink)
+                VInput(
+                    value = editName,
+                    onValueChange = { editName = it },
+                    label = appString(StringKeys.TRANS_ROUTE_NAME),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                VInput(
+                    value = editDescription,
+                    onValueChange = { editDescription = it },
+                    label = appString(StringKeys.TRANS_DESC_OPTIONAL),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { editIsActive = !editIsActive }.padding(vertical = 4.dp),
+                ) {
+                    androidx.compose.material3.Checkbox(
+                        checked = editIsActive,
+                        onCheckedChange = { editIsActive = it },
+                    )
+                    Text(appString(StringKeys.TRANS_ACTIVE), style = VTypography.body, color = VColors.ink)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(
+                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                        variant = VButtonVariant.Ghost,
+                        size = VButtonSize.Sm,
+                        onClick = onEdit,
+                    )
+                    VButton(
+                        text = "Save",
+                        variant = VButtonVariant.Primary,
+                        size = VButtonSize.Sm,
+                        onClick = {
+                            onSaveEdit(editName.trim(), editDescription.ifBlank { null }, editIsActive)
+                        },
+                        enabled = editName.isNotBlank(),
+                    )
+                }
+            }
         }
     }
 }
@@ -477,38 +554,120 @@ private fun RouteCard(
 @Composable
 private fun VehicleCard(
     vehicle: TransportVehicle,
+    isEditing: Boolean = false,
+    onEdit: () -> Unit = {},
+    onSaveEdit: (busNumber: String, capacity: Int, driverName: String?, driverPhone: String?, isActive: Boolean) -> Unit = { _, _, _, _, _ -> },
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var editBusNumber by remember(isEditing) { mutableStateOf(vehicle.busNumber) }
+    var editCapacity by remember(isEditing) { mutableStateOf(vehicle.capacity.toString()) }
+    var editDriverName by remember(isEditing) { mutableStateOf(vehicle.driverName ?: "") }
+    var editDriverPhone by remember(isEditing) { mutableStateOf(vehicle.driverPhone ?: "") }
+    var editIsActive by remember(isEditing) { mutableStateOf(vehicle.isActive) }
+
     VCard(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(vehicle.busNumber, style = VTypography.h3, color = VColors.ink)
-                Text(
-                    appString(StringKeys.TRANS_CAPACITY_LABEL).replace("{count}", vehicle.capacity.toString()),
-                    style = VTypography.caption,
-                    color = VColors.ink2,
+        if (!isEditing) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(vehicle.busNumber, style = VTypography.h3, color = VColors.ink)
+                    Text(
+                        appString(StringKeys.TRANS_CAPACITY_LABEL).replace("{count}", vehicle.capacity.toString()),
+                        style = VTypography.caption,
+                        color = VColors.ink2,
+                    )
+                    vehicle.driverName?.let {
+                        Text(appString(StringKeys.TRANS_DRIVER_LABEL).replace("{name}", it), style = VTypography.caption, color = VColors.ink2)
+                    }
+                }
+                VBadge(
+                    text = if (vehicle.isActive) appString(StringKeys.TRANS_ACTIVE) else appString(StringKeys.TRANS_INACTIVE),
+                    tone = if (vehicle.isActive) VBadgeTone.Success else VBadgeTone.Neutral,
                 )
-                vehicle.driverName?.let {
-                    Text(appString(StringKeys.TRANS_DRIVER_LABEL).replace("{name}", it), style = VTypography.caption, color = VColors.ink2)
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VButton(
+                    text = "Edit",
+                    variant = VButtonVariant.Secondary,
+                    size = VButtonSize.Sm,
+                    onClick = onEdit,
+                )
+                VButton(
+                    text = appString(StringKeys.COMMON_BUTTON_DELETE),
+                    variant = VButtonVariant.Destructive,
+                    size = VButtonSize.Sm,
+                    onClick = onDelete,
+                )
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Edit Vehicle", style = VTypography.h3, color = VColors.ink)
+                VInput(
+                    value = editBusNumber,
+                    onValueChange = { editBusNumber = it },
+                    label = appString(StringKeys.TRANS_BUS_NUMBER),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                VInput(
+                    value = editCapacity,
+                    onValueChange = { editCapacity = it },
+                    label = appString(StringKeys.TRANS_CAPACITY),
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                VInput(
+                    value = editDriverName,
+                    onValueChange = { editDriverName = it },
+                    label = appString(StringKeys.TRANS_DRIVER_NAME),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                VInput(
+                    value = editDriverPhone,
+                    onValueChange = { editDriverPhone = it },
+                    label = appString(StringKeys.TRANS_DRIVER_PHONE),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { editIsActive = !editIsActive }.padding(vertical = 4.dp),
+                ) {
+                    androidx.compose.material3.Checkbox(
+                        checked = editIsActive,
+                        onCheckedChange = { editIsActive = it },
+                    )
+                    Text(appString(StringKeys.TRANS_ACTIVE), style = VTypography.body, color = VColors.ink)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VButton(
+                        text = appString(StringKeys.COMMON_BUTTON_CANCEL),
+                        variant = VButtonVariant.Ghost,
+                        size = VButtonSize.Sm,
+                        onClick = onEdit,
+                    )
+                    VButton(
+                        text = "Save",
+                        variant = VButtonVariant.Primary,
+                        size = VButtonSize.Sm,
+                        onClick = {
+                            onSaveEdit(
+                                editBusNumber.trim(),
+                                editCapacity.toIntOrNull() ?: 40,
+                                editDriverName.ifBlank { null },
+                                editDriverPhone.ifBlank { null },
+                                editIsActive,
+                            )
+                        },
+                        enabled = editBusNumber.isNotBlank(),
+                    )
                 }
             }
-            VBadge(
-                text = if (vehicle.isActive) appString(StringKeys.TRANS_ACTIVE) else appString(StringKeys.TRANS_INACTIVE),
-                tone = if (vehicle.isActive) VBadgeTone.Success else VBadgeTone.Neutral,
-            )
         }
-        Spacer(Modifier.height(8.dp))
-        VButton(
-            text = appString(StringKeys.COMMON_BUTTON_DELETE),
-            variant = VButtonVariant.Destructive,
-            size = VButtonSize.Sm,
-            onClick = onDelete,
-        )
     }
 }
 

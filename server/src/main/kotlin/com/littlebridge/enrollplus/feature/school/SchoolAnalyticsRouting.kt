@@ -831,7 +831,10 @@ fun Route.schoolAnalyticsRouting() {
                     val (liveTrend, liveLabels) = monthlyAttendanceTrend(schoolId, months = 6)
                     val hasLiveData = liveTrend.any { it > 0.0 }
 
-                    val trend = if (hasLiveData) liveTrend else cmsTrend
+                    // Bug 9: Do NOT fall back to CMS template trend for schools with
+                    // no attendance data — return zeros so new schools see honest
+                    // empty data instead of fabricated values like 4.2%.
+                    val trend = if (hasLiveData) liveTrend else List(6) { 0.0 }
                     val labels = if (hasLiveData) liveLabels else emptyList()
 
                     // --- REAL growth: last month vs previous month ---
@@ -841,7 +844,7 @@ fun Route.schoolAnalyticsRouting() {
                         val deltaPts = (last - prev) * 100.0
                         val sign = if (deltaPts >= 0) "+" else ""
                         "$sign${(kotlin.math.round(deltaPts * 10) / 10.0)}%"
-                    } else cmsGrowth
+                    } else "0%"
 
                     val cardsTpl = cmsArray("school_analytics_cards_template")
                     val cards = computeAnalyticsCards(schoolId, cardsTpl)

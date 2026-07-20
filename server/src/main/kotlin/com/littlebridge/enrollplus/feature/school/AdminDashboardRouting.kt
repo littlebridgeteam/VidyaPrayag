@@ -39,6 +39,7 @@ import com.littlebridge.enrollplus.db.DatabaseFactory.dbQuery
 import com.littlebridge.enrollplus.db.ExamResultsTable
 import com.littlebridge.enrollplus.db.ExamTimetableEntriesTable
 import com.littlebridge.enrollplus.db.FacultyTable
+import com.littlebridge.enrollplus.db.NonTeachingStaffTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import com.littlebridge.enrollplus.db.NotificationsTable
 import com.littlebridge.enrollplus.db.SchoolClassesTable
@@ -133,7 +134,8 @@ data class DashStatisticsDto(
     val students: DashStudentsStatDto,
     val teachers: DashTeachersStatDto,
     val classes: DashSimpleStatDto,
-    val subjects: DashSimpleStatDto
+    val subjects: DashSimpleStatDto,
+    val staff: DashSimpleStatDto = DashSimpleStatDto(0, 0)
 )
 
 @Serializable
@@ -422,6 +424,13 @@ fun Route.adminDashboardRouting() {
                     val teacherTotal = faculty.size
                     val teacherActive = faculty.count { it[FacultyTable.isActive] }
 
+                    // ---- non-teaching staff ----
+                    val staffRows = NonTeachingStaffTable.selectAll()
+                        .where { NonTeachingStaffTable.schoolId eq schoolId }
+                        .toList()
+                    val staffTotal = staffRows.size
+                    val staffActive = staffRows.count { it[NonTeachingStaffTable.isActive] }
+
                     // New admissions/joins in the last 30 days (created_at based).
                     val cutoff30 = today.minusDays(30)
                     val newAdmissions = students.count {
@@ -587,7 +596,8 @@ fun Route.adminDashboardRouting() {
                                 )
                             ),
                             classes = DashSimpleStatDto(classTotal, classTotal),
-                            subjects = DashSimpleStatDto(subjectTotal, subjectActive)
+                            subjects = DashSimpleStatDto(subjectTotal, subjectActive),
+                            staff = DashSimpleStatDto(staffTotal, staffActive)
                         ),
                         teacherInsight = DashTeacherInsightDto(
                             totalTeachers = teacherTotal,

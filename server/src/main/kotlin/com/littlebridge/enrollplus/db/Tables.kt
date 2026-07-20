@@ -603,6 +603,7 @@ object StudentsTable : UUIDTable("students", "id") {
     // Nullable so pre-existing rows remain valid until backfilled.
     val parentPhone = text("parent_phone").nullable()
     val profilePhotoUrl = text("profile_photo_url").nullable()
+    val address    = text("address").nullable()               // V15 — Contact section
     val isActive   = bool("is_active").default(true)
     val admissionDate = date("admission_date").nullable()
     val createdAt  = timestamp("created_at")
@@ -1800,6 +1801,7 @@ object NonTeachingStaffTable : UUIDTable("non_teaching_staff", "id") {
     val phone       = varchar("phone", 32).nullable()
     val email       = text("email").nullable()
     val photoUrl    = text("photo_url").nullable()
+    val address     = text("address").nullable()               // V15 — Contact section
     val employeeId  = varchar("employee_id", 32).nullable()     // e.g. "EMP-001"
     val shiftId     = uuid("shift_id").nullable()               // FK staff_shifts.id
     val isActive    = bool("is_active").default(true)           // soft-delete flag

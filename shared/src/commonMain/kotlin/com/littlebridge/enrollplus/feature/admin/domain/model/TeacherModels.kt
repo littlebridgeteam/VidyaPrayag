@@ -41,6 +41,8 @@ data class TeacherCardProfileDto(
     val name: String = "",
     val avatarUrl: String? = null,
     val role: String = "",
+    val phone: String? = null,
+    val email: String? = null,
     val status: String = "ACTIVE",                            // ACTIVE | INACTIVE
     @SerialName("is_class_teacher") val isClassTeacher: Boolean = false,
     val experience: String? = null,
@@ -113,4 +115,13 @@ data class TeacherCredentialDto(
     val name: String,
     val email: String,
     @SerialName("initial_password") val initialPassword: String
+)
+
+/** Bug 11: update teacher details (name, email, phone, designation). */
+@Serializable
+data class UpdateTeacherRequest(
+    val name: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val designation: String? = null,
 )

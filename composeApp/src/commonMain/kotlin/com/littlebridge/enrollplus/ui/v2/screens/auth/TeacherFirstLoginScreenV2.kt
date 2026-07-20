@@ -196,7 +196,7 @@ fun TeacherFirstLoginScreenV2(
     }
 }
 
-private fun validate(current: String, newPassword: String, confirm: String, pwTooShort: String, pwNoMatch: String): String? = when {
+internal fun validate(current: String, newPassword: String, confirm: String, pwTooShort: String, pwNoMatch: String): String? = when {
     newPassword.length < 8 -> pwTooShort
     newPassword != confirm -> pwNoMatch
     else -> null

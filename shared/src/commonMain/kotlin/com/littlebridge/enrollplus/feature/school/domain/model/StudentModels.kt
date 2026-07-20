@@ -19,6 +19,7 @@ data class StudentDto(
     @SerialName("roll_number") val rollNumber: String,
     @SerialName("parent_phone") val parentPhone: String? = null,
     @SerialName("profile_photo_url") val profilePhotoUrl: String? = null,
+    val address: String? = null,
     @SerialName("attendance_percent") val attendancePercent: Float = 0f,
     @SerialName("teacher_count") val teacherCount: Int = 0,
     @SerialName("parent_count") val parentCount: Int = 0,
@@ -27,6 +28,10 @@ data class StudentDto(
     @SerialName("parent_name") val parentName: String? = null,
     @SerialName("homework_percent") val homeworkPercent: Float = 0f,
     @SerialName("fees_pending") val feesPending: Boolean = false,
+    // Tri-state fee signal: "PAID" | "PENDING" | "NONE" (no fee data on record).
+    // Lets the card avoid the false-positive "Fees paid" pill for students that
+    // simply have no fee records yet.
+    @SerialName("fee_status") val feeStatus: String = "NONE",
     @SerialName("parent_meeting_scheduled") val parentMeetingScheduled: Boolean = false,
     @SerialName("parent_user_id") val parentUserId: String? = null,
     @SerialName("today_items") val todayItems: List<TodayItemDto> = emptyList()
@@ -151,6 +156,7 @@ data class StudentProfileDto(
     @SerialName("absent_days") val absentDays: Int,
     @SerialName("late_days") val lateDays: Int,
     @SerialName("attendance_rate") val attendanceRate: Int,
+    @SerialName("this_term_attendance") val thisTermAttendance: Int = 0,
     @SerialName("recent_attendance") val recentAttendance: List<AttendanceDayDto>,
     val marks: List<StudentMarkDto>,
     val leave: List<StudentLeaveDto>,

@@ -55,7 +55,7 @@ import org.koin.compose.viewmodel.koinViewModel
 private val VALID_LEVELS = setOf("ALL", "PRIMARY", "SECONDARY")
 private val SLOT_TYPES = listOf("TEACHING", "BREAK", "ASSEMBLY", "LAB", "FREE", "ZERO")
 
-private fun isValidDays(days: String): Boolean {
+internal fun isValidDays(days: String): Boolean {
     val parts = days.split(",").map { it.trim() }
     val nums = parts.mapNotNull { it.toIntOrNull() }
     return nums.size == parts.size && nums.all { it in 1..7 }

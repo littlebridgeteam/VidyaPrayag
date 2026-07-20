@@ -41,7 +41,7 @@ import com.littlebridge.enrollplus.feature.admin.presentation.SchoolProfileViewM
 import com.littlebridge.enrollplus.ui.v2.components.VButton
 import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
-import com.littlebridge.enrollplus.ui.v2.components.VDropdown
+import com.littlebridge.enrollplus.ui.v2.components.VSheetPicker
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
@@ -95,6 +95,7 @@ fun EditSchoolProfileScreenV2(
 
                 onName = viewModel::onName,
                 onBoard = viewModel::onBoard,
+                onCustomBoard = viewModel::onCustomBoard,
                 onMedium = viewModel::onMedium,
                 onSchoolGender = viewModel::onSchoolGender,
 
@@ -163,6 +164,7 @@ private fun EditSchoolProfileContent(
     state: SchoolProfileState,
     onName: (String) -> Unit,
     onBoard: (String) -> Unit,
+    onCustomBoard: (String) -> Unit,
     onMedium: (String) -> Unit,
     onSchoolGender: (String) -> Unit,
     onContactPhone: (String) -> Unit,
@@ -262,21 +264,31 @@ private fun EditSchoolProfileContent(
                         isError = state.fieldErrors.containsKey("name"),
                         errorText = state.fieldErrors["name"],
                     )
-                    VDropdown(
+                    VSheetPicker(
                         value = state.board,
                         options = BOARD_OPTIONS,
                         onSelect = onBoard,
                         placeholder = "Board",
                         leadingIcon = VIcons.School,
                     )
-                    VDropdown(
+                    if (state.board == "Other") {
+                        VInput(
+                            value = state.customBoard,
+                            onValueChange = onCustomBoard,
+                            placeholder = "Enter board name",
+                            leadingIcon = VIcons.School,
+                            isError = state.fieldErrors.containsKey("customBoard"),
+                            errorText = state.fieldErrors["customBoard"],
+                        )
+                    }
+                    VSheetPicker(
                         value = state.medium,
                         options = MEDIUM_OPTIONS,
                         onSelect = onMedium,
                         placeholder = "Medium",
                         leadingIcon = VIcons.Globe,
                     )
-                    VDropdown(
+                    VSheetPicker(
                         value = state.schoolGender,
                         options = SCHOOL_TYPE_OPTIONS,
                         onSelect = onSchoolGender,
@@ -296,7 +308,7 @@ private fun EditSchoolProfileContent(
                 ) {
                     VInput(
                         value = state.contactPhone,
-                        onValueChange = onContactPhone,
+                        onValueChange = { v -> onContactPhone(v.filter { it.isDigit() }.take(10)) },
                         placeholder = "School Phone",
                         leadingIcon = VIcons.Phone,
                         keyboardType = KeyboardType.Phone,
@@ -320,7 +332,7 @@ private fun EditSchoolProfileContent(
                     )
                     VInput(
                         value = state.principalPhone,
-                        onValueChange = onPrincipalPhone,
+                        onValueChange = { v -> onPrincipalPhone(v.filter { it.isDigit() }.take(10)) },
                         placeholder = "Principal Phone",
                         leadingIcon = VIcons.Phone,
                         keyboardType = KeyboardType.Phone,
@@ -354,17 +366,21 @@ private fun EditSchoolProfileContent(
                         leadingIcon = VIcons.Home,
                         singleLine = false,
                     )
-                    VDropdown(
+                    VSheetPicker(
                         value = state.city,
                         options = CITY_OPTIONS,
-                        onSelect = onCity,
+                        onSelect = { city ->
+                            onCity(city)
+                            CITY_TO_STATE[city]?.let { onState(it) }
+                        },
                         placeholder = "City",
                         leadingIcon = VIcons.School,
                         isError = state.fieldErrors.containsKey("city"),
+                        errorText = state.fieldErrors["city"],
                     )
                     VInput(
                         value = state.pincode,
-                        onValueChange = onPincode,
+                        onValueChange = { v -> onPincode(v.filter { it.isDigit() }.take(6)) },
                         placeholder = "PIN",
                         leadingIcon = VIcons.Settings,
                         keyboardType = KeyboardType.Number,
@@ -379,7 +395,7 @@ private fun EditSchoolProfileContent(
                         isError = state.fieldErrors.containsKey("district"),
                         errorText = state.fieldErrors["district"],
                     )
-                    VDropdown(
+                    VSheetPicker(
                         value = state.state,
                         options = STATE_OPTIONS,
                         onSelect = onState,
@@ -494,6 +510,25 @@ private val CITY_OPTIONS = listOf(
     "New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata",
     "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Lucknow",
     "Kanpur", "Varanasi", "Meerut", "Noida", "Ghaziabad", "Gurugram",
+)
+
+internal val CITY_TO_STATE: Map<String, String> = mapOf(
+    "New Delhi" to "Delhi",
+    "Mumbai" to "Maharashtra",
+    "Pune" to "Maharashtra",
+    "Bangalore" to "Karnataka",
+    "Chennai" to "Tamil Nadu",
+    "Kolkata" to "West Bengal",
+    "Hyderabad" to "Telangana",
+    "Ahmedabad" to "Gujarat",
+    "Jaipur" to "Rajasthan",
+    "Lucknow" to "Uttar Pradesh",
+    "Kanpur" to "Uttar Pradesh",
+    "Varanasi" to "Uttar Pradesh",
+    "Meerut" to "Uttar Pradesh",
+    "Noida" to "Uttar Pradesh",
+    "Ghaziabad" to "Uttar Pradesh",
+    "Gurugram" to "Haryana",
 )
 
 private val STATE_OPTIONS = listOf(

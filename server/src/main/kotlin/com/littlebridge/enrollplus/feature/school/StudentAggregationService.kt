@@ -34,6 +34,7 @@ import com.littlebridge.enrollplus.db.AppUsersTable
 import com.littlebridge.enrollplus.db.AssessmentMarksTable
 import com.littlebridge.enrollplus.db.AssessmentsTable
 import com.littlebridge.enrollplus.db.AttendanceRecordsTable
+import com.littlebridge.enrollplus.db.ChildrenTable
 import com.littlebridge.enrollplus.db.FeeRecordsTable
 import com.littlebridge.enrollplus.db.HomeworkSubmissionsTable
 import com.littlebridge.enrollplus.db.HomeworkTable
@@ -765,21 +766,44 @@ object StudentAggregationService {
         return (submitted * 100f) / total
     }
 
-    /** People Tab: whether the student has any overdue/unpaid fees. */
-    fun feesPendingForStudent(schoolId: UUID, studentCode: String): Boolean {
-        val student = StudentsTable.selectAll().where {
-            (StudentsTable.schoolId eq schoolId) and
-                (StudentsTable.studentCode eq studentCode)
-        }.firstOrNull() ?: return false
-        val studentId = student[StudentsTable.id].value
-        // Check fee_records via childId or parentId linkage.
-        return FeeRecordsTable.selectAll().where {
+    /**
+     * People Tab fee status for a student.
+     *
+     * fee_records.child_id is a FK to children.id (NOT students.id), so we must
+     * resolve the student through the children table via student_code first —
+     * the previous implementation compared against students.id and therefore
+     * never matched, which made every card read "Fees paid" regardless of the
+     * real balance.
+     *
+     * Returns a tri-state:
+     *   PAID    — has fee records and none is outstanding
+     *   PENDING — has at least one non-PAID fee record
+     *   NONE    — no fee records exist for this student (unknown; render neutral)
+     */
+    enum class FeeStatus { PAID, PENDING, NONE }
+
+    fun feeStatusForStudent(schoolId: UUID, studentCode: String): FeeStatus {
+        // Resolve the canonical children.id linked to this student_code. The
+        // fee_records rows below are already school-scoped, so matching children
+        // by student_code alone is sufficient (children.school_id is nullable).
+        val childIds = ChildrenTable.selectAll().where {
+            ChildrenTable.studentCode eq studentCode
+        }.map { it[ChildrenTable.id].value }
+        if (childIds.isEmpty()) return FeeStatus.NONE
+
+        val records = FeeRecordsTable.selectAll().where {
             (FeeRecordsTable.schoolId eq schoolId) and
-                (FeeRecordsTable.status neq "PAID")
-        }.any { row ->
-            row[FeeRecordsTable.childId]?.let { it == studentId } ?: false
-        }
+                (FeeRecordsTable.childId inList childIds)
+        }.toList()
+        if (records.isEmpty()) return FeeStatus.NONE
+
+        val anyOutstanding = records.any { !it[FeeRecordsTable.status].equals("PAID", ignoreCase = true) }
+        return if (anyOutstanding) FeeStatus.PENDING else FeeStatus.PAID
     }
+
+    /** Back-compat boolean wrapper — true only when there is a real outstanding fee. */
+    fun feesPendingForStudent(schoolId: UUID, studentCode: String): Boolean =
+        feeStatusForStudent(schoolId, studentCode) == FeeStatus.PENDING
 
     /** People Tab: whether a parent meeting is scheduled for this student. */
     fun parentMeetingScheduledForStudent(schoolId: UUID, studentCode: String): Boolean {

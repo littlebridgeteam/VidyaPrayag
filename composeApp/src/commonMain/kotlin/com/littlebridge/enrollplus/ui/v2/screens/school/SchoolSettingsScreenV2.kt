@@ -199,37 +199,38 @@ private fun SchoolSettingsContent(
         onRefresh = { isRefreshing = true; onRetry() },
         modifier = modifier.fillMaxSize(),
     ) {
-        val listState = rememberLazyListState()
+        VStateHost(
+            loading = state.isLoading,
+            error = state.errorMessage,
+            isEmpty = false,
+            onRetry = onRetry,
+            modifier = Modifier.fillMaxSize(),
+            skeleton = { SkeletonList(rows = 6) },
+        ) {
+            val listState = rememberLazyListState()
 
-        val collapsedFraction by remember {
-            derivedStateOf {
-                val firstItem = listState.layoutInfo.visibleItemsInfo.firstOrNull()
-                if (firstItem != null && firstItem.index == 0) {
-                    val scrolled = (-firstItem.offset).toFloat() / firstItem.size.toFloat()
-                    scrolled.coerceIn(0f, 1f)
-                } else {
-                    1f
+            val collapsedFraction by remember {
+                derivedStateOf {
+                    val firstItem = listState.layoutInfo.visibleItemsInfo.firstOrNull()
+                    if (firstItem != null && firstItem.index == 0) {
+                        val scrolled = (-firstItem.offset).toFloat() / firstItem.size.toFloat()
+                        scrolled.coerceIn(0f, 1f)
+                    } else {
+                        1f
+                    }
                 }
             }
-        }
-        val showToolbar by remember {
-            derivedStateOf {
-                collapsedFraction > 0.85f
+            val showToolbar by remember {
+                derivedStateOf {
+                    collapsedFraction > 0.85f
+                }
             }
-        }
-        val toolbarAlpha by animateFloatAsState(
-            targetValue = if (showToolbar) 1f else 0f,
-            animationSpec = tween(150),
-        )
+            val toolbarAlpha by animateFloatAsState(
+                targetValue = if (showToolbar) 1f else 0f,
+                animationSpec = tween(150),
+            )
 
-        Box(Modifier.fillMaxSize()) {
-            VStateHost(
-                loading = state.isLoading,
-                error = state.errorMessage,
-                isEmpty = false,
-                onRetry = onRetry,
-                skeleton = { SkeletonList(rows = 6) },
-            ) {
+            Box(Modifier.fillMaxSize()) {
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(bottom = 100.dp),
@@ -338,7 +339,6 @@ private fun SchoolSettingsContent(
                         LogoutRow(onClick = { showLogoutConfirm = true })
                     }
                 }
-            }
 
             // ── Sticky toolbar (fades in when header is collapsed) ──
             Box(
@@ -357,6 +357,7 @@ private fun SchoolSettingsContent(
                 )
             }
         }
+    }
     }
 
     // ── Bottom sheets ──

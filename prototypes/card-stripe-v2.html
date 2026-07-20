@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe-style v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF9;
+    --card: #FFFFFF;
+    --border: #E8E6E3;
+    --border-2: #F0EFEC;
+    --ink: #1A1A2E;
+    --ink-2: #6B6A75;
+    --ink-3: #A8A7B0;
+    --accent: #5B41D5;
+    --accent-tint: #F3F1FC;
+    --teal: #0D9488;
+    --teal-tint: #ECFAF8;
+    --gold: #B45309;
+    --gold-tint: #FDF4E6;
+    --success: #16A34A;
+    --warning: #D97706;
+    --shadow: 0 1px 2px rgba(26,26,46,.04), 0 1px 3px rgba(26,26,46,.03);
+    --shadow-h: 0 2px 8px rgba(26,26,46,.06), 0 1px 3px rgba(26,26,46,.04);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); padding: 48px 20px; display: flex; justify-content: center; -webkit-font-smoothing: antialiased; font-feature-settings: 'ss01','cv01','cv11'; }
+  .container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+  .header h2 { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -.3px; }
+  .header span { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    cursor: pointer;
+    transition: box-shadow 180ms ease, border-color 180ms ease;
+    box-shadow: var(--shadow);
+  }
+  .card:hover { box-shadow: var(--shadow-h); border-color: #DDDAD5; }
+
+  .card-head { display: flex; align-items: center; gap: 14px; }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600; color: #fff; flex-shrink: 0;
+    letter-spacing: -.2px;
+  }
+  .avatar.violet { background: linear-gradient(135deg, #6B52E0, #5B41D5); }
+  .avatar.teal { background: linear-gradient(135deg, #14B8A6, #0D9488); }
+  .avatar.gold { background: linear-gradient(135deg, #D97706, #B45309); }
+
+  .identity { flex: 1; min-width: 0; }
+  .name-row { display: flex; align-items: center; gap: 7px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2.5px var(--card); }
+  .status-dot.active { background: var(--success); }
+  .status-dot.leave { background: var(--warning); }
+  .name { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -.3px; }
+  .role { font-size: 13px; color: var(--ink-2); margin-top: 3px; font-weight: 400; }
+
+  .actions { display: flex; gap: 14px; flex-shrink: 0; align-items: center; }
+  .act-link {
+    font-size: 13px; font-weight: 500; color: var(--ink-2);
+    background: none; border: none; cursor: pointer; padding: 0;
+    transition: color 120ms ease;
+  }
+  .act-link:hover { color: var(--accent); }
+
+  /* ── Metric grid ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-2);
+  }
+  .metric { position: relative; padding: 0 14px; }
+  .metric:first-child { padding-left: 0; }
+  .metric:not(:last-child)::after {
+    content: ''; position: absolute; right: 0; top: 4px; bottom: 4px;
+    width: 1px; background: var(--border-2);
+  }
+  .metric.highlight { background: var(--accent-tint); border-radius: 8px; padding: 10px 14px; margin: -10px -14px -10px -14px; }
+  .metric.highlight.teal-h { background: var(--teal-tint); }
+  .metric.highlight.gold-h { background: var(--gold-tint); }
+  .metric-val { font-size: 22px; font-weight: 800; color: var(--ink); letter-spacing: -.5px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .metric.highlight .metric-val { color: var(--accent); }
+  .metric.highlight.teal-h .metric-val { color: var(--teal); }
+  .metric.highlight.gold-h .metric-val { color: var(--gold); }
+  .metric-lbl { font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+
+  /* ── Tags ── */
+  .tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .tag {
+    font-size: 12px; font-weight: 500; color: var(--ink-2);
+    padding: 4px 10px; border-radius: 6px;
+    background: var(--bg); border: 1px solid var(--border-2);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .tag-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .tag-dot.violet { background: var(--accent); }
+  .tag-dot.teal { background: var(--teal); }
+  .tag-dot.gold { background: var(--gold); }
+  .tag-dot.sky { background: #0EA5E9; }
+  .tag-rating { color: var(--ink); font-weight: 600; border: none; background: none; padding: 0; }
+  .tag-rating svg { width: 12px; height: 12px; fill: var(--gold); }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h2>Teachers</h2><span>3 active</span></div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="avatar violet">PS</div>
+        <div class="identity">
+          <div class="name-row"><div class="status-dot active"></div><div class="name">Priya Sharma</div></div>
+          <div class="role">Mathematics · Senior Teacher · 12 yrs</div>
+        </div>
+        <div class="actions"><button class="act-link">Call</button><button class="act-link">Message</button></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val">142</div><div class="metric-lbl">Students</div></div>
+        <div class="metric"><div class="metric-val">6</div><div class="metric-lbl">Classes</div></div>
+        <div class="metric highlight"><div class="metric-val">94%</div><div class="metric-lbl">Attendance</div></div>
+      </div>
+      <div class="tags">
+        <span class="tag"><span class="tag-dot violet"></span>Math</span>
+        <span class="tag"><span class="tag-dot teal"></span>Physics</span>
+        <span class="tag"><span class="tag-dot sky"></span>Statistics</span>
+        <span class="tag tag-rating"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.9</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="avatar teal">RK</div>
+        <div class="identity">
+          <div class="name-row"><div class="status-dot active"></div><div class="name">Rahul Verma</div></div>
+          <div class="role">Physics · Teacher · 8 yrs</div>
+        </div>
+        <div class="actions"><button class="act-link">Call</button><button class="act-link">Message</button></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val">98</div><div class="metric-lbl">Students</div></div>
+        <div class="metric"><div class="metric-val">4</div><div class="metric-lbl">Classes</div></div>
+        <div class="metric highlight teal-h"><div class="metric-val">91%</div><div class="metric-lbl">Attendance</div></div>
+      </div>
+      <div class="tags">
+        <span class="tag"><span class="tag-dot teal"></span>Physics</span>
+        <span class="tag"><span class="tag-dot violet"></span>Chemistry</span>
+        <span class="tag tag-rating"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.6</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="avatar gold">AN</div>
+        <div class="identity">
+          <div class="name-row"><div class="status-dot leave"></div><div class="name">Anita Nair</div></div>
+          <div class="role">English · Teacher · On leave until Mar 15</div>
+        </div>
+        <div class="actions"><button class="act-link">Call</button><button class="act-link">Message</button></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val">120</div><div class="metric-lbl">Students</div></div>
+        <div class="metric"><div class="metric-val">5</div><div class="metric-lbl">Classes</div></div>
+        <div class="metric highlight gold-h"><div class="metric-val">87%</div><div class="metric-lbl">Attendance</div></div>
+      </div>
+      <div class="tags">
+        <span class="tag"><span class="tag-dot gold"></span>English</span>
+        <span class="tag"><span class="tag-dot violet"></span>Literature</span>
+        <span class="tag tag-rating"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>4.7</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

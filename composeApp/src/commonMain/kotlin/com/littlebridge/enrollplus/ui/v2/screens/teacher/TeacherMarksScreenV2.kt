@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.core.locale.StringKeys
@@ -396,8 +397,8 @@ private fun MarkRow(s: GradebookStudentMark, maxMarks: Int, readOnly: Boolean, o
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.weight(1f)) {
-                Text(s.name, style = VTypography.caption, color = VColors.ink, maxLines = 1)
-                Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTypography.caption, color = VColors.ink3)
+                Text(s.name, style = VTypography.caption, color = VColors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(appString(StringKeys.TC_ROLL_N, "n" to s.rollNo.toString()), style = VTypography.caption, color = VColors.ink3, maxLines = 1)
             }
             // AB toggle — visually inactive when marks are present (defensive: isAbsent
             // is cleared in the ViewModel, but we also guard here so the badge never
@@ -452,6 +453,6 @@ private fun MarkInput(value: Float?, maxMarks: Int, enabled: Boolean, onChange: 
                 },
             )
         }
-        Text(" /$maxMarks", style = VTypography.caption, color = VColors.ink3)
+        Text(" /$maxMarks", style = VTypography.caption, color = VColors.ink3, maxLines = 1)
     }
 }

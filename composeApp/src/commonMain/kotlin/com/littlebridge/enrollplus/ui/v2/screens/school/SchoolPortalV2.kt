@@ -116,6 +116,7 @@ fun SchoolPortalV2(
     var localDeepLink by remember { mutableStateOf<DeepLinkTarget?>(null) }
     var deepLinkThreadId by remember { mutableStateOf<String?>(null) }
     var messageRecipientId by remember { mutableStateOf<String?>(null) }
+    var messageRecipientName by remember { mutableStateOf("") }
     // PEWS — student code carried into the early-warning detail overlay.
     var selectedPewsStudentCode by remember { mutableStateOf<String?>(null) }
     // Track which screen launched the create-event wizard so onCreated returns there.
@@ -262,6 +263,8 @@ fun SchoolPortalV2(
     var selectedClassName by remember { mutableStateOf<String?>(null) }
     // Track which overlay launched a student/teacher profile so back returns there.
     var profileReturnOverlay by remember { mutableStateOf(SchoolOverlay.None) }
+    // Bug 11: when true, TeacherProfileScreenV2 opens in edit mode.
+    var teacherProfileStartInEdit by remember { mutableStateOf(false) }
         // RA-S12 — the Comms badge counts message threads with unread messages
         // (GET /school/messages/threads), not a hardcoded literal.
         val messagesState by messagesViewModel.state.collectAsStateV2()
@@ -345,10 +348,11 @@ fun SchoolPortalV2(
             }
             SchoolOverlay.Messages -> {
                 MessagesScreenV2(
-                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null; messageRecipientId = null },
+                    onBack = { overlay = SchoolOverlay.None; deepLinkThreadId = null; messageRecipientId = null; messageRecipientName = "" },
                     modifier = modifier,
                     initialThreadId = deepLinkThreadId,
                     initialRecipientId = messageRecipientId,
+                    initialRecipientName = messageRecipientName,
                 )
                 return
             }
@@ -469,8 +473,11 @@ fun SchoolPortalV2(
                 val returnTo = profileReturnOverlay
                 TeacherProfileScreenV2(
                     teacherId = id,
-                    onBack = { overlay = returnTo; profileReturnOverlay = SchoolOverlay.None },
+                    initialEditMode = teacherProfileStartInEdit,
+                    onBack = { overlay = returnTo; profileReturnOverlay = SchoolOverlay.None
+                        teacherProfileStartInEdit = false },
                     onRemoved = { overlay = returnTo; profileReturnOverlay = SchoolOverlay.None
+                        teacherProfileStartInEdit = false
                         peopleRefreshKey++ },
                     // RA-TAM — Quick Action → reusable assignment module.
                     onOpenAssignments = { overlay = SchoolOverlay.TeacherAssignments },
@@ -781,16 +788,19 @@ fun SchoolPortalV2(
                         studentRefreshKey = studentRefreshKey,
                         // RA-48 — open the parent→child link approval queue.
                         onOpenLinkRequests = { overlay = SchoolOverlay.LinkRequests },
+                        onOpenNotifications = { overlay = SchoolOverlay.Notifications },
                         // RA-S17 — People is now a 3-sub-tab roster; rows open the
                         // matching profile overlay (delete-in-profile lives there).
                         onOpenStudent = { id -> selectedStudentId = id; overlay = SchoolOverlay.StudentProfile },
-                        onOpenTeacher = { id -> selectedTeacherId = id; overlay = SchoolOverlay.TeacherProfile },
+                        onOpenTeacher = { id -> selectedTeacherId = id; teacherProfileStartInEdit = false; overlay = SchoolOverlay.TeacherProfile },
+                        onEditTeacher = { id -> selectedTeacherId = id; teacherProfileStartInEdit = true; overlay = SchoolOverlay.TeacherProfile },
                         // RA-TAM — Teacher Listing entry point into the reusable module.
                         onAssignClasses = { id -> selectedTeacherId = id; overlay = SchoolOverlay.TeacherAssignments },
                         onOpenStaff = { id -> selectedStaffId = id; overlay = SchoolOverlay.Staff },
                         // Bug 5: Message button on StudentCard opens in-app messaging.
-                        onOpenMessages = { recipientId ->
+                        onOpenMessages = { recipientId, recipientName ->
                             messageRecipientId = recipientId
+                            messageRecipientName = recipientName
                             overlay = SchoolOverlay.Messages
                         },
                         // Mark students as alumni (graduation bulk action)

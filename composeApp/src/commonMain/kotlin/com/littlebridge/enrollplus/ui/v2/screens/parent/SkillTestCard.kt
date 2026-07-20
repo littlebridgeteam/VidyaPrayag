@@ -453,27 +453,35 @@ private fun SkillTestInProgress(
                 Text(it, style = VTypography.caption, color = VColors.error)
             }
 
-            // Navigation buttons
+            // Navigation buttons — weighted so Back + primary share the row
+            // without the underlying VButton's fillMaxWidth causing overlap or
+            // a huge blank gap below the content.
             if (showBack || showNext || showSeeResults) {
                 Spacer(Modifier.height(16.dp))
-                if (showSeeResults) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     if (showBack) {
-                        VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
-                        Spacer(Modifier.height(8.dp))
+                        VButton(
+                            "Back",
+                            onClick = onPrevious,
+                            variant = VButtonVariant.Secondary,
+                            modifier = Modifier.weight(1f),
+                        )
                     }
-                    VButton("See Results", onClick = onSeeResults, modifier = Modifier.fillMaxWidth())
-                } else {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (showBack && showNext) Arrangement.SpaceBetween else if (showBack) Arrangement.Start else Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (showBack) {
-                            VButton("Back", onClick = onPrevious, variant = VButtonVariant.Ghost)
-                        }
-                        if (showNext) {
-                            VButton("Next Question", onClick = onNext)
-                        }
+                    when {
+                        showSeeResults -> VButton(
+                            "See Results",
+                            onClick = onSeeResults,
+                            modifier = Modifier.weight(if (showBack) 1.4f else 1f),
+                        )
+                        showNext -> VButton(
+                            "Next Question",
+                            onClick = onNext,
+                            modifier = Modifier.weight(if (showBack) 1.4f else 1f),
+                        )
                     }
                 }
             }

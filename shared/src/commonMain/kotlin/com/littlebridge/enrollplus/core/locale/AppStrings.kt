@@ -1068,6 +1068,11 @@ object StringKeys {
     const val SCH_REMOVE_STAFF_MEMBER  = "sch.remove_staff_member"
     const val SCH_REMOVE_STAFF_CONFIRM = "sch.remove_staff_confirm"
     const val SCH_REMOVE               = "sch.remove"
+    const val SCH_STAFF_PROFILE        = "sch.staff_profile"
+    const val SCH_ROLE                 = "sch.role"
+    const val SCH_DEPARTMENT           = "sch.department"
+    const val SCH_REMOVE_STAFF         = "sch.remove_staff"
+    const val SCH_REMOVE_STAFF_DANGER  = "sch.remove_staff_danger"
 
     // DailyAttendanceScreenV2
     const val SCH_DAILY_ATTENDANCE     = "sch.daily_attendance"
@@ -1396,6 +1401,7 @@ object StringKeys {
     const val SCH_ACADEMIC_SCORE       = "sch.academic_score"
     const val SCH_ADD_SLOT             = "sch.add_slot"
     const val SCH_ADD_STUDENT          = "sch.add_student"
+    const val SCH_ADDRESS              = "sch.address"
     const val SCH_ADMINISTRATIVE_INFO  = "sch.administrative_info"
     const val SCH_ADMISSION_DATE       = "sch.admission_date"
     const val SCH_ADMISSION_NO         = "sch.admission_no"
@@ -1407,6 +1413,12 @@ object StringKeys {
     const val SCH_ATTENDANCE           = "sch.attendance"
     const val SCH_ATTENDANCE_OVERVIEW  = "sch.attendance_overview"
     const val SCH_ATTENDANCE_RATE      = "sch.attendance_rate"
+    const val SCH_OVERALL_ATTENDANCE   = "sch.overall_attendance"
+    const val SCH_THIS_TERM            = "sch.this_term"
+    const val SCH_TOTAL_LEAVE_DAYS     = "sch.total_leave_days"
+    const val SCH_PENDING_REQUESTS     = "sch.pending_requests"
+    const val SCH_FATHERS_PHONE        = "sch.fathers_phone"
+    const val SCH_MOTHERS_PHONE        = "sch.mothers_phone"
     const val SCH_AVERAGE              = "sch.average"
     const val SCH_CLASS                = "sch.class"
     const val SCH_CLASS_LEVEL          = "sch.class_level"
@@ -4596,6 +4608,11 @@ object AppStrings {
         StringKeys.SCH_REMOVE_STAFF_MEMBER  to "Remove staff member",
         StringKeys.SCH_REMOVE_STAFF_CONFIRM to "Remove {name} from your school? Their record will be hidden. This can be reversed by re-adding them.",
         StringKeys.SCH_REMOVE               to "Remove",
+        StringKeys.SCH_STAFF_PROFILE        to "Staff Profile",
+        StringKeys.SCH_ROLE                 to "Role",
+        StringKeys.SCH_DEPARTMENT           to "Department",
+        StringKeys.SCH_REMOVE_STAFF         to "Remove Staff",
+        StringKeys.SCH_REMOVE_STAFF_DANGER  to "Removing this staff member will revoke access immediately. This can be reversed by re-adding them.",
         // DailyAttendanceScreenV2
         StringKeys.SCH_DAILY_ATTENDANCE     to "Daily Attendance",
         StringKeys.SCH_STUDENTS             to "Students",
@@ -4911,6 +4928,7 @@ object AppStrings {
         StringKeys.SCH_ACADEMIC_SCORE                  to "Academic Score",
         StringKeys.SCH_ADD_SLOT                        to "+ Add Slot",
         StringKeys.SCH_ADD_STUDENT                     to "Add student",
+        StringKeys.SCH_ADDRESS                         to "Address",
         StringKeys.SCH_ADMINISTRATIVE_INFO             to "Administrative Information",
         StringKeys.SCH_ADMISSION_DATE                  to "Admission Date",
         StringKeys.SCH_ADMISSION_NO                    to "Admission No.",
@@ -4922,6 +4940,12 @@ object AppStrings {
         StringKeys.SCH_ATTENDANCE                      to "Attendance",
         StringKeys.SCH_ATTENDANCE_OVERVIEW             to "Attendance Overview",
         StringKeys.SCH_ATTENDANCE_RATE                 to "Attendance rate",
+        StringKeys.SCH_OVERALL_ATTENDANCE              to "Overall Attendance",
+        StringKeys.SCH_THIS_TERM                       to "This Term",
+        StringKeys.SCH_TOTAL_LEAVE_DAYS                to "Total Leave Days",
+        StringKeys.SCH_PENDING_REQUESTS                to "Pending Requests",
+        StringKeys.SCH_FATHERS_PHONE                   to "Father's Phone",
+        StringKeys.SCH_MOTHERS_PHONE                   to "Mother's Phone",
         StringKeys.SCH_AVERAGE                         to "average",
         StringKeys.SCH_CLASS                           to "Class",
         StringKeys.SCH_CLASS_LEVEL                     to "Class Level",
@@ -8090,6 +8114,11 @@ object AppStrings {
         StringKeys.SCH_REMOVE_STAFF_MEMBER  to "स्टाफ सदस्य हटाएं",
         StringKeys.SCH_REMOVE_STAFF_CONFIRM to "{name} को आपके स्कूल से हटाएं? उनका रिकॉर्ड छिप जाएगा। इसे फिर से जोड़कर पूर्ववत किया जा सकता है।",
         StringKeys.SCH_REMOVE               to "हटाएं",
+        StringKeys.SCH_STAFF_PROFILE        to "स्टाफ प्रोफ़ाइल",
+        StringKeys.SCH_ROLE                 to "भूमिका",
+        StringKeys.SCH_DEPARTMENT           to "विभाग",
+        StringKeys.SCH_REMOVE_STAFF         to "स्टाफ हटाएं",
+        StringKeys.SCH_REMOVE_STAFF_DANGER  to "इस स्टाफ सदस्य को हटाने से उनकी पहुंच तुरंत रद्द हो जाएगी। इसे फिर से जोड़कर पूर्ववत किया जा सकता है।",
         // DailyAttendanceScreenV2
         StringKeys.SCH_DAILY_ATTENDANCE     to "दैनिक उपस्थिति",
         StringKeys.SCH_STUDENTS             to "छात्र",
@@ -8405,6 +8434,13 @@ object AppStrings {
         StringKeys.SCH_ACADEMIC_SCORE                  to "एकादमिक स्कोर",
         StringKeys.SCH_ADD_SLOT                        to "+ स्लॉट जोड़ें",
         StringKeys.SCH_ADD_STUDENT                     to "छात्र जोड़ें",
+        StringKeys.SCH_ADDRESS                         to "पता",
+        StringKeys.SCH_OVERALL_ATTENDANCE              to "कुल हाजिरी",
+        StringKeys.SCH_THIS_TERM                       to "इस सत्र",
+        StringKeys.SCH_TOTAL_LEAVE_DAYS                to "कुल अवकाश दिन",
+        StringKeys.SCH_PENDING_REQUESTS                to "लंबित अनुरोध",
+        StringKeys.SCH_FATHERS_PHONE                   to "पिता का फोन",
+        StringKeys.SCH_MOTHERS_PHONE                   to "माता का फोन",
         StringKeys.SCH_ADMINISTRATIVE_INFO             to "प्रशासनिक जानकारी",
         StringKeys.SCH_ADMISSION_DATE                  to "प्रवेश तिथि",
         StringKeys.SCH_ADMISSION_NO                    to "प्रवेश संख्या",

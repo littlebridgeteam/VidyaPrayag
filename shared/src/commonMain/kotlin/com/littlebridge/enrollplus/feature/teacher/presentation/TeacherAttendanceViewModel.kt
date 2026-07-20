@@ -224,6 +224,10 @@ class TeacherAttendanceViewModel(
         viewModelScope.launch {
             val current = _state.value
             if (current.assignmentId.isBlank() || current.students.isEmpty()) return@launch
+            if (current.isHoliday) {
+                _state.update { it.copy(saveError = "Attendance cannot be marked on a holiday.") }
+                return@launch
+            }
             _state.update { it.copy(isSaving = true, saveError = null, saveSuccess = false) }
             val token = preferenceRepository.getUserToken().first()
             if (token == null) {

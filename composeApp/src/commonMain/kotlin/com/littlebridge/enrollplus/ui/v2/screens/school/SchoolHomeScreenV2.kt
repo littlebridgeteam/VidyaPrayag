@@ -273,7 +273,9 @@ private fun PremiumHeader(
 @Composable
 private fun HeroCard(overview: AdminDashboardOverview, summary: AdminDashboardSummary?) {
     val students = summary?.statistics?.students?.total ?: kpi(overview, "students")
-    val staff = summary?.statistics?.teachers?.total ?: kpi(overview, "teachers")
+    val staff = if (summary?.statistics != null) {
+        (summary.statistics.teachers.total) + (summary.statistics.staff.total)
+    } else kpi(overview, "staff")
     val classes = summary?.statistics?.classes?.total ?: 0
     val pending = kpi(overview, "approvals")
     val attendance = kpi(overview, "attendance")
@@ -488,8 +490,12 @@ private fun KeyMetrics(
     val fee = overview.feeAnalytics
     val attendance = kpi(overview, "attendance")
     val admissions = summary?.statistics?.students?.newAdmissions ?: 0
-    val staffTotal = summary?.statistics?.teachers?.total ?: 0
-    val staffActive = summary?.statistics?.teachers?.active ?: 0
+    val staffTotal = if (summary?.statistics != null) {
+        (summary.statistics.teachers.total) + (summary.statistics.staff.total)
+    } else kpi(overview, "staff")
+    val staffActive = if (summary?.statistics != null) {
+        (summary.statistics.teachers.active) + (summary.statistics.staff.active)
+    } else 0
     val staffRate = if (staffTotal > 0) staffActive * 100 / staffTotal else 0
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         AdminSectionHeader("Key Metrics", "This month")
@@ -691,6 +697,11 @@ private fun ClassPerformance(analytics: AdminDashboardAnalytics, onDetails: () -
 }
 
 private fun kpi(overview: AdminDashboardOverview, key: String): Int = overview.kpis.firstOrNull { it.key == key }?.value ?: 0
+internal fun computeStaffTotal(teachersTotal: Int, staffTotal: Int): Int = teachersTotal + staffTotal
+internal fun computeStaffActive(teachersActive: Int, staffActive: Int): Int = teachersActive + staffActive
+internal fun computeStaffRate(staffTotal: Int, staffActive: Int): Int =
+    if (staffTotal > 0) staffActive * 100 / staffTotal else 0
+
 private fun formatCount(value: Int): String = value.toString().reversed().chunked(3).joinToString(",").reversed()
 private fun money(value: Double): String = when {
     value >= 10_000_000 -> "₹${trim(value / 10_000_000)}Cr"
@@ -701,7 +712,7 @@ private fun money(value: Double): String = when {
 private fun trim(value: Double): String = if (value % 1.0 == 0.0) value.toInt().toString() else ((value * 10).roundToInt() / 10.0).toString()
 private fun initials(value: String): String = value.split(" ").filter(String::isNotBlank).take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("").ifBlank { "A" }
 
-private fun routeQuickAction(
+internal fun routeQuickAction(
     id: String,
     open: (String) -> Unit,
     announce: () -> Unit,
@@ -709,7 +720,7 @@ private fun routeQuickAction(
     reports: () -> Unit,
     analytics: () -> Unit,
 ) = when (id) {
-    "ADD_STUDENT" -> open("overlay_admissions")
+    "ADD_STUDENT" -> open("setup_add_students")
     "ADD_STAFF" -> open("tab_people")
     "COLLECT_FEES" -> open("overlay_fee_salary")
     "ANNOUNCE" -> announce()
@@ -720,7 +731,7 @@ private fun routeQuickAction(
     else -> open("tab_settings")
 }
 
-private fun routeAlert(alert: DashboardAlert, open: (String) -> Unit, approvals: () -> Unit, events: () -> Unit) = when (alert.action) {
+internal fun routeAlert(alert: DashboardAlert, open: (String) -> Unit, approvals: () -> Unit, events: () -> Unit) = when (alert.action) {
     "VIEW_ADMISSIONS" -> open("overlay_admissions")
     "ASSIGN_TEACHER" -> open("tab_people")
     "VIEW_APPROVALS" -> approvals()
@@ -730,7 +741,7 @@ private fun routeAlert(alert: DashboardAlert, open: (String) -> Unit, approvals:
     else -> open("overlay_notifications")
 }
 
-private fun routeActivity(row: DashboardActivity, open: (String) -> Unit, notifications: () -> Unit) = when {
+internal fun routeActivity(row: DashboardActivity, open: (String) -> Unit, notifications: () -> Unit) = when {
     row.type.contains("ADMISSION", true) -> open("overlay_admissions")
     row.type.contains("FEE", true) || row.type.contains("PAY", true) -> open("overlay_fee_salary")
     row.type.contains("LEAVE", true) -> open("overlay_leave_requests")

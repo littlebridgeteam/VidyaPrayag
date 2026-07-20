@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
@@ -62,6 +63,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.littlebridge.enrollplus.feature.admin.presentation.RegistrationOnboardingViewModel
@@ -72,9 +75,11 @@ import com.littlebridge.enrollplus.ui.v2.components.VButtonTone
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
+import com.littlebridge.enrollplus.ui.v2.components.VDropdown
 import com.littlebridge.enrollplus.ui.v2.components.VMaterialDatePicker
 import com.littlebridge.enrollplus.ui.v2.components.VMaterialTimePicker
 import com.littlebridge.enrollplus.ui.v2.components.VSheetPicker
+import com.littlebridge.enrollplus.ui.v2.screens.school.CITY_TO_STATE
 import com.littlebridge.enrollplus.ui.v2.theme.VTheme
 import com.littlebridge.enrollplus.ui.v2.theme.colored
 import com.littlebridge.enrollplus.ui.v2.theme.shapeCard
@@ -85,18 +90,18 @@ import com.littlebridge.enrollplus.util.parseIsoDate
 import com.littlebridge.enrollplus.util.todayIso
 import org.koin.compose.viewmodel.koinViewModel
 
-private data class FieldError(val field: String, val message: String)
+internal data class FieldError(val field: String, val message: String)
 
-private fun validateName(name: String): String? {
+internal fun validateName(name: String): String? {
     if (name.isBlank()) return "Name is required"
     if (name.trim().length < 2) return "Name must be at least 2 characters"
     if (!name.trim().all { it.isLetter() || it == ' ' || it == '.' || it == '-' }) return "Name must contain only letters"
     return null
 }
 
-private val emailPattern = Regex("^[A-Z0-9.!#\$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$", RegexOption.IGNORE_CASE)
+internal val emailPattern = Regex("^[A-Z0-9.!#\$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$", RegexOption.IGNORE_CASE)
 
-private fun validateEmail(email: String): String? {
+internal fun validateEmail(email: String): String? {
     if (email.isBlank()) return "Email is required"
     val value = email.trim()
     val localPart = value.substringBefore('@', missingDelimiterValue = "")
@@ -111,7 +116,7 @@ private fun validateEmail(email: String): String? {
     return null
 }
 
-private fun validatePhone(phone: String): String? {
+internal fun validatePhone(phone: String): String? {
     if (phone.isBlank()) return "Phone number is required"
     if (phone.length != 10) return "Phone must be exactly 10 digits"
     if (!phone.all { it.isDigit() }) return "Phone must contain only digits"
@@ -119,7 +124,7 @@ private fun validatePhone(phone: String): String? {
     return null
 }
 
-private fun validatePassword(password: String): String? {
+internal fun validatePassword(password: String): String? {
     if (password.isBlank()) return "Password is required"
     if (password.length < 8) return "Must be at least 8 characters"
     if (password.length > 128) return "Must be 128 characters or fewer"
@@ -130,25 +135,44 @@ private fun validatePassword(password: String): String? {
     return null
 }
 
-private fun validateConfirmPassword(password: String, confirm: String): String? {
+internal fun validateConfirmPassword(password: String, confirm: String): String? {
     if (confirm.isBlank()) return "Please confirm your password"
     if (password != confirm) return "Passwords do not match"
     return null
 }
 
-private fun validateSchoolName(name: String): String? {
+internal fun validateSchoolName(name: String): String? {
     if (name.isBlank()) return "School name is required"
     if (name.trim().length < 3) return "School name must be at least 3 characters"
+    if (!name.trim().all { it.isLetter() || it == ' ' || it == '.' || it == '-' || it == '\'' })
+        return "School name must contain only alphabetic characters"
     return null
 }
 
-private fun validatePrincipalName(name: String): String? {
+internal fun validateShortName(name: String): String? {
+    if (name.isBlank()) return "Short name is required"
+    if (name.trim().length < 2) return "Short name must be at least 2 characters"
+    if (!name.trim().all { it.isLetter() || it == ' ' })
+        return "Short name must contain only alphabetic characters"
+    return null
+}
+
+internal fun validateAffiliationNumber(value: String): String? {
+    if (value.isBlank()) return null
+    val trimmed = value.trim()
+    if (trimmed.length < 3) return "Affiliation number must be at least 3 characters"
+    if (trimmed.length > 30) return "Affiliation number must be 30 characters or fewer"
+    if (!trimmed.all { it.isLetterOrDigit() }) return "Affiliation number must contain only letters and digits"
+    return null
+}
+
+internal fun validatePrincipalName(name: String): String? {
     if (name.isBlank()) return "Principal name is required"
     if (!name.trim().all { it.isLetter() || it == ' ' || it == '.' || it == '-' }) return "Name must contain only letters"
     return null
 }
 
-private fun validatePrincipalPhone(phone: String): String? {
+internal fun validatePrincipalPhone(phone: String): String? {
     if (phone.isBlank()) return "Principal phone is required"
     if (phone.length != 10) return "Phone must be exactly 10 digits"
     if (!phone.all { it.isDigit() }) return "Phone must contain only digits"
@@ -156,11 +180,118 @@ private fun validatePrincipalPhone(phone: String): String? {
     return null
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// Extracted step validation functions (testable)
+// ════════════════════════════════════════════════════════════════════════════
+
+internal data class StepValidationResult(val errors: List<FieldError>) {
+    val isValid: Boolean get() = errors.isEmpty()
+    fun getError(field: String): String? = errors.find { it.field == field }?.message
+}
+
+internal fun validateStep1BasicDetails(
+    adminName: String,
+    adminRole: String,
+    email: String,
+    contactPhone: String,
+): StepValidationResult {
+    val errors = mutableListOf<FieldError>()
+    validateName(adminName)?.let { errors.add(FieldError("name", it)) }
+    if (adminRole.isBlank()) errors.add(FieldError("role", "Select your role"))
+    validateEmail(email)?.let { errors.add(FieldError("email", it)) }
+    validatePhone(contactPhone)?.let { errors.add(FieldError("phone", it)) }
+    return StepValidationResult(errors)
+}
+
+internal fun validateStep2Password(
+    password: String,
+    confirmPassword: String,
+): StepValidationResult {
+    val errors = mutableListOf<FieldError>()
+    validatePassword(password)?.let { errors.add(FieldError("password", it)) }
+    validateConfirmPassword(password, confirmPassword)?.let { errors.add(FieldError("confirm", it)) }
+    return StepValidationResult(errors)
+}
+
+internal fun validateStep3SchoolIdentity(
+    schoolName: String,
+    shortName: String,
+    board: String,
+    customBoard: String,
+    schoolType: String,
+    affiliationNumber: String,
+    principalName: String,
+    principalPhone: String,
+): StepValidationResult {
+    val errors = mutableListOf<FieldError>()
+    validateSchoolName(schoolName)?.let { errors.add(FieldError("schoolName", it)) }
+    validateShortName(shortName)?.let { errors.add(FieldError("shortName", it)) }
+    if (board.isBlank()) errors.add(FieldError("board", "Select a board"))
+    else if (board == "Other" && customBoard.isBlank()) errors.add(FieldError("customBoard", "Enter board name"))
+    if (schoolType.isBlank()) errors.add(FieldError("schoolType", "Select school type"))
+    validateAffiliationNumber(affiliationNumber)?.let { errors.add(FieldError("affiliationNumber", it)) }
+    if (principalName.isNotBlank()) validatePrincipalName(principalName)?.let { errors.add(FieldError("principalName", it)) }
+    if (principalPhone.isNotBlank()) validatePrincipalPhone(principalPhone)?.let { errors.add(FieldError("principalPhone", it)) }
+    return StepValidationResult(errors)
+}
+
+internal fun validateStep4AcademicYear(
+    academicYearLabel: String,
+    yearStartDate: String,
+    yearEndDate: String,
+    workingDays: String,
+    periodsPerDay: String,
+    schoolStartTime: String,
+    schoolEndTime: String,
+): StepValidationResult {
+    val errors = mutableListOf<FieldError>()
+    if (academicYearLabel.isBlank()) errors.add(FieldError("year", "Select an academic year"))
+    if (yearStartDate.isBlank()) errors.add(FieldError("startDate", "Select start date"))
+    if (yearEndDate.isBlank()) errors.add(FieldError("endDate", "Select end date"))
+    if (yearStartDate.isNotBlank() && yearEndDate.isNotBlank() && yearStartDate >= yearEndDate) {
+        errors.add(FieldError("endDate", "End date must be after start date"))
+    }
+    if (workingDays.isBlank()) errors.add(FieldError("workingDays", "Select working days"))
+    if (periodsPerDay.isBlank()) errors.add(FieldError("periods", "Select periods per day"))
+    val startH = schoolStartTime.substringBefore(":").toIntOrNull() ?: 0
+    val startM = schoolStartTime.substringAfter(":").take(2).ifBlank { "0" }.toIntOrNull() ?: 0
+    val endH = schoolEndTime.substringBefore(":").toIntOrNull() ?: 0
+    val endM = schoolEndTime.substringAfter(":").take(2).ifBlank { "0" }.toIntOrNull() ?: 0
+    if (startH > endH || (startH == endH && startM >= endM)) {
+        errors.add(FieldError("endTime", "End time must be after start time"))
+    }
+    return StepValidationResult(errors)
+}
+
+internal fun computePasswordStrength(password: String): Int {
+    var score = 0
+    if (password.length >= 8) score++
+    if (password.any { it.isUpperCase() } && password.any { it.isLowerCase() }) score++
+    if (password.any { it.isDigit() }) score++
+    if (password.any { !it.isLetterOrDigit() && !it.isWhitespace() }) score++
+    return score
+}
+
+internal fun passwordStrengthLabel(score: Int): String = when (score) {
+    1 -> "Weak"
+    2 -> "Fair"
+    3 -> "Good"
+    4 -> "Strong"
+    else -> ""
+}
+
+internal fun academicYearOptionsTestable(currentYear: Int): List<String> {
+    return listOf(currentYear, currentYear + 1).map { start ->
+        "$start-${((start + 1) % 100).toString().padStart(2, '0')}"
+    }
+}
+
 @Composable
 private fun VChip(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
+    maxWidth: Dp = Dp.Unspecified,
 ) {
     val c = VTheme.colors
     val bg = if (selected) c.accent else c.card
@@ -170,15 +301,18 @@ private fun VChip(
     Box(
         modifier = Modifier
             .heightIn(min = 40.dp)
+            .then(if (maxWidth != Dp.Unspecified) Modifier.widthIn(max = maxWidth) else Modifier)
             .clip(VTheme.dimens.shapePill)
             .background(bg)
             .border(1.dp, border, VTheme.dimens.shapePill)
             .clickable { onClick() }
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = VTheme.type.body.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold).colored(fg),
         )
     }
@@ -190,13 +324,16 @@ private fun VChipGroup(
     selected: String?,
     onSelect: (String) -> Unit,
 ) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        options.forEach { opt ->
-            VChip(text = opt, selected = selected == opt, onClick = { onSelect(opt) })
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val maxChipWidth = maxWidth
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            options.forEach { opt ->
+                VChip(text = opt, selected = selected == opt, onClick = { onSelect(opt) }, maxWidth = maxChipWidth)
+            }
         }
     }
 }
@@ -655,8 +792,11 @@ private fun StepThreeSchoolIdentity(
     fun validateAndSubmit() {
         val errors = mutableListOf<FieldError>()
         validateSchoolName(state.schoolName)?.let { errors.add(FieldError("schoolName", it)) }
+        validateShortName(state.shortName)?.let { errors.add(FieldError("shortName", it)) }
         if (state.board.isBlank()) errors.add(FieldError("board", "Select a board"))
+        else if (state.board == "Other" && state.customBoard.isBlank()) errors.add(FieldError("customBoard", "Enter board name"))
         if (state.schoolType.isBlank()) errors.add(FieldError("schoolType", "Select school type"))
+        validateAffiliationNumber(state.affiliationNumber)?.let { errors.add(FieldError("affiliationNumber", it)) }
         if (state.principalName.isNotBlank()) validatePrincipalName(state.principalName)?.let { errors.add(FieldError("principalName", it)) }
         if (state.principalPhone.isNotBlank()) validatePrincipalPhone(state.principalPhone)?.let { errors.add(FieldError("principalPhone", it)) }
         if (errors.isNotEmpty()) { validationErrors = errors; return }
@@ -676,13 +816,26 @@ private fun StepThreeSchoolIdentity(
                 placeholder = "Delhi Public School",
                 isError = getError("schoolName") != null, errorText = getError("schoolName"),
             )
-            VInput(label = "Short name", value = state.shortName, onValueChange = { viewModel.update { s -> s.copy(shortName = it) } }, placeholder = "DPS")
-            VInput(label = "Affiliation number", value = state.affiliationNumber, onValueChange = { viewModel.update { s -> s.copy(affiliationNumber = it) } }, placeholder = "1234567")
+            VInput(
+                label = "Short name", value = state.shortName,
+                onValueChange = { viewModel.update { s -> s.copy(shortName = it) }; validationErrors = validationErrors.filter { it.field != "shortName" } },
+                placeholder = "DPS",
+                isError = getError("shortName") != null, errorText = getError("shortName"),
+            )
+            VInput(label = "Affiliation number", value = state.affiliationNumber, onValueChange = { viewModel.update { s -> s.copy(affiliationNumber = it) }; validationErrors = validationErrors.filter { it.field != "affiliationNumber" } }, placeholder = "1234567", isError = getError("affiliationNumber") != null, errorText = getError("affiliationNumber"))
             VSectionLabel("BOARD")
             VChipGroup(
                 options = listOf("CBSE", "ICSE", "UP State", "Other"), selected = state.board,
-                onSelect = { viewModel.update { s -> s.copy(board = it) }; validationErrors = validationErrors.filter { it.field != "board" } },
+                onSelect = { viewModel.update { s -> s.copy(board = it) }; validationErrors = validationErrors.filter { it.field != "board" && it.field != "customBoard" } },
             )
+            if (state.board == "Other") {
+                VInput(
+                    label = "Board name", value = state.customBoard,
+                    onValueChange = { viewModel.update { s -> s.copy(customBoard = it) }; validationErrors = validationErrors.filter { it.field != "customBoard" } },
+                    placeholder = "e.g. IB, Cambridge, State Board",
+                    isError = getError("customBoard") != null, errorText = getError("customBoard"),
+                )
+            }
             if (getError("board") != null) Text(text = getError("board")!!, style = VTheme.type.caption.colored(c.dangerInk))
             VSectionLabel("SCHOOL TYPE")
             VChipGroup(options = listOf("Government", "Private Aided", "Private Unaided", "Central"), selected = state.schoolType, onSelect = { viewModel.update { s -> s.copy(schoolType = it) }; validationErrors = validationErrors.filter { it.field != "schoolType" } })
@@ -700,15 +853,20 @@ private fun StepThreeSchoolIdentity(
                 isError = getError("principalPhone") != null, errorText = getError("principalPhone"),
             )
             VSheetPicker(
-                label = "City", value = state.city,
+                value = state.city,
                 options = listOf("New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Lucknow", "Kanpur", "Varanasi", "Meerut", "Noida", "Ghaziabad", "Gurugram"),
-                onSelect = { viewModel.update { s -> s.copy(city = it) } }, placeholder = "Select city", searchable = true,
+                onSelect = { city ->
+                    viewModel.update { s -> s.copy(city = city, state = CITY_TO_STATE[city] ?: s.state) }
+                },
+                label = "City",
+                placeholder = "Select city",
+                searchable = true,
             )
         }
         if (state.error != null) Text(text = state.error!!, style = VTheme.type.caption.colored(c.dangerInk))
         PrimaryRegistrationAction(
             text = "Continue",
-            enabled = state.schoolName.isNotBlank() && state.board.isNotBlank(),
+            enabled = state.schoolName.isNotBlank() && state.board.isNotBlank() && (state.board != "Other" || state.customBoard.isNotBlank()),
             loading = state.isLoading,
             onClick = { validateAndSubmit() },
         )
@@ -966,7 +1124,7 @@ private fun SuccessScreen(
             }
             VButton(
                 text = "Continue to Dashboard",
-                onClick = { viewModel.completeOnboarding(onComplete) },
+                onClick = onComplete,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                 full = true,
                 loading = state.isLoading,
