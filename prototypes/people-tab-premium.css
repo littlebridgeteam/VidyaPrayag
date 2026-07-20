@@ -227,6 +227,7 @@ body{font-family:var(--font);background:#E8E4F0;color:var(--ink);line-height:1.5
 .metric-val.success{color:var(--success-ink)}
 .metric-val.warning{color:var(--warning-ink)}
 .metric-val.danger{color:var(--danger-ink)}
+.metric-val.ink-3{color:var(--ink-3)}
 .metric-lbl{
   font-size:10px;font-weight:600;color:var(--ink-3);
   text-transform:uppercase;letter-spacing:.08em;margin-top:3px;
@@ -247,11 +248,43 @@ body{font-family:var(--font);background:#E8E4F0;color:var(--ink);line-height:1.5
 .subj-tag.score-mid{color:var(--warning-ink);background:var(--warning-soft)}.subj-tag.score-mid .tag-dot{background:var(--warning-ink)}
 .subj-tag.score-lo{color:var(--danger-ink);background:var(--danger-soft)}.subj-tag.score-lo .tag-dot{background:var(--danger-ink)}
 
-/* Fee status inline */
-.fee-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.fee-dot.paid{background:var(--success-ink)}
-.fee-dot.pending{background:var(--warning-ink)}
-.fee-dot.overdue{background:var(--danger-ink)}
+/* Fee bar — student cards */
+.fee-bar{
+  margin-top:14px;padding:12px 14px;
+  border-radius:10px;
+  background:var(--surface);
+}
+.fee-bar-top{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.fee-bar-label{
+  font-size:11px;font-weight:600;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.fee-bar-status{
+  font-size:11px;font-weight:700;padding:2px 8px;
+  border-radius:6px;letter-spacing:.02em;
+}
+.fee-bar.paid .fee-bar-status{color:var(--success-ink);background:var(--success-soft)}
+.fee-bar.pending .fee-bar-status{color:var(--warning-ink);background:var(--warning-soft)}
+.fee-bar.overdue .fee-bar-status{color:var(--danger-ink);background:var(--danger-soft)}
+.fee-bar-track{
+  height:4px;border-radius:2px;
+  background:rgba(38,35,77,.06);
+  margin-top:10px;overflow:hidden;
+}
+.fee-bar-fill{
+  height:100%;border-radius:2px;
+}
+.fee-bar.paid .fee-bar-fill{background:var(--success-ink)}
+.fee-bar.pending .fee-bar-fill{background:var(--warning-ink)}
+.fee-bar.overdue .fee-bar-fill{background:var(--danger-ink)}
+.fee-bar-amt{
+  margin-top:8px;font-family:var(--mono);
+  font-size:12px;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.fee-bar-paid{color:var(--ink);font-weight:500}
 
 /* Contact row (staff) */
 .card .contact-row{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
