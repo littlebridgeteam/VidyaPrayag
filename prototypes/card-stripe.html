@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe-style Cards</title>
+<style>
+  :root {
+    --bg: #F6F5F3;
+    --card: #FFFFFF;
+    --border: #E3E1DE;
+    --border-hover: #D0CDC8;
+    --ink: #1A1A1A;
+    --ink-2: #6B6B6B;
+    --ink-3: #9A9A9A;
+    --accent: #5B41D5;
+    --teal: #0D9488;
+    --gold: #B45309;
+    --success: #16A34A;
+    --warning: #D97706;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font); background: var(--bg); padding: 40px 20px; display: flex; justify-content: center; }
+  .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; }
+  .label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+
+  /* ── Stripe-style card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+    cursor: pointer;
+  }
+  .card:hover { border-color: var(--border-hover); box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+
+  .card-head { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .avatar.violet { background: var(--accent); }
+  .avatar.teal { background: var(--teal); }
+  .avatar.gold { background: var(--gold); }
+
+  .identity { flex: 1; min-width: 0; }
+  .name-row { display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.active { background: var(--success); }
+  .status-dot.leave { background: var(--warning); }
+  .name { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -.2px; }
+  .role { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+
+  .actions { display: flex; gap: 16px; flex-shrink: 0; }
+  .act-link {
+    font-size: 13px; font-weight: 500; color: var(--accent);
+    background: none; border: none; cursor: pointer; padding: 0;
+    transition: opacity 150ms ease;
+  }
+  .act-link:hover { opacity: .7; }
+
+  /* ── Metric grid ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .metric { padding: 0 12px; }
+  .metric:first-child { padding-left: 0; }
+  .metric:last-child { padding-right: 0; }
+  .metric-val { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -.3px; }
+  .metric-val.accent { color: var(--accent); }
+  .metric-lbl { font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .6px; margin-top: 3px; }
+
+  /* ── Tags ── */
+  .tags { display: flex; gap: 14px; margin-top: 14px; }
+  .tag { font-size: 12px; color: var(--ink-2); font-weight: 500; }
+  .tag::before { content: '·'; margin-right: 6px; color: var(--ink-3); }
+  .tag:first-child::before { display: none; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="label">Teachers · Stripe-style</div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="avatar violet">PS</div>
+        <div class="identity">
+          <div class="name-row"><div class="status-dot active"></div><div class="name">Priya Sharma</div></div>
+          <div class="role">Mathematics · Senior Teacher · 12 yrs</div>
+        </div>
+        <div class="actions"><button class="act-link">Call</button><button class="act-link">Message</button></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val">142</div><div class="metric-lbl">Students</div></div>
+        <div class="metric"><div class="metric-val">6</div><div class="metric-lbl">Classes</div></div>
+        <div class="metric"><div class="metric-val accent">94%</div><div class="metric-lbl">Attendance</div></div>
+      </div>
+      <div class="tags"><span class="tag">Math</span><span class="tag">Physics</span><span class="tag">Statistics</span><span class="tag">★ 4.9</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="avatar teal">RK</div>
+        <div class="identity">
+          <div class="name-row"><div class="status-dot active"></div><div class="name">Rahul Verma</div></div>
+          <div class="role">Physics · Teacher · 8 yrs</div>
+        </div>
+        <div class="actions"><button class="act-link">Call</button><button class="act-link">Message</button></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val">98</div><div class="metric-lbl">Students</div></div>
+        <div class="metric"><div class="metric-val">4</div><div class="metric-lbl">Classes</div></div>
+        <div class="metric"><div class="metric-val accent">91%</div><div class="metric-lbl">Attendance</div></div>
+      </div>
+      <div class="tags"><span class="tag">Physics</span><span class="tag">Chemistry</span><span class="tag">★ 4.6</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="avatar gold">AN</div>
+        <div class="identity">
+          <div class="name-row"><div class="status-dot leave"></div><div class="name">Anita Nair</div></div>
+          <div class="role">English · Teacher · On leave until Mar 15</div>
+        </div>
+        <div class="actions"><button class="act-link">Call</button><button class="act-link">Message</button></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val">120</div><div class="metric-lbl">Students</div></div>
+        <div class="metric"><div class="metric-val">5</div><div class="metric-lbl">Classes</div></div>
+        <div class="metric"><div class="metric-val accent">87%</div><div class="metric-lbl">Attendance</div></div>
+      </div>
+      <div class="tags"><span class="tag">English</span><span class="tag">Literature</span><span class="tag">★ 4.7</span></div>
+    </div>
+  </div>
+</body>
+</html>

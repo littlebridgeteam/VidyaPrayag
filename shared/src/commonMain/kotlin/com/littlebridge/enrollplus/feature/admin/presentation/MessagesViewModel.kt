@@ -64,7 +64,12 @@ data class ConversationState(
     val messages: List<Message> = emptyList(),
     val isLoading: Boolean = false,
     val isSending: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // When a conversation is opened directly against a person who has no
+    // existing thread yet (e.g. tapping "Message" on a People card), we hold
+    // the target recipient here so the FIRST reply creates the 1:1 thread
+    // server-side via recipient_user_id.
+    val pendingRecipientId: String? = null,
 )
 
 /**
@@ -330,6 +335,40 @@ class MessagesViewModel(
         }
     }
 
+    /**
+     * Opens a 1:1 conversation DIRECTLY with a specific person (used by the
+     * "Message" action on People cards). If a thread with this person already
+     * exists we open it straight away; otherwise we open an empty conversation
+     * targeting [recipientUserId] — the first reply creates the thread on the
+     * server. This lands the user inside the chat instead of a picker sheet.
+     */
+    fun openConversationWith(recipientUserId: String?, recipientName: String) {
+        if (recipientUserId.isNullOrBlank()) {
+            // No linked account to chat with — fall back to the compose picker
+            // so the admin can still start a conversation.
+            openCompose()
+            return
+        }
+        stopPolling()
+        // Try to resume an existing thread with this person first. Threads carry
+        // the counterpart's display name in senderName, so match on that.
+        val existing = recipientName.takeIf { it.isNotBlank() }?.let { name ->
+            _state.value.threads.firstOrNull { it.senderName.equals(name, ignoreCase = true) }
+        }
+        if (existing != null) {
+            openConversation(existing.id)
+            return
+        }
+        // No thread yet — open a fresh conversation view targeting the recipient.
+        _conversation.value = ConversationState(
+            threadId = null,
+            senderName = recipientName,
+            messages = emptyList(),
+            isLoading = false,
+            pendingRecipientId = recipientUserId,
+        )
+    }
+
     /** Reloads the currently open conversation (after sending a reply or via polling). */
     private fun reloadConversation() {
         val threadId = _conversation.value.threadId ?: return
@@ -366,7 +405,11 @@ class MessagesViewModel(
      * conversation and the thread list so previews/timestamps stay accurate.
      */
     fun sendReply(body: String) {
-        val threadId = _conversation.value.threadId ?: return
+        val threadId = _conversation.value.threadId
+        val pendingRecipientId = _conversation.value.pendingRecipientId
+        // A conversation opened directly against a person (no thread yet) is still
+        // valid to reply into — the first message creates the thread server-side.
+        if (threadId == null && pendingRecipientId == null) return
         if (body.isBlank()) {
             _conversation.value = _conversation.value.copy(error = "Message cannot be empty")
             return
@@ -401,17 +444,25 @@ class MessagesViewModel(
             val clientMsgId = kotlin.random.Random.nextLong().toString()
             val request = SendMessageRequest(
                 threadId = threadId,
+                recipientUserId = if (threadId == null) pendingRecipientId else null,
                 body = body,
                 clientMsgId = clientMsgId,
             )
             when (val result = messagesRepository.sendMessage(token, request)) {
                 is NetworkResult.Success -> {
+                    val resolvedThreadId = result.data.threadId
                     AnalyticsTracker.event("vp_message_sent", mapOf(
-                        "thread_id" to threadId,
-                        "is_new_thread" to false,
+                        "thread_id" to resolvedThreadId,
+                        "is_new_thread" to (threadId == null),
                     ))
-                    // Replace optimistic message with real one via reload.
-                    _conversation.value = _conversation.value.copy(isSending = false)
+                    // A brand-new thread may have just been created — bind the
+                    // conversation to it so subsequent replies append instead of
+                    // forking new threads.
+                    _conversation.value = _conversation.value.copy(
+                        isSending = false,
+                        threadId = _conversation.value.threadId ?: resolvedThreadId,
+                        pendingRecipientId = null,
+                    )
                     reloadConversation()
                     refresh()
                 }
@@ -465,7 +516,9 @@ class MessagesViewModel(
             return
         }
 
-        val threadId = _conversation.value.threadId ?: return
+        val threadId = _conversation.value.threadId
+        val pendingRecipientId = _conversation.value.pendingRecipientId
+        if (threadId == null && pendingRecipientId == null) return
 
         // Optimistic message
         val tempId = "optimistic-${kotlin.random.Random.nextLong()}"
@@ -526,16 +579,22 @@ class MessagesViewModel(
             val clientMsgId = kotlin.random.Random.nextLong().toString()
             val request = SendMessageRequest(
                 threadId = threadId,
+                recipientUserId = if (threadId == null) pendingRecipientId else null,
                 body = body,
                 clientMsgId = clientMsgId,
                 attachments = listOf(attachmentInput),
             )
             when (val result = messagesRepository.sendMessage(token, request)) {
                 is NetworkResult.Success -> {
+                    val resolvedThreadId = result.data.threadId
                     AnalyticsTracker.event("vp_message_sent_with_attachment", mapOf(
-                        "thread_id" to threadId,
+                        "thread_id" to resolvedThreadId,
                     ))
-                    _conversation.value = _conversation.value.copy(isSending = false)
+                    _conversation.value = _conversation.value.copy(
+                        isSending = false,
+                        threadId = _conversation.value.threadId ?: resolvedThreadId,
+                        pendingRecipientId = null,
+                    )
                     reloadConversation()
                     refresh()
                 }

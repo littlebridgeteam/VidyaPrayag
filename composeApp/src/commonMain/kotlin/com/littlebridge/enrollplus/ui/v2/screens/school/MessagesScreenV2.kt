@@ -95,6 +95,7 @@ fun MessagesScreenV2(
     modifier: Modifier = Modifier,
     initialThreadId: String? = null,
     initialRecipientId: String? = null,
+    initialRecipientName: String = "",
     viewModel: MessagesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateV2()
@@ -114,10 +115,18 @@ fun MessagesScreenV2(
         }
     }
 
-    // Deep-link: auto-open compose-new with a pre-selected recipient.
-    LaunchedEffect(initialRecipientId) {
-        if (initialRecipientId != null && !compose.isOpen) {
-            viewModel.openCompose()
+    // "Message" from a People card: land the user DIRECTLY inside the 1:1 chat
+    // with that person (resuming an existing thread, or opening a fresh one that
+    // the first reply will create) — not the recipient-picker sheet. We wait for
+    // the thread list so an existing conversation can be resumed instead of
+    // spawning a duplicate.
+    var recipientOpened by remember(initialRecipientId) { mutableStateOf(false) }
+    LaunchedEffect(initialRecipientId, isLoading, state.threads) {
+        if (initialRecipientId != null && !recipientOpened && !isLoading &&
+            conversation.threadId == null && !compose.isOpen
+        ) {
+            recipientOpened = true
+            viewModel.openConversationWith(initialRecipientId, initialRecipientName)
         }
     }
 
@@ -134,12 +143,16 @@ fun MessagesScreenV2(
         return
     }
 
+    // A conversation view is "open" either when it's bound to a real thread OR
+    // when it targets a person whose thread the first reply will create.
+    val conversationOpen = conversation.threadId != null || conversation.pendingRecipientId != null
+
     // If a conversation is open, back closes it first; otherwise back exits the overlay.
     val backHandler: () -> Unit = {
-        if (conversation.threadId != null) viewModel.closeConversation() else onBack()
+        if (conversationOpen) viewModel.closeConversation() else onBack()
     }
 
-    val title = if (conversation.threadId != null) {
+    val title = if (conversationOpen) {
         conversation.senderName.ifBlank { "Conversation" }
     } else {
         "Messages"
@@ -148,7 +161,7 @@ fun MessagesScreenV2(
     Column(modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         VBackHeader(title = title, onBack = backHandler, pinRouteId = "overlay_messages")
 
-        if (conversation.threadId != null) {
+        if (conversationOpen) {
             ConversationContent(
                 conversation = conversation,
                 onSend = viewModel::sendReply,

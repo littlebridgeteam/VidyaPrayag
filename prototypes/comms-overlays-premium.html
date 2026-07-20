@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enroll+ — Comms Overlays Premium Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="comms-overlays-premium.css">
+</head>
+<body>
+
+<!-- Overlay Navigation -->
+<div class="overlay-nav">
+  <button class="active" onclick="showOverlay('messages',this)">1. Messages</button>
+  <button onclick="showOverlay('ptm',this)">2. Schedule PTM</button>
+  <button onclick="showOverlay('scheduled',this)">3. Scheduled Messages</button>
+  <button onclick="showOverlay('create',this)">4. Create Event</button>
+  <button onclick="showOverlay('notifications',this)">5. Notifications</button>
+  <button onclick="showOverlay('preferences',this)">6. Notification Prefs</button>
+  <button onclick="showOverlay('delivery',this)">7. Delivery Log</button>
+</div>
+
+<div class="phone">
+<div class="side-btn-l"></div>
+<div class="side-btn-l2"></div>
+<div class="side-btn-l3"></div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <span>9:41</span>
+  <div class="right">
+    <svg viewBox="0 0 24 24"><path d="M2 12h20M2 8h20M2 16h20"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/></svg>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════════
+     OVERLAY 1: MESSAGES (Inbox + Conversation + Compose New)
+     ═════════════════════════════════════════════════════════════════════ -->
+<div class="screen active" id="screen-messages">
+  <!-- Inbox View -->
+  <div id="msg-inbox" style="display:flex;flex-direction:column;flex:1">
+    <div class="back-hdr">
+      <button class="back-btn" onclick="alert('Back to Comms tab')"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="back-title">Messages</div>
+      <div class="back-actions">
+        <button class="back-action-btn" onclick="alert('Mark all read')"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>
+      </div>
+    </div>
+    <div class="scroll-body" style="padding-bottom:80px">
+      <div class="thread-row" onclick="openConversation()">
+        <div class="thread-av violet">PS</div>
+        <div class="thread-body">
+          <div class="thread-top">
+            <div class="thread-name">Priya Sharma (Parent)</div>
+            <div class="thread-time">10:42 AM</div>
+          </div>
+          <div class="thread-preview unread">Hi, I wanted to discuss Aarav's performance in the last test...</div>
+        </div>
+        <div class="thread-badge">3</div>
+      </div>
+      <div class="thread-row" onclick="openConversation()">
+        <div class="thread-av teal">RK</div>
+        <div class="thread-body">
+          <div class="thread-top">
+            <div class="thread-name">Rahul Verma (Teacher)</div>
+            <div class="thread-time">9:15 AM</div>
+          </div>
+          <div class="thread-preview unread">The physics lab equipment has arrived. Can we schedule a setup session?</div>
+        </div>
+        <div class="thread-badge">1</div>
+      </div>
+      <div class="thread-row" onclick="openConversation()">
+        <div class="thread-av sky">DP</div>
+        <div class="thread-body">
+          <div class="thread-top">
+            <div class="thread-name">Diya's Mother</div>
+            <div class="thread-time">Yesterday</div>
+          </div>
+          <div class="thread-preview">Thank you for the quick response about the admission process...</div>
+        </div>
+      </div>
+      <div class="thread-row" onclick="openConversation()">
+        <div class="thread-av peach">MJ</div>
+        <div class="thread-body">
+          <div class="thread-top">
+            <div class="thread-name">Meena Joshi (Librarian)</div>
+            <div class="thread-time">Mar 11</div>
+          </div>
+          <div class="thread-preview">The new book order has been catalogued. 47 titles added to fiction.</div>
+        </div>
+      </div>
+      <div class="thread-row" onclick="openConversation()">
+        <div class="thread-av gold">RT</div>
+        <div class="thread-body">
+          <div class="thread-top">
+            <div class="thread-name">Rajesh Tiwari (Accounts)</div>
+            <div class="thread-time">Mar 10</div>
+          </div>
+          <div class="thread-preview">Fee collection for March is at 78%. 12 students have overdue payments.</div>
+        </div>
+      </div>
+      <div class="thread-row" onclick="openConversation()">
+        <div class="thread-av violet">SN</div>
+        <div class="thread-body">
+          <div class="thread-top">
+            <div class="thread-name">Sneha Nair (Parent)</div>
+            <div class="thread-time">Mar 09</div>
+          </div>
+          <div class="thread-preview">Can you please share the syllabus for Class 7 Science? We want to...</div>
+        </div>
+      </div>
+      <div class="thread-row" onclick="openConversation()">
+        <div class="thread-av teal">AK</div>
+        <div class="thread-body">
+          <div class="thread-top">
+            <div class="thread-name">Amit Kumar (Teacher)</div>
+            <div class="thread-time">Mar 08</div>
+          </div>
+          <div class="thread-preview">Submitted the quarterly lesson plans for Class 10 Mathematics.</div>
+        </div>
+      </div>
+    </div>
+    <button class="fab" onclick="openComposeNew()"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+  </div>
+
+  <!-- Conversation View (hidden by default) -->
+  <div id="msg-conversation" style="display:none;flex-direction:column;flex:1">
+    <div class="back-hdr">
+      <button class="back-btn" onclick="closeConversation()"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="back-title">Priya Sharma</div>
+      <div class="back-actions">
+        <div class="thread-av violet" style="width:32px;height:32px;font-size:12px">PS</div>
+      </div>
+    </div>
+    <div class="scroll-body" style="background:var(--cream);flex:1;display:flex;flex-direction:column;padding:12px 16px">
+      <div class="chat-date">Today · 10:30 AM</div>
+      <div class="bubble theirs">Hi, I wanted to discuss Aarav's performance in the last test. He seems to be struggling with some concepts.<div class="bubble-time">10:30 AM</div></div>
+      <div class="bubble mine">Hi Priya, thanks for reaching out. I noticed the same — let's schedule a call.<div class="bubble-time">10:35 AM</div></div>
+      <div class="bubble theirs">That would be great. Are you available tomorrow afternoon?<div class="bubble-time">10:42 AM</div></div>
+      <div class="bubble mine">Yes, 2 PM works. I'll send you a calendar invite.<div class="bubble-time">10:45 AM</div></div>
+      <div class="bubble theirs">Perfect, thank you! Also, could you share the topics covered so I can help him at home?<div class="bubble-time">10:48 AM</div></div>
+      <div class="bubble mine">Absolutely. I'll email the syllabus and some practice worksheets today.<div class="bubble-time">10:50 AM</div></div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="compose-bar">
+      <button class="compose-attach"><svg viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+      <input class="compose-input" placeholder="Type a message…" id="compose-text">
+      <button class="compose-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+
+  <!-- Compose New Sheet (hidden by default) -->
+  <div id="msg-compose-new" style="display:none;position:absolute;bottom:0;left:0;right:0;top:60px;background:rgba(0,0,0,.3);z-index:15" onclick="closeComposeNew(event)">
+    <div class="compose-sheet" onclick="event.stopPropagation()">
+      <div class="compose-sheet-hdr">
+        <div class="compose-sheet-title">New Message</div>
+        <button class="compose-sheet-close" onclick="closeComposeNew()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <input class="compose-search" placeholder="Search recipient…" id="recipient-search">
+      <div class="compose-recipient-list">
+        <div class="compose-recipient" onclick="alert('Selected: Priya Sharma')">
+          <div class="thread-av violet" style="width:40px;height:40px;font-size:12px">PS</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Priya Sharma</div><div style="font-size:12px;color:var(--ink-3)">Parent · Class 7-A</div></div>
+        </div>
+        <div class="compose-recipient" onclick="alert('Selected: Rahul Verma')">
+          <div class="thread-av teal" style="width:40px;height:40px;font-size:12px">RK</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Rahul Verma</div><div style="font-size:12px;color:var(--ink-3)">Teacher · Physics</div></div>
+        </div>
+        <div class="compose-recipient" onclick="alert('Selected: All Class 7-A Parents')">
+          <div class="thread-av sky" style="width:40px;height:40px;font-size:12px">7A</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Class 7-A Parents</div><div style="font-size:12px;color:var(--ink-3)">Group · 32 recipients</div></div>
+        </div>
+        <div class="compose-recipient" onclick="alert('Selected: All Teachers')">
+          <div class="thread-av peach" style="width:40px;height:40px;font-size:12px">TC</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--ink)">All Teachers</div><div style="font-size:12px;color:var(--ink-3)">Group · 24 recipients</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════════
+     OVERLAY 2: SCHEDULE PTM
+     ═════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-ptm">
+  <div class="back-hdr">
+    <button class="back-btn" onclick="alert('Back to Comms tab')"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <div class="back-title">Schedule PTM</div>
+  </div>
+  <div class="scroll-body">
+    <!-- Schedule new PTM button -->
+    <button class="btn teal full" style="margin-bottom:12px" onclick="alert('Open PTM composer')">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Schedule New PTM
+    </button>
+
+    <!-- Active Event Banner -->
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="badge success">Active</span>
+        <div style="font-size:16px;font-weight:700;color:var(--ink)">Class 9 & 10 PTM</div>
+      </div>
+      <div style="font-size:13px;color:var(--ink-2)">Sat, Mar 22 · 10:00 AM – 1:00 PM</div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <div class="kpi-tile" style="flex:1"><div class="kpi-lbl">Expected</div><div class="kpi-val">40</div></div>
+        <div class="kpi-tile" style="flex:1"><div class="kpi-lbl">Checked In</div><div class="kpi-val">18</div></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <div class="kpi-tile" style="flex:1"><div class="kpi-lbl">Invites Sent</div><div class="kpi-val">40</div></div>
+        <div class="kpi-tile" style="flex:1"><div class="kpi-lbl">Read Receipts</div><div class="kpi-val">35</div></div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="section-lbl">History</div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--hairline)">
+        <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Class 11 & 12 PTM</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">Feb 15, 2025</div></div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-2);font-family:var(--mono)">52/60</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--hairline)">
+        <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Class 6–8 PTM</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">Jan 18, 2025</div></div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-2);font-family:var(--mono)">86/120</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+        <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Class 1–5 PTM</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">Dec 14, 2024</div></div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-2);font-family:var(--mono)">98/108</div>
+      </div>
+    </div>
+
+    <!-- Per-class progress -->
+    <div class="section-lbl">Class Progress</div>
+    <div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Class 9-A</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">Rahul Verma</div></div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-2);font-family:var(--mono)">8/20</div>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:40%"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Class 9-B</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">Sneha Nair</div></div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-2);font-family:var(--mono)">5/18</div>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:28%"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:14px;font-weight:600;color:var(--ink)">Class 10-A</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">Amit Kumar</div></div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-2);font-family:var(--mono)">5/22</div>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:23%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════════
+     OVERLAY 3: SCHEDULED MESSAGES
+     ═════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-scheduled">
+  <div class="back-hdr">
+    <button class="back-btn" onclick="alert('Back to Comms tab')"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <div class="back-title">Scheduled Messages</div>
+  </div>
+  <div class="scroll-body">
+    <!-- Status filters -->
+    <div class="fchips">
+      <div class="fchip active" onclick="filterSched(this,'all')">All</div>
+      <div class="fchip" onclick="filterSched(this,'scheduled')">Scheduled</div>
+      <div class="fchip" onclick="filterSched(this,'dispatched')">Dispatched</div>
+      <div class="fchip" onclick="filterSched(this,'failed')">Failed</div>
+      <div class="fchip" onclick="filterSched(this,'cancelled')">Cancelled</div>
+    </div>
+
+    <!-- Scheduled message cards -->
+    <div class="smsg-card sched-item" data-status="scheduled">
+      <div class="smsg-top">
+        <div class="smsg-title">Annual Sports Day Registration</div>
+        <span class="badge sky">Scheduled</span>
+      </div>
+      <div class="smsg-body">Registration for the Annual Sports Day is now open. All students from Class 5–12 can participate. Last date to register is March 25.</div>
+      <div class="smsg-meta">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="smsg-meta-txt">2025-03-20 09:00</span>
+        <svg viewBox="0 0 24 24" style="margin-left:6px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="smsg-meta-txt">All School</span>
+      </div>
+      <div class="smsg-actions">
+        <button class="btn primary sm" style="flex:1" onclick="alert('Dispatch now')">Send now</button>
+        <button class="btn ghost sm" style="flex:1" onclick="alert('Cancel scheduled message')">Cancel</button>
+      </div>
+    </div>
+
+    <div class="smsg-card sched-item" data-status="scheduled">
+      <div class="smsg-top">
+        <div class="smsg-title">Fee Payment Reminder Q4</div>
+        <span class="badge sky">Scheduled</span>
+      </div>
+      <div class="smsg-body">This is a reminder that the Q4 fee installment of ₹15,000 is due by March 31. Late payments incur a 2% surcharge per week.</div>
+      <div class="smsg-meta">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="smsg-meta-txt">2025-03-25 10:00</span>
+        <svg viewBox="0 0 24 24" style="margin-left:6px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="smsg-meta-txt">Overdue Parents · 12</span>
+      </div>
+      <div class="smsg-actions">
+        <button class="btn primary sm" style="flex:1" onclick="alert('Dispatch now')">Send now</button>
+        <button class="btn ghost sm" style="flex:1" onclick="alert('Cancel scheduled message')">Cancel</button>
+      </div>
+    </div>
+
+    <div class="smsg-card sched-item" data-status="dispatched">
+      <div class="smsg-top">
+        <div class="smsg-title">Holi Holiday Alert</div>
+        <span class="badge success">Dispatched</span>
+      </div>
+      <div class="smsg-body">School will remain closed on March 14 (Friday) for the Holi festival. Regular classes resume Monday March 17.</div>
+      <div class="smsg-meta">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="smsg-meta-txt">2025-03-12 08:00</span>
+        <svg viewBox="0 0 24 24" style="margin-left:6px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="smsg-meta-txt">All School</span>
+      </div>
+    </div>
+
+    <div class="smsg-card sched-item" data-status="failed">
+      <div class="smsg-top">
+        <div class="smsg-title">PTM Slot Booking Open</div>
+        <span class="badge danger">Failed</span>
+      </div>
+      <div class="smsg-body">PTM slot booking for Class 9 & 10 is now open. Book your preferred time slot before March 20.</div>
+      <div class="smsg-meta">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="smsg-meta-txt">2025-03-10 14:00</span>
+        <svg viewBox="0 0 24 24" style="margin-left:6px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="smsg-meta-txt">Class 9 & 10 Parents</span>
+      </div>
+      <div class="smsg-error">Error: WhatsApp template rejected — invalid variable count</div>
+    </div>
+
+    <div class="smsg-card sched-item" data-status="cancelled">
+      <div class="smsg-top">
+        <div class="smsg-title">Library Overdue Notice</div>
+        <span class="badge neutral">Cancelled</span>
+      </div>
+      <div class="smsg-body">Reminder: 3 library books are overdue. Please return them by Friday to avoid fines.</div>
+      <div class="smsg-meta">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="smsg-meta-txt">2025-03-08 16:00</span>
+        <svg viewBox="0 0 24 24" style="margin-left:6px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="smsg-meta-txt">Class 6–8 Students</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════════
+     OVERLAY 4: CREATE EVENT (3-step wizard)
+     ═════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-create">
+  <div class="back-hdr">
+    <button class="back-btn" onclick="alert('Back to Comms tab')"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <div class="back-title">Create Event</div>
+  </div>
+  <!-- Step Progress -->
+  <div class="step-prog">
+    <div class="step-prog-lbl">Step <span id="step-num">1</span> of 3</div>
+    <div class="step-prog-bars">
+      <div class="step-prog-bar done" id="bar-1"></div>
+      <div class="step-prog-bar" id="bar-2"></div>
+      <div class="step-prog-bar" id="bar-3"></div>
+    </div>
+  </div>
+  <div class="scroll-body" style="flex:1">
+    <!-- Step 1: What -->
+    <div id="create-step-1">
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">What kind of event?</div>
+      <div class="type-grid">
+        <div class="type-card selected" onclick="selectType(this)"><div class="type-card-title">Holiday</div><div class="type-card-sub">Days off & breaks</div></div>
+        <div class="type-card" onclick="selectType(this)"><div class="type-card-title">PTM</div><div class="type-card-sub">Parent-teacher meetings</div></div>
+        <div class="type-card" onclick="selectType(this)"><div class="type-card-title">School Event</div><div class="type-card-sub">Functions, celebrations</div></div>
+        <div class="type-card" onclick="selectType(this)"><div class="type-card-title">Update</div><div class="type-card-sub">General notice / info</div></div>
+      </div>
+      <div class="input-group">
+        <label class="input-lbl">Title</label>
+        <input class="input" placeholder="e.g. Annual Sports Day" value="">
+      </div>
+      <div class="input-group">
+        <label class="input-lbl">Description</label>
+        <textarea class="input input-area" placeholder="Add details for parents and staff"></textarea>
+      </div>
+    </div>
+    <!-- Step 2: When -->
+    <div id="create-step-2" style="display:none">
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">When is it?</div>
+      <div class="input-group">
+        <label class="input-lbl">Event date</label>
+        <input class="input" type="date" value="2025-03-22">
+      </div>
+      <div class="sched-toggle">
+        <div class="sched-toggle-info">
+          <div class="sched-toggle-lbl">Schedule for later</div>
+          <div class="sched-toggle-sub">Send this announcement at a specific date & time</div>
+        </div>
+        <button class="toggle off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="sched-toggle">
+        <div class="sched-toggle-info">
+          <div class="sched-toggle-lbl">Add to calendar</div>
+          <div class="sched-toggle-sub">Sync this event to the Academic Calendar</div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+    </div>
+    <!-- Step 3: Who -->
+    <div id="create-step-3" style="display:none">
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">Send to</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <div class="aud-chip active" onclick="selectAudience(this)">Everyone</div>
+        <div class="aud-chip inactive" onclick="selectAudience(this)">Class</div>
+        <div class="aud-chip inactive" onclick="selectAudience(this)">Subject</div>
+        <div class="aud-chip inactive" onclick="selectAudience(this)">Students</div>
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">Announcement visibility</div>
+      <div class="toggle-pill">
+        <div class="toggle-pill-top">
+          <div class="toggle-pill-lbl">Post as announcement</div>
+          <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+        </div>
+        <div class="toggle-pill-sub">Parents will see this in their announcement feed</div>
+        <div class="toggle-pill-hint">This event will also sync to the Academic Calendar automatically.</div>
+      </div>
+    </div>
+  </div>
+  <!-- Footer -->
+  <div class="footer-bar">
+    <button class="btn secondary" id="create-back" onclick="createStep(-1)" style="display:none">Back</button>
+    <button class="btn primary" id="create-next" onclick="createStep(1)" style="flex:1">Continue</button>
+    <button class="btn teal" id="create-publish" onclick="alert('Published!')" style="display:none">Publish</button>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════════
+     OVERLAY 5: NOTIFICATIONS (Full inbox)
+     ═════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-notifications">
+  <div class="back-hdr">
+    <button class="back-btn" onclick="alert('Back to Comms tab')"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <div class="back-title">Notifications</div>
+    <div class="back-actions">
+      <button class="back-action-btn" onclick="alert('Mark all read')"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>
+      <button class="back-action-btn" onclick="alert('Clear all')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+    </div>
+  </div>
+  <div class="scroll-body" style="background:var(--cream)">
+    <!-- Hero -->
+    <div class="hero-grad">
+      <div class="hero-bell"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+      <div style="flex:1">
+        <div class="hero-overline">Inbox</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:2px">
+          <span class="hero-count">7</span>
+          <span class="hero-unread-lbl">unread</span>
+        </div>
+      </div>
+    </div>
+    <!-- Filter pills -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div class="aud-chip active" style="background:var(--ink);color:#fff" onclick="this.style.background='var(--ink)';this.style.color='#fff';this.nextElementSibling.style.background='var(--surface)';this.nextElementSibling.style.color='var(--ink-2)'">All</div>
+      <div class="aud-chip inactive" onclick="this.style.background='var(--ink)';this.style.color='#fff';this.previousElementSibling.style.background='var(--surface)';this.previousElementSibling.style.color='var(--ink-2)'">Unread · 7</div>
+    </div>
+    <!-- Notification items -->
+    <div class="notif-row unread" onclick="this.classList.remove('unread')">
+      <div class="notif-icon violet"><svg viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
+      <div class="notif-body">
+        <div class="notif-top"><div class="notif-title">Sports Day Registration</div><div class="notif-time">10:42 AM</div></div>
+        <div class="notif-desc">New announcement published — Annual Sports Day registration is now open for Class 5–12.</div>
+      </div>
+      <div class="notif-unread-dot"></div>
+    </div>
+    <div class="notif-row unread" onclick="this.classList.remove('unread')">
+      <div class="notif-icon gold"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="notif-body">
+        <div class="notif-top"><div class="notif-title">Holi Holiday</div><div class="notif-time">9:30 AM</div></div>
+        <div class="notif-desc">School will remain closed on March 14 for Holi. Classes resume Monday March 17.</div>
+      </div>
+      <div class="notif-unread-dot"></div>
+    </div>
+    <div class="notif-row unread" onclick="this.classList.remove('unread')">
+      <div class="notif-icon sky"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="notif-body">
+        <div class="notif-top"><div class="notif-title">New message from Priya Sharma</div><div class="notif-time">10:30 AM</div></div>
+        <div class="notif-desc">Hi, I wanted to discuss Aarav's performance in the last test...</div>
+      </div>
+      <div class="notif-unread-dot"></div>
+    </div>
+    <div class="notif-row" onclick="alert('Open notification')">
+      <div class="notif-icon teal"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div class="notif-body">
+        <div class="notif-top"><div class="notif-title">Fee Payment Received</div><div class="notif-time">Yesterday</div></div>
+        <div class="notif-desc">Q3 fee payment of ₹15,000 received from Aarav Sharma's parent.</div>
+      </div>
+    </div>
+    <div class="notif-row" onclick="alert('Open notification')">
+      <div class="notif-icon peach"><svg viewBox="0 0 24 24"><path d="M20 12v9H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+      <div class="notif-body">
+        <div class="notif-top"><div class="notif-title">Inter-School Science Fair</div><div class="notif-time">Mar 08</div></div>
+        <div class="notif-desc">Volunteer sign-ups are open for the April 5 Science Fair. 3 parents have already signed up.</div>
+      </div>
+    </div>
+    <!-- Preferences footer -->
+    <div style="margin-top:16px;text-align:center;padding:12px;background:var(--surface);border-radius:var(--r-md);cursor:pointer" onclick="showOverlay('preferences',document.querySelector('.overlay-nav button:nth-child(6)'))">
+      <span style="font-size:13px;font-weight:600;color:var(--ink-2)">Notification Preferences</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════════
+     OVERLAY 6: NOTIFICATION PREFERENCES
+     ═════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-preferences">
+  <div class="back-hdr">
+    <button class="back-btn" onclick="alert('Back to Notifications')"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <div class="back-title">Notification Preferences</div>
+  </div>
+  <div class="scroll-body">
+    <div class="card">
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">Announcements</div>
+          <div class="pref-channels">
+            <span class="pref-ch on">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch on">Email</span>
+            <span class="pref-ch off">SMS</span>
+          </div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">Messages</div>
+          <div class="pref-channels">
+            <span class="pref-ch on">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch off">Email</span>
+            <span class="pref-ch off">SMS</span>
+          </div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">PTM</div>
+          <div class="pref-channels">
+            <span class="pref-ch on">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch on">Email</span>
+            <span class="pref-ch on">SMS</span>
+          </div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">Fees</div>
+          <div class="pref-channels">
+            <span class="pref-ch on">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch on">Email</span>
+            <span class="pref-ch off">SMS</span>
+          </div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">Events</div>
+          <div class="pref-channels">
+            <span class="pref-ch on">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch off">Email</span>
+            <span class="pref-ch off">SMS</span>
+          </div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">Attendance</div>
+          <div class="pref-channels">
+            <span class="pref-ch off">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch off">Email</span>
+            <span class="pref-ch off">SMS</span>
+          </div>
+        </div>
+        <button class="toggle off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">Transport</div>
+          <div class="pref-channels">
+            <span class="pref-ch on">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch off">Email</span>
+            <span class="pref-ch off">SMS</span>
+          </div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-cat">Library</div>
+          <div class="pref-channels">
+            <span class="pref-ch off">Push</span>
+            <span class="pref-ch on">In-App</span>
+            <span class="pref-ch off">Email</span>
+            <span class="pref-ch off">SMS</span>
+          </div>
+        </div>
+        <button class="toggle off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:var(--success-ink);text-align:center">Preference saved</div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════════
+     OVERLAY 7: DELIVERY LOG
+     ═════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-delivery">
+  <div class="back-hdr">
+    <button class="back-btn" onclick="alert('Back to Comms tab')"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <div class="back-title">Delivery Log</div>
+  </div>
+  <div class="scroll-body">
+    <!-- Channel filters -->
+    <div class="fchips">
+      <div class="fchip active" onclick="filterDelivery(this,'all')">All Channels</div>
+      <div class="fchip" onclick="filterDelivery(this,'push')">Push</div>
+      <div class="fchip" onclick="filterDelivery(this,'whatsapp')">WhatsApp</div>
+      <div class="fchip" onclick="filterDelivery(this,'sms')">SMS</div>
+      <div class="fchip" onclick="filterDelivery(this,'email')">Email</div>
+    </div>
+    <!-- Status filters -->
+    <div class="fchips">
+      <div class="fchip active" onclick="filterDeliveryStatus(this,'all')">All Status</div>
+      <div class="fchip" onclick="filterDeliveryStatus(this,'delivered')">Delivered</div>
+      <div class="fchip" onclick="filterDeliveryStatus(this,'queued')">Queued</div>
+      <div class="fchip" onclick="filterDeliveryStatus(this,'failed')">Failed</div>
+    </div>
+
+    <div class="dl-row dl-item" data-channel="push" data-status="delivered">
+      <div class="dl-icon push"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+      <div class="dl-body">
+        <div class="dl-top"><div class="dl-title">Sports Day Registration</div><div class="dl-time">10:42 AM</div></div>
+        <div class="dl-meta">Push · Class 5–12 Parents · 1,240 recipients</div>
+        <div class="dl-status delivered"><span class="dot"></span>Delivered · 1,240/1,240</div>
+      </div>
+    </div>
+    <div class="dl-row dl-item" data-channel="whatsapp" data-status="delivered">
+      <div class="dl-icon whatsapp"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+      <div class="dl-body">
+        <div class="dl-top"><div class="dl-title">Holi Holiday Alert</div><div class="dl-time">9:30 AM</div></div>
+        <div class="dl-meta">WhatsApp · All School · 980 recipients</div>
+        <div class="dl-status delivered"><span class="dot"></span>Delivered · 980/980</div>
+      </div>
+    </div>
+    <div class="dl-row dl-item" data-channel="email" data-status="queued">
+      <div class="dl-icon email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <div class="dl-body">
+        <div class="dl-top"><div class="dl-title">Fee Payment Reminder</div><div class="dl-time">Yesterday</div></div>
+        <div class="dl-meta">Email · Overdue Parents · 12 recipients</div>
+        <div class="dl-status queued"><span class="dot"></span>Queued · 9 sent, 3 pending</div>
+      </div>
+    </div>
+    <div class="dl-row dl-item" data-channel="sms" data-status="failed">
+      <div class="dl-icon sms"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="dl-body">
+        <div class="dl-top"><div class="dl-title">PTM Slot Booking Open</div><div class="dl-time">Mar 10</div></div>
+        <div class="dl-meta">SMS · Class 9 & 10 Parents · 40 recipients</div>
+        <div class="dl-status failed"><span class="dot"></span>Failed · 36 sent, 4 bounced</div>
+      </div>
+    </div>
+    <div class="dl-row dl-item" data-channel="push" data-status="delivered">
+      <div class="dl-icon push"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+      <div class="dl-body">
+        <div class="dl-top"><div class="dl-title">Inter-School Science Fair</div><div class="dl-time">Mar 08</div></div>
+        <div class="dl-meta">Push · All School · 1,240 recipients</div>
+        <div class="dl-status delivered"><span class="dot"></span>Delivered · 1,240/1,240</div>
+      </div>
+    </div>
+    <div class="dl-row dl-item" data-channel="whatsapp" data-status="delivered">
+      <div class="dl-icon whatsapp"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+      <div class="dl-body">
+        <div class="dl-top"><div class="dl-title">Fee Payment Reminder</div><div class="dl-time">Mar 05</div></div>
+        <div class="dl-meta">WhatsApp · Overdue Parents · 12 recipients</div>
+        <div class="dl-status delivered"><span class="dot"></span>Delivered · 12/12</div>
+      </div>
+    </div>
+    <div class="dl-row dl-item" data-channel="email" data-status="delivered">
+      <div class="dl-icon email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <div class="dl-body">
+        <div class="dl-top"><div class="dl-title">Monthly Newsletter — March</div><div class="dl-time">Mar 01</div></div>
+        <div class="dl-meta">Email · All School · 840 recipients</div>
+        <div class="dl-status delivered"><span class="dot"></span>Delivered · 840/840</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /phone -->
+
+<script>
+function showOverlay(name,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.overlay-nav button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+function openConversation(){
+  document.getElementById('msg-inbox').style.display='none';
+  document.getElementById('msg-conversation').style.display='flex';
+}
+function closeConversation(){
+  document.getElementById('msg-conversation').style.display='none';
+  document.getElementById('msg-inbox').style.display='flex';
+}
+function sendMessage(){
+  var input=document.getElementById('compose-text');
+  if(input.value.trim()){
+    var chat=document.querySelector('#msg-conversation .scroll-body');
+    var div=document.createElement('div');
+    div.className='bubble mine';
+    div.innerHTML=input.value+'<div class="bubble-time">Now</div>';
+    chat.insertBefore(div,chat.lastElementChild);
+    input.value='';
+  }
+}
+function openComposeNew(){
+  document.getElementById('msg-compose-new').style.display='block';
+}
+function closeComposeNew(e){
+  if(!e||e.target.id==='msg-compose-new')document.getElementById('msg-compose-new').style.display='none';
+}
+function filterSched(el,status){
+  el.parentElement.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.sched-item').forEach(item=>{
+    if(status==='all'||item.dataset.status===status)item.style.display='block';
+    else item.style.display='none';
+  });
+}
+var createStepNum=1;
+function createStep(dir){
+  createStepNum+=dir;
+  if(createStepNum<1)createStepNum=1;
+  if(createStepNum>3)createStepNum=3;
+  document.getElementById('step-num').textContent=createStepNum;
+  for(var i=1;i<=3;i++){
+    document.getElementById('create-step-'+i).style.display=i===createStepNum?'block':'none';
+    document.getElementById('bar-'+i).classList.toggle('done',i<=createStepNum);
+  }
+  document.getElementById('create-back').style.display=createStepNum>1?'inline-flex':'none';
+  document.getElementById('create-next').style.display=createStepNum<3?'inline-flex':'none';
+  document.getElementById('create-publish').style.display=createStepNum===3?'inline-flex':'none';
+}
+function selectType(el){
+  el.parentElement.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectAudience(el){
+  el.parentElement.querySelectorAll('.aud-chip').forEach(c=>{c.classList.remove('active');c.classList.add('inactive')});
+  el.classList.add('active');el.classList.remove('inactive');
+}
+function filterDelivery(el,channel){
+  el.parentElement.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.dl-item').forEach(item=>{
+    if(channel==='all'||item.dataset.channel===channel)item.style.display='flex';
+    else item.style.display='none';
+  });
+}
+function filterDeliveryStatus(el,status){
+  el.parentElement.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.dl-item').forEach(item=>{
+    if(status==='all'||item.dataset.status===status)item.style.display='flex';
+    else item.style.display='none';
+  });
+}
+</script>
+</body>
+</html>

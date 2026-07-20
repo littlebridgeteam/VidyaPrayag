@@ -27,6 +27,7 @@ server/data.db
 server/data.db-journal
 server_*.log
 server_*.txt
+build-*.log
 
 # Seed credentials — must never be committed (FS-008)
 seed-credentials-*.md

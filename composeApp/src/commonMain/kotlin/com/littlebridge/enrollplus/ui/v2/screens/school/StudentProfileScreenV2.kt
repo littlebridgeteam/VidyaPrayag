@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -31,12 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.littlebridge.enrollplus.feature.admin.domain.model.StudentActivityDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentParentDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentProfileDto
 import com.littlebridge.enrollplus.feature.admin.domain.model.StudentTeacherDto
@@ -47,7 +46,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VBackHeader
 import com.littlebridge.enrollplus.ui.v2.components.VBadge
 import com.littlebridge.enrollplus.ui.v2.components.VBadgeTone
 import com.littlebridge.enrollplus.ui.v2.components.VButton
-import com.littlebridge.enrollplus.ui.v2.components.VButtonSize
 import com.littlebridge.enrollplus.ui.v2.components.VButtonVariant
 import com.littlebridge.enrollplus.ui.v2.components.VActionCard
 import com.littlebridge.enrollplus.ui.v2.components.VBottomSheet
@@ -57,7 +55,6 @@ import com.littlebridge.enrollplus.ui.v2.components.VConfirmDialog
 import com.littlebridge.enrollplus.ui.v2.components.VIcons
 import com.littlebridge.enrollplus.ui.v2.components.VInput
 import com.littlebridge.enrollplus.core.locale.StringKeys
-import com.littlebridge.enrollplus.ui.v2.components.VProgressBar
 import com.littlebridge.enrollplus.ui.v2.locale.appString
 import com.littlebridge.enrollplus.ui.v2.screens.VSectionHeader
 import com.littlebridge.enrollplus.ui.v2.screens.VStateHost
@@ -206,20 +203,22 @@ private fun StudentProfileContent(
 
 @Composable
 private fun StudentProfileBody(p: StudentProfileDto) {
+    // 1:1 with #view-student-profile in people-tab-premium.html:
+    // Hero · KPI carousel · Academic overview · Teacher connections ·
+    // Parent connections · Attendance overview · Recent marks · Leave records ·
+    // Fees status · Contact information. (Health action + Danger zone appended
+    // by the caller.)
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        HeroBanner(p)               // 1. Hero profile banner
-        KpiCarousel(p)              // 2. KPI carousel
-        AcademicOverview(p)         // 3. Academic overview
-        TeacherConnections(p.teachers) // 4. Teacher connections
-        ParentConnections(p.parents)   // 5. Parent connections
-        AttendanceOverview(p)       // 6. Attendance overview
-        InsightsSection(p.insights) // 7. Insights
-        ActivityTimeline(p.activities) // 8. Recent activity timeline
-        MarksSection(p)             // 9. Marks
-        LeaveSection(p)             // 10. Leave
-        FeesSection(p)              // 11. Fees
-        ContactInformation(p)       // 12. Contact information
-        AdministrativeInformation(p) // 13. Administrative information
+        HeroBanner(p)                   // Hero profile banner
+        KpiCarousel(p)                  // KPI carousel (Overview)
+        AcademicOverview(p)             // Academic overview
+        TeacherConnections(p.teachers)  // Teacher connections
+        ParentConnections(p.parents)    // Parent connections
+        AttendanceOverview(p)           // Attendance overview (Overall + This Term)
+        MarksSection(p)                 // Recent marks
+        LeaveSection(p)                 // Leave records
+        FeesSection(p)                  // Fees status
+        ContactInformation(p)           // Contact information
     }
 }
 
@@ -239,7 +238,7 @@ private fun HeroBanner(p: StudentProfileDto) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(s.fullName, style = VTypography.h2, color = VColors.ink)
                 Text(
-                    "${s.className} · Sec ${s.section}",
+                    "Class ${s.className} · Sec ${s.section}",
                     style = VTypography.caption, color = VColors.ink2,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -277,6 +276,14 @@ private fun HeroFact(icon: ImageVector, label: String, value: String) {
 }
 
 // ──────────────────────────── 2. KPI carousel ─────────────────────────────
+
+private data class KpiCardData(
+    val label: String,
+    val value: String,
+    val support: String,
+    val icon: ImageVector,
+    val tone: VBadgeTone,
+)
 
 @Composable
 private fun KpiCarousel(p: StudentProfileDto) {
@@ -343,6 +350,8 @@ private fun AcademicOverview(p: StudentProfileDto) {
 }
 
 // ───────────────────────── 4. Teacher connections ─────────────────────────
+// HTML .dr rows: 28dp gradient-initial mini avatar + teacher name (left) +
+// subject (right), hairline-separated inside one card.
 
 @Composable
 private fun TeacherConnections(teachers: List<StudentTeacherDto>) {
@@ -351,34 +360,20 @@ private fun TeacherConnections(teachers: List<StudentTeacherDto>) {
         if (teachers.isEmpty()) {
             EmptyCard(VIcons.Users, appString(StringKeys.SCH_NO_TEACHERS_CONNECTED))
         } else {
-            Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                teachers.forEach { t -> TeacherConnectionCard(t) }
+            VCard(padding = 18.dp) {
+                teachers.forEachIndexed { index, t ->
+                    ConnectionRow(name = t.name, trailing = t.subject)
+                    if (index != teachers.lastIndex) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                    }
+                }
             }
-        }
-    }
-}
-
-@Composable
-private fun TeacherConnectionCard(t: StudentTeacherDto) {
-    VCard(modifier = Modifier.width(190.dp), padding = 16.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            VAvatar(name = t.name, size = 40.dp)
-            Column(Modifier.weight(1f)) {
-                Text(t.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
-                Text(t.subject, style = VTypography.caption, color = VColors.ink2, maxLines = 1)
-            }
-        }
-        if (!t.designation.isNullOrBlank()) {
-            Spacer(Modifier.height(10.dp))
-            VBadge(text = t.designation?:"", tone = VBadgeTone.Arctic)
         }
     }
 }
 
 // ───────────────────────── 5. Parent connections ──────────────────────────
+// HTML .dr rows: 28dp mini avatar + "Name (Relation)" left + phone right.
 
 @Composable
 private fun ParentConnections(parents: List<StudentParentDto>) {
@@ -387,29 +382,41 @@ private fun ParentConnections(parents: List<StudentParentDto>) {
         if (parents.isEmpty()) {
             EmptyCard(VIcons.Heart, appString(StringKeys.SCH_NO_PARENTS_LINKED))
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                parents.forEach { ParentConnectionCard(it) }
+            VCard(padding = 18.dp) {
+                parents.forEachIndexed { index, parent ->
+                    ConnectionRow(
+                        name = "${parent.name} (${parent.relation})",
+                        trailing = parent.phone?.takeIf { it.isNotBlank() } ?: "—",
+                    )
+                    if (index != parents.lastIndex) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
+                    }
+                }
             }
         }
     }
 }
 
+/** Shared connection detail-row: 28dp gradient avatar + name (left) + value (right). */
 @Composable
-private fun ParentConnectionCard(parent: StudentParentDto) {
-    VCard(padding = 16.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            VAvatar(name = parent.name, size = 44.dp)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(parent.name, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink, maxLines = 1)
-                Text(parent.relation, style = VTypography.caption, color = VColors.ink2)
-                parent.phone?.takeIf { it.isNotBlank() }?.let {
-                    Text(it, style = VTypography.label, color = VColors.ink3)
-                }
-            }
-            if (parent.isPrimaryGuardian) {
-                VBadge(text = appString(StringKeys.SCH_PRIMARY_GUARDIAN), tone = VBadgeTone.Success)
-            }
-        }
+private fun ConnectionRow(name: String, trailing: String) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        VAvatar(name = name, size = 28.dp)
+        Text(
+            name,
+            style = VTypography.caption,
+            color = VColors.ink,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            trailing,
+            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = VColors.ink,
+        )
     }
 }
 
@@ -420,117 +427,54 @@ private fun AttendanceOverview(p: StudentProfileDto) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_ATTENDANCE_OVERVIEW))
         VCard(padding = 18.dp) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(appString(StringKeys.SCH_ATTENDANCE_RATE), style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
-                Text("${p.attendanceRate}%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Overall Attendance — mint (--success #A8E6CF) fill, matching prototype.
+                MetricBar(
+                    label = appString(StringKeys.SCH_OVERALL_ATTENDANCE),
+                    percent = p.attendancePercent.toInt(),
+                    fillColor = Color(0xFFA8E6CF),
+                )
+                // This Term — accent (violet) fill.
+                MetricBar(
+                    label = appString(StringKeys.SCH_THIS_TERM),
+                    percent = p.thisTermAttendance,
+                    fillColor = VColors.violet,
+                )
             }
-            Spacer(Modifier.height(8.dp))
-            VProgressBar(
-                value = p.attendanceRate.toFloat(),
-                tone = if (p.attendanceRate < 75) VBadgeTone.Warning else VBadgeTone.Success,
-                height = 8.dp,
+        }
+    }
+}
+
+@Composable
+private fun MetricBar(label: String, percent: Int, fillColor: Color) {
+    val clamped = percent.coerceIn(0, 100)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+            Text("$clamped%", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink2)
+        }
+        // .btr track + .bf fill (8px, pill radius) — drawn directly for exact fill colors.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(VColors.cream),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(clamped / 100f)
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(fillColor),
             )
-            Spacer(Modifier.height(14.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatPill(appString(StringKeys.SCH_PRESENT), p.presentDays, Modifier.weight(1f))
-                StatPill(appString(StringKeys.SCH_ABSENT), p.absentDays, Modifier.weight(1f))
-                StatPill(appString(StringKeys.SCH_LATE), p.lateDays, Modifier.weight(1f))
-            }
         }
     }
 }
 
-@Composable
-private fun StatPill(label: String, value: Int, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(VColors.cream).padding(12.dp),
-    ) {
-        Text(value.toString(), style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink)
-        Text(label, style = VTypography.label, color = VColors.ink3)
-    }
-}
-
-// ─────────────────────────── 7. Insights ──────────────────────────────────
-
-@Composable
-private fun InsightsSection(insights: List<String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_INSIGHTS))
-        if (insights.isEmpty()) {
-            EmptyCard(VIcons.Sparkles, appString(StringKeys.SCH_NO_INSIGHTS_YET))
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                insights.forEach { insight ->
-                    VCard(padding = 14.dp) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(
-                                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.violetSoft),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(VIcons.Sparkles, contentDescription = null, tint = VColors.violet, modifier = Modifier.size(17.dp))
-                            }
-                            Text(insight, style = VTypography.body, color = VColors.ink, modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ─────────────────────── 8. Recent activity timeline ──────────────────────
-
-@Composable
-private fun ActivityTimeline(activities: List<StudentActivityDto>) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_RECENT_ACTIVITY))
-        if (activities.isEmpty()) {
-            EmptyCard(VIcons.Calendar, appString(StringKeys.SCH_NO_RECENT_ACTIVITY))
-        } else {
-            VCard(padding = 18.dp) {
-                Column {
-                    activities.forEachIndexed { index, activity ->
-                        TimelineRow(activity, isLast = index == activities.lastIndex)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimelineRow(activity: StudentActivityDto, isLast: Boolean) {
-    val tone = activityTone(activity.type)
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.size(12.dp).clip(CircleShape).background(tone))
-            if (!isLast) {
-                Box(Modifier.width(2.dp).height(34.dp).background(VColors.line))
-            }
-        }
-        Column(Modifier.padding(bottom = if (isLast) 0.dp else 12.dp)) {
-            Text(activity.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
-            Text(formatActivityMeta(activity), style = VTypography.label, color = VColors.ink3)
-        }
-    }
-}
-
-@Composable
-private fun activityTone(type: String) = when (type.lowercase()) {
-    "admission" -> VColors.violet
-    "marks" -> VColors.success
-    "parent_link" -> VColors.gold
-    "attendance" -> VColors.error
-    else -> VColors.ink3
-}
-
-private fun formatActivityMeta(activity: StudentActivityDto): String {
-    val label = activity.type.replace('_', ' ').replaceFirstChar { it.uppercase() }
-    val date = activity.createdAt.take(10)
-    return if (date.isNotBlank()) "$label · $date" else label
-}
-
-// ─────────────────────────────── 9. Marks ─────────────────────────────────
+// ───────────────────────────── Recent marks ───────────────────────────────
+// HTML .marks-row: subject name left (SemiBold ink), score "92/100" right
+// (SemiBold, accent/violet). Rows separated by hairlines inside one card.
 
 @Composable
 private fun MarksSection(p: StudentProfileDto) {
@@ -539,19 +483,27 @@ private fun MarksSection(p: StudentProfileDto) {
         if (p.marks.isEmpty()) {
             EmptyCard(VIcons.BookOpen, appString(StringKeys.SCH_NO_MARKS_RECORDED))
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                p.marks.forEach { m ->
-                    VCard(padding = 16.dp) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                            Column(Modifier.weight(1f)) {
-                                Text("${m.subject} · ${m.assessmentName}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
-                                m.examDate?.let { Text(it, style = VTypography.label, color = VColors.ink3) }
-                            }
-                            Text(
-                                "${m.marks?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "—"} / ${m.maxMarks}",
-                                style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink,
-                            )
-                        }
+            VCard(padding = 18.dp) {
+                p.marks.forEachIndexed { index, m ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            m.subject,
+                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = VColors.ink,
+                        )
+                        val score = m.marks?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "—"
+                        Text(
+                            "$score/${m.maxMarks}",
+                            style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = VColors.violet,
+                        )
+                    }
+                    if (index != p.marks.lastIndex) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(VColors.line))
                     }
                 }
             }
@@ -559,70 +511,84 @@ private fun MarksSection(p: StudentProfileDto) {
     }
 }
 
-// ─────────────────────────────── 10. Leave ────────────────────────────────
+// ───────────────────────────── Leave records ──────────────────────────────
+// HTML: two aggregate detail rows — Total Leave Days · Pending Requests.
 
 @Composable
 private fun LeaveSection(p: StudentProfileDto) {
+    val totalLeaveDays = p.leave.sumOf { leaveDayCount(it.dateFrom, it.dateTo) }
+    val pending = p.leave.count { it.status.equals("pending", ignoreCase = true) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_LEAVE))
-        if (p.leave.isEmpty()) {
-            EmptyCard(VIcons.Calendar, appString(StringKeys.SCH_NO_LEAVE_APPLICATIONS))
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                p.leave.forEach { l ->
-                    VCard(padding = 16.dp) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Column(Modifier.weight(1f)) {
-                                Text("${l.dateFrom} → ${l.dateTo}", style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
-                                Text(l.reason, style = VTypography.caption, color = VColors.ink2)
-                            }
-                            VBadge(
-                                text = l.status,
-                                tone = when (l.status.lowercase()) {
-                                    "approved" -> VBadgeTone.Success
-                                    "rejected" -> VBadgeTone.Danger
-                                    else -> VBadgeTone.Warning
-                                },
-                            )
-                        }
-                    }
-                }
+        VCard(padding = 18.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                DetailRow(VIcons.Calendar, appString(StringKeys.SCH_TOTAL_LEAVE_DAYS), totalLeaveDays.toString())
+                DetailRow(VIcons.AlertTriangle, appString(StringKeys.SCH_PENDING_REQUESTS), pending.toString())
             }
         }
     }
 }
 
-// ─────────────────────────────── 11. Fees ─────────────────────────────────
+/** Inclusive day count between two ISO dates (yyyy-MM-dd). Falls back to 1. */
+private fun leaveDayCount(from: String, to: String): Int = runCatching {
+    val f = epochDay(from.take(10))
+    val t = epochDay(to.take(10))
+    (t - f + 1).toInt().coerceAtLeast(1)
+}.getOrDefault(1)
+
+/** Days since 1970-01-01 for an ISO date, via a proleptic-Gregorian formula. */
+private fun epochDay(iso: String): Long {
+    val parts = iso.split("-")
+    val y = parts[0].toLong()
+    val m = parts[1].toInt()
+    val d = parts[2].toInt()
+    var total = 0L
+    var year = 1970L
+    if (y >= 1970) {
+        while (year < y) { total += if (isLeap(year)) 366 else 365; year++ }
+    } else {
+        while (year > y) { year--; total -= if (isLeap(year)) 366 else 365 }
+    }
+    val daysInMonth = intArrayOf(31, if (isLeap(y)) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    for (mm in 1 until m) total += daysInMonth[mm - 1]
+    total += (d - 1)
+    return total
+}
+
+private fun isLeap(y: Long): Boolean = (y % 4 == 0L && y % 100 != 0L) || (y % 400 == 0L)
+
+// ────────────────────────────── Fees status ───────────────────────────────
+// HTML .dr with $ icon chip: title left, status value colored right
+// (Paid → success, Pending/Overdue → warning/danger).
 
 @Composable
 private fun FeesSection(p: StudentProfileDto) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_FEES))
         if (p.fees.isEmpty()) {
-            EmptyCard(VIcons.Bookmark, appString(StringKeys.SCH_NO_FEE_RECORDS))
+            EmptyCard(VIcons.Wallet, appString(StringKeys.SCH_NO_FEE_RECORDS))
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                p.fees.forEach { f ->
-                    VCard(padding = 16.dp) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                            Column(Modifier.weight(1f)) {
-                                Text(f.title, style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold), color = VColors.ink)
-                                f.dueDate?.let { Text(appString(StringKeys.SCH_DUE, "date" to it), style = VTypography.label, color = VColors.ink3) }
+            VCard(padding = 18.dp) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    p.fees.forEach { f ->
+                        val statusColor = when (f.status.uppercase()) {
+                            "PAID" -> VColors.success
+                            "OVERDUE" -> VColors.error
+                            else -> VColors.gold
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(
+                                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(VColors.cream),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(VIcons.Wallet, contentDescription = null, tint = VColors.ink2, modifier = Modifier.size(16.dp))
                             }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    "${f.currency} ${if (f.amount % 1.0 == 0.0) f.amount.toInt().toString() else f.amount.toString()}",
-                                    style = VTypography.body.copy(fontSize = 13.sp), color = VColors.ink,
-                                )
-                                VBadge(
-                                    text = f.status,
-                                    tone = when (f.status.uppercase()) {
-                                        "PAID" -> VBadgeTone.Success
-                                        "OVERDUE" -> VBadgeTone.Danger
-                                        else -> VBadgeTone.Warning
-                                    },
-                                )
-                            }
+                            Text(f.title, style = VTypography.caption, color = VColors.ink3, modifier = Modifier.weight(1f))
+                            Text(
+                                f.status.replaceFirstChar { it.uppercase() },
+                                style = VTypography.caption.copy(fontWeight = FontWeight.SemiBold),
+                                color = statusColor,
+                            )
                         }
                     }
                 }
@@ -631,34 +597,32 @@ private fun FeesSection(p: StudentProfileDto) {
     }
 }
 
-// ──────────────────────── 12. Contact information ──────────────────────────
+// ─────────────────────────── Contact information ───────────────────────────
+// HTML: Father's Phone · Mother's Phone · Address. Phones derived from the
+// parents list by relationship; address from the student record (V15).
 
 @Composable
 private fun ContactInformation(p: StudentProfileDto) {
-    val primary = p.parents.firstOrNull { it.isPrimaryGuardian } ?: p.parents.firstOrNull()
+    val father = p.parents.firstOrNull { it.relation.contains("father", ignoreCase = true) }
+    val mother = p.parents.firstOrNull { it.relation.contains("mother", ignoreCase = true) }
+    val address = p.student.address?.takeIf { it.isNotBlank() }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         VSectionHeader(title = appString(StringKeys.SCH_CONTACT_INFORMATION))
         VCard(padding = 18.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                DetailRow(VIcons.Heart, appString(StringKeys.SCH_PRIMARY_GUARDIAN), primary?.name ?: "—")
-                DetailRow(VIcons.Phone, appString(StringKeys.SCH_PHONE), primary?.phone?.takeIf { it.isNotBlank() } ?: "—")
-            }
-        }
-    }
-}
-
-// ────────────────────── 13. Administrative information ─────────────────────
-
-@Composable
-private fun AdministrativeInformation(p: StudentProfileDto) {
-    val s = p.student
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        VSectionHeader(title = appString(StringKeys.SCH_ADMINISTRATIVE_INFO))
-        VCard(padding = 18.dp) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                DetailRow(VIcons.Bookmark, appString(StringKeys.SCH_ADMISSION_NUMBER), s.studentCode)
-                DetailRow(VIcons.Calendar, appString(StringKeys.SCH_ADMISSION_DATE), p.admissionDate?.takeIf { it.isNotBlank() } ?: "—")
-                DetailRow(VIcons.User, appString(StringKeys.SCH_STUDENT_ID), s.id)
+                DetailRow(
+                    VIcons.Phone,
+                    appString(StringKeys.SCH_FATHERS_PHONE),
+                    father?.phone?.takeIf { it.isNotBlank() } ?: "—",
+                )
+                DetailRow(
+                    VIcons.Phone,
+                    appString(StringKeys.SCH_MOTHERS_PHONE),
+                    mother?.phone?.takeIf { it.isNotBlank() } ?: "—",
+                )
+                if (address != null) {
+                    DetailRow(VIcons.MapPin, appString(StringKeys.SCH_ADDRESS), address)
+                }
             }
         }
     }
@@ -754,7 +718,7 @@ private fun EditStudentSheet(
     var admission by remember { mutableStateOf(admissionDate ?: "") }
 
     VBottomSheet(visible = true, onDismiss = onDismiss) {
-        VBottomSheetHeader(title = "Edit Student")
+        VBottomSheetHeader(title = "Edit Student", subtitle = "Update student details", onClose = onDismiss)
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -796,14 +760,25 @@ private fun EditStudentSheet(
             if (success) {
                 Text("Saved successfully", style = VTypography.caption, color = VColors.success)
             }
-            VButton(
-                text = "Save Changes",
-                onClick = { onSave(name, cls, sec, roll, admission) },
-                variant = VButtonVariant.Primary,
-                full = true,
-                enabled = !isSaving,
-                loading = isSaving,
-            )
+            Spacer(Modifier.height(4.dp))
+            // Prototype sheet footer: Cancel (outline) + Save Changes (violet primary).
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                VButton(
+                    text = "Cancel",
+                    onClick = onDismiss,
+                    variant = VButtonVariant.Secondary,
+                    enabled = !isSaving,
+                    modifier = Modifier.weight(1f),
+                )
+                VButton(
+                    text = "Save Changes",
+                    onClick = { onSave(name, cls, sec, roll, admission) },
+                    variant = VButtonVariant.Primary,
+                    enabled = !isSaving,
+                    loading = isSaving,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }

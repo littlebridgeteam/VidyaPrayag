@@ -103,6 +103,8 @@ data class TeacherCardProfileDto(
     val name: String,
     val avatarUrl: String? = null,
     val role: String,
+    val phone: String? = null,
+    val email: String? = null,
     val status: String,                                   // ACTIVE | INACTIVE
     // People Tab enrichment — new fields for enriched teacher card.
     @SerialName("is_class_teacher") val isClassTeacher: Boolean = false,
@@ -631,6 +633,8 @@ fun Route.teacherProvisioningRouting() {
                                 name = appUser?.get(AppUsersTable.fullName) ?: fRow[FacultyTable.name],
                                 avatarUrl = appUser?.get(AppUsersTable.profilePicUrl) ?: fRow[FacultyTable.profilePic],
                                 role = roleLabel,
+                                phone = appUser?.get(AppUsersTable.phone),
+                                email = appUser?.get(AppUsersTable.email),
                                 status = if (isActive) "ACTIVE" else "INACTIVE",
                                 isClassTeacher = isClassTeacher,
                                 experience = experienceLabel,
